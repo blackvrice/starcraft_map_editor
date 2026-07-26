@@ -246,6 +246,20 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - timeout, 취소, 네이티브 크래시는 작업 실패로 변환하고 앱이 만든 정확한
   임시 디렉터리만 정리한다.
 
+2026-07-26 구현 기준선:
+
+- `native/map_archive_helper`는 고정된 StormLib revision을 정적으로 링크하고
+  `extractScenario` 프로토콜만 제공한다. 원본은 `MPQ_OPEN_READ_ONLY`로 열며
+  기존 CHK 출력 파일을 덮어쓰지 않는다.
+- `ProcessMapArchiveGateway`는 요청별 임시 디렉터리를 만들고 helper와
+  `protocolVersion=1` JSON으로 통신한다. 성공 응답의 request ID, 작업,
+  helper/StormLib 버전, 메타데이터와 실제 추출 파일 크기를 모두 검증한다.
+- helper stdin은 64 KiB, Dart가 보존하는 stdout/stderr는 스트림별 1 MiB,
+  추출 CHK는 기본 64 MiB로 제한한다. 출력 스트림은 제한을 넘은 뒤에도
+  버리면서 끝까지 소비해 파이프 교착을 막는다.
+- timeout과 operation ID 취소는 helper 프로세스를 종료하며, 임시 쓰기는
+  Save As 구현 전까지 `ARCHIVE_WRITE_NOT_IMPLEMENTED` 진단으로 차단한다.
+
 ## 8. 주요 데이터 흐름
 
 ### 맵 열기

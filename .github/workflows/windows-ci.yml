@@ -45,3 +45,28 @@ jobs:
 
       - name: Build Windows debug app
         run: flutter build windows --debug
+
+      - name: Test native map archive helper
+        run: >
+          ctest
+          --test-dir build/windows/x64
+          -C Debug
+          --output-on-failure
+          -R map_archive_helper_native
+
+      - name: Smoke test bundled map archive helper
+        shell: pwsh
+        run: |
+          $fixtureDirectory = Join-Path $env:RUNNER_TEMP "map-archive-fixture"
+          New-Item -ItemType Directory -Path $fixtureDirectory -Force | Out-Null
+          $fixtureBuilder = (Resolve-Path "build/windows/x64/map_archive_helper/Debug/map_archive_helper_native_test.exe").Path
+          $env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path "build/windows/x64/runner/Debug/map_archive_helper.exe").Path
+          $env:MAP_ARCHIVE_TEST_MAP = Join-Path $fixtureDirectory "generated test map.scx"
+          $scenarioPath = Join-Path $fixtureDirectory "expected scenario.chk"
+
+          & $fixtureBuilder --create-fixture $env:MAP_ARCHIVE_TEST_MAP $scenarioPath
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          flutter test test/infrastructure/bundled_map_archive_helper_test.dart

@@ -79,6 +79,16 @@ StormLib 연동 helper는
 - timeout, 취소, 크래시 때 프로세스 트리를 종료하고 앱이 만든 정확한 요청
   임시 디렉터리만 정리한다.
 
+현재 archive helper 구현은 다음 상한과 검증을 적용한다.
+
+- JSON stdin 최대 64 KiB
+- stdout/stderr 캡처 각각 최대 1 MiB, 초과분은 메모리에 보관하지 않고 계속 소비
+- 추출 `scenario.chk` 기본 최대 64 MiB
+- `protocolVersion`, request ID, 작업, helper/StormLib 버전의 완전 일치
+- helper 작업 디렉터리와 동일한 기존 디렉터리 안의 새 CHK 출력만 허용
+- 원본 아카이브 read-only open과 기존 임시 출력 덮어쓰기 거부
+- StormLib 메타데이터, 추출 파일 크기, Dart에서 읽은 바이트 길이의 일치
+
 ## 6. 경로 안전
 
 - 입력, 임시, 출력 경로를 절대 경로로 정규화

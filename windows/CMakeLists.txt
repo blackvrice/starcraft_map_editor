@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(starcraft_map_editor LANGUAGES CXX)
 
+include(CTest)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "starcraft_map_editor")
@@ -71,6 +73,11 @@ endif()
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
+
+add_subdirectory(
+  "../native/map_archive_helper"
+  "${CMAKE_CURRENT_BINARY_DIR}/map_archive_helper"
+)
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)

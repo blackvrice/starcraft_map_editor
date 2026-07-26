@@ -70,6 +70,18 @@ flutter analyze
 flutter test
 ```
 
+Windows archive helper 변경 시:
+
+```powershell
+flutter build windows --debug
+ctest --test-dir build/windows/x64 -C Debug --output-on-failure -R map_archive_helper_native
+```
+
+helper 빌드는 CMake 3.25 이상, MSVC C++17 도구 체인과 Git이 필요하다. 첫
+configure에서는 full commit SHA로 고정된 StormLib와 JSON for Modern C++를
+공식 GitHub 저장소에서 가져오며, 이후 빌드는 `build/`의 FetchContent 캐시를
+재사용한다.
+
 변경 유형별 추가 검증:
 
 | 변경 | 추가 검증 |

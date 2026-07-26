@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | helper 결정·`MapArchiveGateway` 포트 완료, MPQ 어댑터 대기 |
+| M3. 맵 아카이브 입출력 | 진행 중 | 실제 helper CHK 추출 완료, 아카이브 목록 진단 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -102,7 +102,7 @@
 
 - [x] StormLib 브리지 방식 FFI/helper process 비교와 ADR 작성
 - [x] `MapArchiveGateway` 포트 구현
-- [ ] `staredit\scenario.chk` 탐색과 추출
+- [x] `staredit\scenario.chk` 탐색과 추출
 - [ ] 아카이브 목록과 기본 메타데이터 진단
 - [ ] Open Map UI와 최근 파일 연결
 - [ ] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
@@ -125,6 +125,17 @@
   StormLib 타입을 노출하지 않는다.
 - `test/application/map_archive_gateway_test.dart`는 가짜 어댑터 대입과 함께
   계약의 불변성, 경계값, 진단 규칙을 검증한다.
+- `native/map_archive_helper`는 pinned StormLib를 정적으로 링크해 원본을
+  read-only로 열고 정확히 `staredit\scenario.chk`만 새 임시 파일로 추출한다.
+  고정 JSON 프로토콜과 입력/출력/CHK 크기 상한, 기존 출력 거부를 적용한다.
+- `ProcessMapArchiveGateway`는 절대 경로 helper를 셸 없이 실행하고 프로토콜,
+  버전, 종료 코드, 메타데이터와 실제 파일 크기를 검증한다. stdout/stderr를
+  동시에 소비하며 timeout, operation ID 취소와 정확한 임시 디렉터리 정리를
+  제공한다.
+- native CTest는 자체 생성 MPQ의 한글 경로 추출, 원본 byte-exact 불변,
+  CHK 누락과 출력 충돌을 검증한다. Dart 프로세스 테스트와 패키지의 실제
+  helper end-to-end 스모크 테스트가 성공/오류/손상 응답/대량 출력/timeout/
+  취소를 검증한다.
 
 완료 조건:
 

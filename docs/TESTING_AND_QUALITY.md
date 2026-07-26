@@ -129,6 +129,17 @@ StormLib 없이 가짜 `MapArchiveGateway`를 대입해 open, 임시 쓰기, 취
 바이트 값 범위, `scenario.chk` 항목과 추출 크기의 일치, 성공/실패 진단
 불변식을 단위 테스트한다.
 
+`test/infrastructure/process_map_archive_gateway_test.dart`는 셸을 사용하지 않고
+고정 PowerShell fixture 프로세스를 실행해 성공, 구조화 오류, 손상 응답,
+대량 stderr, timeout, 취소, 상대 경로 차단과 임시 디렉터리 정리를 검증한다.
+
+`map_archive_helper_native_test`는 StormLib로 테스트 중 MPQ를 직접 생성해 한글
+경로 추출, 원본 byte-exact 불변, 누락 CHK, 기존 출력 보존을 검증한다. Windows
+CI는 이 native CTest 뒤에 같은 fixture builder가 만든 MPQ를 패키지의 실제
+helper와 `ProcessMapArchiveGateway`로 다시 여는 end-to-end 스모크 테스트를
+실행한다. 테스트 맵은 실행 중 임시로 생성되며 저장소에 제3자 맵을 포함하지
+않는다.
+
 ## 4. 필수 회귀 테스트
 
 ### CHK
