@@ -1,8 +1,11 @@
 #include "flutter_window.h"
 
+#include <commdlg.h>
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "utils.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +28,51 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  file_dialog_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(),
+          "starcraft_map_editor/file_dialog",
+          &flutter::StandardMethodCodec::GetInstance());
+  file_dialog_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "openMap") {
+          result->NotImplemented();
+          return;
+        }
+
+        wchar_t selected_path[32768] = {};
+        constexpr wchar_t filter[] =
+            L"StarCraft maps (*.scm;*.scx)\0*.scm;*.scx\0"
+            L"All files (*.*)\0*.*\0";
+        OPENFILENAMEW dialog = {};
+        dialog.lStructSize = sizeof(dialog);
+        dialog.hwndOwner = GetHandle();
+        dialog.lpstrFile = selected_path;
+        dialog.nMaxFile =
+            static_cast<DWORD>(sizeof(selected_path) / sizeof(wchar_t));
+        dialog.lpstrFilter = filter;
+        dialog.nFilterIndex = 1;
+        dialog.lpstrTitle = L"Open StarCraft Map";
+        dialog.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |
+                       OFN_NOCHANGEDIR;
+
+        if (::GetOpenFileNameW(&dialog)) {
+          result->Success(flutter::EncodableValue(Utf8FromUtf16(selected_path)));
+          return;
+        }
+
+        const DWORD error = ::CommDlgExtendedError();
+        if (error == 0) {
+          result->Success();
+          return;
+        }
+
+        result->Error("FILE_DIALOG_FAILED",
+                      "The Windows file dialog could not be opened.",
+                      flutter::EncodableValue(static_cast<int64_t>(error)));
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -40,6 +88,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  file_dialog_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

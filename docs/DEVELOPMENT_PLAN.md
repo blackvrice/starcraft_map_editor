@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | CHK 추출·아카이브 목록 진단 완료, Open Map UI 대기 |
+| M3. 맵 아카이브 입출력 | 진행 중 | CHK 추출·목록·Open Map UI·최근 파일 완료, Save As 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -104,7 +104,7 @@
 - [x] `MapArchiveGateway` 포트 구현
 - [x] `staredit\scenario.chk` 탐색과 추출
 - [x] 아카이브 목록과 기본 메타데이터 진단
-- [ ] Open Map UI와 최근 파일 연결
+- [x] Open Map UI와 최근 파일 연결
 - [ ] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
 - [ ] 입력 파일 fingerprint와 외부 변경 감지
 - [ ] 원본 덮어쓰기 방지와 백업 정책 테스트
@@ -142,6 +142,17 @@
   검증한다. Dart 프로세스 테스트와 패키지의 실제 helper end-to-end 스모크
   테스트가 전체 목록, 진단, 성공/오류/손상 응답/대량 출력/timeout/취소를
   검증한다.
+- `OpenMapController`는 Windows 파일 선택 또는 최근 맵 경로를 받아
+  `MapArchiveGateway` 추출, raw CHK 파싱, typed 메타데이터 검증, 최근 파일
+  기록을 한 유스케이스로 조립한다. 성공한 맵만 최근 목록에 기록하며 raw CHK
+  구조 오류는 열기를 실패시키고 typed view 오류는 제한된 읽기 전용 세션으로
+  표시한다.
+- Windows runner의 기본 파일 대화상자는 `.scm`/`.scx` 필터를 적용하고
+  method channel 뒤의 `MapFilePicker` 포트로 노출된다. 위젯은 파일 시스템이나
+  네이티브 API를 직접 호출하지 않는다.
+- 에디터 셸은 열린 파일 경로, MPQ/CHK 크기, 아카이브 항목 수, CHK 섹션 수,
+  맵 크기, 버전, 타입, 타일셋과 구조화 진단을 표시한다. 최근 맵을 누르면
+  파일 선택 대화상자 없이 같은 실제 열기 흐름을 다시 실행한다.
 
 완료 조건:
 

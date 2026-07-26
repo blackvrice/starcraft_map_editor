@@ -210,9 +210,18 @@ abstract interface class EudCompilerGateway {
 abstract interface class SafeFileWriter {
   Future<VerifiedWriteResult> writeVerified(WriteRequest request);
 }
+
+abstract interface class MapFilePicker {
+  Future<String?> pickMapPath();
+}
 ```
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
+
+`MapFilePicker`는 사용자가 선택한 절대 경로 또는 취소를 뜻하는 `null`만
+Application 계층에 반환한다. Windows의 `GetOpenFileNameW`와 Flutter method
+channel 세부사항은 Infrastructure와 runner에 남고 Presentation은 Open Map
+명령만 전달한다.
 
 `MapArchiveGateway` 포트는 Application 계층의 계약만 표현한다. open 요청은
 operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK 바이트와
@@ -292,6 +301,13 @@ sequenceDiagram
     Validator-->>OpenMap: diagnostics
     OpenMap-->>UI: document session
 ```
+
+2026-07-26 기준 `OpenMapController`가 이 흐름의 Application 조정자다. 새 파일
+열기는 `MapFilePicker`로 경로를 고르고 최근 파일 열기는 저장된 경로를 직접
+사용하지만, 이후에는 동일하게 `MapArchiveGateway` → `RawChkParser` →
+`ChkMetadataViewDecoder`를 거친다. raw 구조를 파싱할 수 없으면 기존 세션을
+유지한 채 실패 진단을 반환한다. typed 메타데이터 오류는 원시 문서를 보존한
+제한 읽기 전용 세션으로 열며, 성공한 경로만 최근 파일에 기록한다.
 
 ### 안전한 저장
 

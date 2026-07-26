@@ -4,20 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/commands/editor_command_dispatcher.dart';
+import '../../application/documents/open_map_controller.dart';
+import '../../application/documents/opened_map_session.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
+import '../../domain/diagnostics/editor_diagnostic.dart';
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
     required this.commandDispatcher,
+    required this.openMapController,
     required this.operationProgressController,
     required this.recentProjectsService,
     super.key,
   });
 
   final EditorCommandDispatcher commandDispatcher;
+  final OpenMapController openMapController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
 
@@ -27,11 +32,13 @@ class EditorShell extends StatefulWidget {
 
 class _EditorShellState extends State<EditorShell> {
   late Future<List<RecentProject>> _recentProjects;
+  late StreamSubscription<OpenMapState> _openMapSubscription;
 
   @override
   void initState() {
     super.initState();
     _recentProjects = widget.recentProjectsService.load();
+    _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
   }
 
   @override
@@ -40,6 +47,30 @@ class _EditorShellState extends State<EditorShell> {
     if (oldWidget.recentProjectsService != widget.recentProjectsService) {
       _recentProjects = widget.recentProjectsService.load();
     }
+    if (oldWidget.openMapController != widget.openMapController) {
+      unawaited(_openMapSubscription.cancel());
+      _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
+    }
+  }
+
+  StreamSubscription<OpenMapState> _listenForOpenedMaps(
+    OpenMapController controller,
+  ) {
+    return controller.changes.listen((state) {
+      if (mounted) {
+        setState(() {
+          if (state.status == OpenMapStatus.opened) {
+            _recentProjects = widget.recentProjectsService.load();
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_openMapSubscription.cancel());
+    super.dispose();
   }
 
   VoidCallback? _callbackFor(EditorCommandId command) {
@@ -111,22 +142,34 @@ class _EditorShellState extends State<EditorShell> {
                 ),
                 const Divider(height: 1),
                 Expanded(
-                  child: FutureBuilder<List<RecentProject>>(
-                    future: _recentProjects,
-                    builder: (context, snapshot) {
-                      return _EditorWorkspace(
-                        openMap: openMap,
-                        recentProjects: snapshot.data ?? const [],
-                        recentProjectsError: snapshot.hasError,
-                        recentProjectsLoading:
-                            snapshot.connectionState == ConnectionState.waiting,
-                        onOpenRecentProject:
-                            widget.commandDispatcher.canDispatch(
-                              EditorCommandId.openMap,
-                            )
-                            ? _openRecentProject
-                            : null,
-                        onRemoveRecentProject: _removeRecentProject,
+                  child: StreamBuilder<OpenMapState>(
+                    initialData: widget.openMapController.state,
+                    stream: widget.openMapController.changes,
+                    builder: (context, openMapSnapshot) {
+                      return FutureBuilder<List<RecentProject>>(
+                        future: _recentProjects,
+                        builder: (context, recentProjectsSnapshot) {
+                          return _EditorWorkspace(
+                            openMap: openMap,
+                            openMapState:
+                                openMapSnapshot.data ??
+                                const OpenMapState.idle(),
+                            recentProjects:
+                                recentProjectsSnapshot.data ?? const [],
+                            recentProjectsError:
+                                recentProjectsSnapshot.hasError,
+                            recentProjectsLoading:
+                                recentProjectsSnapshot.connectionState ==
+                                ConnectionState.waiting,
+                            onOpenRecentProject:
+                                widget.commandDispatcher.canDispatch(
+                                  EditorCommandId.openMap,
+                                )
+                                ? _openRecentProject
+                                : null,
+                            onRemoveRecentProject: _removeRecentProject,
+                          );
+                        },
                       );
                     },
                   ),
@@ -139,9 +182,16 @@ class _EditorShellState extends State<EditorShell> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _OutputPanel(progress: snapshot.data),
+                        _OutputPanel(
+                          progress: snapshot.data,
+                          diagnostics:
+                              widget.openMapController.state.diagnostics,
+                        ),
                         const Divider(height: 1),
-                        _StatusBar(progress: snapshot.data),
+                        _StatusBar(
+                          progress: snapshot.data,
+                          session: widget.openMapController.state.session,
+                        ),
                       ],
                     );
                   },
@@ -316,6 +366,7 @@ class _EnvironmentBadge extends StatelessWidget {
 class _EditorWorkspace extends StatelessWidget {
   const _EditorWorkspace({
     required this.openMap,
+    required this.openMapState,
     required this.recentProjects,
     required this.recentProjectsError,
     required this.recentProjectsLoading,
@@ -324,6 +375,7 @@ class _EditorWorkspace extends StatelessWidget {
   });
 
   final VoidCallback? openMap;
+  final OpenMapState openMapState;
   final List<RecentProject> recentProjects;
   final bool recentProjectsError;
   final bool recentProjectsLoading;
@@ -332,22 +384,27 @@ class _EditorWorkspace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = openMapState.session;
+
     return Row(
       children: [
-        const SizedBox(
+        SizedBox(
           width: 210,
           child: _EditorPane(
-            title: 'Project / Layers',
-            child: _EmptyPaneMessage(
-              icon: Icons.layers_outlined,
-              message: 'No map layers',
-            ),
+            title: session == null ? 'Project / Layers' : 'Archive Entries',
+            child: session == null
+                ? const _EmptyPaneMessage(
+                    icon: Icons.layers_outlined,
+                    message: 'No map layers',
+                  )
+                : _ArchiveEntryList(session: session),
           ),
         ),
         const VerticalDivider(width: 1),
         Expanded(
           child: _MapWorkspace(
             openMap: openMap,
+            openMapState: openMapState,
             recentProjects: recentProjects,
             recentProjectsError: recentProjectsError,
             recentProjectsLoading: recentProjectsLoading,
@@ -356,14 +413,16 @@ class _EditorWorkspace extends StatelessWidget {
           ),
         ),
         const VerticalDivider(width: 1),
-        const SizedBox(
+        SizedBox(
           width: 260,
           child: _EditorPane(
             title: 'Inspector',
-            child: _EmptyPaneMessage(
-              icon: Icons.tune,
-              message: 'Nothing selected',
-            ),
+            child: session == null
+                ? const _EmptyPaneMessage(
+                    icon: Icons.tune,
+                    message: 'Nothing selected',
+                  )
+                : _MapInspector(session: session),
           ),
         ),
       ],
@@ -432,6 +491,7 @@ class _EmptyPaneMessage extends StatelessWidget {
 class _MapWorkspace extends StatelessWidget {
   const _MapWorkspace({
     required this.openMap,
+    required this.openMapState,
     required this.recentProjects,
     required this.recentProjectsError,
     required this.recentProjectsLoading,
@@ -440,6 +500,7 @@ class _MapWorkspace extends StatelessWidget {
   });
 
   final VoidCallback? openMap;
+  final OpenMapState openMapState;
   final List<RecentProject> recentProjects;
   final bool recentProjectsError;
   final bool recentProjectsLoading;
@@ -448,6 +509,14 @@ class _MapWorkspace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = openMapState.session;
+    if (session != null) {
+      return _OpenedMapWorkspace(
+        session: session,
+        diagnostics: session.diagnostics,
+      );
+    }
+
     return ColoredBox(
       key: const Key('map-workspace'),
       color: const Color(0xFF101319),
@@ -530,6 +599,432 @@ class _MapWorkspace extends StatelessWidget {
   }
 }
 
+class _OpenedMapWorkspace extends StatelessWidget {
+  const _OpenedMapWorkspace({required this.session, required this.diagnostics});
+
+  final OpenedMapSession session;
+  final List<EditorDiagnostic> diagnostics;
+
+  @override
+  Widget build(BuildContext context) {
+    final metadataViews = session.metadataViews;
+    final dimensions = metadataViews.dimensions.isEmpty
+        ? null
+        : metadataViews.dimensions.first;
+    final version = metadataViews.versions.isEmpty
+        ? null
+        : metadataViews.versions.first;
+    final tileset = metadataViews.tilesets.isEmpty
+        ? null
+        : metadataViews.tilesets.first;
+    final scenarioType = metadataViews.types.isEmpty
+        ? null
+        : metadataViews.types.first;
+    final warningCount = diagnostics
+        .where(
+          (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
+        )
+        .length;
+    final blockingCount = diagnostics
+        .where((diagnostic) => diagnostic.blocksOperation)
+        .length;
+
+    return ColoredBox(
+      key: const Key('map-workspace'),
+      color: const Color(0xFF101319),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1D2738),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.map_outlined,
+                        color: Color(0xFF70A1FF),
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _fileName(session.sourcePath),
+                            key: const Key('opened-map-name'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            session.sourcePath,
+                            key: const Key('opened-map-path'),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF929DB0),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _SessionStatusChip(
+                      restricted: session.requiresRestrictedEditing,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _MapSummaryMetric(
+                      label: 'CHK sections',
+                      value: '${session.rawDocument.sections.length}',
+                      icon: Icons.view_list_outlined,
+                    ),
+                    _MapSummaryMetric(
+                      label: 'Map size',
+                      value: dimensions == null
+                          ? 'Unknown'
+                          : '${dimensions.width} × ${dimensions.height}',
+                      icon: Icons.aspect_ratio,
+                    ),
+                    _MapSummaryMetric(
+                      label: 'Archive entries',
+                      value:
+                          '${session.archiveMetadata.entries.length} / '
+                          '${session.archiveMetadata.totalEntryCount}',
+                      icon: Icons.inventory_2_outlined,
+                    ),
+                    _MapSummaryMetric(
+                      label: 'CHK size',
+                      value: _formatBytes(session.scenarioChkSizeBytes),
+                      icon: Icons.data_object,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                _SummaryCard(
+                  title: 'Scenario summary',
+                  rows: [
+                    (
+                      'Map version',
+                      version == null
+                          ? 'Not present'
+                          : version.knownVersion == null
+                          ? 'Unknown (${version.rawValue})'
+                          : '${_humanizeEnumName(version.knownVersion!.name)} '
+                                '(${version.rawValue})',
+                    ),
+                    (
+                      'Scenario type',
+                      scenarioType == null
+                          ? 'Not present'
+                          : scenarioType.fourCharacterCode,
+                    ),
+                    (
+                      'Tileset',
+                      tileset == null
+                          ? 'Not present'
+                          : tileset.knownTileset == null
+                          ? 'Unknown (${tileset.rawValue})'
+                          : _humanizeEnumName(tileset.knownTileset!.name),
+                    ),
+                    (
+                      'MPQ format',
+                      'Version ${session.archiveMetadata.formatVersion}',
+                    ),
+                    (
+                      'Archive listing',
+                      session.archiveMetadata.listingComplete
+                          ? 'Complete'
+                          : 'Partial',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _SummaryCard(
+                  title: 'Open diagnostics',
+                  rows: [
+                    ('Blocking', '$blockingCount'),
+                    ('Warnings', '$warningCount'),
+                    (
+                      'Mode',
+                      session.requiresRestrictedEditing
+                          ? 'Restricted read-only'
+                          : 'Read-only preview',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SessionStatusChip extends StatelessWidget {
+  const _SessionStatusChip({required this.restricted});
+
+  final bool restricted;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = restricted
+        ? const Color(0xFFFFB454)
+        : const Color(0xFF68D391);
+    return Container(
+      key: const Key('opened-map-mode'),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Text(
+        restricted ? 'Restricted' : 'Read-only preview',
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _MapSummaryMetric extends StatelessWidget {
+  const _MapSummaryMetric({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 172,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171C24),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF293242)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF70A1FF)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF8994A8),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.title, required this.rows});
+
+  final String title;
+  final List<(String, String)> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171C24),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF293242)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          for (var index = 0; index < rows.length; index++) ...[
+            if (index > 0) const Divider(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    rows[index].$1,
+                    style: const TextStyle(
+                      color: Color(0xFF8994A8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: Text(
+                    rows[index].$2,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ArchiveEntryList extends StatelessWidget {
+  const _ArchiveEntryList({required this.session});
+
+  final OpenedMapSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = session.archiveMetadata.entries;
+    return ListView.builder(
+      key: const Key('archive-entry-list'),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        return ListTile(
+          dense: true,
+          leading: Icon(
+            entry.nameIsSynthetic
+                ? Icons.help_outline
+                : Icons.insert_drive_file_outlined,
+            size: 18,
+            color: entry.nameIsSynthetic
+                ? const Color(0xFFFFB454)
+                : const Color(0xFF7F8BA0),
+          ),
+          title: Text(
+            entry.path,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11),
+          ),
+          subtitle: Text(
+            _formatBytes(entry.uncompressedSizeBytes),
+            style: const TextStyle(fontSize: 10),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MapInspector extends StatelessWidget {
+  const _MapInspector({required this.session});
+
+  final OpenedMapSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final archive = session.archiveMetadata;
+    return ListView(
+      key: const Key('map-inspector'),
+      padding: const EdgeInsets.all(12),
+      children: [
+        _InspectorValue(label: 'File', value: _fileName(session.sourcePath)),
+        _InspectorValue(
+          label: 'Archive size',
+          value: _formatBytes(archive.archiveSizeBytes),
+        ),
+        _InspectorValue(
+          label: 'Entries',
+          value:
+              '${archive.entries.length} listed / ${archive.totalEntryCount}',
+        ),
+        _InspectorValue(
+          label: 'CHK size',
+          value: _formatBytes(session.scenarioChkSizeBytes),
+        ),
+        _InspectorValue(
+          label: 'CHK sections',
+          value: '${session.rawDocument.sections.length}',
+        ),
+        _InspectorValue(
+          label: 'Diagnostics',
+          value: '${session.diagnostics.length}',
+        ),
+      ],
+    );
+  }
+}
+
+class _InspectorValue extends StatelessWidget {
+  const _InspectorValue({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Color(0xFF8994A8), fontSize: 11),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RecentProjectTile extends StatelessWidget {
   const _RecentProjectTile({
     required this.project,
@@ -605,9 +1100,10 @@ class _RecentProjectsMessage extends StatelessWidget {
 }
 
 class _OutputPanel extends StatelessWidget {
-  const _OutputPanel({required this.progress});
+  const _OutputPanel({required this.progress, required this.diagnostics});
 
   final OperationProgress? progress;
+  final List<EditorDiagnostic> diagnostics;
 
   @override
   Widget build(BuildContext context) {
@@ -641,7 +1137,11 @@ class _OutputPanel extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-              child: progress == null
+              child: progress != null && !progress!.isTerminal
+                  ? _OperationSummary(progress: progress!)
+                  : diagnostics.isNotEmpty
+                  ? _DiagnosticList(diagnostics: diagnostics)
+                  : progress == null
                   ? const Center(
                       child: Text(
                         'No problems detected',
@@ -653,6 +1153,52 @@ class _OutputPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DiagnosticList extends StatelessWidget {
+  const _DiagnosticList({required this.diagnostics});
+
+  final List<EditorDiagnostic> diagnostics;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      itemCount: diagnostics.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 2),
+      itemBuilder: (context, index) {
+        final diagnostic = diagnostics[index];
+        return Row(
+          key: ValueKey('diagnostic-${diagnostic.code}-$index'),
+          children: [
+            Icon(
+              _diagnosticIcon(diagnostic.severity),
+              size: 16,
+              color: _diagnosticColor(diagnostic.severity),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              diagnostic.code,
+              style: const TextStyle(
+                color: Color(0xFFAAB5C8),
+                fontFamily: 'monospace',
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                diagnostic.message,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -696,14 +1242,16 @@ class _OperationSummary extends StatelessWidget {
 }
 
 class _StatusBar extends StatelessWidget {
-  const _StatusBar({required this.progress});
+  const _StatusBar({required this.progress, required this.session});
 
   final OperationProgress? progress;
+  final OpenedMapSession? session;
 
   @override
   Widget build(BuildContext context) {
     final currentProgress = progress;
     final active = currentProgress != null && !currentProgress.isTerminal;
+    final session = this.session;
 
     return SizedBox(
       height: 28,
@@ -739,7 +1287,12 @@ class _StatusBar extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
               const Spacer(),
-              const Text('No document', style: TextStyle(fontSize: 12)),
+              Text(
+                session == null ? 'No document' : _fileName(session.sourcePath),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
               const SizedBox(width: 18),
               Text(
                 currentProgress == null
@@ -788,4 +1341,47 @@ Color _phaseColor(OperationPhase phase) {
     OperationPhase.cancelled => const Color(0xFFF0B85A),
     _ => const Color(0xFF70A1FF),
   };
+}
+
+IconData _diagnosticIcon(DiagnosticSeverity severity) {
+  return switch (severity) {
+    DiagnosticSeverity.info => Icons.info_outline,
+    DiagnosticSeverity.warning => Icons.warning_amber_rounded,
+    DiagnosticSeverity.error || DiagnosticSeverity.fatal => Icons.error_outline,
+  };
+}
+
+Color _diagnosticColor(DiagnosticSeverity severity) {
+  return switch (severity) {
+    DiagnosticSeverity.info => const Color(0xFF70A1FF),
+    DiagnosticSeverity.warning => const Color(0xFFFFB454),
+    DiagnosticSeverity.error ||
+    DiagnosticSeverity.fatal => const Color(0xFFFF7B72),
+  };
+}
+
+String _fileName(String path) {
+  return path.replaceAll('\\', '/').split('/').last;
+}
+
+String _formatBytes(int bytes) {
+  if (bytes < 1024) {
+    return '$bytes B';
+  }
+  if (bytes < 1024 * 1024) {
+    return '${(bytes / 1024).toStringAsFixed(1)} KiB';
+  }
+  return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MiB';
+}
+
+String _humanizeEnumName(String name) {
+  final buffer = StringBuffer();
+  for (var index = 0; index < name.length; index++) {
+    final character = name[index];
+    if (index > 0 && character.toUpperCase() == character) {
+      buffer.write(' ');
+    }
+    buffer.write(index == 0 ? character.toUpperCase() : character);
+  }
+  return buffer.toString();
 }

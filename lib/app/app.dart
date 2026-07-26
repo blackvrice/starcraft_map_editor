@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../application/commands/editor_command_dispatcher.dart';
+import '../application/documents/open_map_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
 import '../application/recent_projects/recent_projects_service.dart';
@@ -9,12 +10,14 @@ import '../presentation/shell/editor_shell.dart';
 class EditorAppDependencies {
   const EditorAppDependencies({
     required this.commandDispatcher,
+    required this.openMapController,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.settingsStore,
   });
 
   final EditorCommandDispatcher commandDispatcher;
+  final OpenMapController openMapController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final SettingsStore settingsStore;
@@ -43,6 +46,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
       ),
       home: EditorShell(
         commandDispatcher: dependencies.commandDispatcher,
+        openMapController: dependencies.openMapController,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,
       ),

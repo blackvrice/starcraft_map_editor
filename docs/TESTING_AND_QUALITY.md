@@ -129,6 +129,15 @@ StormLib 없이 가짜 `MapArchiveGateway`를 대입해 open, 임시 쓰기, 취
 바이트 값 범위, 목록 완전성, uint32 entry metadata, `scenario.chk` 항목과
 추출 크기의 일치, 성공/실패 진단 불변식을 단위 테스트한다.
 
+`test/application/open_map_controller_test.dart`는 가짜 파일 선택기와
+`MapArchiveGateway`로 파일 선택/최근 경로, CHK 파싱과 typed 요약, 성공 시
+최근 목록 기록, 아카이브 및 raw CHK 실패, 제한 읽기 전용 열기와 확장자
+경계를 검증한다. `test/infrastructure/method_channel_map_file_picker_test.dart`는
+Windows runner와 동일한 method channel 계약에서 선택 경로와 취소를
+검증한다. `test/widget/editor_shell_test.dart`는 실제 Open Map 명령을 통해
+열린 파일명, 맵 크기, 아카이브 목록, Inspector와 읽기 전용 상태가 표시되는지
+검증한다.
+
 `test/infrastructure/process_map_archive_gateway_test.dart`는 셸을 사용하지 않고
 고정 PowerShell fixture 프로세스를 실행해 성공, 구조화 오류, 손상 응답,
 전체/불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ version, 암호화 항목,
