@@ -4,18 +4,65 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/commands/editor_command_dispatcher.dart';
+import '../../application/operations/operation_progress.dart';
+import '../../application/operations/operation_progress_controller.dart';
+import '../../application/recent_projects/recent_project.dart';
+import '../../application/recent_projects/recent_projects_service.dart';
 
-class EditorShell extends StatelessWidget {
-  const EditorShell({required this.commandDispatcher, super.key});
+class EditorShell extends StatefulWidget {
+  const EditorShell({
+    required this.commandDispatcher,
+    required this.operationProgressController,
+    required this.recentProjectsService,
+    super.key,
+  });
 
   final EditorCommandDispatcher commandDispatcher;
+  final OperationProgressController operationProgressController;
+  final RecentProjectsService recentProjectsService;
+
+  @override
+  State<EditorShell> createState() => _EditorShellState();
+}
+
+class _EditorShellState extends State<EditorShell> {
+  late Future<List<RecentProject>> _recentProjects;
+
+  @override
+  void initState() {
+    super.initState();
+    _recentProjects = widget.recentProjectsService.load();
+  }
+
+  @override
+  void didUpdateWidget(EditorShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.recentProjectsService != widget.recentProjectsService) {
+      _recentProjects = widget.recentProjectsService.load();
+    }
+  }
 
   VoidCallback? _callbackFor(EditorCommandId command) {
-    if (!commandDispatcher.canDispatch(command)) {
+    if (!widget.commandDispatcher.canDispatch(command)) {
       return null;
     }
 
-    return () => unawaited(commandDispatcher.dispatch(command));
+    return () => unawaited(widget.commandDispatcher.dispatch(command));
+  }
+
+  void _openRecentProject(RecentProject project) {
+    unawaited(
+      widget.commandDispatcher.dispatch(
+        EditorCommandId.openMap,
+        argument: project.path,
+      ),
+    );
+  }
+
+  void _removeRecentProject(RecentProject project) {
+    setState(() {
+      _recentProjects = widget.recentProjectsService.remove(project.path);
+    });
   }
 
   @override
@@ -63,11 +110,42 @@ class EditorShell extends StatelessWidget {
                   buildEud: buildEud,
                 ),
                 const Divider(height: 1),
-                Expanded(child: _EditorWorkspace(openMap: openMap)),
+                Expanded(
+                  child: FutureBuilder<List<RecentProject>>(
+                    future: _recentProjects,
+                    builder: (context, snapshot) {
+                      return _EditorWorkspace(
+                        openMap: openMap,
+                        recentProjects: snapshot.data ?? const [],
+                        recentProjectsError: snapshot.hasError,
+                        recentProjectsLoading:
+                            snapshot.connectionState == ConnectionState.waiting,
+                        onOpenRecentProject:
+                            widget.commandDispatcher.canDispatch(
+                              EditorCommandId.openMap,
+                            )
+                            ? _openRecentProject
+                            : null,
+                        onRemoveRecentProject: _removeRecentProject,
+                      );
+                    },
+                  ),
+                ),
                 const Divider(height: 1),
-                const _OutputPanel(),
-                const Divider(height: 1),
-                const _StatusBar(),
+                StreamBuilder<OperationProgress?>(
+                  initialData: widget.operationProgressController.current,
+                  stream: widget.operationProgressController.changes,
+                  builder: (context, snapshot) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _OutputPanel(progress: snapshot.data),
+                        const Divider(height: 1),
+                        _StatusBar(progress: snapshot.data),
+                      ],
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -236,9 +314,21 @@ class _EnvironmentBadge extends StatelessWidget {
 }
 
 class _EditorWorkspace extends StatelessWidget {
-  const _EditorWorkspace({required this.openMap});
+  const _EditorWorkspace({
+    required this.openMap,
+    required this.recentProjects,
+    required this.recentProjectsError,
+    required this.recentProjectsLoading,
+    required this.onOpenRecentProject,
+    required this.onRemoveRecentProject,
+  });
 
   final VoidCallback? openMap;
+  final List<RecentProject> recentProjects;
+  final bool recentProjectsError;
+  final bool recentProjectsLoading;
+  final ValueChanged<RecentProject>? onOpenRecentProject;
+  final ValueChanged<RecentProject> onRemoveRecentProject;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +345,16 @@ class _EditorWorkspace extends StatelessWidget {
           ),
         ),
         const VerticalDivider(width: 1),
-        Expanded(child: _MapWorkspace(openMap: openMap)),
+        Expanded(
+          child: _MapWorkspace(
+            openMap: openMap,
+            recentProjects: recentProjects,
+            recentProjectsError: recentProjectsError,
+            recentProjectsLoading: recentProjectsLoading,
+            onOpenRecentProject: onOpenRecentProject,
+            onRemoveRecentProject: onRemoveRecentProject,
+          ),
+        ),
         const VerticalDivider(width: 1),
         const SizedBox(
           width: 260,
@@ -331,9 +430,21 @@ class _EmptyPaneMessage extends StatelessWidget {
 }
 
 class _MapWorkspace extends StatelessWidget {
-  const _MapWorkspace({required this.openMap});
+  const _MapWorkspace({
+    required this.openMap,
+    required this.recentProjects,
+    required this.recentProjectsError,
+    required this.recentProjectsLoading,
+    required this.onOpenRecentProject,
+    required this.onRemoveRecentProject,
+  });
 
   final VoidCallback? openMap;
+  final List<RecentProject> recentProjects;
+  final bool recentProjectsError;
+  final bool recentProjectsLoading;
+  final ValueChanged<RecentProject>? onOpenRecentProject;
+  final ValueChanged<RecentProject> onRemoveRecentProject;
 
   @override
   Widget build(BuildContext context) {
@@ -373,6 +484,42 @@ class _MapWorkspace extends StatelessWidget {
                     icon: const Icon(Icons.folder_open),
                     label: const Text('Open Map'),
                   ),
+                  const SizedBox(height: 28),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        'Recent maps',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (recentProjectsLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: LinearProgressIndicator(),
+                    )
+                  else if (recentProjectsError)
+                    const _RecentProjectsMessage(
+                      icon: Icons.warning_amber_rounded,
+                      message: 'Recent maps could not be loaded.',
+                    )
+                  else if (recentProjects.isEmpty)
+                    const _RecentProjectsMessage(
+                      icon: Icons.history,
+                      message: 'Maps you open will appear here.',
+                    )
+                  else
+                    for (final project in recentProjects)
+                      _RecentProjectTile(
+                        project: project,
+                        onOpen: onOpenRecentProject == null
+                            ? null
+                            : () => onOpenRecentProject!(project),
+                        onRemove: () => onRemoveRecentProject(project),
+                      ),
                 ],
               ),
             ),
@@ -383,19 +530,95 @@ class _MapWorkspace extends StatelessWidget {
   }
 }
 
-class _OutputPanel extends StatelessWidget {
-  const _OutputPanel();
+class _RecentProjectTile extends StatelessWidget {
+  const _RecentProjectTile({
+    required this.project,
+    required this.onOpen,
+    required this.onRemove,
+  });
+
+  final RecentProject project;
+  final VoidCallback? onOpen;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    final fileName = project.path.replaceAll('\\', '/').split('/').last;
+    final openedAt = project.lastOpenedAt;
+    final openedLabel =
+        '${openedAt.year.toString().padLeft(4, '0')}-'
+        '${openedAt.month.toString().padLeft(2, '0')}-'
+        '${openedAt.day.toString().padLeft(2, '0')} '
+        '${openedAt.hour.toString().padLeft(2, '0')}:'
+        '${openedAt.minute.toString().padLeft(2, '0')}';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        key: ValueKey('recent-project-${project.path}'),
+        dense: true,
+        enabled: onOpen != null,
+        onTap: onOpen,
+        leading: const Icon(Icons.map_outlined),
+        title: Text(fileName, maxLines: 1, overflow: TextOverflow.ellipsis),
+        subtitle: Text(
+          '${project.path}\n$openedLabel',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: IconButton(
+          key: ValueKey('remove-recent-project-${project.path}'),
+          tooltip: 'Remove from recent maps',
+          onPressed: onRemove,
+          icon: const Icon(Icons.close, size: 18),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentProjectsMessage extends StatelessWidget {
+  const _RecentProjectsMessage({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF657086)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Color(0xFF8994A8), fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OutputPanel extends StatelessWidget {
+  const _OutputPanel({required this.progress});
+
+  final OperationProgress? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
       height: 128,
       child: ColoredBox(
-        color: Color(0xFF151A22),
+        color: const Color(0xFF151A22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
+            const SizedBox(
               height: 36,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
@@ -416,14 +639,16 @@ class _OutputPanel extends StatelessWidget {
                 ),
               ),
             ),
-            Divider(height: 1),
+            const Divider(height: 1),
             Expanded(
-              child: Center(
-                child: Text(
-                  'No problems detected',
-                  style: TextStyle(color: Color(0xFF8994A8)),
-                ),
-              ),
+              child: progress == null
+                  ? const Center(
+                      child: Text(
+                        'No problems detected',
+                        style: TextStyle(color: Color(0xFF8994A8)),
+                      ),
+                    )
+                  : _OperationSummary(progress: progress!),
             ),
           ],
         ),
@@ -432,30 +657,135 @@ class _OutputPanel extends StatelessWidget {
   }
 }
 
-class _StatusBar extends StatelessWidget {
-  const _StatusBar();
+class _OperationSummary extends StatelessWidget {
+  const _OperationSummary({required this.progress});
+
+  final OperationProgress progress;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(
+        children: [
+          Icon(
+            _phaseIcon(progress.phase),
+            size: 18,
+            color: _phaseColor(progress.phase),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            progress.label,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              progress.message ?? _phaseLabel(progress.phase),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFF8994A8)),
+            ),
+          ),
+          if (progress.fraction case final fraction?)
+            Text('${(fraction * 100).round()}%'),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBar extends StatelessWidget {
+  const _StatusBar({required this.progress});
+
+  final OperationProgress? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentProgress = progress;
+    final active = currentProgress != null && !currentProgress.isTerminal;
+
+    return SizedBox(
       height: 28,
       child: ColoredBox(
-        color: Color(0xFF1B4E8A),
+        color: const Color(0xFF1B4E8A),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             children: [
-              Icon(Icons.check_circle_outline, size: 14),
-              SizedBox(width: 6),
-              Text('Ready', style: TextStyle(fontSize: 12)),
-              Spacer(),
-              Text('No document', style: TextStyle(fontSize: 12)),
-              SizedBox(width: 18),
-              Text('100%', style: TextStyle(fontSize: 12)),
+              if (active)
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    value: currentProgress.fraction,
+                    color: Colors.white,
+                  ),
+                )
+              else
+                Icon(
+                  currentProgress == null
+                      ? Icons.check_circle_outline
+                      : _phaseIcon(currentProgress.phase),
+                  size: 14,
+                ),
+              const SizedBox(width: 6),
+              Text(
+                currentProgress == null
+                    ? 'Ready'
+                    : currentProgress.message ??
+                          _phaseLabel(currentProgress.phase),
+                style: const TextStyle(fontSize: 12),
+              ),
+              const Spacer(),
+              const Text('No document', style: TextStyle(fontSize: 12)),
+              const SizedBox(width: 18),
+              Text(
+                currentProgress == null
+                    ? '100%'
+                    : currentProgress.fraction == null
+                    ? '—'
+                    : '${(currentProgress.fraction! * 100).round()}%',
+                style: const TextStyle(fontSize: 12),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+String _phaseLabel(OperationPhase phase) {
+  return switch (phase) {
+    OperationPhase.queued => 'Queued',
+    OperationPhase.reading => 'Reading',
+    OperationPhase.parsing => 'Parsing',
+    OperationPhase.validating => 'Validating',
+    OperationPhase.writing => 'Writing',
+    OperationPhase.compiling => 'Compiling',
+    OperationPhase.verifying => 'Verifying',
+    OperationPhase.succeeded => 'Completed',
+    OperationPhase.failed => 'Failed',
+    OperationPhase.cancelled => 'Cancelled',
+  };
+}
+
+IconData _phaseIcon(OperationPhase phase) {
+  return switch (phase) {
+    OperationPhase.succeeded => Icons.check_circle_outline,
+    OperationPhase.failed => Icons.error_outline,
+    OperationPhase.cancelled => Icons.cancel_outlined,
+    _ => Icons.pending_outlined,
+  };
+}
+
+Color _phaseColor(OperationPhase phase) {
+  return switch (phase) {
+    OperationPhase.succeeded => const Color(0xFF65D28A),
+    OperationPhase.failed => const Color(0xFFFF7B72),
+    OperationPhase.cancelled => const Color(0xFFF0B85A),
+    _ => const Color(0xFF70A1FF),
+  };
 }

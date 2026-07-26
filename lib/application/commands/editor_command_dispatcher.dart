@@ -2,7 +2,7 @@ import 'dart:async';
 
 enum EditorCommandId { openMap, saveAs, buildEud }
 
-typedef EditorCommandHandler = FutureOr<void> Function();
+typedef EditorCommandHandler = FutureOr<void> Function(Object? argument);
 
 class EditorCommandDispatcher {
   EditorCommandDispatcher([
@@ -21,12 +21,12 @@ class EditorCommandDispatcher {
     _handlers.remove(command);
   }
 
-  Future<void> dispatch(EditorCommandId command) async {
+  Future<void> dispatch(EditorCommandId command, {Object? argument}) async {
     final handler = _handlers[command];
     if (handler == null) {
       return;
     }
 
-    await handler();
+    await handler(argument);
   }
 }

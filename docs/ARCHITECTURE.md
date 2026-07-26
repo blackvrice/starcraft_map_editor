@@ -87,7 +87,9 @@ lib/
     documents/
     editing/
     build/
+    operations/
     ports/
+    recent_projects/
   infrastructure/
     archive/
     compiler/
@@ -290,6 +292,8 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 ## 11. 설정과 비밀정보
 
 - 로컬 설정에는 StarCraft, euddraft, 작업 폴더 경로가 포함될 수 있다.
+- Windows 사용자 설정과 최근 맵 목록은
+  `%LOCALAPPDATA%\blackvrice\StarCraftMapEditor\settings.json`에 저장한다.
 - 설정은 소스 저장소나 프로젝트 파일에 자동으로 커밋하지 않는다.
 - 토큰이나 계정 자격 증명은 이 프로젝트의 초기 기능에 필요하지 않다.
 - 로그를 공유할 때 개인 경로를 가릴 수 있어야 한다.
