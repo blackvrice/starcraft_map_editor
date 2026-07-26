@@ -6,6 +6,9 @@ and exact contents remain reviewable in Git.
 - `minimal.chk.hex`: `VER ` and `DIM ` sections.
 - `duplicate_unknown.chk.hex`: duplicate `TEST` sections around an unknown,
   empty `UNKN` section.
+- `metadata.chk.hex`: valid `TYPE`, `VER `, `IVER`, `ERA `, and `DIM ` views.
+- `invalid_metadata_sizes.chk.hex`: typed sections with invalid fixed sizes
+  around a valid section.
 - `truncated_header.chk.hex`: a section header shorter than eight bytes.
 - `out_of_bounds.chk.hex`: a payload length that exceeds the remaining input.
 

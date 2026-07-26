@@ -60,6 +60,20 @@ class RawChkSection {
 
   Uint8List get payload => Uint8List.fromList(_payload);
 
+  bool hasNameBytes(List<int> candidate) {
+    if (candidate.length != _nameBytes.length) {
+      return false;
+    }
+
+    for (var index = 0; index < _nameBytes.length; index++) {
+      if (_nameBytes[index] != candidate[index]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   String get name {
     final result = StringBuffer();
 

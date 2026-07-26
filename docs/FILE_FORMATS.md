@@ -109,6 +109,31 @@
 - `SPRP`
 - `STR ` 또는 `STRx`
 
+#### 구현된 메타데이터 typed view
+
+2026-07-26 기준 다음 고정 크기 섹션을 `ChkMetadataViewDecoder`가
+little-endian 값으로 투영한다.
+
+| 섹션 | payload 크기 | typed 값 |
+| --- | ---: | --- |
+| `TYPE` | 4 | `u32 rawValue`, `RAWS`/`RAWB` known type |
+| `VER ` | 2 | `u16 rawValue`, 59/63/205/206 known version |
+| `IVER` | 2 | `u16 rawValue`, 9/10 known internal version |
+| `DIM ` | 4 | `u16 width`, `u16 height` |
+| `ERA ` | 2 | `u16 rawValue`, 0~7 known tileset |
+
+- 같은 이름의 섹션을 합치거나 하나만 선택하지 않고 원래 순서의 별도 뷰로
+  반환한다. 각 뷰는 raw 섹션과 문서 내 섹션 인덱스를 가진다.
+- 알려지지 않은 scalar 값은 진단 없이 `rawValue`로 유지하고 known enum만
+  `null`로 둔다. 값의 의미를 모른다는 이유로 원시 데이터를 바꾸지 않는다.
+- 고정 payload 크기가 다르면 `CHK_TYPED_SECTION_SIZE_MISMATCH` 오류를 payload
+  시작 오프셋에 반환하고 해당 섹션의 typed view만 만들지 않는다. 다른 정상
+  섹션 디코딩은 계속한다.
+- typed 변경 메서드는 같은 이름과 소스 오프셋을 가진 dirty raw 섹션을
+  반환한다. 호출자는 뷰의 정확한 섹션 인덱스에 이 섹션을 교체한다.
+- 섹션 누락과 `DIM `의 0 크기처럼 구조적으로 읽을 수 있지만 의미 확인이
+  필요한 값은 이후 문서 의미 검증 단계에서 판단한다.
+
 ### 2단계: 플레이어와 맵 설정
 
 - `OWNR`, `SIDE`
@@ -199,5 +224,10 @@ EUD 컴파일러가 만든 트리거는 일반 트리거 UI가 임의로 정규�
 - [StormLib](https://github.com/ladislav-zezula/StormLib)
 - [Chkdraft](https://github.com/TheNitesWhoSay/Chkdraft)
 - [eudplib](https://github.com/armoha/eudplib)
+
+메타데이터 필드 크기와 알려진 값은 구현 시점에
+[Chkdraft `chk.h`](https://github.com/TheNitesWhoSay/Chkdraft/blob/7ad7c28c15ab404eb6b535433f518f65a7b6e0f8/src/mapping_core/chk.h)와
+[eudplib `chktok.py`](https://github.com/armoha/eudplib/blob/f10e069e0008afa3d473b673c4078b6d8765d105/src/eudplib/core/mapdata/chktok.py)를
+교차 확인했다.
 
 참고 구현의 동작은 유용한 증거지만 이 프로젝트의 테스트를 대신하지 않는다.

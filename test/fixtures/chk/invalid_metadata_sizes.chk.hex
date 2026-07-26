@@ -1,0 +1,6 @@
+# VER payload should be 2 bytes, not 1
+56 45 52 20 01 00 00 00 CD
+# ERA is valid so decoding can continue after an invalid typed section
+45 52 41 20 02 00 00 00 04 00
+# DIM payload should be 4 bytes, not 3
+44 49 4D 20 03 00 00 00 40 00 40

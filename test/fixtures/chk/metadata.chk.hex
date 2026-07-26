@@ -1,0 +1,10 @@
+# TYPE, length 4, RAWB (Brood War)
+54 59 50 45 04 00 00 00 52 41 57 42
+# VER , length 2, version 205 (Brood War)
+56 45 52 20 02 00 00 00 CD 00
+# IVER, length 2, internal version 10
+49 56 45 52 02 00 00 00 0A 00
+# ERA , length 2, Jungle
+45 52 41 20 02 00 00 00 04 00
+# DIM , length 4, width 128, height 64
+44 49 4D 20 04 00 00 00 80 00 40 00
