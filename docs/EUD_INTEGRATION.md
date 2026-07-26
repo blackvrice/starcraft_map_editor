@@ -67,12 +67,34 @@ MyMap/
 2. 사용자 설정의 euddraft 경로
 3. 향후 앱과 함께 배포되는 검증된 도구
 
+명시된 상위 우선순위 경로가 잘못되었으면 낮은 우선순위 설치로 자동
+우회하지 않는다. 사용자가 의도한 도구와 다른 바이너리를 실행하는 일을 막기
+위해 해당 경로의 오류를 그대로 진단한다. 경로는 공식 ZIP을 푼 디렉터리 또는
+그 안의 `euddraft.exe` 절대 경로로 지정한다. `PATH` 검색은 하지 않는다.
+
 자동으로 인터넷에서 실행 파일을 내려받아 실행하지 않는다. 앱은 사용 전에 다음을 확인한다.
 
 - 실행 파일 또는 진입점 존재
 - 버전 정보 또는 배포 식별자
 - 필요한 companion 파일 존재
 - 지원 프로필과의 호환성
+
+2026-07-26 확인 기준 armoha/euddraft의 최신 공식 릴리스는
+[`0.10.2.5`](https://github.com/armoha/euddraft/releases/tag/v0.10.2.5)이며
+ZIP 배포 루트에는 `euddraft.exe`, `VERSION`,
+`libepScriptLib.dll`, Python 런타임과 `lib/`가 함께 있다. 현재
+`LocalEudToolInspector`는 도구를 실행하지 않고 다음을 정적으로 확인한다.
+
+- `VERSION`의 최대 크기 64바이트와 정확한 4성분 버전 형식
+- exact allowlist `0.10.2.5`
+- 0바이트가 아닌 `euddraft.exe`
+- `libepScriptLib.dll`, `python3.dll`, 버전별 `python3<runtime>.dll`
+- `lib/library.zip`, `lib/eudplib.bindings._rust.pyd`, `license.txt`
+- 일반 파일/디렉터리만 허용하고 symbolic link는 companion으로 인정하지 않음
+
+다른 버전은 존재와 버전 자체는 진단할 수 있지만 빌드를 허용하지 않는다.
+지원 범위를 넓힐 때에는 해당 릴리스 레이아웃과 실제 빌드 스모크 테스트를 먼저
+추가한다. euddraft 소스 실행은 이 단계의 지원 설치로 취급하지 않는다.
 
 빌드 기록에는 앱 버전, euddraft/eudplib 버전, 프로필, 종료 코드를 남긴다.
 
@@ -211,7 +233,7 @@ BuildManifest
 ## 13. 미결정 사항
 
 - euddraft 배포본을 앱에 포함할지
-- 지원할 최소/최대 euddraft 버전
+- 새 euddraft 릴리스를 exact allowlist에 추가하는 승인·배포 주기
 - 설정 파일을 직접 생성할지 기존 프로젝트 형식을 사용할지
 - Python 플러그인을 별도 신뢰 등급으로 표시할지
 - 향후 epScript 언어 서버 구현 또는 연동 방식

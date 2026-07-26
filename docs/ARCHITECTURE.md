@@ -205,8 +205,13 @@ abstract interface class MapArchiveGateway {
   Future<bool> cancel(String operationId);
 }
 
+abstract interface class EudToolInspector {
+  Future<EudToolInspectionResult> inspect(
+    EudToolInspectionRequest request,
+  );
+}
+
 abstract interface class EudCompilerGateway {
-  Future<EudToolInfo> inspect();
   Stream<BuildEvent> build(EudBuildRequest request);
 }
 
@@ -224,6 +229,13 @@ abstract interface class MapFileFingerprintGateway {
 ```
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
+
+`EudToolInspector`는 프로젝트 프로필, 사용자 설정, 번들 경로 후보의 우선순위와
+euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
+`LocalEudToolInspector`는 절대 경로의 디렉터리 또는 `euddraft.exe`만 받아
+실행 없이 sibling `VERSION`과 공식 배포 companion 파일을 확인한다. 지원
+버전은 검증된 exact allowlist이며, 잘못된 상위 우선순위 경로를 낮은 우선순위
+설치로 조용히 대체하지 않는다.
 
 `MapFilePicker`는 사용자가 선택한 절대 경로 또는 취소를 뜻하는 `null`만
 Application 계층에 반환한다. Windows의 `GetOpenFileNameW`/
@@ -394,7 +406,10 @@ Windows Save As 확인을 승인한 경우에만 허용한다. 최종 경로와 
 
 ### EUD 빌드
 
-기준 맵, 소스, 설정을 고정한 요청을 만들고 euddraft 어댑터가 별도 프로세스를 실행한다. 출력 맵은 성공 후 다시 열어 최소 구조를 검증한다. 자세한 내용은 [EUD 연동](EUD_INTEGRATION.md)을 따른다.
+먼저 `EudToolInspector`가 선택된 설치의 경로, 지원 버전과 companion 파일을
+검증한다. 기준 맵, 소스, 설정을 고정한 요청을 만들고 euddraft 어댑터가 별도
+프로세스를 실행한다. 출력 맵은 성공 후 다시 열어 최소 구조를 검증한다. 자세한
+내용은 [EUD 연동](EUD_INTEGRATION.md)을 따른다.
 
 ## 9. 동시성과 성능
 

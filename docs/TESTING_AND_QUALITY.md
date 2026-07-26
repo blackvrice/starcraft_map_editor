@@ -201,7 +201,12 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 
 ### EUD
 
-- 도구 없음/버전 확인 실패
+- 프로젝트→사용자 설정→번들 경로 우선순위
+- 상위 경로 오류 시 낮은 우선순위 설치로 우회하지 않음
+- 도구 없음, 상대 경로, 잘못된 실행 파일
+- VERSION 누락/손상/크기 초과와 미지원 버전
+- Python/eudplib/epScript companion 누락
+- 검사 과정에서 euddraft를 실행하지 않음
 - 성공 종료지만 출력 없음
 - 실패 종료와 부분 출력 존재
 - stdout/stderr 동시 출력
@@ -256,6 +261,16 @@ flutter test
 - StarCraft 수동 실행 체크리스트
 - 설치/제거
 - 라이선스 고지와 배포 파일 목록 검사
+
+공식 euddraft 설치 레이아웃의 선택적 로컬 스모크 테스트:
+
+```powershell
+$env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft"
+flutter test test/infrastructure/local_eud_tool_inspector_test.dart
+```
+
+환경 변수가 없으면 해당 한 케이스만 skip되며 합성 설치 레이아웃 회귀 테스트는
+항상 실행된다.
 
 ## 8. 결함 심각도
 

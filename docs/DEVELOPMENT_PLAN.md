@@ -15,7 +15,7 @@
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
 | M3. 맵 아카이브 입출력 | 완료 | Open Map·검증형 Save As·fingerprint·복구 백업·자체 제작 SCX |
-| M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
+| M4. EUD 수직 기능 | 진행 중 | euddraft 설치 경로·버전 검사 완료 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
 | M7. 일반 트리거 | 대기 | 트리거 편집 |
@@ -191,7 +191,7 @@
 
 목표: 기준 맵과 epScript를 선택해 별도 EUD 맵을 빌드하는 첫 사용자 가치 흐름을 완성한다.
 
-- [ ] euddraft 설치 경로와 버전 검사 구현
+- [x] euddraft 설치 경로와 버전 검사 구현
 - [ ] `EudCompilerGateway` 외부 프로세스 어댑터 구현
 - [ ] 기준 맵, 소스 경로, 출력 경로를 가진 빌드 설정 모델 구현
 - [ ] 최소 epScript 코드 편집기와 변경 상태 구현
@@ -201,6 +201,19 @@
 - [ ] 임시 출력과 성공 출력 승격 구현
 - [ ] 가짜 컴파일러를 이용한 성공/실패/취소 통합 테스트
 - [ ] 실제 euddraft와 자체 제작 테스트 맵 빌드 스모크 테스트
+
+검증 메모:
+
+- `EudToolInspector` 포트는 프로젝트 프로필, 사용자 설정, 번들 후보의 우선순위,
+  4성분 버전, 성공/실패 진단 불변식을 Application 계층에 정의한다.
+- `LocalEudToolInspector`는 절대 경로 디렉터리 또는 `euddraft.exe`를 받아
+  실행 없이 `VERSION`, Python 런타임, eudplib/epScript companion과
+  라이선스 파일을 확인한다. 현재 exact allowlist는 공식 최신 릴리스로 실제
+  ZIP 레이아웃을 검증한 `0.10.2.5`다.
+- 단위·파일 시스템 테스트는 경로 우선순위, 우회 금지, 누락 경로/실행 파일,
+  손상·미지원 버전, companion 누락과 비-Windows 진단을 검증한다.
+  `EUDDRAFT_TEST_INSTALLATION`을 지정하면 추출한 공식 릴리스도 같은 검사로
+  스모크 테스트한다.
 
 완료 조건:
 

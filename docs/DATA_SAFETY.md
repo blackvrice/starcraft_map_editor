@@ -62,6 +62,18 @@ Map은 helper 호출 전후 값을 비교하고, Save As는 세션에 저장한 
 
 Python 플러그인은 파일 접근과 네트워크 접근이 가능한 임의 코드로 간주한다.
 
+### euddraft 설치 검사
+
+- 설치 검사는 `euddraft.exe`를 실행하지 않고 파일 시스템 메타데이터와
+  `VERSION`만 읽는다.
+- 프로젝트, 사용자 설정, 번들 후보 중 선택된 절대 경로만 사용하며 `PATH`
+  검색과 자동 다운로드를 하지 않는다.
+- 상위 우선순위 경로가 잘못되어도 다른 설치로 자동 우회하지 않는다.
+- `VERSION`은 최대 64바이트의 4성분 숫자만 허용하고 검증된 exact version
+  allowlist와 비교한다.
+- 실행 파일, Python 런타임, eudplib/epScript companion과 라이선스 파일은
+  0바이트가 아닌 일반 파일이어야 하며 symbolic link는 인정하지 않는다.
+
 ### MPQ archive helper
 
 StormLib 연동 helper는
