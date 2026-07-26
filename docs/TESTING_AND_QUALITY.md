@@ -118,6 +118,14 @@ test/fixtures/
 인접 `README.md`에 각 입력의 의도를 기록한다. 단위 테스트는 고정 시드로 만든
 200개 임의 섹션 목록도 왕복해 별도 fuzz 의존성 없이 초기 속성 검사를 수행한다.
 
+`test/fixtures/maps/generated/minimal-self-authored.scx`는 위 CHK 중
+`metadata.chk.hex`와 네 개의 프로젝트 테스트 바이트로 만든 460바이트 MPQ다.
+제3자 맵이나 게임 자산을 포함하지 않으며 저장소의 MIT 라이선스로 재배포한다.
+인접 `README.md`는 재생성 방법을, `manifest.json`은 pinned StormLib revision,
+아카이브·CHK SHA-256, 크기와 예상 엔트리를 기록한다.
+`test/fixtures/generated_map_fixture_test.dart`는 helper 없이도 이 provenance와
+해시를 모든 플랫폼에서 검증한다.
+
 문자열 픽스처는 공유/중복 offset, `STR `과 `STRx`의 서로 다른 offset 폭,
 UTF-8 및 제어 바이트, 미참조 꼬리 데이터, 잘린 표와 잘못된 offset을 포함한다.
 문자열 변경 테스트는 대상 offset과 추가된 바이트 외의 기존 payload가 동일한지
@@ -155,11 +163,10 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 `map_archive_helper_native_test`는 StormLib로 테스트 중 MPQ를 직접 생성해 한글
 경로 추출, 원본 byte-exact 불변, 내부 listfile 기반 완전 목록, listfile 없는
 합성 이름, 누락 CHK, 기존 출력 보존, 복사본 CHK 교체, 비대상 엔트리 보존과
-원본 byte-exact 불변을 검증한다. Windows CI는 이 native CTest
-뒤에 같은 fixture builder가 만든 3-entry MPQ를 패키지의 실제 helper와
+원본 byte-exact 불변을 검증한다. Windows CI는 이 native CTest 뒤에 저장소의
+고정 3-entry 자체 제작 SCX를 패키지의 실제 helper와
 `ProcessMapArchiveGateway`로 열고, 새 CHK를 임시 MPQ에 쓴 뒤 재열어 목록과
-교체 바이트 및 원본 불변을 검증한다. 테스트 맵은 실행 중 임시로 생성되며
-저장소에 제3자 맵을 포함하지 않는다.
+교체 바이트 및 원본 불변을 검증한다.
 
 ## 4. 필수 회귀 테스트
 

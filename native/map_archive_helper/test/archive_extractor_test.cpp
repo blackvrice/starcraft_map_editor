@@ -161,7 +161,12 @@ std::vector<std::uint8_t> ReadBytes(
 }
 
 std::vector<std::uint8_t> ScenarioBytes() {
-  return {'V', 'E', 'R', ' ', 2, 0, 0, 0, 59, 0};
+  return {
+      'T', 'Y', 'P', 'E', 4, 0, 0, 0, 'R', 'A', 'W', 'B',
+      'V', 'E', 'R', ' ', 2, 0, 0, 0, 205, 0,
+      'I', 'V', 'E', 'R', 2, 0, 0, 0, 10, 0,
+      'E', 'R', 'A', ' ', 2, 0, 0, 0, 4, 0,
+      'D', 'I', 'M', ' ', 4, 0, 0, 0, 128, 0, 64, 0};
 }
 
 bool CreateIntegrationFixture(

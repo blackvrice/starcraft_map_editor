@@ -40,6 +40,12 @@
 어댑터가 프로토콜과 실제 파일 크기를 다시 검증한 뒤 읽기 전용 바이트로
 노출한다.
 
+저장소의 `test/fixtures/maps/generated/minimal-self-authored.scx`는
+`TYPE`, `VER`, `IVER`, `ERA`, `DIM`만 가진 프로젝트 작성 CHK와 네 개의
+테스트 바이트로 구성한 비플레이용 MPQ다. 인접 manifest의 SHA-256과 엔트리
+목록을 일반 테스트에서 확인하고, Windows CI에서는 실제 번들 helper로 추출과
+교체를 검증한다. 제3자 지도나 게임 자산은 포함하지 않는다.
+
 helper `0.2.0`부터 MPQ format version과 최대 1,024개의 엔트리 목록도 함께
 반환한다. 항목 메타데이터는 경로, 압축/비압축 크기, MPQ flags, locale과
 StormLib가 복원한 합성 이름 여부를 포함한다. 동일 파일 block을 가리키는 locale

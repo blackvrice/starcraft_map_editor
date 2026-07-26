@@ -6,18 +6,20 @@ import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_
 
 void main() {
   final helperPath = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
-  final mapPath = Platform.environment['MAP_ARCHIVE_TEST_MAP'];
+  final mapPath =
+      Platform.environment['MAP_ARCHIVE_TEST_MAP'] ??
+      'test/fixtures/maps/generated/minimal-self-authored.scx';
   final missingEnvironment =
-      helperPath == null ||
-      helperPath.isEmpty ||
-      mapPath == null ||
-      mapPath.isEmpty;
+      helperPath == null || helperPath.isEmpty || mapPath.isEmpty;
 
   test(
     'bundled helper extracts, replaces, and reopens without changing source',
     () async {
-      final sourceFile = File(mapPath!);
+      final sourceFile = File(mapPath);
       final sourceBytesBefore = await sourceFile.readAsBytes();
+      final expectedScenarioChk = _loadHexFixture(
+        'test/fixtures/chk/metadata.chk.hex',
+      );
       final gateway = ProcessMapArchiveGateway(
         helperExecutablePath: helperPath!,
       );
@@ -40,18 +42,7 @@ void main() {
       final sourceBytesAfter = await sourceFile.readAsBytes();
 
       expect(result.isSuccess, isTrue, reason: '${result.diagnostics}');
-      expect(result.extractedMap?.scenarioChkBytes, [
-        86,
-        69,
-        82,
-        32,
-        2,
-        0,
-        0,
-        0,
-        59,
-        0,
-      ]);
+      expect(result.extractedMap?.scenarioChkBytes, expectedScenarioChk);
       expect(result.extractedMap?.metadata.formatVersion, 1);
       expect(result.extractedMap?.metadata.totalEntryCount, 3);
       expect(result.extractedMap?.metadata.listingComplete, isTrue);
@@ -66,7 +57,7 @@ void main() {
 
       final temporaryOutputPath =
           '${saveWorkspace.path}${Platform.pathSeparator}saved.scx';
-      final replacementChk = [86, 69, 82, 32, 2, 0, 0, 0, 205, 0];
+      final replacementChk = [...expectedScenarioChk]..[20] = 59;
       final writeResult = await gateway.writeTemporary(
         MapArchiveWriteRequest(
           operationId: 'bundled-helper-write-smoke',
@@ -101,7 +92,21 @@ void main() {
       expect(await sourceFile.readAsBytes(), sourceBytesBefore);
     },
     skip: missingEnvironment
-        ? 'Set MAP_ARCHIVE_HELPER_PATH and MAP_ARCHIVE_TEST_MAP after build.'
+        ? 'Set MAP_ARCHIVE_HELPER_PATH after building the Windows app.'
         : false,
   );
+}
+
+List<int> _loadHexFixture(String path) {
+  final bytes = <int>[];
+  for (final line in File(path).readAsLinesSync()) {
+    final content = line.split('#').first.trim();
+    if (content.isEmpty) {
+      continue;
+    }
+    for (final token in content.split(RegExp(r'\s+'))) {
+      bytes.add(int.parse(token, radix: 16));
+    }
+  }
+  return bytes;
 }

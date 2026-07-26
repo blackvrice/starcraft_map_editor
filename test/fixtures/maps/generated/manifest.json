@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "minimal-self-authored",
+  "file": "minimal-self-authored.scx",
+  "purpose": "Stable bundled-helper and Save As integration input",
+  "provenance": "Generated entirely from project-authored bytes",
+  "license": "MIT",
+  "generator": {
+    "source": "native/map_archive_helper/test/archive_extractor_test.cpp",
+    "stormLibCommit": "c91595a1a1b7b515567bd62a60af066914a29a6a"
+  },
+  "archive": {
+    "sha256": "a370f6c404ad7d73c6c13051e9c5936412e648e3401d2e863e9d7d4df5907a4e",
+    "sizeBytes": 460,
+    "formatVersion": 1,
+    "totalEntryCount": 3,
+    "entries": [
+      "staredit\\scenario.chk",
+      "staredit\\units.dat",
+      "(listfile)"
+    ]
+  },
+  "scenario": {
+    "source": "test/fixtures/chk/metadata.chk.hex",
+    "sha256": "e1c19e6af377864cec744d2598d6e50646c6aea356160c4e894db5baa78b40bf",
+    "sizeBytes": 54
+  }
+}

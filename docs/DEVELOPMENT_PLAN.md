@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | Open Map·검증형 Save As·fingerprint·복구 백업 완료, 통합 픽스처 대기 |
+| M3. 맵 아카이브 입출력 | 완료 | Open Map·검증형 Save As·fingerprint·복구 백업·자체 제작 SCX |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -108,7 +108,7 @@
 - [x] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
 - [x] 입력 파일 fingerprint와 외부 변경 감지
 - [x] 원본 덮어쓰기 방지와 백업 정책 테스트
-- [ ] 재배포 가능한 자체 제작 `.scx` 통합 픽스처 추가
+- [x] 재배포 가능한 자체 제작 `.scx` 통합 픽스처 추가
 
 검증 메모:
 
@@ -143,6 +143,12 @@
   복사본 CHK 교체와 비대상 엔트리 보존을 검증한다. Dart 프로세스 테스트와
   패키지의 실제 helper end-to-end 스모크 테스트가 전체 목록, 임시 쓰기와
   재열기, 진단, 성공/오류/손상 응답/대량 출력/timeout/취소를 검증한다.
+- `test/fixtures/maps/generated/minimal-self-authored.scx`는 프로젝트가 직접
+  작성한 `metadata.chk.hex`와 네 개의 테스트 바이트만 담은 460바이트 MPQ다.
+  인접 README와 manifest가 생성 방법, MIT 라이선스, pinned StormLib revision,
+  아카이브·CHK SHA-256과 예상 엔트리를 기록한다. 일반 테스트는 manifest를
+  검증하고 Windows CI의 실제 번들 helper 스모크 테스트는 이 고정 입력을 열어
+  CHK 교체·재열기와 원본 byte-exact 불변을 확인한다.
 - `OpenMapController`는 Windows 파일 선택 또는 최근 맵 경로를 받아
   `MapArchiveGateway` 추출, raw CHK 파싱, typed 메타데이터 검증, 최근 파일
   기록을 한 유스케이스로 조립한다. 성공한 맵만 최근 목록에 기록하며 raw CHK
