@@ -1,0 +1,6 @@
+# SPRP, title string 1, description string 2
+53 50 52 50 04 00 00 00 01 00 02 00
+# STR , count 3, offsets 8/12/8, strings "Map"/"Line", tail DE AD
+53 54 52 20 13 00 00 00
+03 00 08 00 0C 00 08 00
+4D 61 70 00 4C 69 6E 65 00 DE AD

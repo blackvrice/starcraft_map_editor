@@ -174,6 +174,48 @@ EUD 컴파일러가 만든 트리거는 일반 트리거 UI가 임의로 정규�
 - `STR `과 `STRx` 변환은 명시적 마이그레이션으로만 수행한다.
 - 문자열 제거 전 모든 섹션의 참조를 검사한다.
 
+### 구현된 문자열 typed view
+
+2026-07-26 기준 `ChkStringViewDecoder`가 다음 구조를 투영한다.
+
+| 섹션 | 구조 |
+| --- | --- |
+| `SPRP` | `u16` 맵 이름 문자열 ID + `u16` 설명 문자열 ID |
+| `STR ` | `u16` 문자열 수 + 같은 수의 `u16` section-relative offset |
+| `STRx` | `u32` 문자열 수 + 같은 수의 `u32` section-relative offset |
+
+- 문자열 ID는 1부터 시작하고 참조 ID 0은 문자열 없음으로 표현한다.
+- 각 엔트리는 ID, 원시 offset, null 종결 여부, 원시 문자열 바이트를 가진다.
+- 같은 offset을 공유하는 문자열, 다른 문자열의 중간을 가리키는 부분 문자열,
+  빈 문자열, 제어 바이트를 합치거나 정규화하지 않는다.
+- 표시 문자열은 저장 데이터가 아니다. 호출자가 명시적으로 전달한 decoder만
+  원시 바이트를 표시용 문자열로 변환하며, 변환 결과를 자동 저장하지 않는다.
+- 중복 `SPRP`, `STR `, `STRx`는 각각 원래 섹션 인덱스를 가진 별도 뷰로
+  반환한다. `STR `과 `STRx`가 함께 있을 때 active table을 임의 선택하지 않는다.
+
+문자열 수정은 기존 표를 재작성하지 않는 append-only 방식만 제공한다.
+
+1. 기존 payload 전체를 그대로 복사한다.
+2. 새 원시 문자열 바이트와 null 종결자를 payload 끝에 추가한다.
+3. 사용자가 지정한 한 문자열 ID의 offset 필드만 새 위치로 변경한다.
+
+따라서 공유 offset을 편집해도 다른 ID는 기존 문자열을 계속 가리키고, 미참조
+꼬리 데이터와 기존 부분 문자열도 유지된다. 내장 null 바이트, 범위를 벗어난
+바이트, 존재하지 않는 ID, `STR `의 `u16`으로 표현할 수 없는 새 offset은
+거부한다. 구조 오류가 하나라도 있는 표는 append-only 수정도 차단한다.
+
+현재 문자열 구조 진단은 다음과 같다.
+
+| 코드 | 의미 |
+| --- | --- |
+| `CHK_STRING_TABLE_HEADER_TRUNCATED` | 문자열 수 필드가 완전하지 않음 |
+| `CHK_STRING_TABLE_OFFSETS_TRUNCATED` | 선언 개수에 필요한 offset 표가 잘림 |
+| `CHK_STRING_OFFSET_INTO_HEADER` | 문자열 offset이 수/offset 표 내부를 가리킴 |
+| `CHK_STRING_OFFSET_OUT_OF_BOUNDS` | 문자열 offset이 payload 범위를 벗어남 |
+| `CHK_STRING_UNTERMINATED` | payload 끝까지 null 종결자가 없음 |
+
+손상 표의 원시 섹션은 계속 보존하지만 typed 편집은 읽기 전용으로 제한한다.
+
 ## 7. 변경 추적
 
 각 typed view는 다음 중 하나의 상태를 가진다.

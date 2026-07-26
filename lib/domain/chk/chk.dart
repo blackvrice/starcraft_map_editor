@@ -5,3 +5,5 @@ export 'raw_chk_parse_result.dart';
 export 'raw_chk_parser.dart';
 export 'raw_chk_section.dart';
 export 'typed/chk_metadata_views.dart';
+export 'typed/chk_string_views.dart';
+export 'typed/chk_typed_diagnostic_codes.dart';

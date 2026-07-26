@@ -5,10 +5,7 @@ import '../chk_section_names.dart';
 import '../raw_chk_document.dart';
 import '../raw_chk_parser.dart';
 import '../raw_chk_section.dart';
-
-abstract final class ChkTypedDiagnosticCodes {
-  static const sectionSizeMismatch = 'CHK_TYPED_SECTION_SIZE_MISMATCH';
-}
+import 'chk_typed_diagnostic_codes.dart';
 
 enum ChkScenarioType {
   starCraftHybrid(0x53574152, 'RAWS'),

@@ -1,0 +1,8 @@
+# STR header is shorter than its 2-byte count
+53 54 52 20 01 00 00 00 03
+# STRx declares 3 strings but contains only one complete offset
+53 54 52 78 08 00 00 00
+03 00 00 00 08 00 00 00
+# STR has an unterminated string, a header offset, and an out-of-bounds offset
+53 54 52 20 0A 00 00 00
+03 00 08 00 07 00 63 00 4F 4B
