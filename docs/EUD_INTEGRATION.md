@@ -160,7 +160,6 @@ EudBuildEvent
   stdoutLine
   stderrLine
   diagnostic
-  progress
   cancelled
   failed
   succeeded
@@ -216,6 +215,19 @@ flowchart LR
 제공한다. `EudSourceDocument`는 immutable snapshot과 revision을 유지하고
 `EudSourceController`는 같은 내용의 중복 변경을 방출하지 않으며 dirty
 문서의 암묵적 교체·닫기를 막는다.
+
+Build/Cancel 조각은 `EudBuildController`가 준비된 요청 하나를 소유하고
+게이트웨이의 시작·원시 출력·진단·종료 이벤트를 현재 실행 상태와 메모리
+로그로 조립한다. Build가 시작되면 도구 모음 버튼이 Cancel로 바뀌고 하단
+`Build Log` 탭이 자동으로 열리며 stdout과 stderr를 구분해 보여준다.
+실패 진단은 `Problems`에도 합쳐지고 일반 앱 작업은 `Output` 탭에 남는다.
+`Ctrl+B`는 Build, `Ctrl+Shift+B`는 실행 중인 Build 취소다.
+
+아직 일회성 `.eds` 생성 파이프라인이 없으므로 앱 부트스트랩은 실제 프로세스
+게이트웨이와 명령을 연결하되 요청을 임의로 만들지 않는다. 검사된 도구와
+생성된 설정을 가진 파이프라인이 요청을 준비할 때까지 Build는 비활성이다.
+현재 로그는 실행 중 사용자 피드백을 위한 메모리 이벤트이며 구조화된 빌드
+기록, 종료 코드·도구 버전 보존과 개인정보 제거 정책은 다음 단계다.
 
 이 단계는 파일을 저장한 것처럼 표시하지 않는다. 메모리 문서는
 `In-memory draft`로 표시하며 실제 `.eps` 파일 열기·저장과 외부 변경 감지는

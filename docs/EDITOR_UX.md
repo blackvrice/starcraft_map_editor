@@ -168,6 +168,14 @@ epScript 모드와 Clean/Modified 상태를 표시하며 맵 탭으로 이동해
 명시적 discard 없이는 거부한다. 실제 `.eps` 열기·저장, 외부 변경 감지,
 구문 강조와 찾기/바꾸기는 후속 단계다.
 
+준비된 EUD 요청이 있으면 도구 모음과 EUD 메뉴의 Build가 활성화된다.
+실행 중에는 같은 위치가 Cancel로 바뀌어 중복 빌드를 막고, Build Log 탭이
+자동으로 선택되어 euddraft 원시 출력을 보여준다. Problems는 맵 진단과
+빌드 진단을 함께 표시하고 Output은 일반 작업 진행을 표시한다. 아직 빌드
+설정과 `.eds` 생성 흐름이 없을 때 Build는 비활성 상태이며 Build Log에
+`Build settings are not ready`를 표시한다. 비어 있는 경로를 추측해 외부
+도구를 실행하지 않는다.
+
 ## 9. 상태와 피드백
 
 오래 걸리는 작업은 다음 상태를 가진다.

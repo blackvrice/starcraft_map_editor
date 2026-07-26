@@ -7,10 +7,12 @@ import '../../application/commands/editor_command_dispatcher.dart';
 import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
+import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_source_document.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
+import '../../application/ports/eud_compiler_models.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
@@ -23,6 +25,7 @@ class EditorShell extends StatefulWidget {
     required this.commandDispatcher,
     required this.openMapController,
     required this.saveMapController,
+    required this.eudBuildController,
     required this.eudSourceController,
     required this.operationProgressController,
     required this.recentProjectsService,
@@ -32,6 +35,7 @@ class EditorShell extends StatefulWidget {
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
   final SaveMapController saveMapController;
+  final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
@@ -44,6 +48,7 @@ class _EditorShellState extends State<EditorShell> {
   late Future<List<RecentProject>> _recentProjects;
   late StreamSubscription<OpenMapState> _openMapSubscription;
   late StreamSubscription<SaveMapState> _saveMapSubscription;
+  late StreamSubscription<EudBuildState> _eudBuildSubscription;
   late StreamSubscription<EudSourceState> _eudSourceSubscription;
   late List<EditorDiagnostic> _visibleDiagnostics;
   late _WorkspaceView _workspaceView;
@@ -58,6 +63,7 @@ class _EditorShellState extends State<EditorShell> {
         : _WorkspaceView.map;
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
+    _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
     _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
   }
 
@@ -74,6 +80,10 @@ class _EditorShellState extends State<EditorShell> {
     if (oldWidget.saveMapController != widget.saveMapController) {
       unawaited(_saveMapSubscription.cancel());
       _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
+    }
+    if (oldWidget.eudBuildController != widget.eudBuildController) {
+      unawaited(_eudBuildSubscription.cancel());
+      _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
     }
     if (oldWidget.eudSourceController != widget.eudSourceController) {
       unawaited(_eudSourceSubscription.cancel());
@@ -131,10 +141,21 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<EudBuildState> _listenForEudBuild(
+    EudBuildController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
     unawaited(_saveMapSubscription.cancel());
+    unawaited(_eudBuildSubscription.cancel());
     unawaited(_eudSourceSubscription.cancel());
     super.dispose();
   }
@@ -187,7 +208,13 @@ class _EditorShellState extends State<EditorShell> {
     final saveAs = widget.openMapController.state.session == null
         ? null
         : _callbackFor(EditorCommandId.saveAs);
-    final buildEud = _callbackFor(EditorCommandId.buildEud);
+    final eudBuildState = widget.eudBuildController.state;
+    final buildEud = widget.eudBuildController.canStart
+        ? _callbackFor(EditorCommandId.buildEud)
+        : null;
+    final cancelEudBuild = eudBuildState.canCancel
+        ? _callbackFor(EditorCommandId.cancelEudBuild)
+        : null;
     final newEudSource =
         widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
         ? _newEudSource
@@ -209,6 +236,14 @@ class _EditorShellState extends State<EditorShell> {
     if (buildEud != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyB, control: true)] =
           buildEud;
+    }
+    if (cancelEudBuild != null) {
+      shortcuts[const SingleActivator(
+            LogicalKeyboardKey.keyB,
+            control: true,
+            shift: true,
+          )] =
+          cancelEudBuild;
     }
     if (newEudSource != null) {
       shortcuts[const SingleActivator(
@@ -233,6 +268,7 @@ class _EditorShellState extends State<EditorShell> {
                   saveAs: saveAs,
                   newEudSource: newEudSource,
                   buildEud: buildEud,
+                  cancelEudBuild: cancelEudBuild,
                 ),
                 const Divider(height: 1),
                 _EditorToolbar(
@@ -240,6 +276,8 @@ class _EditorShellState extends State<EditorShell> {
                   saveAs: saveAs,
                   newEudSource: newEudSource,
                   buildEud: buildEud,
+                  cancelEudBuild: cancelEudBuild,
+                  eudBuildActive: eudBuildState.isActive,
                 ),
                 const Divider(height: 1),
                 Expanded(
@@ -290,6 +328,7 @@ class _EditorShellState extends State<EditorShell> {
                         _OutputPanel(
                           progress: snapshot.data,
                           diagnostics: _visibleDiagnostics,
+                          eudBuildState: eudBuildState,
                         ),
                         const Divider(height: 1),
                         _StatusBar(
@@ -318,12 +357,14 @@ class _EditorMenuBar extends StatelessWidget {
     required this.saveAs,
     required this.newEudSource,
     required this.buildEud,
+    required this.cancelEudBuild,
   });
 
   final VoidCallback? openMap;
   final VoidCallback? saveAs;
   final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
+  final VoidCallback? cancelEudBuild;
 
   @override
   Widget build(BuildContext context) {
@@ -359,8 +400,14 @@ class _EditorMenuBar extends StatelessWidget {
             ),
             const Divider(),
             MenuItemButton(
+              key: const Key('menu-build-eud'),
               onPressed: buildEud,
               child: const Text('Build EUD Map'),
+            ),
+            MenuItemButton(
+              key: const Key('menu-cancel-eud-build'),
+              onPressed: cancelEudBuild,
+              child: const Text('Cancel EUD Build'),
             ),
           ],
           child: const Text('EUD'),
@@ -383,12 +430,16 @@ class _EditorToolbar extends StatelessWidget {
     required this.saveAs,
     required this.newEudSource,
     required this.buildEud,
+    required this.cancelEudBuild,
+    required this.eudBuildActive,
   });
 
   final VoidCallback? openMap;
   final VoidCallback? saveAs;
   final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
+  final VoidCallback? cancelEudBuild;
+  final bool eudBuildActive;
 
   @override
   Widget build(BuildContext context) {
@@ -433,11 +484,20 @@ class _EditorToolbar extends StatelessWidget {
                     tooltip: 'New epScript',
                     icon: const Icon(Icons.code_rounded),
                   ),
-                  IconButton.filled(
-                    onPressed: buildEud,
-                    tooltip: 'Build EUD',
-                    icon: const Icon(Icons.play_arrow_rounded),
-                  ),
+                  if (eudBuildActive)
+                    IconButton.filled(
+                      key: const Key('toolbar-cancel-eud-build'),
+                      onPressed: cancelEudBuild,
+                      tooltip: 'Cancel EUD Build',
+                      icon: const Icon(Icons.stop_rounded),
+                    )
+                  else
+                    IconButton.filled(
+                      key: const Key('toolbar-build-eud'),
+                      onPressed: buildEud,
+                      tooltip: 'Build EUD',
+                      icon: const Icon(Icons.play_arrow_rounded),
+                    ),
                 ] else ...[
                   TextButton.icon(
                     key: const Key('toolbar-open-map'),
@@ -460,11 +520,20 @@ class _EditorToolbar extends StatelessWidget {
                     label: const Text('New epScript'),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: buildEud,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Build EUD'),
-                  ),
+                  if (eudBuildActive)
+                    FilledButton.icon(
+                      key: const Key('toolbar-cancel-eud-build'),
+                      onPressed: cancelEudBuild,
+                      icon: const Icon(Icons.stop_rounded),
+                      label: const Text('Cancel Build'),
+                    )
+                  else
+                    FilledButton.icon(
+                      key: const Key('toolbar-build-eud'),
+                      onPressed: buildEud,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Build EUD'),
+                    ),
                 ],
               ],
             ),
@@ -1452,14 +1521,64 @@ class _RecentProjectsMessage extends StatelessWidget {
   }
 }
 
-class _OutputPanel extends StatelessWidget {
-  const _OutputPanel({required this.progress, required this.diagnostics});
+enum _OutputPanelTab { problems, output, buildLog }
+
+class _OutputPanel extends StatefulWidget {
+  const _OutputPanel({
+    required this.progress,
+    required this.diagnostics,
+    required this.eudBuildState,
+  });
 
   final OperationProgress? progress;
   final List<EditorDiagnostic> diagnostics;
+  final EudBuildState eudBuildState;
+
+  @override
+  State<_OutputPanel> createState() => _OutputPanelState();
+}
+
+class _OutputPanelState extends State<_OutputPanel> {
+  late _OutputPanelTab _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab =
+        widget.eudBuildState.isActive || widget.eudBuildState.events.isNotEmpty
+        ? _OutputPanelTab.buildLog
+        : widget.progress != null && !widget.progress!.isTerminal
+        ? _OutputPanelTab.output
+        : _OutputPanelTab.problems;
+  }
+
+  @override
+  void didUpdateWidget(_OutputPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final buildStarted =
+        !oldWidget.eudBuildState.isActive && widget.eudBuildState.isActive;
+    final firstBuildEvent =
+        oldWidget.eudBuildState.events.isEmpty &&
+        widget.eudBuildState.events.isNotEmpty;
+    if (buildStarted || firstBuildEvent) {
+      _selectedTab = _OutputPanelTab.buildLog;
+      return;
+    }
+    final operationStarted =
+        (oldWidget.progress == null || oldWidget.progress!.isTerminal) &&
+        widget.progress != null &&
+        !widget.progress!.isTerminal;
+    if (operationStarted) {
+      _selectedTab = _OutputPanelTab.output;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final diagnostics = [
+      ...widget.diagnostics,
+      ...widget.eudBuildState.diagnostics,
+    ];
     return SizedBox(
       height: 128,
       child: ColoredBox(
@@ -1467,22 +1586,43 @@ class _OutputPanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(
+            SizedBox(
               height: 36,
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Row(
                   children: [
-                    Text(
-                      'Problems',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    _OutputPanelTabButton(
+                      key: const Key('output-tab-problems'),
+                      label: 'Problems',
+                      selected: _selectedTab == _OutputPanelTab.problems,
+                      count: diagnostics.length,
+                      onPressed: () {
+                        setState(() {
+                          _selectedTab = _OutputPanelTab.problems;
+                        });
+                      },
                     ),
-                    SizedBox(width: 22),
-                    Text('Output', style: TextStyle(color: Color(0xFF8994A8))),
-                    SizedBox(width: 22),
-                    Text(
-                      'Build Log',
-                      style: TextStyle(color: Color(0xFF8994A8)),
+                    _OutputPanelTabButton(
+                      key: const Key('output-tab-output'),
+                      label: 'Output',
+                      selected: _selectedTab == _OutputPanelTab.output,
+                      onPressed: () {
+                        setState(() {
+                          _selectedTab = _OutputPanelTab.output;
+                        });
+                      },
+                    ),
+                    _OutputPanelTabButton(
+                      key: const Key('output-tab-build-log'),
+                      label: 'Build Log',
+                      selected: _selectedTab == _OutputPanelTab.buildLog,
+                      count: widget.eudBuildState.events.length,
+                      onPressed: () {
+                        setState(() {
+                          _selectedTab = _OutputPanelTab.buildLog;
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -1490,24 +1630,166 @@ class _OutputPanel extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-              child: progress != null && !progress!.isTerminal
-                  ? _OperationSummary(progress: progress!)
-                  : diagnostics.isNotEmpty
-                  ? _DiagnosticList(diagnostics: diagnostics)
-                  : progress == null
-                  ? const Center(
-                      child: Text(
-                        'No problems detected',
-                        style: TextStyle(color: Color(0xFF8994A8)),
-                      ),
-                    )
-                  : _OperationSummary(progress: progress!),
+              child: switch (_selectedTab) {
+                _OutputPanelTab.problems =>
+                  diagnostics.isEmpty
+                      ? const _OutputPanelMessage('No problems detected')
+                      : _DiagnosticList(diagnostics: diagnostics),
+                _OutputPanelTab.output =>
+                  widget.progress == null
+                      ? const _OutputPanelMessage('No operation output')
+                      : _OperationSummary(progress: widget.progress!),
+                _OutputPanelTab.buildLog => _EudBuildLog(
+                  state: widget.eudBuildState,
+                ),
+              },
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _OutputPanelTabButton extends StatelessWidget {
+  const _OutputPanelTabButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    this.count,
+    super.key,
+  });
+
+  final String label;
+  final bool selected;
+  final int? count;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final count = this.count;
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: selected
+            ? const Color(0xFFE7EDF8)
+            : const Color(0xFF8994A8),
+        textStyle: TextStyle(
+          fontSize: 13,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+      child: Text(count == null || count == 0 ? label : '$label ($count)'),
+    );
+  }
+}
+
+class _OutputPanelMessage extends StatelessWidget {
+  const _OutputPanelMessage(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(message, style: const TextStyle(color: Color(0xFF8994A8))),
+    );
+  }
+}
+
+class _EudBuildLog extends StatelessWidget {
+  const _EudBuildLog({required this.state});
+
+  final EudBuildState state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.events.isEmpty) {
+      return _OutputPanelMessage(_emptyMessage(state.status));
+    }
+
+    return ListView.builder(
+      key: const Key('eud-build-log'),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      itemCount: state.events.length,
+      itemBuilder: (context, index) {
+        final event = state.events[index];
+        return Padding(
+          key: ValueKey('eud-build-log-$index'),
+          padding: const EdgeInsets.symmetric(vertical: 1),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                _buildEventIcon(event.kind),
+                size: 14,
+                color: _buildEventColor(event.kind),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SelectableText(
+                  _buildEventText(event),
+                  style: TextStyle(
+                    color: _buildEventColor(event.kind),
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+String _emptyMessage(EudBuildStatus status) {
+  return switch (status) {
+    EudBuildStatus.notConfigured => 'Build settings are not ready',
+    EudBuildStatus.ready => 'Ready to build',
+    EudBuildStatus.running => 'Starting euddraft…',
+    EudBuildStatus.cancelling => 'Stopping euddraft…',
+    EudBuildStatus.succeeded => 'Build completed',
+    EudBuildStatus.failed => 'Build failed without output',
+    EudBuildStatus.cancelled => 'Build cancelled',
+  };
+}
+
+String _buildEventText(EudBuildEvent event) {
+  return switch (event.kind) {
+    EudBuildEventKind.started => 'euddraft ${event.toolVersion} started',
+    EudBuildEventKind.stdoutLine => event.text ?? '',
+    EudBuildEventKind.stderrLine => '[stderr] ${event.text ?? ''}',
+    EudBuildEventKind.diagnostic =>
+      '[${event.diagnostic?.code}] ${event.diagnostic?.message}',
+    EudBuildEventKind.cancelled => '[cancelled] ${event.diagnostic?.message}',
+    EudBuildEventKind.failed => '[failed] ${event.diagnostic?.message}',
+    EudBuildEventKind.succeeded =>
+      'Build process completed (exit code ${event.exitCode})',
+  };
+}
+
+IconData _buildEventIcon(EudBuildEventKind kind) {
+  return switch (kind) {
+    EudBuildEventKind.started => Icons.play_arrow_rounded,
+    EudBuildEventKind.stdoutLine => Icons.chevron_right_rounded,
+    EudBuildEventKind.stderrLine => Icons.warning_amber_rounded,
+    EudBuildEventKind.diagnostic => Icons.info_outline_rounded,
+    EudBuildEventKind.cancelled => Icons.stop_circle_outlined,
+    EudBuildEventKind.failed => Icons.error_outline,
+    EudBuildEventKind.succeeded => Icons.check_circle_outline,
+  };
+}
+
+Color _buildEventColor(EudBuildEventKind kind) {
+  return switch (kind) {
+    EudBuildEventKind.stderrLine => const Color(0xFFFFC66D),
+    EudBuildEventKind.cancelled ||
+    EudBuildEventKind.failed => const Color(0xFFFF7B86),
+    EudBuildEventKind.succeeded => const Color(0xFF7ADAA5),
+    _ => const Color(0xFFAAB5C8),
+  };
 }
 
 class _DiagnosticList extends StatelessWidget {

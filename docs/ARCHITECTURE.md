@@ -260,6 +260,19 @@ euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
 프로세스 단계 성공일 뿐이며 출력 파일 검사와 최종 승격은 이후 Application
 파이프라인 책임이다.
 
+`EudBuildController`는 준비된 단일 `EudBuildRequest`와 게이트웨이 이벤트
+스트림을 `ready/running/cancelling/succeeded/failed/cancelled` 상태로
+조립한다. 같은 `OperationProgressController`에 컴파일 단계를 게시하고,
+Build 중복 실행을 차단하며 취소는 활성 build ID로만 전달한다. 이벤트
+스트림 오류, 결과 없는 종료와 build ID 불일치는 구조화 진단을 가진 실패로
+종결한다. Presentation은 이 상태만 구독해 Build/Cancel 활성 상태와 현재
+세션의 메모리 로그를 표시한다.
+
+컨트롤러는 임의의 기본 경로나 설정을 만들지 않는다. 도구 검사와 일회성
+`.eds` 생성까지 마친 후속 빌드 파이프라인이 요청을 `prepare`하기 전에는
+Build 명령이 비활성 상태다. 이 경계로 아직 구현되지 않은 설정 생성을 UI나
+프로세스 어댑터가 추측하지 않도록 한다.
+
 어댑터는 Windows 기본 환경 변수 중 실행에 필요한 allowlist만 상속하고,
 스트림마다 기본 1 MiB까지만 메모리에 전달한다. 초과분도 프로세스 종료까지
 소비해 파이프 교착을 막지만 빌드는 실패시킨다. timeout, 명시적 취소와

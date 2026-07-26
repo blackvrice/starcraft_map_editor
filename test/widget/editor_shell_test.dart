@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -6,15 +7,19 @@ import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
+import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 
 void main() {
   testWidgets('renders the desktop editor shell', (tester) async {
@@ -49,6 +54,87 @@ void main() {
     await tester.pump();
 
     expect(openMapInvocations, 1);
+  });
+
+  testWidgets('keeps EUD build disabled until a request is prepared', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_createTestApp());
+    await tester.pump();
+
+    final button = tester.widget<IconButton>(
+      find.byKey(const Key('toolbar-build-eud')),
+    );
+    expect(button.onPressed, isNull);
+
+    await tester.tap(find.byKey(const Key('output-tab-build-log')));
+    await tester.pump();
+    expect(find.text('Build settings are not ready'), findsOneWidget);
+  });
+
+  testWidgets('runs an EUD build and displays raw build output', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final progressController = OperationProgressController();
+    final buildController = EudBuildController(
+      compilerGateway: _ScriptedEudCompilerGateway(),
+      operationProgressController: progressController,
+    )..prepare(_eudBuildRequest('widget-build'));
+    addTearDown(buildController.dispose);
+    addTearDown(progressController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        eudBuildController: buildController,
+        operationProgressController: progressController,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('toolbar-build-eud')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('eud-build-log')), findsOneWidget);
+    expect(find.text('euddraft 0.10.2.5 started'), findsOneWidget);
+    expect(find.text('Compiling main.eps'), findsOneWidget);
+    expect(find.text('[stderr] Test warning'), findsOneWidget);
+    expect(find.text('Build process completed (exit code 0)'), findsOneWidget);
+  });
+
+  testWidgets('replaces Build with Cancel while euddraft is running', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final progressController = OperationProgressController();
+    final gateway = _CancellableEudCompilerGateway();
+    final buildController = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+    )..prepare(_eudBuildRequest('widget-cancel'));
+    addTearDown(buildController.dispose);
+    addTearDown(progressController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        eudBuildController: buildController,
+        operationProgressController: progressController,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('toolbar-build-eud')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('toolbar-cancel-eud-build')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toolbar-cancel-eud-build')));
+    await tester.pumpAndSettle();
+
+    expect(gateway.cancelledBuildId, 'widget-cancel');
+    expect(find.byKey(const Key('toolbar-build-eud')), findsOneWidget);
+    expect(find.text('[cancelled] Test build cancelled.'), findsOneWidget);
   });
 
   testWidgets('edits epScript and displays its dirty state', (tester) async {
@@ -227,6 +313,7 @@ Widget _createTestApp({
   OpenMapController? openMapController,
   SaveMapController? saveMapController,
   EudSourceController? eudSourceController,
+  EudBuildController? eudBuildController,
   OperationProgressController? operationProgressController,
   RecentProjectsService? recentProjectsService,
   InMemorySettingsStore? settingsStore,
@@ -238,6 +325,12 @@ Widget _createTestApp({
       recentProjectsService ?? RecentProjectsService(resolvedSettingsStore);
   final resolvedEudSourceController =
       eudSourceController ?? EudSourceController();
+  final resolvedEudBuildController =
+      eudBuildController ??
+      EudBuildController(
+        compilerGateway: _UnusedEudCompilerGateway(),
+        operationProgressController: resolvedProgressController,
+      );
   final resolvedFingerprintGateway = _FakeMapFileFingerprintGateway();
   final resolvedOpenMapController =
       openMapController ??
@@ -272,18 +365,110 @@ Widget _createTestApp({
         EditorCommandId.newEudSource: (_) {
           resolvedEudSourceController.createUntitled();
         },
+        EditorCommandId.buildEud: (_) async {
+          await resolvedEudBuildController.start();
+        },
+        EditorCommandId.cancelEudBuild: (_) async {
+          await resolvedEudBuildController.cancel();
+        },
       });
   return StarCraftMapEditorApp(
     dependencies: EditorAppDependencies(
       commandDispatcher: resolvedDispatcher,
       openMapController: resolvedOpenMapController,
       saveMapController: resolvedSaveMapController,
+      eudBuildController: resolvedEudBuildController,
       eudSourceController: resolvedEudSourceController,
       operationProgressController: resolvedProgressController,
       recentProjectsService: resolvedRecentProjectsService,
       settingsStore: resolvedSettingsStore,
     ),
   );
+}
+
+EudBuildRequest _eudBuildRequest(String buildId) {
+  return EudBuildRequest(
+    buildId: buildId,
+    tool: EudToolInfo(
+      pathSource: EudToolPathSource.projectProfile,
+      installationPath: r'C:\Tools\euddraft',
+      executablePath: r'C:\Tools\euddraft\euddraft.exe',
+      versionFilePath: r'C:\Tools\euddraft\VERSION',
+      version: EudToolVersion.parse('0.10.2.5'),
+      companionPaths: const [r'C:\Tools\euddraft\python3.dll'],
+    ),
+    settingsFilePath: r'C:\Project\.build\request.eds',
+    timeout: const Duration(minutes: 2),
+  );
+}
+
+final class _UnusedEudCompilerGateway implements EudCompilerGateway {
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) {
+    throw StateError('The EUD compiler gateway is not used by this test.');
+  }
+
+  @override
+  Future<bool> cancel(String buildId) async => false;
+}
+
+final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) {
+    return Stream.fromIterable([
+      EudBuildEvent.started(
+        buildId: request.buildId,
+        toolVersion: request.tool.version,
+      ),
+      EudBuildEvent.stdoutLine(
+        buildId: request.buildId,
+        text: 'Compiling main.eps',
+      ),
+      EudBuildEvent.stderrLine(buildId: request.buildId, text: 'Test warning'),
+      EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
+    ]);
+  }
+
+  @override
+  Future<bool> cancel(String buildId) async => false;
+}
+
+final class _CancellableEudCompilerGateway implements EudCompilerGateway {
+  final StreamController<EudBuildEvent> _events =
+      StreamController<EudBuildEvent>();
+
+  String? cancelledBuildId;
+
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) {
+    scheduleMicrotask(() {
+      _events.add(
+        EudBuildEvent.started(
+          buildId: request.buildId,
+          toolVersion: request.tool.version,
+        ),
+      );
+    });
+    return _events.stream;
+  }
+
+  @override
+  Future<bool> cancel(String buildId) async {
+    cancelledBuildId = buildId;
+    _events.add(
+      EudBuildEvent.cancelled(
+        buildId: buildId,
+        diagnostic: const EditorDiagnostic(
+          code: 'EUD_TEST_CANCELLED',
+          message: 'Test build cancelled.',
+          severity: DiagnosticSeverity.error,
+          stage: DiagnosticStage.compile,
+        ),
+      ),
+    );
+    await _events.close();
+    return true;
+  }
 }
 
 class _FakeMapFilePicker implements MapFilePicker {

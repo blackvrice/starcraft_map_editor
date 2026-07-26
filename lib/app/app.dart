@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
+import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
@@ -14,6 +15,7 @@ class EditorAppDependencies {
     required this.commandDispatcher,
     required this.openMapController,
     required this.saveMapController,
+    required this.eudBuildController,
     required this.eudSourceController,
     required this.operationProgressController,
     required this.recentProjectsService,
@@ -23,6 +25,7 @@ class EditorAppDependencies {
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
   final SaveMapController saveMapController;
+  final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
@@ -54,6 +57,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
         commandDispatcher: dependencies.commandDispatcher,
         openMapController: dependencies.openMapController,
         saveMapController: dependencies.saveMapController,
+        eudBuildController: dependencies.eudBuildController,
         eudSourceController: dependencies.eudSourceController,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,

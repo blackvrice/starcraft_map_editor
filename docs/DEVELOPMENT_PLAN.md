@@ -195,7 +195,7 @@
 - [x] `EudCompilerGateway` 외부 프로세스 어댑터 구현
 - [x] 기준 맵, 소스 경로, 출력 경로를 가진 빌드 설정 모델 구현
 - [x] 최소 epScript 코드 편집기와 변경 상태 구현
-- [ ] Build/Cancel 명령과 출력 패널 구현
+- [x] Build/Cancel 명령과 출력 패널 구현
 - [ ] stdout/stderr, 종료 코드, 도구 버전 기록
 - [ ] 가능한 오류의 파일/행/열 진단 변환
 - [ ] 임시 출력과 성공 출력 승격 구현
@@ -236,6 +236,18 @@
   Project/Inspector와 상태 표시줄의 Clean/Modified 표시를 제공한다. 위젯
   테스트는 입력 후 dirty 전환과 탭 왕복 시 텍스트 보존을 검증한다. 실제
   `.eps` 열기·저장과 외부 변경 감지는 후속 파일 I/O 작업이다.
+- `EudBuildController`는 준비된 요청을 `ready/running/cancelling`과 세 종료
+  상태로 조립하고 같은 operation 진행 모델에 컴파일 상태를 게시한다. 중복
+  시작을 막고 활성 build ID만 취소하며, 이벤트 스트림 오류·결과 없는 종료·
+  ID 불일치를 구조화 실패로 바꾼다.
+- 셸은 EUD Build/Cancel 명령과 `Ctrl+B`/`Ctrl+Shift+B`를 연결하고 실행 중
+  도구 모음 버튼을 Cancel로 전환한다. Problems/Output/Build Log 탭은 각각
+  구조화 진단, 일반 작업 진행, 현재 빌드의 원시 이벤트를 표시한다. 빌드
+  시작 시 Build Log를 자동 선택한다.
+- 단위·위젯 테스트는 설정 전 Build 비활성, 성공 stdout/stderr 표시, 실패
+  진단, 취소 요청과 버튼 복귀, 결과 없는 스트림의 안전한 실패를 검증한다.
+  일회성 `.eds`를 생성해 요청을 준비하는 파이프라인은 후속 항목이므로
+  부트스트랩은 임의 설정 경로로 euddraft를 실행하지 않는다.
 
 완료 조건:
 

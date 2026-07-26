@@ -1,6 +1,6 @@
 import 'dart:async';
 
-enum EditorCommandId { openMap, saveAs, newEudSource, buildEud }
+enum EditorCommandId { openMap, saveAs, newEudSource, buildEud, cancelEudBuild }
 
 typedef EditorCommandHandler = FutureOr<void> Function(Object? argument);
 

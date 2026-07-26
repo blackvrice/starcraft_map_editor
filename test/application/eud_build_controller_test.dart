@@ -1,0 +1,214 @@
+import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
+import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
+import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
+import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
+
+void main() {
+  test('runs a prepared build and forwards its log events', () async {
+    final progressController = OperationProgressController();
+    final gateway = _ScriptedEudCompilerGateway((request) {
+      return Stream.fromIterable([
+        EudBuildEvent.started(
+          buildId: request.buildId,
+          toolVersion: request.tool.version,
+        ),
+        EudBuildEvent.stdoutLine(
+          buildId: request.buildId,
+          text: 'Compiling main.eps',
+        ),
+        EudBuildEvent.stderrLine(
+          buildId: request.buildId,
+          text: 'A recoverable warning',
+        ),
+        EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
+      ]);
+    });
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+
+    expect(await controller.start(), isFalse);
+    controller.prepare(_request('success-build'));
+
+    expect(controller.state.status, EudBuildStatus.ready);
+    expect(controller.canStart, isTrue);
+    expect(await controller.start(), isTrue);
+
+    expect(controller.state.status, EudBuildStatus.succeeded);
+    expect(controller.state.events.map((event) => event.kind), [
+      EudBuildEventKind.started,
+      EudBuildEventKind.stdoutLine,
+      EudBuildEventKind.stderrLine,
+      EudBuildEventKind.succeeded,
+    ]);
+    expect(progressController.current?.phase, OperationPhase.succeeded);
+  });
+
+  test('surfaces a compiler failure as a terminal operation', () async {
+    final progressController = OperationProgressController();
+    final gateway = _ScriptedEudCompilerGateway((request) {
+      return Stream.fromIterable([
+        EudBuildEvent.failed(
+          buildId: request.buildId,
+          diagnostic: _blockingDiagnostic(
+            code: 'EUD_TEST_COMPILE_FAILED',
+            message: 'main.eps could not be compiled.',
+          ),
+          exitCode: 1,
+        ),
+      ]);
+    });
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+    controller.prepare(_request('failed-build'));
+
+    expect(await controller.start(), isFalse);
+
+    expect(controller.state.status, EudBuildStatus.failed);
+    expect(controller.state.diagnostics.single.code, 'EUD_TEST_COMPILE_FAILED');
+    expect(progressController.current?.phase, OperationPhase.failed);
+    expect(progressController.current?.message, contains('could not'));
+  });
+
+  test('requests cancellation and waits for the cancelled event', () async {
+    final progressController = OperationProgressController();
+    final gateway = _CancellableEudCompilerGateway();
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+    controller.prepare(_request('cancel-build'));
+
+    final result = controller.start();
+    gateway.emitStarted();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.state.status, EudBuildStatus.running);
+    expect(await controller.cancel(), isTrue);
+    expect(await result, isFalse);
+
+    expect(gateway.cancelledBuildId, 'cancel-build');
+    expect(controller.state.status, EudBuildStatus.cancelled);
+    expect(progressController.current?.phase, OperationPhase.cancelled);
+  });
+
+  test('fails safely when the event stream closes without a result', () async {
+    final progressController = OperationProgressController();
+    final gateway = _ScriptedEudCompilerGateway((_) => const Stream.empty());
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+    controller.prepare(_request('empty-build'));
+
+    expect(await controller.start(), isFalse);
+
+    expect(controller.state.status, EudBuildStatus.failed);
+    expect(
+      controller.state.diagnostics.single.code,
+      EudBuildControllerDiagnosticCodes.eventStreamEnded,
+    );
+  });
+}
+
+EudBuildRequest _request(String buildId) {
+  return EudBuildRequest(
+    buildId: buildId,
+    tool: _tool(),
+    settingsFilePath: r'C:\Project\.build\request.eds',
+    timeout: const Duration(minutes: 2),
+  );
+}
+
+EudToolInfo _tool() {
+  return EudToolInfo(
+    pathSource: EudToolPathSource.projectProfile,
+    installationPath: r'C:\Tools\euddraft',
+    executablePath: r'C:\Tools\euddraft\euddraft.exe',
+    versionFilePath: r'C:\Tools\euddraft\VERSION',
+    version: EudToolVersion.parse('0.10.2.5'),
+    companionPaths: const [r'C:\Tools\euddraft\python3.dll'],
+  );
+}
+
+EditorDiagnostic _blockingDiagnostic({
+  required String code,
+  required String message,
+}) {
+  return EditorDiagnostic(
+    code: code,
+    message: message,
+    severity: DiagnosticSeverity.error,
+    stage: DiagnosticStage.compile,
+    filePath: r'C:\Project\src\main.eps',
+    remediation: 'Fix the epScript source and retry.',
+  );
+}
+
+final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
+  _ScriptedEudCompilerGateway(this.script);
+
+  final Stream<EudBuildEvent> Function(EudBuildRequest request) script;
+
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) => script(request);
+
+  @override
+  Future<bool> cancel(String buildId) async => false;
+}
+
+final class _CancellableEudCompilerGateway implements EudCompilerGateway {
+  final StreamController<EudBuildEvent> _events =
+      StreamController<EudBuildEvent>();
+
+  EudBuildRequest? _request;
+  String? cancelledBuildId;
+
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) {
+    _request = request;
+    return _events.stream;
+  }
+
+  void emitStarted() {
+    final request = _request!;
+    _events.add(
+      EudBuildEvent.started(
+        buildId: request.buildId,
+        toolVersion: request.tool.version,
+      ),
+    );
+  }
+
+  @override
+  Future<bool> cancel(String buildId) async {
+    cancelledBuildId = buildId;
+    _events.add(
+      EudBuildEvent.cancelled(
+        buildId: buildId,
+        diagnostic: _blockingDiagnostic(
+          code: 'EUD_TEST_CANCELLED',
+          message: 'The test build was cancelled.',
+        ),
+      ),
+    );
+    await _events.close();
+    return true;
+  }
+}

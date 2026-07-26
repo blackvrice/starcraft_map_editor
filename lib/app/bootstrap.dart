@@ -3,10 +3,12 @@ import 'package:flutter/widgets.dart';
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
+import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
+import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
 import '../infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 import '../infrastructure/filesystem/local_map_save_file_gateway.dart';
 import '../infrastructure/filesystem/method_channel_map_file_picker.dart';
@@ -21,6 +23,10 @@ void bootstrap() {
   final operationProgressController = OperationProgressController();
   final recentProjectsService = RecentProjectsService(settingsStore);
   final archiveGateway = ProcessMapArchiveGateway.bundled();
+  final eudBuildController = EudBuildController(
+    compilerGateway: ProcessEudCompilerGateway(),
+    operationProgressController: operationProgressController,
+  );
   final fingerprintGateway = LocalMapFileFingerprintGateway();
   final eudSourceController = EudSourceController();
   const filePicker = MethodChannelMapFilePicker();
@@ -50,11 +56,18 @@ void bootstrap() {
   commandDispatcher.register(EditorCommandId.newEudSource, (_) {
     eudSourceController.createUntitled();
   });
+  commandDispatcher.register(EditorCommandId.buildEud, (_) async {
+    await eudBuildController.start();
+  });
+  commandDispatcher.register(EditorCommandId.cancelEudBuild, (_) async {
+    await eudBuildController.cancel();
+  });
 
   final dependencies = EditorAppDependencies(
     commandDispatcher: commandDispatcher,
     openMapController: openMapController,
     saveMapController: saveMapController,
+    eudBuildController: eudBuildController,
     eudSourceController: eudSourceController,
     operationProgressController: operationProgressController,
     recentProjectsService: recentProjectsService,
