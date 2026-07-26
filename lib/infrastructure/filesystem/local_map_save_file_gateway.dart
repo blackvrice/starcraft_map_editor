@@ -2,12 +2,20 @@ import 'dart:io';
 
 import '../../application/ports/map_save_file_gateway.dart';
 
+typedef LocalMapFileMover =
+    Future<void> Function(File source, String destinationPath);
+
 class LocalMapSaveFileGateway implements MapSaveFileGateway {
+  LocalMapSaveFileGateway({LocalMapFileMover? fileMover})
+    : _fileMover = fileMover ?? _moveFile;
+
+  final LocalMapFileMover _fileMover;
   final Set<String> _ownedWorkspacePaths = {};
 
   @override
   Future<bool> destinationExists(String path) async {
-    return await FileSystemEntity.type(path) != FileSystemEntityType.notFound;
+    return await FileSystemEntity.type(path, followLinks: false) !=
+        FileSystemEntityType.notFound;
   }
 
   @override
@@ -45,17 +53,12 @@ class LocalMapSaveFileGateway implements MapSaveFileGateway {
   }
 
   @override
-  Future<void> promote({
+  Future<MapSavePromotionResult> promote({
     required MapSaveWorkspace workspace,
     required String destinationPath,
+    required bool replaceExisting,
   }) async {
     _requireOwned(workspace);
-    if (await destinationExists(destinationPath)) {
-      throw FileSystemException(
-        'The Save As destination already exists.',
-        destinationPath,
-      );
-    }
 
     final workspaceDirectory = Directory(workspace.directoryPath).absolute;
     final temporaryOutput = File(workspace.temporaryOutputPath).absolute;
@@ -75,7 +78,74 @@ class LocalMapSaveFileGateway implements MapSaveFileGateway {
         destination.path,
       );
     }
-    await temporaryOutput.rename(destination.path);
+
+    final temporaryOutputType = await FileSystemEntity.type(
+      temporaryOutput.path,
+      followLinks: false,
+    );
+    if (temporaryOutputType != FileSystemEntityType.file) {
+      throw FileSystemException(
+        'The verified temporary output is not a regular file.',
+        temporaryOutput.path,
+      );
+    }
+
+    final destinationType = await FileSystemEntity.type(
+      destination.path,
+      followLinks: false,
+    );
+    if (destinationType == FileSystemEntityType.notFound) {
+      await _fileMover(temporaryOutput, destination.path);
+      return MapSavePromotionResult();
+    }
+    if (destinationType != FileSystemEntityType.file) {
+      throw FileSystemException(
+        'Only a regular destination file can be replaced.',
+        destination.path,
+      );
+    }
+    if (!replaceExisting) {
+      throw FileSystemException(
+        'The Save As destination already exists.',
+        destination.path,
+      );
+    }
+
+    final backupPath = _backupPathFor(
+      destinationPath: destination.path,
+      workspaceDirectoryPath: workspaceDirectory.path,
+    );
+    if (await destinationExists(backupPath)) {
+      throw FileSystemException(
+        'The recovery backup path already exists.',
+        backupPath,
+      );
+    }
+
+    await _fileMover(destination, backupPath);
+    try {
+      await _fileMover(temporaryOutput, destination.path);
+    } on Object catch (promotionError, promotionStackTrace) {
+      try {
+        if (await destinationExists(destination.path)) {
+          throw FileSystemException(
+            'The failed promotion left an unexpected destination in place.',
+            destination.path,
+          );
+        }
+        await _fileMover(File(backupPath), destination.path);
+      } on Object catch (restorationError) {
+        throw MapSavePromotionRecoveryException(
+          destinationPath: destination.path,
+          backupPath: backupPath,
+          promotionError: promotionError,
+          restorationError: restorationError,
+        );
+      }
+      Error.throwWithStackTrace(promotionError, promotionStackTrace);
+    }
+
+    return MapSavePromotionResult(backupPath: backupPath);
   }
 
   @override
@@ -114,6 +184,26 @@ class LocalMapSaveFileGateway implements MapSaveFileGateway {
         workspace.directoryPath,
       );
     }
+  }
+
+  String _backupPathFor({
+    required String destinationPath,
+    required String workspaceDirectoryPath,
+  }) {
+    const workspacePrefix = '.starcraft_map_editor_save_';
+    final workspaceName = workspaceDirectoryPath
+        .split(RegExp(r'[\\/]'))
+        .where((part) => part.isNotEmpty)
+        .last;
+    final rawToken = workspaceName.startsWith(workspacePrefix)
+        ? workspaceName.substring(workspacePrefix.length)
+        : workspaceName;
+    final safeToken = rawToken.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    return '$destinationPath.backup-$safeToken.bak';
+  }
+
+  static Future<void> _moveFile(File source, String destinationPath) async {
+    await source.rename(destinationPath);
   }
 
   String _normalize(String path) =>

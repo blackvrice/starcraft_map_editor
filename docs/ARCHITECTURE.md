@@ -228,12 +228,16 @@ abstract interface class MapFileFingerprintGateway {
 `MapFilePicker`는 사용자가 선택한 절대 경로 또는 취소를 뜻하는 `null`만
 Application 계층에 반환한다. Windows의 `GetOpenFileNameW`/
 `GetSaveFileNameW`와 Flutter method channel 세부사항은 Infrastructure와
-runner에 남고 Presentation은 Open Map/Save As 명령만 전달한다.
+runner에 남고 Presentation은 Open Map/Save As 명령만 전달한다. 기존 Save As
+대상은 Windows `OFN_OVERWRITEPROMPT` 승인을 통과한 경우에만 포트가 반환한다.
 
 `MapSaveFileGateway`는 최종 경로 존재 여부와 경로 동일성 확인, 최종 경로의
 같은 디렉터리에 앱 소유 임시 작업 공간 생성, 검증된 파일의 rename 승격,
-정확한 작업 공간 정리를 추상화한다. 현재 정책은 원본 또는 기존 출력 경로를
-교체하지 않으며, 같은 볼륨의 새 경로에만 승격한다.
+기존 출력의 고유 복구 백업과 정확한 작업 공간 정리를 추상화한다. 현재 정책은
+열린 원본을 교체하지 않는다. 명시적으로 승인된 다른 기존 출력은 같은
+디렉터리의 `.bak` 경로로 먼저 이동하고, 검증된 출력을 승격한다. 승격 실패 시
+백업을 자동 복원하며 복원도 실패하면 백업 경로를 예외 계약으로 반환한다.
+백업은 작업 공간 밖에 있어 cleanup 대상이 아니다.
 
 `MapFileFingerprintGateway`는 Application 계층에 경로 독립적인 파일
 fingerprint만 반환한다. Infrastructure의 로컬 구현은 해시 전후 `stat`이
@@ -350,6 +354,7 @@ sequenceDiagram
     participant Encoder
     participant Archive
     participant Validator
+    participant Backup
 
     User->>UI: Save As
     UI->>SaveAs: output path
@@ -365,18 +370,27 @@ sequenceDiagram
     Validator-->>SaveAs: verified
     SaveAs->>Fingerprint: fingerprint output and recapture source
     Fingerprint-->>SaveAs: source unchanged
-    SaveAs->>SaveAs: rename to new final path
-    SaveAs-->>UI: finalized output
+    opt confirmed existing destination
+        SaveAs->>Fingerprint: recapture destination
+        Fingerprint-->>SaveAs: unchanged
+        SaveAs->>Backup: move existing destination to unique .bak
+    end
+    SaveAs->>SaveAs: rename verified output to final path
+    SaveAs-->>UI: finalized output + optional backup path
 ```
 
-2026-07-26 기준 `SaveMapController`가 이 흐름을 조정한다. 원본과 같은 경로,
-기존 최종 경로, 지원하지 않는 확장자를 먼저 거부한다. 최종 경로와 같은
-디렉터리에 만든 임시 작업 공간에서만 helper를 실행하고, 재열기 CHK가 인코딩
-바이트와 정확히 같으며 raw 파싱에 성공한 뒤에만 최종 경로로 rename한다.
-성공 시 검증된 출력을 현재 문서 세션과 최근 파일로 채택한다. 검증 실패 시
-임시 파일은 최종 출력으로 승격하지 않는다. 저장 시작 시 현재 파일이 세션의
-fingerprint와 다르거나, 작업 중 변경·삭제되어 승격 직전 fingerprint가
-달라지면 같은 실패 정책을 적용한다.
+2026-07-26 기준 `SaveMapController`가 이 흐름을 조정한다. 원본과 같은 경로와
+지원하지 않는 확장자를 먼저 거부한다. 기존의 다른 최종 경로는 사용자가
+Windows Save As 확인을 승인한 경우에만 허용한다. 최종 경로와 같은 디렉터리에
+만든 임시 작업 공간에서만 helper를 실행하고, 재열기 CHK가 인코딩 바이트와
+정확히 같으며 raw 파싱에 성공한 뒤에만 최종 경로로 rename한다. 성공 시 검증된
+출력을 현재 문서 세션과 최근 파일로 채택하고, 교체한 파일의 백업 경로는 저장
+상태와 정보 진단으로 반환한다.
+
+저장 시작과 승격 직전에 원본과 기존 출력의 fingerprint를 각각 비교한다.
+처음 없던 출력의 생성도 충돌로 처리한다. 기존 출력은 고유 `.bak`로 이동한 뒤
+승격하며 실패하면 자동 복원한다. 자동 복원 실패 시 백업은 보존되고 별도의
+복구 필요 진단을 반환한다. 다른 검증 실패에서는 임시 파일을 승격하지 않는다.
 
 ### EUD 빌드
 

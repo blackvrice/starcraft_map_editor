@@ -115,6 +115,8 @@ bool FlutterWindow::OnCreate() {
             OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
         if (is_open) {
           dialog.Flags |= OFN_FILEMUSTEXIST;
+        } else {
+          dialog.Flags |= OFN_OVERWRITEPROMPT;
         }
 
         const BOOL accepted = is_open

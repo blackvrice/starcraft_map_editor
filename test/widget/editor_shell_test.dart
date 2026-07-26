@@ -285,9 +285,10 @@ class _UnusedMapSaveFileGateway implements MapSaveFileGateway {
   Future<bool> destinationExists(String path) async => false;
 
   @override
-  Future<void> promote({
+  Future<MapSavePromotionResult> promote({
     required MapSaveWorkspace workspace,
     required String destinationPath,
+    required bool replaceExisting,
   }) {
     throw StateError('The save file gateway is not used by this test.');
   }

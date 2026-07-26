@@ -18,6 +18,10 @@ abstract final class SaveMapDiagnosticCodes {
   static const unsupportedExtension = 'SAVE_MAP_UNSUPPORTED_EXTENSION';
   static const sourceDestinationSame = 'SAVE_MAP_SOURCE_DESTINATION_SAME';
   static const destinationExists = 'SAVE_MAP_DESTINATION_EXISTS';
+  static const destinationFingerprintFailed =
+      'SAVE_MAP_DESTINATION_FINGERPRINT_FAILED';
+  static const destinationChangedDuringSave =
+      'SAVE_MAP_DESTINATION_CHANGED_DURING_SAVE';
   static const operationBusy = 'SAVE_MAP_OPERATION_BUSY';
   static const sourceFingerprintFailed = 'SAVE_MAP_SOURCE_FINGERPRINT_FAILED';
   static const sourceChangedBeforeSave = 'SAVE_MAP_SOURCE_CHANGED_BEFORE_SAVE';
@@ -28,6 +32,9 @@ abstract final class SaveMapDiagnosticCodes {
   static const verificationParseFailed = 'SAVE_MAP_VERIFICATION_PARSE_FAILED';
   static const outputFingerprintFailed = 'SAVE_MAP_OUTPUT_FINGERPRINT_FAILED';
   static const promotionFailed = 'SAVE_MAP_PROMOTION_FAILED';
+  static const promotionRecoveryRequired =
+      'SAVE_MAP_PROMOTION_RECOVERY_REQUIRED';
+  static const backupCreated = 'SAVE_MAP_BACKUP_CREATED';
   static const unexpectedFailure = 'SAVE_MAP_UNEXPECTED_FAILURE';
 }
 
@@ -37,6 +44,7 @@ class SaveMapState {
   const SaveMapState._({
     required this.status,
     required this.outputPath,
+    required this.backupPath,
     required this.diagnostics,
   });
 
@@ -44,15 +52,18 @@ class SaveMapState {
     : this._(
         status: SaveMapStatus.idle,
         outputPath: null,
+        backupPath: null,
         diagnostics: const [],
       );
 
   SaveMapState.saved({
     required String savedPath,
+    String? backupPath,
     required Iterable<EditorDiagnostic> diagnostics,
   }) : this._(
          status: SaveMapStatus.saved,
          outputPath: savedPath,
+         backupPath: backupPath,
          diagnostics: List.unmodifiable(diagnostics),
        );
 
@@ -60,11 +71,13 @@ class SaveMapState {
     : this._(
         status: SaveMapStatus.failed,
         outputPath: null,
+        backupPath: null,
         diagnostics: List.unmodifiable(diagnostics),
       );
 
   final SaveMapStatus status;
   final String? outputPath;
+  final String? backupPath;
   final List<EditorDiagnostic> diagnostics;
 }
 
@@ -113,7 +126,10 @@ class SaveMapController {
 
   Stream<SaveMapState> get changes => _changes.stream;
 
-  Future<SaveMapState> saveAs({String? destinationPath}) async {
+  Future<SaveMapState> saveAs({
+    String? destinationPath,
+    bool replaceExisting = false,
+  }) async {
     if (_isSaving) {
       return _state;
     }
@@ -132,6 +148,7 @@ class SaveMapController {
     MapSaveWorkspace? workspace;
     String? operationId;
     try {
+      final selectedFromPicker = destinationPath == null;
       final selectedPath =
           destinationPath ??
           await _selectDestinationPath(sourceSession.sourcePath);
@@ -173,15 +190,18 @@ class SaveMapController {
           ),
         );
       }
-      if (await saveFileGateway.destinationExists(normalizedPath)) {
+      final destinationExistedAtSaveStart = await saveFileGateway
+          .destinationExists(normalizedPath);
+      final replacementConfirmed = selectedFromPicker || replaceExisting;
+      if (destinationExistedAtSaveStart && !replacementConfirmed) {
         return _emitFailure(
           _diagnostic(
             code: SaveMapDiagnosticCodes.destinationExists,
             message: 'The Save As destination already exists.',
             filePath: normalizedPath,
             remediation:
-                'Choose a new file name. Existing files are never replaced '
-                'in this safety milestone.',
+                'Choose a new file name or explicitly confirm replacement in '
+                'the Save As dialog.',
           ),
         );
       }
@@ -247,6 +267,29 @@ class SaveMapController {
                 'current=$sourceFingerprintAtSaveStart',
           ),
         );
+      }
+
+      MapFileFingerprint? destinationFingerprintAtSaveStart;
+      if (destinationExistedAtSaveStart) {
+        operationProgressController.update(
+          operationId: operationId,
+          phase: OperationPhase.validating,
+          message: 'Checking existing destination fingerprint',
+          fraction: 0.13,
+        );
+        try {
+          destinationFingerprintAtSaveStart = await fingerprintGateway
+              .fingerprint(normalizedPath);
+        } on Object catch (error, stackTrace) {
+          return _failOperation(
+            operationId,
+            _destinationFingerprintFailureDiagnostic(
+              path: normalizedPath,
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          );
+        }
       }
 
       try {
@@ -414,14 +457,88 @@ class SaveMapController {
 
       operationProgressController.update(
         operationId: operationId,
+        phase: OperationPhase.verifying,
+        message: 'Rechecking Save As destination',
+        fraction: 0.89,
+      );
+      final destinationExistsBeforePromotion = await saveFileGateway
+          .destinationExists(normalizedPath);
+      if (destinationExistedAtSaveStart) {
+        if (!destinationExistsBeforePromotion) {
+          return _failOperation(
+            operationId,
+            _destinationChangedDiagnostic(
+              path: normalizedPath,
+              rawDetails: 'The existing destination disappeared.',
+            ),
+          );
+        }
+
+        late final MapFileFingerprint destinationFingerprintBeforePromotion;
+        try {
+          destinationFingerprintBeforePromotion = await fingerprintGateway
+              .fingerprint(normalizedPath);
+        } on Object catch (error, stackTrace) {
+          return _failOperation(
+            operationId,
+            _destinationFingerprintFailureDiagnostic(
+              path: normalizedPath,
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          );
+        }
+        if (destinationFingerprintBeforePromotion !=
+            destinationFingerprintAtSaveStart) {
+          return _failOperation(
+            operationId,
+            _destinationChangedDiagnostic(
+              path: normalizedPath,
+              rawDetails:
+                  'start=$destinationFingerprintAtSaveStart; '
+                  'beforePromotion=$destinationFingerprintBeforePromotion',
+            ),
+          );
+        }
+      } else if (destinationExistsBeforePromotion) {
+        return _failOperation(
+          operationId,
+          _destinationChangedDiagnostic(
+            path: normalizedPath,
+            rawDetails:
+                'A destination was created after the Save As operation '
+                'started.',
+          ),
+        );
+      }
+
+      operationProgressController.update(
+        operationId: operationId,
         phase: OperationPhase.writing,
         message: 'Promoting verified map to final destination',
         fraction: 0.9,
       );
+      late final MapSavePromotionResult promotionResult;
       try {
-        await saveFileGateway.promote(
+        promotionResult = await saveFileGateway.promote(
           workspace: workspace,
           destinationPath: normalizedPath,
+          replaceExisting: destinationExistedAtSaveStart,
+        );
+      } on MapSavePromotionRecoveryException catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _diagnostic(
+            code: SaveMapDiagnosticCodes.promotionRecoveryRequired,
+            message:
+                'The existing destination is safe in a backup, but automatic '
+                'restoration failed.',
+            filePath: error.backupPath,
+            remediation:
+                'Restore the backup to ${error.destinationPath} before '
+                'retrying Save As.',
+            rawDetails: '$error\n$stackTrace',
+          ),
         );
       } on Object catch (error, stackTrace) {
         return _failOperation(
@@ -452,14 +569,33 @@ class SaveMapController {
           diagnostics: verifiedDiagnostics,
         ),
       );
+      final saveDiagnostics = [...adoptedState.diagnostics];
+      final backupPath = promotionResult.backupPath;
+      if (backupPath != null) {
+        saveDiagnostics.add(
+          EditorDiagnostic(
+            code: SaveMapDiagnosticCodes.backupCreated,
+            message:
+                'The previous destination was preserved as a recovery backup.',
+            severity: DiagnosticSeverity.info,
+            stage: DiagnosticStage.save,
+            filePath: backupPath,
+            remediation:
+                'Keep the backup until the replacement map has been verified.',
+          ),
+        );
+      }
       operationProgressController.succeed(
         operationId: operationId,
-        message: 'Map saved and verified',
+        message: backupPath == null
+            ? 'Map saved and verified'
+            : 'Map saved, verified, and backed up',
       );
       return _emit(
         SaveMapState.saved(
           savedPath: normalizedPath,
-          diagnostics: adoptedState.diagnostics,
+          backupPath: backupPath,
+          diagnostics: saveDiagnostics,
         ),
       );
     } on Object catch (error, stackTrace) {
@@ -540,6 +676,37 @@ class SaveMapController {
           'Check that the source map still exists, is readable, and is not '
           'being changed by another program.',
       rawDetails: '$error\n$stackTrace',
+    );
+  }
+
+  EditorDiagnostic _destinationFingerprintFailureDiagnostic({
+    required String path,
+    required Object error,
+    required StackTrace stackTrace,
+  }) {
+    return _diagnostic(
+      code: SaveMapDiagnosticCodes.destinationFingerprintFailed,
+      message: 'The existing Save As destination could not be verified.',
+      filePath: path,
+      remediation:
+          'Check that the destination is a readable regular file and retry.',
+      rawDetails: '$error\n$stackTrace',
+    );
+  }
+
+  EditorDiagnostic _destinationChangedDiagnostic({
+    required String path,
+    required String rawDetails,
+  }) {
+    return _diagnostic(
+      code: SaveMapDiagnosticCodes.destinationChangedDuringSave,
+      message:
+          'The Save As destination changed while the map was being prepared.',
+      filePath: path,
+      remediation:
+          'Review the destination in another program, then retry and confirm '
+          'replacement again.',
+      rawDetails: rawDetails,
     );
   }
 

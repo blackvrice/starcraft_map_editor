@@ -23,6 +23,44 @@ class MapSaveWorkspace {
   final String temporaryOutputPath;
 }
 
+class MapSavePromotionResult {
+  MapSavePromotionResult({this.backupPath}) {
+    if (backupPath != null && backupPath!.trim().isEmpty) {
+      throw ArgumentError.value(
+        backupPath,
+        'backupPath',
+        'The backup path must not be blank.',
+      );
+    }
+  }
+
+  final String? backupPath;
+
+  bool get replacedExistingDestination => backupPath != null;
+}
+
+class MapSavePromotionRecoveryException implements Exception {
+  const MapSavePromotionRecoveryException({
+    required this.destinationPath,
+    required this.backupPath,
+    required this.promotionError,
+    required this.restorationError,
+  });
+
+  final String destinationPath;
+  final String backupPath;
+  final Object promotionError;
+  final Object restorationError;
+
+  @override
+  String toString() {
+    return 'The existing destination could not be restored automatically '
+        'after promotion failed. destination=$destinationPath; '
+        'backup=$backupPath; promotionError=$promotionError; '
+        'restorationError=$restorationError';
+  }
+}
+
 abstract interface class MapSaveFileGateway {
   Future<bool> destinationExists(String path);
 
@@ -30,9 +68,10 @@ abstract interface class MapSaveFileGateway {
 
   Future<MapSaveWorkspace> createWorkspace(String destinationPath);
 
-  Future<void> promote({
+  Future<MapSavePromotionResult> promote({
     required MapSaveWorkspace workspace,
     required String destinationPath,
+    required bool replaceExisting,
   });
 
   Future<void> cleanup(MapSaveWorkspace workspace);

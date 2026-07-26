@@ -2,10 +2,10 @@
 
 Windows용 StarCraft: Remastered UMS 맵 에디터를 만드는 오픈 소스 프로젝트입니다. Flutter 기반 데스크톱 UI, 무손실 `scenario.chk` 편집, 일반 트리거 편집, epScript/euddraft 기반 EUD 빌드 환경을 하나의 작업 흐름으로 제공하는 것을 목표로 합니다.
 
-> 현재 상태: M1 데스크톱 기반과 M2 CHK 무손실 코어를 완료했습니다. raw
-> `scenario.chk` 왕복, 손상 진단, 기본 메타데이터와 문자열 typed view를
-> 지원합니다. 아직 `.scm/.scx`를 직접 열거나 실제 맵을 편집하고 EUD 맵을
-> 빌드할 수는 없습니다.
+> 현재 상태: M1 데스크톱 기반과 M2 CHK 무손실 코어를 완료했고 M3 맵
+> 아카이브 입출력을 진행 중입니다. 원본을 변경하지 않는 `.scm/.scx` 열기, raw
+> `scenario.chk` 왕복과 진단, 검증형 Save As, 외부 변경 감지와 기존 출력의
+> 복구 백업을 지원합니다. 실제 맵 편집과 EUD 빌드는 아직 구현 중입니다.
 
 ## 목표
 

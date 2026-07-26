@@ -122,6 +122,7 @@ void main() {
     test('refuses to overwrite the current source path', () async {
       final state = await saveMapController.saveAs(
         destinationPath: sourceMap.sourcePath.toLowerCase(),
+        replaceExisting: true,
       );
 
       expect(state.status, SaveMapStatus.failed);
@@ -150,6 +151,42 @@ void main() {
       expect(saveFileGateway.createWorkspaceCount, 0);
       expect(saveFileGateway.promotedDestination, isNull);
     });
+
+    test(
+      'backs up and replaces a destination confirmed by the Save As dialog',
+      () async {
+        const destinationPath = r'C:\Maps\Arena Copy.scx';
+        const backupPath = r'C:\Maps\Arena Copy.scx.backup-test.bak';
+        saveFileGateway.destinationAlreadyExists = true;
+        saveFileGateway.promotionResult = MapSavePromotionResult(
+          backupPath: backupPath,
+        );
+        fingerprintGateway.defaultResponses[destinationPath] =
+            _existingDestinationFingerprint();
+
+        final state = await saveMapController.saveAs();
+
+        expect(state.status, SaveMapStatus.saved);
+        expect(state.outputPath, destinationPath);
+        expect(state.backupPath, backupPath);
+        expect(saveFileGateway.promotedDestination, destinationPath);
+        expect(saveFileGateway.promotedReplaceExisting, isTrue);
+        expect(
+          state.diagnostics.last.code,
+          SaveMapDiagnosticCodes.backupCreated,
+        );
+        expect(state.diagnostics.last.filePath, backupPath);
+        expect(
+          openMapController.state.session!.diagnostics
+              .where(
+                (diagnostic) =>
+                    diagnostic.code == SaveMapDiagnosticCodes.backupCreated,
+              )
+              .toList(),
+          isEmpty,
+        );
+      },
+    );
 
     test('rejects a relative destination before filesystem access', () async {
       final state = await saveMapController.saveAs(
@@ -220,6 +257,75 @@ void main() {
         state.diagnostics.single.code,
         SaveMapDiagnosticCodes.promotionFailed,
       );
+      expect(saveFileGateway.cleanupCount, 1);
+      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+    });
+
+    test('does not replace a destination changed during Save As', () async {
+      const destinationPath = r'C:\Maps\Externally Changed.scx';
+      saveFileGateway.destinationAlreadyExists = true;
+      fingerprintGateway.defaultResponses[destinationPath] =
+          _existingDestinationFingerprint();
+      fingerprintGateway.script(destinationPath, [
+        _existingDestinationFingerprint(),
+        _changedDestinationFingerprint(),
+      ]);
+
+      final state = await saveMapController.saveAs(
+        destinationPath: destinationPath,
+        replaceExisting: true,
+      );
+
+      expect(state.status, SaveMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        SaveMapDiagnosticCodes.destinationChangedDuringSave,
+      );
+      expect(saveFileGateway.promotedDestination, isNull);
+      expect(saveFileGateway.cleanupCount, 1);
+      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+    });
+
+    test('does not replace a destination created during Save As', () async {
+      saveFileGateway.destinationExistenceResponses.addAll([false, true]);
+
+      final state = await saveMapController.saveAs(
+        destinationPath: r'C:\Maps\Created During Save.scx',
+      );
+
+      expect(state.status, SaveMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        SaveMapDiagnosticCodes.destinationChangedDuringSave,
+      );
+      expect(saveFileGateway.promotedDestination, isNull);
+      expect(saveFileGateway.cleanupCount, 1);
+    });
+
+    test('reports the backup path when automatic restoration fails', () async {
+      const destinationPath = r'C:\Maps\Recovery Required.scx';
+      const backupPath = r'C:\Maps\Recovery Required.scx.backup-recovery.bak';
+      saveFileGateway.destinationAlreadyExists = true;
+      fingerprintGateway.defaultResponses[destinationPath] =
+          _existingDestinationFingerprint();
+      saveFileGateway.promotionError = MapSavePromotionRecoveryException(
+        destinationPath: destinationPath,
+        backupPath: backupPath,
+        promotionError: StateError('promotion failed'),
+        restorationError: StateError('restoration failed'),
+      );
+
+      final state = await saveMapController.saveAs(
+        destinationPath: destinationPath,
+        replaceExisting: true,
+      );
+
+      expect(state.status, SaveMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        SaveMapDiagnosticCodes.promotionRecoveryRequired,
+      );
+      expect(state.diagnostics.single.filePath, backupPath);
       expect(saveFileGateway.cleanupCount, 1);
       expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
     });
@@ -393,10 +499,13 @@ class _FakeMapSaveFileGateway implements MapSaveFileGateway {
   );
 
   bool destinationAlreadyExists = false;
+  final List<bool> destinationExistenceResponses = [];
   Object? promotionError;
+  MapSavePromotionResult promotionResult = MapSavePromotionResult();
   int createWorkspaceCount = 0;
   int cleanupCount = 0;
   String? promotedDestination;
+  bool? promotedReplaceExisting;
 
   @override
   Future<void> cleanup(MapSaveWorkspace workspace) async {
@@ -410,18 +519,26 @@ class _FakeMapSaveFileGateway implements MapSaveFileGateway {
   }
 
   @override
-  Future<bool> destinationExists(String path) async => destinationAlreadyExists;
+  Future<bool> destinationExists(String path) async {
+    if (destinationExistenceResponses.isNotEmpty) {
+      return destinationExistenceResponses.removeAt(0);
+    }
+    return destinationAlreadyExists;
+  }
 
   @override
-  Future<void> promote({
+  Future<MapSavePromotionResult> promote({
     required MapSaveWorkspace workspace,
     required String destinationPath,
+    required bool replaceExisting,
   }) async {
     final error = promotionError;
     if (error != null) {
       throw error;
     }
     promotedDestination = destinationPath;
+    promotedReplaceExisting = replaceExisting;
+    return promotionResult;
   }
 
   @override
@@ -455,6 +572,24 @@ MapFileFingerprint _outputFingerprint() {
     modifiedAt: DateTime.utc(2026, 7, 26, 12, 1),
     sha256Digest:
         '3333333333333333333333333333333333333333333333333333333333333333',
+  );
+}
+
+MapFileFingerprint _existingDestinationFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 2048,
+    modifiedAt: DateTime.utc(2026, 7, 26, 11),
+    sha256Digest:
+        '4444444444444444444444444444444444444444444444444444444444444444',
+  );
+}
+
+MapFileFingerprint _changedDestinationFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 2048,
+    modifiedAt: DateTime.utc(2026, 7, 26, 11),
+    sha256Digest:
+        '5555555555555555555555555555555555555555555555555555555555555555',
   );
 }
 
