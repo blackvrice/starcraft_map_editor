@@ -211,6 +211,17 @@ flowchart LR
 - Problems와 raw Output 패널
 - Build/Cancel 단축키
 
+현재 구현된 첫 조각은 단일 `main.eps` 메모리 문서의 실제 다중행 입력,
+줄 번호, 커서 위치, 맵/코드 탭 전환과 저장 기준선 기반 Clean/Modified 상태를
+제공한다. `EudSourceDocument`는 immutable snapshot과 revision을 유지하고
+`EudSourceController`는 같은 내용의 중복 변경을 방출하지 않으며 dirty
+문서의 암묵적 교체·닫기를 막는다.
+
+이 단계는 파일을 저장한 것처럼 표시하지 않는다. 메모리 문서는
+`In-memory draft`로 표시하며 실제 `.eps` 파일 열기·저장과 외부 변경 감지는
+파일 포트와 사용자 확인 흐름을 추가하는 후속 작업이다. 다중 파일, 구문 강조,
+찾기/바꾸기와 오류 위치 이동도 위 MVP 완료 전에 확장한다.
+
 초기에는 자체 파서로 잘못된 진단을 만들기보다 euddraft 결과를 신뢰한다. 안정적인 언어 서버가 확인되면 자동 완성, 심볼 이동, 실시간 진단을 추가한다.
 
 ## 9. 보안 모델

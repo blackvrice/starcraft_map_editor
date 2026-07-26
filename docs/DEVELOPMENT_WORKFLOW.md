@@ -84,12 +84,14 @@ $env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft"
 flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 ```
 
-EUD 빌드 설정 또는 euddraft 프로세스 경계 변경 시:
+EUD 문서·빌드 설정 또는 euddraft 프로세스 경계 변경 시:
 
 ```powershell
 flutter test test/application/eud_build_configuration_test.dart `
+  test/application/eud_source_controller_test.dart `
   test/application/eud_compiler_gateway_test.dart `
-  test/infrastructure/process_eud_compiler_gateway_test.dart
+  test/infrastructure/process_eud_compiler_gateway_test.dart `
+  test/widget/editor_shell_test.dart
 ```
 
 helper 빌드는 CMake 3.25 이상, MSVC C++17 도구 체인과 Git이 필요하다. 첫

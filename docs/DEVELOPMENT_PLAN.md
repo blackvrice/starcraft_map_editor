@@ -15,7 +15,7 @@
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
 | M3. 맵 아카이브 입출력 | 완료 | Open Map·검증형 Save As·fingerprint·복구 백업·자체 제작 SCX |
-| M4. EUD 수직 기능 | 진행 중 | euddraft 검사·프로세스 경계·빌드 설정 모델 완료 |
+| M4. EUD 수직 기능 | 진행 중 | 도구 검사·프로세스·빌드 설정·최소 epScript 편집 완료 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
 | M7. 일반 트리거 | 대기 | 트리거 편집 |
@@ -194,7 +194,7 @@
 - [x] euddraft 설치 경로와 버전 검사 구현
 - [x] `EudCompilerGateway` 외부 프로세스 어댑터 구현
 - [x] 기준 맵, 소스 경로, 출력 경로를 가진 빌드 설정 모델 구현
-- [ ] 최소 epScript 코드 편집기와 변경 상태 구현
+- [x] 최소 epScript 코드 편집기와 변경 상태 구현
 - [ ] Build/Cancel 명령과 출력 패널 구현
 - [ ] stdout/stderr, 종료 코드, 도구 버전 기록
 - [ ] 가능한 오류의 파일/행/열 진단 변환
@@ -229,6 +229,13 @@
   위험한 Windows 경로 세그먼트, 옵션·환경 유효성, 방어적 복사와 도구
   검사·컴파일러 요청 변환을 검증한다. 파일 존재·canonical 경로와 `.eds`
   생성은 후속 빌드 파이프라인 책임이다.
+- `EudSourceDocument`와 `EudSourceController`는 단일 epScript 문서의 immutable
+  snapshot, 저장 기준선, revision과 dirty 계산을 Application 계층에 둔다.
+  dirty 문서는 명시적 discard 없이는 교체하거나 닫을 수 없다.
+- 셸은 `New epScript` 명령, 실제 다중행 입력, 줄 번호, 커서 위치, 맵/코드 탭,
+  Project/Inspector와 상태 표시줄의 Clean/Modified 표시를 제공한다. 위젯
+  테스트는 입력 후 dirty 전환과 탭 왕복 시 텍스트 보존을 검증한다. 실제
+  `.eps` 열기·저장과 외부 변경 감지는 후속 파일 I/O 작업이다.
 
 완료 조건:
 

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
+import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
@@ -21,6 +22,7 @@ void bootstrap() {
   final recentProjectsService = RecentProjectsService(settingsStore);
   final archiveGateway = ProcessMapArchiveGateway.bundled();
   final fingerprintGateway = LocalMapFileFingerprintGateway();
+  final eudSourceController = EudSourceController();
   const filePicker = MethodChannelMapFilePicker();
   final openMapController = OpenMapController(
     archiveGateway: archiveGateway,
@@ -45,11 +47,15 @@ void bootstrap() {
   commandDispatcher.register(EditorCommandId.saveAs, (_) async {
     await saveMapController.saveAs();
   });
+  commandDispatcher.register(EditorCommandId.newEudSource, (_) {
+    eudSourceController.createUntitled();
+  });
 
   final dependencies = EditorAppDependencies(
     commandDispatcher: commandDispatcher,
     openMapController: openMapController,
     saveMapController: saveMapController,
+    eudSourceController: eudSourceController,
     operationProgressController: operationProgressController,
     recentProjectsService: recentProjectsService,
     settingsStore: settingsStore,

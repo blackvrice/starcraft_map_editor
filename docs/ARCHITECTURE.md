@@ -238,6 +238,14 @@ abstract interface class MapFileFingerprintGateway {
 진입 소스가 소스 루트 안에 있으며 출력은 기준 맵 및 소스 트리와 분리되도록
 어휘적으로 검증한다.
 
+`EudSourceDocument`는 epScript 텍스트, 저장 기준선, revision과 선택적 절대
+`.eps` 경로를 가진 불변 스냅샷이다. dirty 상태는 별도 플래그를 임의로
+토글하지 않고 현재 텍스트와 저장 기준선의 차이로 계산한다.
+`EudSourceController`는 새 메모리 문서, 열린 파일 스냅샷, 텍스트 변경,
+저장 기준선 갱신과 dirty 문서 교체·닫기 거부를 Application 계층에서
+관리한다. Presentation은 이 상태를 구독하고 실제 파일 I/O는 후속 포트가
+담당한다.
+
 `EudToolInspector`는 프로젝트 프로필, 사용자 설정, 번들 경로 후보의 우선순위와
 euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
 `LocalEudToolInspector`는 절대 경로의 디렉터리 또는 `euddraft.exe`만 받아

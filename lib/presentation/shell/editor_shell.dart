@@ -7,17 +7,23 @@ import '../../application/commands/editor_command_dispatcher.dart';
 import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
+import '../../application/eud/eud_source_controller.dart';
+import '../../application/eud/eud_source_document.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import '../eud_editor/eud_source_editor.dart';
+
+enum _WorkspaceView { map, eud }
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
     required this.commandDispatcher,
     required this.openMapController,
     required this.saveMapController,
+    required this.eudSourceController,
     required this.operationProgressController,
     required this.recentProjectsService,
     super.key,
@@ -26,6 +32,7 @@ class EditorShell extends StatefulWidget {
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
   final SaveMapController saveMapController;
+  final EudSourceController eudSourceController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
 
@@ -37,15 +44,21 @@ class _EditorShellState extends State<EditorShell> {
   late Future<List<RecentProject>> _recentProjects;
   late StreamSubscription<OpenMapState> _openMapSubscription;
   late StreamSubscription<SaveMapState> _saveMapSubscription;
+  late StreamSubscription<EudSourceState> _eudSourceSubscription;
   late List<EditorDiagnostic> _visibleDiagnostics;
+  late _WorkspaceView _workspaceView;
 
   @override
   void initState() {
     super.initState();
     _recentProjects = widget.recentProjectsService.load();
     _visibleDiagnostics = widget.openMapController.state.diagnostics;
+    _workspaceView = widget.eudSourceController.state.hasDocument
+        ? _WorkspaceView.eud
+        : _WorkspaceView.map;
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
+    _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
   }
 
   @override
@@ -62,6 +75,13 @@ class _EditorShellState extends State<EditorShell> {
       unawaited(_saveMapSubscription.cancel());
       _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     }
+    if (oldWidget.eudSourceController != widget.eudSourceController) {
+      unawaited(_eudSourceSubscription.cancel());
+      _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
+      _workspaceView = widget.eudSourceController.state.hasDocument
+          ? _WorkspaceView.eud
+          : _WorkspaceView.map;
+    }
   }
 
   StreamSubscription<OpenMapState> _listenForOpenedMaps(
@@ -72,6 +92,7 @@ class _EditorShellState extends State<EditorShell> {
         setState(() {
           _visibleDiagnostics = state.diagnostics;
           if (state.status == OpenMapStatus.opened) {
+            _workspaceView = _WorkspaceView.map;
             _recentProjects = widget.recentProjectsService.load();
           }
         });
@@ -94,10 +115,27 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<EudSourceState> _listenForEudSources(
+    EudSourceController controller,
+  ) {
+    return controller.changes.listen((state) {
+      if (mounted) {
+        setState(() {
+          if (state.hasDocument) {
+            _workspaceView = _WorkspaceView.eud;
+          } else {
+            _workspaceView = _WorkspaceView.map;
+          }
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
     unawaited(_saveMapSubscription.cancel());
+    unawaited(_eudSourceSubscription.cancel());
     super.dispose();
   }
 
@@ -107,6 +145,25 @@ class _EditorShellState extends State<EditorShell> {
     }
 
     return () => unawaited(widget.commandDispatcher.dispatch(command));
+  }
+
+  void _newEudSource() {
+    setState(() {
+      _workspaceView = _WorkspaceView.eud;
+    });
+    unawaited(widget.commandDispatcher.dispatch(EditorCommandId.newEudSource));
+  }
+
+  void _showMapWorkspace() {
+    setState(() {
+      _workspaceView = _WorkspaceView.map;
+    });
+  }
+
+  void _showEudWorkspace() {
+    setState(() {
+      _workspaceView = _WorkspaceView.eud;
+    });
   }
 
   void _openRecentProject(RecentProject project) {
@@ -131,6 +188,10 @@ class _EditorShellState extends State<EditorShell> {
         ? null
         : _callbackFor(EditorCommandId.saveAs);
     final buildEud = _callbackFor(EditorCommandId.buildEud);
+    final newEudSource =
+        widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
+        ? _newEudSource
+        : null;
 
     final shortcuts = <ShortcutActivator, VoidCallback>{};
     if (openMap != null) {
@@ -149,6 +210,14 @@ class _EditorShellState extends State<EditorShell> {
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyB, control: true)] =
           buildEud;
     }
+    if (newEudSource != null) {
+      shortcuts[const SingleActivator(
+            LogicalKeyboardKey.keyN,
+            control: true,
+            alt: true,
+          )] =
+          newEudSource;
+    }
 
     return CallbackShortcuts(
       bindings: shortcuts,
@@ -162,12 +231,14 @@ class _EditorShellState extends State<EditorShell> {
                 _EditorMenuBar(
                   openMap: openMap,
                   saveAs: saveAs,
+                  newEudSource: newEudSource,
                   buildEud: buildEud,
                 ),
                 const Divider(height: 1),
                 _EditorToolbar(
                   openMap: openMap,
                   saveAs: saveAs,
+                  newEudSource: newEudSource,
                   buildEud: buildEud,
                 ),
                 const Divider(height: 1),
@@ -198,6 +269,10 @@ class _EditorShellState extends State<EditorShell> {
                                 ? _openRecentProject
                                 : null,
                             onRemoveRecentProject: _removeRecentProject,
+                            eudSourceController: widget.eudSourceController,
+                            workspaceView: _workspaceView,
+                            onShowMap: _showMapWorkspace,
+                            onShowEud: _showEudWorkspace,
                           );
                         },
                       );
@@ -220,6 +295,9 @@ class _EditorShellState extends State<EditorShell> {
                         _StatusBar(
                           progress: snapshot.data,
                           session: widget.openMapController.state.session,
+                          eudDocument:
+                              widget.eudSourceController.state.document,
+                          workspaceView: _workspaceView,
                         ),
                       ],
                     );
@@ -238,11 +316,13 @@ class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
     required this.openMap,
     required this.saveAs,
+    required this.newEudSource,
     required this.buildEud,
   });
 
   final VoidCallback? openMap;
   final VoidCallback? saveAs;
+  final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
 
   @override
@@ -274,6 +354,11 @@ class _EditorMenuBar extends StatelessWidget {
         SubmenuButton(
           menuChildren: [
             MenuItemButton(
+              onPressed: newEudSource,
+              child: const Text('New epScript'),
+            ),
+            const Divider(),
+            MenuItemButton(
               onPressed: buildEud,
               child: const Text('Build EUD Map'),
             ),
@@ -296,11 +381,13 @@ class _EditorToolbar extends StatelessWidget {
   const _EditorToolbar({
     required this.openMap,
     required this.saveAs,
+    required this.newEudSource,
     required this.buildEud,
   });
 
   final VoidCallback? openMap;
   final VoidCallback? saveAs;
+  final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
 
   @override
@@ -309,7 +396,8 @@ class _EditorToolbar extends StatelessWidget {
       height: 56,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 1000;
+          final compact = constraints.maxWidth < 1350;
+          final showEnvironmentBadge = constraints.maxWidth >= 1000;
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -321,7 +409,7 @@ class _EditorToolbar extends StatelessWidget {
                   'StarCraft Map Editor',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                if (!compact) ...[
+                if (showEnvironmentBadge) ...[
                   const SizedBox(width: 12),
                   const _EnvironmentBadge(),
                 ],
@@ -338,6 +426,12 @@ class _EditorToolbar extends StatelessWidget {
                     onPressed: saveAs,
                     tooltip: 'Save As',
                     icon: const Icon(Icons.save_outlined),
+                  ),
+                  IconButton(
+                    key: const Key('toolbar-new-eud-source'),
+                    onPressed: newEudSource,
+                    tooltip: 'New epScript',
+                    icon: const Icon(Icons.code_rounded),
                   ),
                   IconButton.filled(
                     onPressed: buildEud,
@@ -357,6 +451,13 @@ class _EditorToolbar extends StatelessWidget {
                     onPressed: saveAs,
                     icon: const Icon(Icons.save_outlined),
                     label: const Text('Save As'),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton.icon(
+                    key: const Key('toolbar-new-eud-source'),
+                    onPressed: newEudSource,
+                    icon: const Icon(Icons.code_rounded),
+                    label: const Text('New epScript'),
                   ),
                   const SizedBox(width: 8),
                   FilledButton.icon(
@@ -403,6 +504,10 @@ class _EditorWorkspace extends StatelessWidget {
     required this.recentProjectsLoading,
     required this.onOpenRecentProject,
     required this.onRemoveRecentProject,
+    required this.eudSourceController,
+    required this.workspaceView,
+    required this.onShowMap,
+    required this.onShowEud,
   });
 
   final VoidCallback? openMap;
@@ -412,18 +517,31 @@ class _EditorWorkspace extends StatelessWidget {
   final bool recentProjectsLoading;
   final ValueChanged<RecentProject>? onOpenRecentProject;
   final ValueChanged<RecentProject> onRemoveRecentProject;
+  final EudSourceController eudSourceController;
+  final _WorkspaceView workspaceView;
+  final VoidCallback onShowMap;
+  final VoidCallback onShowEud;
 
   @override
   Widget build(BuildContext context) {
     final session = openMapState.session;
+    final eudDocument = eudSourceController.state.document;
+    final showingEud =
+        workspaceView == _WorkspaceView.eud && eudDocument != null;
 
     return Row(
       children: [
         SizedBox(
           width: 210,
           child: _EditorPane(
-            title: session == null ? 'Project / Layers' : 'Archive Entries',
-            child: session == null
+            title: showingEud
+                ? 'Project / Sources'
+                : session == null
+                ? 'Project / Layers'
+                : 'Archive Entries',
+            child: showingEud
+                ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
+                : session == null
                 ? const _EmptyPaneMessage(
                     icon: Icons.layers_outlined,
                     message: 'No map layers',
@@ -433,14 +551,30 @@ class _EditorWorkspace extends StatelessWidget {
         ),
         const VerticalDivider(width: 1),
         Expanded(
-          child: _MapWorkspace(
-            openMap: openMap,
-            openMapState: openMapState,
-            recentProjects: recentProjects,
-            recentProjectsError: recentProjectsError,
-            recentProjectsLoading: recentProjectsLoading,
-            onOpenRecentProject: onOpenRecentProject,
-            onRemoveRecentProject: onRemoveRecentProject,
+          child: Column(
+            children: [
+              if (session != null || eudDocument != null)
+                _DocumentTabs(
+                  session: session,
+                  eudDocument: eudDocument,
+                  workspaceView: workspaceView,
+                  onShowMap: onShowMap,
+                  onShowEud: onShowEud,
+                ),
+              Expanded(
+                child: _MapWorkspace(
+                  openMap: openMap,
+                  openMapState: openMapState,
+                  recentProjects: recentProjects,
+                  recentProjectsError: recentProjectsError,
+                  recentProjectsLoading: recentProjectsLoading,
+                  onOpenRecentProject: onOpenRecentProject,
+                  onRemoveRecentProject: onRemoveRecentProject,
+                  eudSourceController: eudSourceController,
+                  workspaceView: workspaceView,
+                ),
+              ),
+            ],
           ),
         ),
         const VerticalDivider(width: 1),
@@ -448,13 +582,190 @@ class _EditorWorkspace extends StatelessWidget {
           width: 260,
           child: _EditorPane(
             title: 'Inspector',
-            child: session == null
+            child: showingEud
+                ? _EudSourceInspector(document: eudDocument)
+                : session == null
                 ? const _EmptyPaneMessage(
                     icon: Icons.tune,
                     message: 'Nothing selected',
                   )
                 : _MapInspector(session: session),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DocumentTabs extends StatelessWidget {
+  const _DocumentTabs({
+    required this.session,
+    required this.eudDocument,
+    required this.workspaceView,
+    required this.onShowMap,
+    required this.onShowEud,
+  });
+
+  final OpenedMapSession? session;
+  final EudSourceDocument? eudDocument;
+  final _WorkspaceView workspaceView;
+  final VoidCallback onShowMap;
+  final VoidCallback onShowEud;
+
+  @override
+  Widget build(BuildContext context) {
+    final document = eudDocument;
+    return SizedBox(
+      height: 40,
+      child: ColoredBox(
+        color: const Color(0xFF171C24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (session case final session?)
+              _DocumentTab(
+                key: const Key('map-document-tab'),
+                label: _fileName(session.sourcePath),
+                icon: Icons.map_outlined,
+                selected: workspaceView == _WorkspaceView.map,
+                onPressed: onShowMap,
+              ),
+            if (document != null)
+              _DocumentTab(
+                key: const Key('eud-source-tab'),
+                label: '${document.fileName}${document.isDirty ? ' •' : ''}',
+                icon: Icons.code_rounded,
+                selected: workspaceView == _WorkspaceView.eud,
+                onPressed: onShowEud,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocumentTab extends StatelessWidget {
+  const _DocumentTab({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0xFF0D1117) : Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 140, maxWidth: 220),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                width: 2,
+                color: selected ? const Color(0xFF70A1FF) : Colors.transparent,
+              ),
+              right: const BorderSide(color: Color(0xFF252C38)),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: selected
+                    ? const Color(0xFF8EB5FF)
+                    : const Color(0xFF778398),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected
+                        ? const Color(0xFFE1E8F3)
+                        : const Color(0xFF9AA5B8),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EudSourceList extends StatelessWidget {
+  const _EudSourceList({required this.document, required this.onSelected});
+
+  final EudSourceDocument document;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('eud-source-list'),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: ListTile(
+            selected: true,
+            dense: true,
+            leading: const Icon(
+              Icons.code_rounded,
+              size: 18,
+              color: Color(0xFF70A1FF),
+            ),
+            title: Text(
+              '${document.fileName}${document.isDirty ? ' •' : ''}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(document.isUntitled ? 'Draft' : 'epScript source'),
+            onTap: onSelected,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EudSourceInspector extends StatelessWidget {
+  const _EudSourceInspector({required this.document});
+
+  final EudSourceDocument document;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('eud-source-inspector'),
+      padding: const EdgeInsets.all(12),
+      children: [
+        _InspectorValue(label: 'File', value: document.fileName),
+        _InspectorValue(
+          label: 'Location',
+          value: document.sourcePath ?? 'In-memory draft',
+        ),
+        _InspectorValue(label: 'Lines', value: '${document.lineCount}'),
+        _InspectorValue(label: 'Characters', value: '${document.text.length}'),
+        _InspectorValue(label: 'Revision', value: '${document.revision}'),
+        _InspectorValue(
+          label: 'State',
+          value: document.isDirty ? 'Modified' : 'Clean',
         ),
       ],
     );
@@ -528,6 +839,8 @@ class _MapWorkspace extends StatelessWidget {
     required this.recentProjectsLoading,
     required this.onOpenRecentProject,
     required this.onRemoveRecentProject,
+    required this.eudSourceController,
+    required this.workspaceView,
   });
 
   final VoidCallback? openMap;
@@ -537,10 +850,19 @@ class _MapWorkspace extends StatelessWidget {
   final bool recentProjectsLoading;
   final ValueChanged<RecentProject>? onOpenRecentProject;
   final ValueChanged<RecentProject> onRemoveRecentProject;
+  final EudSourceController eudSourceController;
+  final _WorkspaceView workspaceView;
 
   @override
   Widget build(BuildContext context) {
     final session = openMapState.session;
+    final eudDocument = eudSourceController.state.document;
+    if (workspaceView == _WorkspaceView.eud && eudDocument != null) {
+      return EudSourceEditor(
+        document: eudDocument,
+        sourceController: eudSourceController,
+      );
+    }
     if (session != null) {
       return _OpenedMapWorkspace(
         session: session,
@@ -1273,16 +1595,26 @@ class _OperationSummary extends StatelessWidget {
 }
 
 class _StatusBar extends StatelessWidget {
-  const _StatusBar({required this.progress, required this.session});
+  const _StatusBar({
+    required this.progress,
+    required this.session,
+    required this.eudDocument,
+    required this.workspaceView,
+  });
 
   final OperationProgress? progress;
   final OpenedMapSession? session;
+  final EudSourceDocument? eudDocument;
+  final _WorkspaceView workspaceView;
 
   @override
   Widget build(BuildContext context) {
     final currentProgress = progress;
     final active = currentProgress != null && !currentProgress.isTerminal;
     final session = this.session;
+    final eudDocument = this.eudDocument;
+    final showingEud =
+        workspaceView == _WorkspaceView.eud && eudDocument != null;
 
     return SizedBox(
       height: 28,
@@ -1319,7 +1651,13 @@ class _StatusBar extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                session == null ? 'No document' : _fileName(session.sourcePath),
+                showingEud
+                    ? '${eudDocument.fileName}'
+                          '${eudDocument.isDirty ? ' • Modified' : ' • Clean'}'
+                    : session == null
+                    ? 'No document'
+                    : _fileName(session.sourcePath),
+                key: const Key('active-document-status'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 12),

@@ -6,6 +6,7 @@ import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
+import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
@@ -48,6 +49,39 @@ void main() {
     await tester.pump();
 
     expect(openMapInvocations, 1);
+  });
+
+  testWidgets('edits epScript and displays its dirty state', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final sourceController = EudSourceController();
+    addTearDown(sourceController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(eudSourceController: sourceController),
+    );
+    await tester.tap(find.byKey(const Key('toolbar-new-eud-source')));
+    await tester.pump();
+
+    expect(find.byKey(const Key('eud-source-workspace')), findsOneWidget);
+    expect(find.byKey(const Key('eud-source-editor')), findsOneWidget);
+    expect(find.text('main.eps'), findsWidgets);
+    expect(find.text('Clean'), findsWidgets);
+
+    await tester.enterText(
+      find.byKey(const Key('eud-source-editor')),
+      'function onPluginStart() {\n  // ready\n}\n',
+    );
+    await tester.pump();
+
+    expect(sourceController.state.document!.isDirty, isTrue);
+    expect(sourceController.state.document!.revision, 1);
+    expect(find.text('Modified'), findsWidgets);
+    expect(find.text('main.eps •'), findsWidgets);
+    expect(find.text('main.eps • Modified'), findsOneWidget);
+    expect(find.text('4'), findsWidgets);
   });
 
   testWidgets('reopens and removes a recent map', (tester) async {
@@ -165,6 +199,26 @@ void main() {
       (await recentProjectsService.load()).single.path,
       r'C:\Maps\Arena.scx',
     );
+
+    await tester.tap(find.byKey(const Key('toolbar-new-eud-source')));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('eud-source-editor')),
+      'const selectedMap = "Arena";\n',
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('map-document-tab')));
+    await tester.pump();
+    expect(find.byKey(const Key('opened-map-name')), findsOneWidget);
+    expect(find.byKey(const Key('eud-source-editor')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('eud-source-tab')));
+    await tester.pump();
+    final sourceEditor = tester.widget<TextField>(
+      find.byKey(const Key('eud-source-editor')),
+    );
+    expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
 }
 
@@ -172,6 +226,7 @@ Widget _createTestApp({
   EditorCommandDispatcher? dispatcher,
   OpenMapController? openMapController,
   SaveMapController? saveMapController,
+  EudSourceController? eudSourceController,
   OperationProgressController? operationProgressController,
   RecentProjectsService? recentProjectsService,
   InMemorySettingsStore? settingsStore,
@@ -181,6 +236,8 @@ Widget _createTestApp({
       operationProgressController ?? OperationProgressController();
   final resolvedRecentProjectsService =
       recentProjectsService ?? RecentProjectsService(resolvedSettingsStore);
+  final resolvedEudSourceController =
+      eudSourceController ?? EudSourceController();
   final resolvedFingerprintGateway = _FakeMapFileFingerprintGateway();
   final resolvedOpenMapController =
       openMapController ??
@@ -212,12 +269,16 @@ Widget _createTestApp({
         EditorCommandId.saveAs: (_) async {
           await resolvedSaveMapController.saveAs();
         },
+        EditorCommandId.newEudSource: (_) {
+          resolvedEudSourceController.createUntitled();
+        },
       });
   return StarCraftMapEditorApp(
     dependencies: EditorAppDependencies(
       commandDispatcher: resolvedDispatcher,
       openMapController: resolvedOpenMapController,
       saveMapController: resolvedSaveMapController,
+      eudSourceController: resolvedEudSourceController,
       operationProgressController: resolvedProgressController,
       recentProjectsService: resolvedRecentProjectsService,
       settingsStore: resolvedSettingsStore,

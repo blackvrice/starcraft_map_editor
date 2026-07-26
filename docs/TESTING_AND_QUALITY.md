@@ -25,6 +25,7 @@
 - 편집 명령의 apply/revert
 - 문자열 표시와 원시 바이트 분리
 - EUD 빌드 설정 경로와 불변식
+- epScript 문서 revision, 저장 기준선과 dirty 상태
 - 빌드 로그 진단 파서
 
 특징:
@@ -202,6 +203,12 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 
 ### EUD
 
+- 단일 untitled 문서 생성과 중복 생성 방지
+- 동일 텍스트 변경 무시와 revision 증가
+- 저장 기준선으로 되돌렸을 때 dirty 해제
+- dirty 문서의 암묵적 교체·닫기 차단
+- 코드 입력 후 탭·Inspector·상태 표시줄의 Modified 표시
+- 맵/코드 탭 전환 뒤 epScript 텍스트 보존
 - 유효한 drive/UNC 빌드 설정과 불변 컬렉션
 - 기준/출력 확장자와 동일 경로 차단
 - 진입 소스의 소스 루트 포함과 출력의 소스 트리 분리
@@ -286,8 +293,10 @@ flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 
 ```powershell
 flutter test test/application/eud_build_configuration_test.dart `
+  test/application/eud_source_controller_test.dart `
   test/application/eud_compiler_gateway_test.dart `
-  test/infrastructure/process_eud_compiler_gateway_test.dart
+  test/infrastructure/process_eud_compiler_gateway_test.dart `
+  test/widget/editor_shell_test.dart
 ```
 
 ## 8. 결함 심각도
