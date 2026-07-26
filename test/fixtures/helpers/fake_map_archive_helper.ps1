@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$requestText = [Console]::In.ReadToEnd()
+$requestText = [Console]::In.ReadLine()
 $request = $requestText | ConvertFrom-Json
 $mode = [IO.Path]::GetFileNameWithoutExtension([string]$request.sourcePath)
 

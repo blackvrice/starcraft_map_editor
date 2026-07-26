@@ -235,7 +235,8 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 `map_archive_helper.exe`를 요청마다 별도 프로세스로 실행한다.
 
 - 앱은 절대 경로의 helper를 셸 없이 실행하고 버전이 있는 UTF-8 JSON 요청을
-  stdin으로 전달한다.
+  줄바꿈으로 끝나는 단일 stdin 레코드로 전달한다. helper는 EOF를 기다리지 않고
+  첫 줄을 받은 즉시 처리한다.
 - helper는 `inspect`, `extractScenario`, `replaceScenario`만 제공하며 MVP에서
   접근 가능한 항목은 정확히 `staredit\scenario.chk`다.
 - 바이너리 CHK는 앱 소유 요청별 임시 디렉터리의 파일로 교환한다.

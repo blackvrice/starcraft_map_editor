@@ -4,7 +4,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
@@ -93,18 +92,15 @@ int main() {
       SEM_NOOPENFILEERRORBOX);
 
   std::string request_text;
-  std::array<char, 4096> request_buffer{};
-  while (std::cin) {
-    std::cin.read(
-        request_buffer.data(),
-        static_cast<std::streamsize>(request_buffer.size()));
-    const auto bytes_read = std::cin.gcount();
-    if (bytes_read <= 0) {
+  char request_character = '\0';
+  while (std::cin.get(request_character)) {
+    if (request_character == '\n') {
       break;
     }
-    if (request_text.size() +
-            static_cast<std::size_t>(bytes_read) >
-        kMaximumRequestBytes) {
+    if (request_character == '\r') {
+      continue;
+    }
+    if (request_text.size() >= kMaximumRequestBytes) {
       return WriteError(
           "",
           "",
@@ -114,9 +110,7 @@ int main() {
           ERROR_INSUFFICIENT_BUFFER,
           2);
     }
-    request_text.append(
-        request_buffer.data(),
-        static_cast<std::size_t>(bytes_read));
+    request_text.push_back(request_character);
   }
 
   try {

@@ -140,7 +140,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         maximumProcessOutputBytes,
       );
 
-      process.stdin.write(
+      process.stdin.writeln(
         jsonEncode({
           'protocolVersion': protocolVersion,
           'requestId': request.operationId,
@@ -149,6 +149,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
           'scenarioOutputPath': scenarioOutputPath,
         }),
       );
+      await process.stdin.flush();
       await process.stdin.close();
 
       final int exitCode;

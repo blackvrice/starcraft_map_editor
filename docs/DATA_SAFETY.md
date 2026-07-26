@@ -81,7 +81,7 @@ StormLib 연동 helper는
 
 현재 archive helper 구현은 다음 상한과 검증을 적용한다.
 
-- JSON stdin 최대 64 KiB
+- 줄바꿈으로 끝나는 단일 JSON stdin 레코드 최대 64 KiB
 - stdout/stderr 캡처 각각 최대 1 MiB, 초과분은 메모리에 보관하지 않고 계속 소비
 - 추출 `scenario.chk` 기본 최대 64 MiB
 - `protocolVersion`, request ID, 작업, helper/StormLib 버전의 완전 일치
