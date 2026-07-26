@@ -13,7 +13,7 @@
 | --- | --- | --- |
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
-| M2. CHK 무손실 코어 | 대기 | raw CHK 왕복 |
+| M2. CHK 무손실 코어 | 진행 중 | raw 파서·왕복·손상 진단 완료, typed view 대기 |
 | M3. 맵 아카이브 입출력 | 대기 | `.scm/.scx` Open/Save As |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
@@ -69,14 +69,21 @@
 
 목표: raw `scenario.chk`를 손실 없이 파싱하고 다시 쓸 수 있는 독립적인 Dart 코어를 만든다.
 
-- [ ] 4바이트 섹션 이름과 little-endian 길이 헤더 파서 구현
-- [ ] 섹션 순서, 중복, 원시 페이로드, 소스 오프셋 보존
-- [ ] 경계 초과, 잘린 헤더, 비정상 길이 진단 구현
-- [ ] 수정되지 않은 문서의 byte-exact round-trip 구현
+- [x] 4바이트 섹션 이름과 little-endian 길이 헤더 파서 구현
+- [x] 섹션 순서, 중복, 원시 페이로드, 소스 오프셋 보존
+- [x] 경계 초과, 잘린 헤더, 비정상 길이 진단 구현
+- [x] 수정되지 않은 문서의 byte-exact round-trip 구현
 - [ ] `VER`, `TYPE`, `IVER`, `DIM`, `ERA` 최소 typed view 구현
 - [ ] `SPRP`, `STR`/`STRx` 문자열 참조를 raw-first 방식으로 구현
-- [ ] 직접 제작한 최소 CHK 픽스처와 손상 픽스처 추가
-- [ ] 속성 기반 또는 fuzz 테스트 도입 검토
+- [x] 직접 제작한 최소 CHK 픽스처와 손상 픽스처 추가
+- [x] 속성 기반 또는 fuzz 테스트 도입 검토
+
+검증 메모:
+
+- `test/fixtures/chk/*.chk.hex`는 저장소에서 직접 작성한 검토 가능한 바이트 스트림이다.
+- `test/domain/chk/raw_chk_parser_test.dart`에서 정상/중복/미지원/손상 입력과
+  200개 결정적 생성 케이스의 byte-exact 왕복을 검증한다.
+- 전용 fuzz 러너와 장시간 코퍼스 실행은 파서 입력 면적이 넓어질 때 다시 검토한다.
 
 완료 조건:
 
