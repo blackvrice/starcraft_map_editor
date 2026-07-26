@@ -88,7 +88,7 @@ lib/
   application/
     documents/
     editing/
-    build/
+    eud/
     operations/
     ports/
     recent_projects/
@@ -230,6 +230,13 @@ abstract interface class MapFileFingerprintGateway {
 ```
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
+
+`EudBuildConfiguration`은 euddraft 호출보다 앞선 Application 계층 모델이다.
+현재 `scr-euddraft` 프로필, 기준 `.scm/.scx`, 소스 루트와 진입 `.eps`, 새
+`.scx` 출력, 선택적 프로젝트 도구 경로, 컴파일러 옵션과 환경 override를
+불변 값으로 보관한다. Windows 절대 경로와 안전한 경로 세그먼트를 요구하고,
+진입 소스가 소스 루트 안에 있으며 출력은 기준 맵 및 소스 트리와 분리되도록
+어휘적으로 검증한다.
 
 `EudToolInspector`는 프로젝트 프로필, 사용자 설정, 번들 경로 후보의 우선순위와
 euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
@@ -420,9 +427,11 @@ Windows Save As 확인을 승인한 경우에만 허용한다. 최종 경로와 
 
 ### EUD 빌드
 
-먼저 `EudToolInspector`가 선택된 설치의 경로, 지원 버전과 companion 파일을
-검증한다. 기준 맵, 소스, 설정을 고정한 요청을 만들고 euddraft 어댑터가 별도
-프로세스를 실행한다. 출력 맵은 성공 후 다시 열어 최소 구조를 검증한다. 자세한
+먼저 `EudBuildConfiguration`이 기준 맵, 소스 루트와 진입점, 별도 출력 경로와
+프로필을 고정한다. 이 모델이 만든 검사 요청으로 `EudToolInspector`가 선택된
+설치의 경로, 지원 버전과 companion 파일을 검증한다. 후속 파이프라인은 설정을
+임시 `.eds`로 직렬화하고 컴파일러 요청을 만들어 euddraft 어댑터를 별도
+프로세스로 실행한다. 출력 맵은 성공 후 다시 열어 최소 구조를 검증한다. 자세한
 내용은 [EUD 연동](EUD_INTEGRATION.md)을 따른다.
 
 ## 9. 동시성과 성능

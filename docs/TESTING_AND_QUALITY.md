@@ -24,6 +24,7 @@
 - typed view와 값 검증
 - 편집 명령의 apply/revert
 - 문자열 표시와 원시 바이트 분리
+- EUD 빌드 설정 경로와 불변식
 - 빌드 로그 진단 파서
 
 특징:
@@ -201,6 +202,12 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 
 ### EUD
 
+- 유효한 drive/UNC 빌드 설정과 불변 컬렉션
+- 기준/출력 확장자와 동일 경로 차단
+- 진입 소스의 소스 루트 포함과 출력의 소스 트리 분리
+- 장치 경로, 상대 경로, `.`/`..`, Windows 금지 경로 세그먼트 차단
+- 컴파일러 옵션과 환경 override 이름/값 검증
+- 빌드 설정에서 도구 검사·컴파일러 요청으로의 값 전달
 - 프로젝트→사용자 설정→번들 경로 우선순위
 - 상위 경로 오류 시 낮은 우선순위 설치로 우회하지 않음
 - 도구 없음, 상대 경로, 잘못된 실행 파일
@@ -278,7 +285,8 @@ flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 가짜 euddraft 프로세스 경계 테스트:
 
 ```powershell
-flutter test test/application/eud_compiler_gateway_test.dart `
+flutter test test/application/eud_build_configuration_test.dart `
+  test/application/eud_compiler_gateway_test.dart `
   test/infrastructure/process_eud_compiler_gateway_test.dart
 ```
 

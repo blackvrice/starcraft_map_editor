@@ -1,4 +1,5 @@
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import '../eud/eud_environment.dart';
 import 'eud_tool_inspector.dart';
 
 enum EudBuildEventKind {
@@ -23,43 +24,15 @@ final class EudBuildRequest {
          settingsFilePath,
          'settingsFilePath',
        ),
-       environmentOverrides = Map.unmodifiable(environmentOverrides) {
+       environmentOverrides = EudEnvironmentRules.copyAndValidate(
+         environmentOverrides,
+       ) {
     if (timeout <= Duration.zero) {
       throw ArgumentError.value(
         timeout,
         'timeout',
         'The build timeout must be positive.',
       );
-    }
-    final normalizedEnvironmentNames = <String>{};
-    for (final entry in this.environmentOverrides.entries) {
-      if (entry.key.trim().isEmpty ||
-          entry.key != entry.key.trim() ||
-          entry.key.contains('=') ||
-          entry.key.codeUnits.any(
-            (codeUnit) => codeUnit < 0x20 || codeUnit == 0x7f,
-          )) {
-        throw ArgumentError.value(
-          entry.key,
-          'environmentOverrides',
-          'Environment variable names must not have surrounding whitespace '
-              'or contain "=" or control characters.',
-        );
-      }
-      if (!normalizedEnvironmentNames.add(entry.key.toUpperCase())) {
-        throw ArgumentError.value(
-          entry.key,
-          'environmentOverrides',
-          'Environment variable names must be unique case-insensitively.',
-        );
-      }
-      if (entry.value.contains('\u0000')) {
-        throw ArgumentError.value(
-          entry.value,
-          'environmentOverrides',
-          'Environment variable values cannot contain NUL.',
-        );
-      }
     }
   }
 

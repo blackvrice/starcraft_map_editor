@@ -30,19 +30,37 @@ output: a new .scx path
 
 ## 4. 작업 공간 모델
 
-프로젝트 파일 형식이 확정되기 전까지 애플리케이션 모델은 다음 정보를 표현한다.
+프로젝트 파일 형식이 확정되기 전까지 구현된 Application 모델은 다음 정보를
+표현한다.
 
 ```text
-EudProject
+EudBuildConfiguration
   baseMapPath
-  sourceRoot
-  entrySource
+  sourceRootPath
+  entrySourcePath
   outputMapPath
   compilerProfile
-  compilerPath
+  compilerPathOverride?
   compilerOptions
   environmentOverrides
 ```
+
+첫 `EudCompilerProfile`은 `scr-euddraft`이며 입력 맵 `.scm/.scx`, 진입 소스
+`.eps`, 출력 `.scx`를 요구한다. 모델 생성 시 다음 불변식을 적용한다.
+
+- 모든 파일과 디렉터리 경로는 drive 또는 UNC 형식의 Windows 절대 경로다.
+- 장치 경로, `.`/`..`, Windows 예약 장치 이름과 금지 문자, 바깥 공백,
+  끝 공백·점이 있는 세그먼트를 거부한다.
+- 진입 소스는 소스 루트 내부에 있어야 한다.
+- 출력 맵은 기준 맵과 다른 경로이며 소스 트리 밖에 있어야 한다.
+- 컴파일러 옵션과 환경 override는 방어적으로 복사한 읽기 전용 값이다.
+- 옵션 키와 환경 변수 이름/값은 설정 또는 프로세스 경계를 깨는 문자를
+  거부한다.
+
+이 검증은 파일 시스템에 접근하지 않는 어휘적 경계다. 파일 존재, 일반 파일
+여부, symbolic link와 canonical 경로 동일성, 작업 중 fingerprint는 후속 빌드
+파이프라인에서 실행 직전에 다시 검증한다. `compilerOptions`는 향후 생성할
+`.eds` 설정에 직렬화하며 euddraft 명령줄 인자로 직접 전달하지 않는다.
 
 권장 사용자 폴더 예시:
 
