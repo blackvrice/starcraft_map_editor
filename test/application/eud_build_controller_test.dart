@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_record.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
@@ -31,6 +32,12 @@ void main() {
     final controller = EudBuildController(
       compilerGateway: gateway,
       operationProgressController: progressController,
+      clock: _SequenceClock([
+        DateTime.utc(2026, 7, 26, 3),
+        DateTime.utc(2026, 7, 26, 3, 0, 1),
+        DateTime.utc(2026, 7, 26, 3, 0, 2),
+        DateTime.utc(2026, 7, 26, 3, 0, 3),
+      ]).call,
     );
     addTearDown(controller.dispose);
     addTearDown(progressController.dispose);
@@ -49,6 +56,14 @@ void main() {
       EudBuildEventKind.stderrLine,
       EudBuildEventKind.succeeded,
     ]);
+    final record = controller.state.latestRecord!;
+    expect(record.status, EudBuildRecordStatus.succeeded);
+    expect(record.toolVersion, EudToolVersion.parse('0.10.2.5'));
+    expect(record.startedAt, DateTime.utc(2026, 7, 26, 3));
+    expect(record.completedAt, DateTime.utc(2026, 7, 26, 3, 0, 3));
+    expect(record.exitCode, 0);
+    expect(record.stdoutLines, ['Compiling main.eps']);
+    expect(record.stderrLines, ['A recoverable warning']);
     expect(progressController.current?.phase, OperationPhase.succeeded);
   });
 
@@ -124,6 +139,33 @@ void main() {
       controller.state.diagnostics.single.code,
       EudBuildControllerDiagnosticCodes.eventStreamEnded,
     );
+  });
+
+  test('retains only the configured number of recent build records', () async {
+    final progressController = OperationProgressController();
+    final gateway = _ScriptedEudCompilerGateway((request) {
+      return Stream.value(
+        EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
+      );
+    });
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      operationProgressController: progressController,
+      maximumBuildRecords: 2,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+
+    for (final buildId in ['first', 'second', 'third']) {
+      controller.prepare(_request(buildId));
+      expect(await controller.start(), isTrue);
+    }
+
+    expect(controller.state.records.map((record) => record.buildId), [
+      'second',
+      'third',
+    ]);
+    expect(() => controller.state.records.clear(), throwsUnsupportedError);
   });
 }
 
@@ -210,5 +252,18 @@ final class _CancellableEudCompilerGateway implements EudCompilerGateway {
     );
     await _events.close();
     return true;
+  }
+}
+
+final class _SequenceClock {
+  _SequenceClock(Iterable<DateTime> values) : _values = values.iterator;
+
+  final Iterator<DateTime> _values;
+
+  DateTime call() {
+    if (!_values.moveNext()) {
+      throw StateError('The test clock has no remaining values.');
+    }
+    return _values.current;
   }
 }

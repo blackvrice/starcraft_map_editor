@@ -97,10 +97,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('eud-build-log')), findsOneWidget);
-    expect(find.text('euddraft 0.10.2.5 started'), findsOneWidget);
-    expect(find.text('Compiling main.eps'), findsOneWidget);
+    expect(find.text('Tool: euddraft 0.10.2.5'), findsOneWidget);
+    expect(find.text('Succeeded • exit code 0'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('eud-build-log')),
+      const Offset(0, -100),
+    );
+    await tester.pump();
+    expect(find.text('[stdout] Compiling main.eps'), findsOneWidget);
     expect(find.text('[stderr] Test warning'), findsOneWidget);
-    expect(find.text('Build process completed (exit code 0)'), findsOneWidget);
   });
 
   testWidgets('replaces Build with Cancel while euddraft is running', (
@@ -134,7 +139,16 @@ void main() {
 
     expect(gateway.cancelledBuildId, 'widget-cancel');
     expect(find.byKey(const Key('toolbar-build-eud')), findsOneWidget);
-    expect(find.text('[cancelled] Test build cancelled.'), findsOneWidget);
+    expect(find.text('Cancelled • exit code unavailable'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('eud-build-log')),
+      const Offset(0, -100),
+    );
+    await tester.pump();
+    expect(
+      find.text('[EUD_TEST_CANCELLED] Test build cancelled.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('edits epScript and displays its dirty state', (tester) async {

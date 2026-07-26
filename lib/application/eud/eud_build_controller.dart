@@ -4,6 +4,7 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
 import '../ports/eud_compiler_gateway.dart';
+import 'eud_build_record.dart';
 
 abstract final class EudBuildControllerDiagnosticCodes {
   static const eventStreamFailed = 'EUD_BUILD_EVENT_STREAM_FAILED';
@@ -26,27 +27,39 @@ final class EudBuildState {
     required this.status,
     required this.request,
     required Iterable<EudBuildEvent> events,
-  }) : events = List.unmodifiable(events);
+    required Iterable<EudBuildRecord> records,
+  }) : events = List.unmodifiable(events),
+       records = List.unmodifiable(records);
 
-  factory EudBuildState.notConfigured() {
+  factory EudBuildState.notConfigured({
+    Iterable<EudBuildRecord> records = const [],
+  }) {
     return EudBuildState._(
       status: EudBuildStatus.notConfigured,
       request: null,
       events: const [],
+      records: records,
     );
   }
 
-  factory EudBuildState.ready(EudBuildRequest request) {
+  factory EudBuildState.ready(
+    EudBuildRequest request, {
+    Iterable<EudBuildRecord> records = const [],
+  }) {
     return EudBuildState._(
       status: EudBuildStatus.ready,
       request: request,
       events: const [],
+      records: records,
     );
   }
 
   final EudBuildStatus status;
   final EudBuildRequest? request;
   final List<EudBuildEvent> events;
+  final List<EudBuildRecord> records;
+
+  EudBuildRecord? get latestRecord => records.isEmpty ? null : records.last;
 
   bool get isConfigured => request != null;
 
@@ -63,20 +76,36 @@ final class EudBuildState {
   List<EditorDiagnostic> get diagnostics =>
       List.unmodifiable([for (final event in events) ?event.diagnostic]);
 
-  EudBuildState transition(EudBuildStatus status, {EudBuildEvent? event}) {
+  EudBuildState transition(
+    EudBuildStatus status, {
+    EudBuildEvent? event,
+    EudBuildRecord? record,
+  }) {
     return EudBuildState._(
       status: status,
       request: request,
       events: [...events, ?event],
+      records: _replaceLatestRecord(record),
     );
   }
 
-  EudBuildState append(EudBuildEvent event) {
+  EudBuildState append(EudBuildEvent event, {EudBuildRecord? record}) {
     return EudBuildState._(
       status: status,
       request: request,
       events: [...events, event],
+      records: _replaceLatestRecord(record),
     );
+  }
+
+  List<EudBuildRecord> _replaceLatestRecord(EudBuildRecord? record) {
+    if (record == null) {
+      return records;
+    }
+    if (records.isEmpty || records.last.buildId != record.buildId) {
+      throw StateError('The latest EUD build record does not match.');
+    }
+    return [...records.take(records.length - 1), record];
   }
 }
 
@@ -84,10 +113,22 @@ final class EudBuildController {
   EudBuildController({
     required this.compilerGateway,
     required this.operationProgressController,
-  });
+    DateTime Function()? clock,
+    this.maximumBuildRecords = 20,
+  }) : _clock = clock ?? DateTime.now {
+    if (maximumBuildRecords <= 0) {
+      throw RangeError.value(
+        maximumBuildRecords,
+        'maximumBuildRecords',
+        'The maximum build record count must be positive.',
+      );
+    }
+  }
 
   final EudCompilerGateway compilerGateway;
   final OperationProgressController operationProgressController;
+  final int maximumBuildRecords;
+  final DateTime Function() _clock;
   final StreamController<EudBuildState> _changes =
       StreamController<EudBuildState>.broadcast(sync: true);
 
@@ -114,7 +155,7 @@ final class EudBuildController {
     if (_state.isActive || _subscription != null) {
       throw StateError('Cannot replace an active EUD build request.');
     }
-    _emit(EudBuildState.ready(request));
+    _emit(EudBuildState.ready(request, records: _state.records));
   }
 
   void clearPreparation() {
@@ -122,7 +163,7 @@ final class EudBuildController {
     if (_state.isActive || _subscription != null) {
       throw StateError('Cannot clear an active EUD build request.');
     }
-    _emit(EudBuildState.notConfigured());
+    _emit(EudBuildState.notConfigured(records: _state.records));
   }
 
   Future<bool> start() {
@@ -143,6 +184,13 @@ final class EudBuildController {
         status: EudBuildStatus.running,
         request: request,
         events: const [],
+        records: _appendBuildRecord(
+          EudBuildRecord.running(
+            buildId: request.buildId,
+            toolVersion: request.tool.version,
+            startedAt: _clock(),
+          ),
+        ),
       ),
     );
 
@@ -177,6 +225,7 @@ final class EudBuildController {
         rawDetails: '$error\n$stackTrace',
       );
       _subscription = null;
+      _complete(false);
     }
     return completion.future;
   }
@@ -205,6 +254,14 @@ final class EudBuildController {
         message: 'The EUD build cancellation request failed.',
         rawDetails: '$error\n$stackTrace',
       );
+      final subscription = _subscription;
+      _subscription = null;
+      try {
+        await subscription?.cancel();
+      } on Object {
+        // The cancellation failure is already captured in the build record.
+      }
+      _complete(false);
       return false;
     }
     if (!accepted &&
@@ -254,9 +311,17 @@ final class EudBuildController {
       return;
     }
 
+    final record = _requireLatestRecord(request.buildId);
     switch (event.kind) {
       case EudBuildEventKind.started:
-        _emit(_state.append(event));
+        _emit(
+          _state.append(
+            event,
+            record: record.withToolVersion(
+              event.toolVersion ?? record.toolVersion,
+            ),
+          ),
+        );
         final cancelling = _state.status == EudBuildStatus.cancelling;
         operationProgressController.update(
           operationId: request.buildId,
@@ -268,33 +333,91 @@ final class EudBuildController {
         );
         return;
       case EudBuildEventKind.stdoutLine:
+        _emit(
+          _state.append(
+            event,
+            record: record.appendLog(
+              channel: EudBuildLogChannel.stdout,
+              text: event.text ?? '',
+              capturedAt: _clock(),
+            ),
+          ),
+        );
+        return;
       case EudBuildEventKind.stderrLine:
+        _emit(
+          _state.append(
+            event,
+            record: record.appendLog(
+              channel: EudBuildLogChannel.stderr,
+              text: event.text ?? '',
+              capturedAt: _clock(),
+            ),
+          ),
+        );
+        return;
       case EudBuildEventKind.diagnostic:
-        _emit(_state.append(event));
+        _emit(
+          _state.append(
+            event,
+            record: event.diagnostic == null
+                ? record
+                : record.appendDiagnostic(event.diagnostic!),
+          ),
+        );
         return;
       case EudBuildEventKind.cancelled:
-        _emit(_state.transition(EudBuildStatus.cancelled, event: event));
+        _emit(
+          _state.transition(
+            EudBuildStatus.cancelled,
+            event: event,
+            record: record.complete(
+              status: EudBuildRecordStatus.cancelled,
+              completedAt: _clock(),
+              exitCode: event.exitCode,
+              diagnostic: event.diagnostic,
+            ),
+          ),
+        );
         operationProgressController.cancel(
           operationId: request.buildId,
           message: event.diagnostic?.message ?? 'EUD build was cancelled',
         );
-        _complete(false);
         return;
       case EudBuildEventKind.failed:
-        _emit(_state.transition(EudBuildStatus.failed, event: event));
+        _emit(
+          _state.transition(
+            EudBuildStatus.failed,
+            event: event,
+            record: record.complete(
+              status: EudBuildRecordStatus.failed,
+              completedAt: _clock(),
+              exitCode: event.exitCode,
+              diagnostic: event.diagnostic,
+            ),
+          ),
+        );
         operationProgressController.fail(
           operationId: request.buildId,
           message: event.diagnostic?.message ?? 'EUD build failed',
         );
-        _complete(false);
         return;
       case EudBuildEventKind.succeeded:
-        _emit(_state.transition(EudBuildStatus.succeeded, event: event));
+        _emit(
+          _state.transition(
+            EudBuildStatus.succeeded,
+            event: event,
+            record: record.complete(
+              status: EudBuildRecordStatus.succeeded,
+              completedAt: _clock(),
+              exitCode: event.exitCode,
+            ),
+          ),
+        );
         operationProgressController.succeed(
           operationId: request.buildId,
           message: 'EUD build process completed',
         );
-        _complete(true);
         return;
     }
   }
@@ -334,12 +457,18 @@ final class EudBuildController {
         rawDetails: rawDetails,
       ),
     );
-    _emit(_state.transition(EudBuildStatus.failed, event: event));
+    final record = _requireLatestRecord(request.buildId).complete(
+      status: EudBuildRecordStatus.failed,
+      completedAt: _clock(),
+      diagnostic: event.diagnostic,
+    );
+    _emit(
+      _state.transition(EudBuildStatus.failed, event: event, record: record),
+    );
     operationProgressController.fail(
       operationId: request.buildId,
       message: message,
     );
-    _complete(false);
   }
 
   void _complete(bool succeeded) {
@@ -348,6 +477,22 @@ final class EudBuildController {
       completion.complete(succeeded);
     }
     _completion = null;
+  }
+
+  List<EudBuildRecord> _appendBuildRecord(EudBuildRecord record) {
+    final records = [..._state.records, record];
+    if (records.length <= maximumBuildRecords) {
+      return records;
+    }
+    return records.sublist(records.length - maximumBuildRecords);
+  }
+
+  EudBuildRecord _requireLatestRecord(String buildId) {
+    final record = _state.latestRecord;
+    if (record == null || record.buildId != buildId) {
+      throw StateError('Build $buildId does not have an active record.');
+    }
+    return record;
   }
 
   void _emit(EudBuildState state) {

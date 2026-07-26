@@ -8,11 +8,11 @@ import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
 import '../../application/eud/eud_build_controller.dart';
+import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_source_document.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
-import '../../application/ports/eud_compiler_models.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
@@ -1617,7 +1617,8 @@ class _OutputPanelState extends State<_OutputPanel> {
                       key: const Key('output-tab-build-log'),
                       label: 'Build Log',
                       selected: _selectedTab == _OutputPanelTab.buildLog,
-                      count: widget.eudBuildState.events.length,
+                      count:
+                          widget.eudBuildState.latestRecord?.logEntries.length,
                       onPressed: () {
                         setState(() {
                           _selectedTab = _OutputPanelTab.buildLog;
@@ -1704,33 +1705,31 @@ class _EudBuildLog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (state.events.isEmpty) {
+    final record = state.latestRecord;
+    if (record == null) {
       return _OutputPanelMessage(_emptyMessage(state.status));
     }
+    final items = _buildLogItems(record);
 
     return ListView.builder(
       key: const Key('eud-build-log'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      itemCount: state.events.length,
+      itemCount: items.length,
       itemBuilder: (context, index) {
-        final event = state.events[index];
+        final item = items[index];
         return Padding(
           key: ValueKey('eud-build-log-$index'),
           padding: const EdgeInsets.symmetric(vertical: 1),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                _buildEventIcon(event.kind),
-                size: 14,
-                color: _buildEventColor(event.kind),
-              ),
+              Icon(item.icon, size: 14, color: item.color),
               const SizedBox(width: 8),
               Expanded(
                 child: SelectableText(
-                  _buildEventText(event),
+                  item.text,
                   style: TextStyle(
-                    color: _buildEventColor(event.kind),
+                    color: item.color,
                     fontFamily: 'monospace',
                     fontSize: 11,
                   ),
@@ -1756,39 +1755,96 @@ String _emptyMessage(EudBuildStatus status) {
   };
 }
 
-String _buildEventText(EudBuildEvent event) {
-  return switch (event.kind) {
-    EudBuildEventKind.started => 'euddraft ${event.toolVersion} started',
-    EudBuildEventKind.stdoutLine => event.text ?? '',
-    EudBuildEventKind.stderrLine => '[stderr] ${event.text ?? ''}',
-    EudBuildEventKind.diagnostic =>
-      '[${event.diagnostic?.code}] ${event.diagnostic?.message}',
-    EudBuildEventKind.cancelled => '[cancelled] ${event.diagnostic?.message}',
-    EudBuildEventKind.failed => '[failed] ${event.diagnostic?.message}',
-    EudBuildEventKind.succeeded =>
-      'Build process completed (exit code ${event.exitCode})',
+final class _EudBuildLogItem {
+  const _EudBuildLogItem({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String text;
+}
+
+List<_EudBuildLogItem> _buildLogItems(EudBuildRecord record) {
+  const metadataColor = Color(0xFF8EA0BB);
+  const stdoutColor = Color(0xFFAAB5C8);
+  const stderrColor = Color(0xFFFFC66D);
+  final items = <_EudBuildLogItem>[
+    _EudBuildLogItem(
+      icon: Icons.tag_rounded,
+      color: metadataColor,
+      text: 'Build: ${record.buildId}',
+    ),
+    _EudBuildLogItem(
+      icon: Icons.construction_rounded,
+      color: metadataColor,
+      text: 'Tool: euddraft ${record.toolVersion}',
+    ),
+    if (record.isTerminal)
+      _EudBuildLogItem(
+        icon: _buildRecordStatusIcon(record.status),
+        color: _buildRecordStatusColor(record.status),
+        text:
+            '${_buildRecordStatusLabel(record.status)} • '
+            '${record.exitCode == null ? 'exit code unavailable' : 'exit code ${record.exitCode}'}',
+      ),
+    _EudBuildLogItem(
+      icon: Icons.schedule_rounded,
+      color: metadataColor,
+      text: 'Started: ${record.startedAt.toIso8601String()}',
+    ),
+    if (record.isTerminal)
+      _EudBuildLogItem(
+        icon: Icons.schedule_rounded,
+        color: metadataColor,
+        text: 'Completed: ${record.completedAt!.toIso8601String()}',
+      ),
+    for (final entry in record.logEntries)
+      _EudBuildLogItem(
+        icon: entry.channel == EudBuildLogChannel.stdout
+            ? Icons.chevron_right_rounded
+            : Icons.warning_amber_rounded,
+        color: entry.channel == EudBuildLogChannel.stdout
+            ? stdoutColor
+            : stderrColor,
+        text: '[${entry.channel.name}] ${entry.text}',
+      ),
+    for (final diagnostic in record.diagnostics)
+      _EudBuildLogItem(
+        icon: _diagnosticIcon(diagnostic.severity),
+        color: _diagnosticColor(diagnostic.severity),
+        text: '[${diagnostic.code}] ${diagnostic.message}',
+      ),
+  ];
+  return items;
+}
+
+String _buildRecordStatusLabel(EudBuildRecordStatus status) {
+  return switch (status) {
+    EudBuildRecordStatus.running => 'Running',
+    EudBuildRecordStatus.succeeded => 'Succeeded',
+    EudBuildRecordStatus.failed => 'Failed',
+    EudBuildRecordStatus.cancelled => 'Cancelled',
   };
 }
 
-IconData _buildEventIcon(EudBuildEventKind kind) {
-  return switch (kind) {
-    EudBuildEventKind.started => Icons.play_arrow_rounded,
-    EudBuildEventKind.stdoutLine => Icons.chevron_right_rounded,
-    EudBuildEventKind.stderrLine => Icons.warning_amber_rounded,
-    EudBuildEventKind.diagnostic => Icons.info_outline_rounded,
-    EudBuildEventKind.cancelled => Icons.stop_circle_outlined,
-    EudBuildEventKind.failed => Icons.error_outline,
-    EudBuildEventKind.succeeded => Icons.check_circle_outline,
+IconData _buildRecordStatusIcon(EudBuildRecordStatus status) {
+  return switch (status) {
+    EudBuildRecordStatus.running => Icons.pending_outlined,
+    EudBuildRecordStatus.succeeded => Icons.check_circle_outline,
+    EudBuildRecordStatus.failed => Icons.error_outline,
+    EudBuildRecordStatus.cancelled => Icons.stop_circle_outlined,
   };
 }
 
-Color _buildEventColor(EudBuildEventKind kind) {
-  return switch (kind) {
-    EudBuildEventKind.stderrLine => const Color(0xFFFFC66D),
-    EudBuildEventKind.cancelled ||
-    EudBuildEventKind.failed => const Color(0xFFFF7B86),
-    EudBuildEventKind.succeeded => const Color(0xFF7ADAA5),
-    _ => const Color(0xFFAAB5C8),
+Color _buildRecordStatusColor(EudBuildRecordStatus status) {
+  return switch (status) {
+    EudBuildRecordStatus.running => const Color(0xFF8EA0BB),
+    EudBuildRecordStatus.succeeded => const Color(0xFF7ADAA5),
+    EudBuildRecordStatus.failed ||
+    EudBuildRecordStatus.cancelled => const Color(0xFFFF7B86),
   };
 }
 
