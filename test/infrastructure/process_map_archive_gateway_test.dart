@@ -96,24 +96,28 @@ void main() {
       skip: !Platform.isWindows,
     );
 
-    test('maps a structured helper error to an archive diagnostic', () async {
-      final sourcePath = await createSource('error');
-      final gateway = createGateway();
+    test(
+      'maps a structured helper error to an archive diagnostic',
+      () async {
+        final sourcePath = await createSource('error');
+        final gateway = createGateway();
 
-      final result = await gateway.open(
-        MapArchiveOpenRequest(
-          operationId: 'open-error',
-          sourcePath: sourcePath,
-          timeout: const Duration(seconds: 10),
-        ),
-      );
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-error',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
 
-      expect(result.isSuccess, isFalse);
-      expect(result.diagnostics.single.code, 'ARCHIVE_SCENARIO_NOT_FOUND');
-      expect(result.diagnostics.single.stage, DiagnosticStage.archive);
-      expect(result.diagnostics.single.rawDetails, contains('exitCode=3'));
-      expect(result.diagnostics.single.rawDetails, contains('nativeError=2'));
-    }, skip: !Platform.isWindows);
+        expect(result.isSuccess, isFalse);
+        expect(result.diagnostics.single.code, 'ARCHIVE_SCENARIO_NOT_FOUND');
+        expect(result.diagnostics.single.stage, DiagnosticStage.archive);
+        expect(result.diagnostics.single.rawDetails, contains('exitCode=3'));
+        expect(result.diagnostics.single.rawDetails, contains('nativeError=2'));
+      },
+      skip: !Platform.isWindows,
+    );
 
     test('rejects malformed helper output', () async {
       final sourcePath = await createSource('malformed');
@@ -176,24 +180,28 @@ void main() {
       skip: !Platform.isWindows,
     );
 
-    test('blocks extracted CHK data above the configured size limit', () async {
-      final sourcePath = await createSource('success');
-      final gateway = createGateway(maximumScenarioBytes: 9);
+    test(
+      'blocks extracted CHK data above the configured size limit',
+      () async {
+        final sourcePath = await createSource('success');
+        final gateway = createGateway(maximumScenarioBytes: 9);
 
-      final result = await gateway.open(
-        MapArchiveOpenRequest(
-          operationId: 'open-scenario-limit',
-          sourcePath: sourcePath,
-          timeout: const Duration(seconds: 10),
-        ),
-      );
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-scenario-limit',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
 
-      expect(result.isSuccess, isFalse);
-      expect(
-        result.diagnostics.single.code,
-        MapArchiveDiagnosticCodes.scenarioTooLarge,
-      );
-    }, skip: !Platform.isWindows);
+        expect(result.isSuccess, isFalse);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.scenarioTooLarge,
+        );
+      },
+      skip: !Platform.isWindows,
+    );
 
     test('terminates a helper that exceeds its timeout', () async {
       final sourcePath = await createSource('hang');
@@ -214,29 +222,33 @@ void main() {
       );
     }, skip: !Platform.isWindows);
 
-    test('cancels the process for the matching operation ID', () async {
-      final sourcePath = await createSource('hang');
-      final gateway = createGateway();
+    test(
+      'cancels the process for the matching operation ID',
+      () async {
+        final sourcePath = await createSource('hang');
+        final gateway = createGateway();
 
-      final openFuture = gateway.open(
-        MapArchiveOpenRequest(
-          operationId: 'open-cancel',
-          sourcePath: sourcePath,
-          timeout: const Duration(seconds: 10),
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 300));
+        final openFuture = gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-cancel',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 300));
 
-      expect(await gateway.cancel('open-cancel'), isTrue);
-      final result = await openFuture;
+        expect(await gateway.cancel('open-cancel'), isTrue);
+        final result = await openFuture;
 
-      expect(result.isSuccess, isFalse);
-      expect(
-        result.diagnostics.single.code,
-        MapArchiveDiagnosticCodes.cancelled,
-      );
-      expect(await gateway.cancel('open-cancel'), isFalse);
-    }, skip: !Platform.isWindows);
+        expect(result.isSuccess, isFalse);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.cancelled,
+        );
+        expect(await gateway.cancel('open-cancel'), isFalse);
+      },
+      skip: !Platform.isWindows,
+    );
 
     test(
       'rejects nonabsolute source paths before starting the helper',
