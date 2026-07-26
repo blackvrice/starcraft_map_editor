@@ -45,3 +45,17 @@ euddraft/eudplib는 Python 기반 도구와 네이티브 구성요소를 포함�
 - 공백과 한글 경로 테스트
 - 실제 지원 euddraft 버전 스모크 테스트
 - 원본 맵 해시 불변과 출력 맵 재열기 검증
+
+## Implementation baseline
+
+2026-07-26의 `ProcessEudCompilerGateway` 기준선은 다음과 같다.
+
+- 공식 euddraft의 한 설정 파일 CLI에 맞춰 절대 `.eds` 경로 하나만 전달한다.
+- 설정 부모를 작업 디렉터리로 지정하고 셸 없이 실행하며 stdin은 즉시 닫는다.
+- UTF-8 stdout/stderr를 동시에 줄 이벤트로 전달하고 스트림별 기본 1 MiB
+  상한을 넘으면 초과분을 버리면서 끝까지 소비한 뒤 실패한다.
+- 부모 환경은 Windows 실행 allowlist만 상속하고 명시적 override를 추가한다.
+- timeout, build ID 취소와 구독 취소는 소유 토큰이 일치하는 프로세스만
+  종료한다.
+- 종료 코드 0은 프로세스 단계 성공일 뿐이다. 임시 출력 검증, 원본 fingerprint
+  재확인과 최종 승격은 후속 Application 파이프라인이 담당한다.

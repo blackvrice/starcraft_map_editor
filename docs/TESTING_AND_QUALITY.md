@@ -207,12 +207,15 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 - VERSION 누락/손상/크기 초과와 미지원 버전
 - Python/eudplib/epScript companion 누락
 - 검사 과정에서 euddraft를 실행하지 않음
+- `.eds` 단일 인자를 셸 없이 전달하고 설정 부모를 작업 디렉터리로 사용
+- 공백/한글 설정 경로와 UTF-8 stdout/stderr 줄 스트리밍
+- 비정상 종료 코드와 부분 로그 보존
+- timeout과 사용자 취소 시 해당 프로세스 종료
+- 동일 build ID 요청과 스트림 구독 취소의 소유권 격리
+- stdout/stderr별 출력 상한 초과 후에도 양쪽 스트림 배출
+- 부모 환경 최소 상속과 명시적 override
 - 성공 종료지만 출력 없음
-- 실패 종료와 부분 출력 존재
-- stdout/stderr 동시 출력
 - 컴파일 오류 위치 파싱
-- 사용자 취소
-- 한글/공백 경로
 - 입력 맵 불변
 
 ## 5. 성능 기준
@@ -271,6 +274,13 @@ flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 
 환경 변수가 없으면 해당 한 케이스만 skip되며 합성 설치 레이아웃 회귀 테스트는
 항상 실행된다.
+
+가짜 euddraft 프로세스 경계 테스트:
+
+```powershell
+flutter test test/application/eud_compiler_gateway_test.dart `
+  test/infrastructure/process_eud_compiler_gateway_test.dart
+```
 
 ## 8. 결함 심각도
 

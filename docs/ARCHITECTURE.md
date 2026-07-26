@@ -212,7 +212,8 @@ abstract interface class EudToolInspector {
 }
 
 abstract interface class EudCompilerGateway {
-  Stream<BuildEvent> build(EudBuildRequest request);
+  Stream<EudBuildEvent> build(EudBuildRequest request);
+  Future<bool> cancel(String buildId);
 }
 
 abstract interface class SafeFileWriter {
@@ -236,6 +237,19 @@ euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
 실행 없이 sibling `VERSION`과 공식 배포 companion 파일을 확인한다. 지원
 버전은 검증된 exact allowlist이며, 잘못된 상위 우선순위 경로를 낮은 우선순위
 설치로 조용히 대체하지 않는다.
+
+`EudCompilerGateway`는 검사 완료된 도구, 절대 `.eds` 설정 경로, timeout과
+명시적 환경 변수 override만 받는다. `ProcessEudCompilerGateway`는 설정 파일
+부모를 작업 디렉터리로 삼고 셸 없이 euddraft를 실행한다. stdin은 즉시
+닫으며 stdout/stderr를 UTF-8 줄 이벤트로 동시에 전달한다. 종료 코드 0은
+프로세스 단계 성공일 뿐이며 출력 파일 검사와 최종 승격은 이후 Application
+파이프라인 책임이다.
+
+어댑터는 Windows 기본 환경 변수 중 실행에 필요한 allowlist만 상속하고,
+스트림마다 기본 1 MiB까지만 메모리에 전달한다. 초과분도 프로세스 종료까지
+소비해 파이프 교착을 막지만 빌드는 실패시킨다. timeout, 명시적 취소와
+스트림 구독 취소는 프로세스를 종료하며 스트림별 소유 토큰으로 같은 ID의
+다른 요청을 취소하지 못하게 한다.
 
 `MapFilePicker`는 사용자가 선택한 절대 경로 또는 취소를 뜻하는 `null`만
 Application 계층에 반환한다. Windows의 `GetOpenFileNameW`/

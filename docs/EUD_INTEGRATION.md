@@ -96,6 +96,13 @@ ZIP 배포 루트에는 `euddraft.exe`, `VERSION`,
 지원 범위를 넓힐 때에는 해당 릴리스 레이아웃과 실제 빌드 스모크 테스트를 먼저
 추가한다. euddraft 소스 실행은 이 단계의 지원 설치로 취급하지 않는다.
 
+공식 [`0.10.2.5` 진입점](https://github.com/armoha/euddraft/blob/v0.10.2.5/euddraft.py#L105-L125)은
+시작할 때 자체 업데이트 검사를 호출한다. 앱이 실행 파일을 자동 다운로드하지
+않는 정책과 별개로 외부 도구 자체가 네트워크와 설치 디렉터리에 접근할 수
+있으므로, 빌드 확인 화면에 이 동작을 알리고 매 빌드 직전에 설치를 다시
+검사한다. 향후 번들 배포는 자동 업데이트를 끄거나 격리하는 별도 정책이
+필요하다.
+
 빌드 기록에는 앱 버전, euddraft/eudplib 버전, 프로필, 종료 코드를 남긴다.
 
 ## 6. 프로세스 경계
@@ -103,31 +110,34 @@ ZIP 배포 루트에는 `euddraft.exe`, `VERSION`,
 ### 실행 규칙
 
 - 셸을 거치지 않고 executable과 argument list를 분리해 실행한다.
-- 작업 디렉터리를 명시한다.
-- stdin 사용 여부를 명시하고 예상치 못한 입력 대기를 막는다.
-- stdout과 stderr를 모두 수집한다.
-- 인코딩 문제로 로그가 유실되지 않도록 원시 바이트 또는 UTF-8 변환 결과를 보존한다.
+- `euddraft.exe <absolute-settings.eds>` 형식의 단발 실행만 허용한다.
+- 설정 파일 부모를 작업 디렉터리로 명시한다.
+- stdin을 즉시 닫아 예상치 못한 입력 대기를 막는다.
+- stdout과 stderr를 동시에 소비하고 UTF-8 줄 이벤트로 전달한다. 잘못된
+  UTF-8 바이트는 대체 문자로 보존한다.
+- 부모 환경은 Windows 실행에 필요한 allowlist만 상속하고 빌드에서 명시한
+  override를 추가한다. 환경 전체를 이벤트나 진단에 기록하지 않는다.
+- 각 출력 스트림은 기본 1 MiB까지만 전달한다. 초과분은 보관하지 않고
+  교착 방지를 위해 끝까지 소비한 뒤 빌드를 실패시킨다.
 - 앱 종료 시 실행 중인 빌드를 사용자에게 알리고 안전하게 종료한다.
+- timeout, Build 취소와 스트림 구독 취소는 소유 토큰이 일치하는 프로세스만
+  종료한다.
 
 ### 요청
 
 ```text
 EudBuildRequest
   buildId
-  baseMap
-  sourceRoot
-  entrySource
-  temporaryOutput
-  finalOutput
   tool
-  arguments
-  environment
+  settingsFilePath
+  timeout
+  environmentOverrides
 ```
 
 ### 이벤트
 
 ```text
-BuildEvent
+EudBuildEvent
   started
   stdoutLine
   stderrLine
@@ -138,7 +148,14 @@ BuildEvent
   succeeded
 ```
 
-프로세스 로그 형식이 버전별로 달라질 수 있으므로, 파싱된 진단과 원시 로그를 함께 유지한다.
+요청은 절대 경로의 비어 있지 않은 일반 `.eds` 파일만 허용한다. `.edd`
+데몬 모드와 `.scx` 보호 모드는 빌드 어댑터 범위 밖이며 거부한다. 실행 직전
+검사된 executable도 다시 확인한다.
+
+프로세스 로그 형식이 버전별로 달라질 수 있으므로, 아직 이해하지 못한 줄도
+버리지 않는다. 종료 코드 0의 `succeeded` 이벤트는 컴파일러 프로세스 단계만
+성공했다는 뜻이다. 출력 파일 존재·아카이브/CHK 검증과 최종 승격이 끝나기
+전에는 전체 EUD 빌드 성공으로 표시하지 않는다.
 
 ## 7. 빌드 파이프라인
 

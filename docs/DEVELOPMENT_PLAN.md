@@ -15,7 +15,7 @@
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
 | M3. 맵 아카이브 입출력 | 완료 | Open Map·검증형 Save As·fingerprint·복구 백업·자체 제작 SCX |
-| M4. EUD 수직 기능 | 진행 중 | euddraft 설치 경로·버전 검사 완료 |
+| M4. EUD 수직 기능 | 진행 중 | euddraft 검사와 외부 프로세스 경계 완료 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
 | M7. 일반 트리거 | 대기 | 트리거 편집 |
@@ -192,7 +192,7 @@
 목표: 기준 맵과 epScript를 선택해 별도 EUD 맵을 빌드하는 첫 사용자 가치 흐름을 완성한다.
 
 - [x] euddraft 설치 경로와 버전 검사 구현
-- [ ] `EudCompilerGateway` 외부 프로세스 어댑터 구현
+- [x] `EudCompilerGateway` 외부 프로세스 어댑터 구현
 - [ ] 기준 맵, 소스 경로, 출력 경로를 가진 빌드 설정 모델 구현
 - [ ] 최소 epScript 코드 편집기와 변경 상태 구현
 - [ ] Build/Cancel 명령과 출력 패널 구현
@@ -214,6 +214,14 @@
   손상·미지원 버전, companion 누락과 비-Windows 진단을 검증한다.
   `EUDDRAFT_TEST_INSTALLATION`을 지정하면 추출한 공식 릴리스도 같은 검사로
   스모크 테스트한다.
+- `EudCompilerGateway`는 검사된 도구와 절대 `.eds` 설정, timeout, 명시적
+  환경 override를 받고 시작·stdout·stderr·실패·취소·성공 이벤트를
+  스트리밍한다. `ProcessEudCompilerGateway`는 셸 없이 한 번만 실행하고
+  stdin을 닫으며 안전 환경 allowlist와 스트림별 1 MiB 상한을 적용한다.
+- Windows PowerShell 가짜 컴파일러 테스트는 공백/한글 경로, UTF-8 양쪽
+  로그, 비정상 종료, timeout, 사용자 취소, 중복 ID 격리, 출력 상한,
+  환경 변수 최소 상속, 잘못된 경로와 시작 실패를 실제 프로세스로 검증한다.
+  이 단계의 성공은 종료 코드 0까지이며 출력 맵 검증·승격은 후속 항목이다.
 
 완료 조건:
 

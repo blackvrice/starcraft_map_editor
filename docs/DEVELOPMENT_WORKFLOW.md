@@ -84,6 +84,13 @@ $env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft"
 flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 ```
 
+euddraft 프로세스 경계 변경 시:
+
+```powershell
+flutter test test/application/eud_compiler_gateway_test.dart `
+  test/infrastructure/process_eud_compiler_gateway_test.dart
+```
+
 helper 빌드는 CMake 3.25 이상, MSVC C++17 도구 체인과 Git이 필요하다. 첫
 configure에서는 full commit SHA로 고정된 StormLib와 JSON for Modern C++를
 공식 GitHub 저장소에서 가져오며, 이후 빌드는 `build/`의 FetchContent 캐시를
