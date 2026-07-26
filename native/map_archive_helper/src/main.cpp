@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <system_error>
+#include <utility>
 
 namespace {
 
@@ -16,7 +17,7 @@ using json = nlohmann::json;
 
 constexpr std::int32_t kProtocolVersion = 1;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
-constexpr char kHelperVersion[] = "0.1.0";
+constexpr char kHelperVersion[] = "0.2.0";
 constexpr char kStormLibRevision[] =
     "c91595a1a1b7b515567bd62a60af066914a29a6a";
 
@@ -199,9 +200,27 @@ int main() {
 
     auto response = BaseResponse(request_id, operation);
     response["status"] = "success";
+    auto entries = json::array();
+    for (const auto& entry : result.archive.entries) {
+      entries.push_back({
+          {"path", entry.path},
+          {"uncompressedSizeBytes", entry.uncompressed_size_bytes},
+          {"compressedSizeBytes", entry.compressed_size_bytes},
+          {"flags", entry.flags},
+          {"locale", entry.locale},
+          {"nameIsSynthetic", entry.name_is_synthetic},
+      });
+    }
     response["archive"] = {
         {"sizeBytes", result.archive.archive_size_bytes},
+        {"formatVersion", result.archive.format_version},
         {"totalEntryCount", result.archive.total_entry_count},
+        {"listingComplete", result.archive.listing_complete},
+        {"listingNativeError",
+         result.archive.listing_complete
+             ? json(nullptr)
+             : json(result.archive.listing_native_error)},
+        {"entries", std::move(entries)},
     };
     response["scenario"] = {
         {"archivePath",

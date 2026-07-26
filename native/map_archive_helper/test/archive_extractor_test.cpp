@@ -4,6 +4,7 @@
 
 #include <StormLib.h>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -17,6 +18,8 @@ namespace {
 
 using starcraft_map_editor::archive::ExtractScenario;
 using starcraft_map_editor::archive::kScenarioArchivePath;
+
+constexpr char kExtraArchivePath[] = "staredit\\units.dat";
 
 class TemporaryDirectory final {
  public:
@@ -89,30 +92,63 @@ bool WriteBytes(
   return stream.good();
 }
 
+bool AddArchiveFile(
+    const HANDLE archive,
+    const std::filesystem::path& source_path,
+    const char* const archive_path) {
+  const bool added = SFileAddFileEx(
+      archive,
+      source_path.c_str(),
+      archive_path,
+      MPQ_FILE_COMPRESS,
+      MPQ_COMPRESSION_ZLIB,
+      MPQ_COMPRESSION_ZLIB);
+  if (!added) {
+    std::cerr << "FAILED: add archive entry "
+              << archive_path
+              << " error="
+              << GetLastError()
+              << '\n';
+  }
+  return added;
+}
+
 bool CreateArchive(
     const std::filesystem::path& archive_path,
-    const std::filesystem::path* const scenario_path) {
+    const std::filesystem::path* const scenario_path,
+    const std::filesystem::path* const extra_path = nullptr,
+    const bool include_list_file = false) {
+  SFILE_CREATE_MPQ create_info{};
+  create_info.cbSize = sizeof(create_info);
+  create_info.dwMpqVersion = MPQ_FORMAT_VERSION_1;
+  create_info.dwStreamFlags =
+      STREAM_PROVIDER_FLAT | BASE_PROVIDER_FILE;
+  create_info.dwFileFlags1 =
+      include_list_file ? MPQ_FILE_DEFAULT_INTERNAL : 0;
+  create_info.dwSectorSize = 0x1000;
+  create_info.dwMaxFileCount = 8;
+
   HANDLE raw_archive = nullptr;
-  if (!SFileCreateArchive(
+  if (!SFileCreateArchive2(
           archive_path.c_str(),
-          MPQ_CREATE_ARCHIVE_V1,
-          4,
+          &create_info,
           &raw_archive)) {
     return false;
   }
   const ArchiveHandle archive(raw_archive);
 
-  if (scenario_path == nullptr) {
-    return true;
+  if (scenario_path != nullptr &&
+      !AddArchiveFile(
+          archive.get(),
+          *scenario_path,
+          kScenarioArchivePath)) {
+    return false;
   }
-
-  return SFileAddFileEx(
-      archive.get(),
-      scenario_path->c_str(),
-      kScenarioArchivePath,
-      MPQ_FILE_COMPRESS,
-      MPQ_COMPRESSION_ZLIB,
-      MPQ_COMPRESSION_ZLIB);
+  if (extra_path != nullptr &&
+      !AddArchiveFile(archive.get(), *extra_path, kExtraArchivePath)) {
+    return false;
+  }
+  return true;
 }
 
 std::vector<std::uint8_t> ReadBytes(
@@ -131,22 +167,38 @@ bool CreateIntegrationFixture(
     const std::filesystem::path& archive_path,
     const std::filesystem::path& scenario_path) {
   const auto scenario_bytes = ScenarioBytes();
+  const auto extra_path = scenario_path.parent_path() / L"units.dat";
+  const std::vector<std::uint8_t> extra_bytes{1, 2, 3, 4};
   return WriteBytes(scenario_path, scenario_bytes) &&
-         CreateArchive(archive_path, &scenario_path);
+         WriteBytes(extra_path, extra_bytes) &&
+         CreateArchive(
+             archive_path,
+             &scenario_path,
+             &extra_path,
+             true);
 }
 
 bool TestExtractsScenarioWithoutChangingSource() {
   const TemporaryDirectory temporary;
   const auto archive_path = temporary.path() / L"입력 맵.scx";
   const auto scenario_path = temporary.path() / L"scenario.chk";
+  const auto extra_path = temporary.path() / L"units.dat";
   const auto output_path = temporary.path() / L"extracted.chk";
   const auto scenario_bytes = ScenarioBytes();
+  const std::vector<std::uint8_t> extra_bytes{1, 2, 3, 4};
 
   if (!Check(
           WriteBytes(scenario_path, scenario_bytes),
           "write scenario fixture") ||
       !Check(
-          CreateArchive(archive_path, &scenario_path),
+          WriteBytes(extra_path, extra_bytes),
+          "write extra fixture") ||
+      !Check(
+          CreateArchive(
+              archive_path,
+              &scenario_path,
+              &extra_path,
+              true),
           "create MPQ fixture")) {
     return false;
   }
@@ -158,8 +210,30 @@ bool TestExtractsScenarioWithoutChangingSource() {
   return Check(!source_bytes_before.empty(), "reads source archive bytes") &&
          Check(result.success, "extract succeeds") &&
          Check(
-             result.archive.total_entry_count >= 1,
-             "reports a nonzero archive entry count") &&
+             result.archive.format_version == 1,
+             "reports MPQ format version") &&
+         Check(
+             result.archive.total_entry_count == 3,
+             "reports archive entry count") &&
+         Check(
+             result.archive.listing_complete,
+             "reports complete archive listing") &&
+         Check(
+             result.archive.listing_native_error == 0,
+             "does not report a listing error") &&
+         Check(
+             result.archive.entries.size() == 3,
+             "lists every archive entry") &&
+         Check(
+             std::any_of(
+                 result.archive.entries.begin(),
+                 result.archive.entries.end(),
+                 [](const auto& entry) {
+                   return entry.path == kExtraArchivePath &&
+                          entry.uncompressed_size_bytes == 4 &&
+                          !entry.name_is_synthetic;
+                 }),
+             "reports extra entry metadata") &&
          Check(
              result.scenario.uncompressed_size_bytes ==
                  scenario_bytes.size(),
@@ -170,6 +244,54 @@ bool TestExtractsScenarioWithoutChangingSource() {
          Check(
              source_bytes_before == source_bytes_after,
              "does not change source archive bytes");
+}
+
+bool TestReportsSyntheticNamesWithoutListFile() {
+  const TemporaryDirectory temporary;
+  const auto archive_path = temporary.path() / L"no-listfile.scx";
+  const auto scenario_path = temporary.path() / L"scenario.chk";
+  const auto extra_path = temporary.path() / L"units.dat";
+  const auto output_path = temporary.path() / L"extracted.chk";
+  const auto scenario_bytes = ScenarioBytes();
+  const std::vector<std::uint8_t> extra_bytes{1, 2, 3, 4};
+
+  if (!Check(
+          WriteBytes(scenario_path, scenario_bytes),
+          "write scenario fixture without listfile") ||
+      !Check(
+          WriteBytes(extra_path, extra_bytes),
+          "write extra fixture without listfile") ||
+      !Check(
+          CreateArchive(archive_path, &scenario_path, &extra_path),
+          "create MPQ fixture without listfile")) {
+    return false;
+  }
+
+  const auto result = ExtractScenario(archive_path, output_path);
+  if (std::none_of(
+          result.archive.entries.begin(),
+          result.archive.entries.end(),
+          [](const auto& entry) {
+            return entry.name_is_synthetic;
+          })) {
+    for (const auto& entry : result.archive.entries) {
+      std::cerr << "listed entry without listfile: "
+                << entry.path
+                << '\n';
+    }
+  }
+  return Check(result.success, "extract without listfile succeeds") &&
+         Check(
+             result.archive.listing_complete,
+             "synthetic listing is structurally complete") &&
+         Check(
+             std::any_of(
+                 result.archive.entries.begin(),
+                 result.archive.entries.end(),
+                 [](const auto& entry) {
+                   return entry.name_is_synthetic;
+                 }),
+             "marks a recovered synthetic name");
 }
 
 bool TestReportsMissingScenarioWithoutOutput() {
@@ -240,6 +362,7 @@ int wmain(const int argument_count, wchar_t* arguments[]) {
 
   const std::array tests{
       TestExtractsScenarioWithoutChangingSource,
+      TestReportsSyntheticNamesWithoutListFile,
       TestReportsMissingScenarioWithoutOutput,
       TestRefusesExistingOutput,
   };

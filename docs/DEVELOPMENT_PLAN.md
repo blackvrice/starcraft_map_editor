@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | 실제 helper CHK 추출 완료, 아카이브 목록 진단 대기 |
+| M3. 맵 아카이브 입출력 | 진행 중 | CHK 추출·아카이브 목록 진단 완료, Open Map UI 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -103,7 +103,7 @@
 - [x] StormLib 브리지 방식 FFI/helper process 비교와 ADR 작성
 - [x] `MapArchiveGateway` 포트 구현
 - [x] `staredit\scenario.chk` 탐색과 추출
-- [ ] 아카이브 목록과 기본 메타데이터 진단
+- [x] 아카이브 목록과 기본 메타데이터 진단
 - [ ] Open Map UI와 최근 파일 연결
 - [ ] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
 - [ ] 입력 파일 fingerprint와 외부 변경 감지
@@ -132,10 +132,16 @@
   버전, 종료 코드, 메타데이터와 실제 파일 크기를 검증한다. stdout/stderr를
   동시에 소비하며 timeout, operation ID 취소와 정확한 임시 디렉터리 정리를
   제공한다.
+- helper `0.2.0`과 Dart 어댑터는 최대 1,024개의 아카이브 엔트리를 열거하고
+  MPQ format version, 전체/열거 항목 수, 항목별 압축·비압축 크기, flags,
+  locale과 합성 이름 여부를 반환한다. 불완전 목록, 합성 이름, 대소문자를
+  무시한 중복 경로, 예상 밖 format version은 비차단 경고로, 암호화 항목은
+  내부 MPQ 관리 파일을 제외하고 정보 진단으로 노출한다.
 - native CTest는 자체 생성 MPQ의 한글 경로 추출, 원본 byte-exact 불변,
-  CHK 누락과 출력 충돌을 검증한다. Dart 프로세스 테스트와 패키지의 실제
-  helper end-to-end 스모크 테스트가 성공/오류/손상 응답/대량 출력/timeout/
-  취소를 검증한다.
+  완전한 내부 listfile과 listfile 없는 합성 이름, CHK 누락과 출력 충돌을
+  검증한다. Dart 프로세스 테스트와 패키지의 실제 helper end-to-end 스모크
+  테스트가 전체 목록, 진단, 성공/오류/손상 응답/대량 출력/timeout/취소를
+  검증한다.
 
 완료 조건:
 

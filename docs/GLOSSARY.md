@@ -18,6 +18,12 @@ StarCraft 맵 파일 확장자. 내부 맵 데이터와 자원을 담는 아카�
 
 StarCraft 맵 컨테이너에 사용되는 아카이브 형식. 이 프로젝트에서는 구체 구현을 `MapArchiveGateway` 뒤에 둔다.
 
+**합성 엔트리 이름 (synthetic entry name)**
+
+MPQ 내부 listfile에 원래 경로가 없을 때 StormLib가 파일 block을 식별하기 위해
+만드는 `File00000000.xxx` 형태의 진단용 이름. 원본 경로나 저장 대상 이름으로
+간주하지 않는다.
+
 **`scenario.chk` / CHK**
 
 맵의 지형, 객체, 플레이어, 문자열, 트리거 등을 섹션 단위로 저장하는 핵심 데이터.

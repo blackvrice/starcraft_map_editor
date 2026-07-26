@@ -4,6 +4,19 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 
 abstract final class MapArchiveEntryPaths {
   static const scenarioChk = r'staredit\scenario.chk';
+  static const listFile = '(listfile)';
+  static const attributes = '(attributes)';
+  static const signature = '(signature)';
+
+  static bool isScenarioChk(String path) =>
+      path.replaceAll('/', r'\').toLowerCase() == scenarioChk;
+
+  static bool isInternal(String path) {
+    return switch (path.toLowerCase()) {
+      listFile || attributes || signature => true,
+      _ => false,
+    };
+  }
 }
 
 class MapArchiveOpenRequest {
@@ -55,51 +68,88 @@ class MapArchiveEntryMetadata {
   MapArchiveEntryMetadata({
     required this.path,
     required this.uncompressedSizeBytes,
-    this.compressedSizeBytes,
+    required this.compressedSizeBytes,
+    required this.flags,
+    required this.locale,
+    required this.nameIsSynthetic,
   }) {
     _requireNonBlank(path, 'path');
-    _requireNonNegative(uncompressedSizeBytes, 'uncompressedSizeBytes');
-    final compressedSizeBytes = this.compressedSizeBytes;
-    if (compressedSizeBytes != null) {
-      _requireNonNegative(compressedSizeBytes, 'compressedSizeBytes');
-    }
+    _requireUint32(uncompressedSizeBytes, 'uncompressedSizeBytes');
+    _requireUint32(compressedSizeBytes, 'compressedSizeBytes');
+    _requireUint32(flags, 'flags');
+    _requireUint32(locale, 'locale');
   }
 
   final String path;
   final int uncompressedSizeBytes;
-  final int? compressedSizeBytes;
+  final int compressedSizeBytes;
+  final int flags;
+  final int locale;
+  final bool nameIsSynthetic;
+
+  bool get isEncrypted => flags & 0x00010000 != 0;
+
+  bool get isInternal => MapArchiveEntryPaths.isInternal(path);
 }
 
 class MapArchiveMetadata {
   MapArchiveMetadata({
     required this.archiveSizeBytes,
+    required this.formatVersion,
+    required this.totalEntryCount,
     required Iterable<MapArchiveEntryMetadata> entries,
-    this.formatVersion,
-    this.totalEntryCount,
+    required this.listingComplete,
+    this.listingNativeError,
   }) : entries = List.unmodifiable(entries) {
     _requireNonNegative(archiveSizeBytes, 'archiveSizeBytes');
-    final formatVersion = this.formatVersion;
-    if (formatVersion != null) {
-      _requireNonNegative(formatVersion, 'formatVersion');
+    if (formatVersion <= 0 || formatVersion > 0xffffffff) {
+      throw RangeError.value(
+        formatVersion,
+        'formatVersion',
+        'The MPQ format version must be a positive uint32 value.',
+      );
     }
-
-    final totalEntryCount = this.totalEntryCount;
-    if (totalEntryCount != null) {
-      _requireNonNegative(totalEntryCount, 'totalEntryCount');
-      if (totalEntryCount < this.entries.length) {
+    _requireUint32(totalEntryCount, 'totalEntryCount');
+    if (totalEntryCount < this.entries.length) {
+      throw ArgumentError.value(
+        totalEntryCount,
+        'totalEntryCount',
+        'The total entry count cannot be smaller than the listed entries.',
+      );
+    }
+    if (listingComplete && totalEntryCount != this.entries.length) {
+      throw ArgumentError.value(
+        listingComplete,
+        'listingComplete',
+        'A complete listing must contain every reported archive entry.',
+      );
+    }
+    final listingNativeError = this.listingNativeError;
+    if (listingNativeError != null) {
+      _requireUint32(listingNativeError, 'listingNativeError');
+      if (listingNativeError == 0) {
+        throw RangeError.value(
+          listingNativeError,
+          'listingNativeError',
+          'A listing error must use a nonzero native error code.',
+        );
+      }
+      if (listingComplete) {
         throw ArgumentError.value(
-          totalEntryCount,
-          'totalEntryCount',
-          'The total entry count cannot be smaller than the listed entries.',
+          listingNativeError,
+          'listingNativeError',
+          'A complete listing cannot contain a native listing error.',
         );
       }
     }
   }
 
   final int archiveSizeBytes;
-  final int? formatVersion;
-  final int? totalEntryCount;
+  final int formatVersion;
+  final int totalEntryCount;
   final List<MapArchiveEntryMetadata> entries;
+  final bool listingComplete;
+  final int? listingNativeError;
 }
 
 class ExtractedMap {
@@ -111,7 +161,7 @@ class ExtractedMap {
     _requireNonBlank(sourcePath, 'sourcePath');
 
     final scenarioEntries = metadata.entries.where(
-      (entry) => entry.path == MapArchiveEntryPaths.scenarioChk,
+      (entry) => MapArchiveEntryPaths.isScenarioChk(entry.path),
     );
     if (scenarioEntries.length != 1) {
       throw ArgumentError.value(
@@ -221,6 +271,12 @@ void _requirePositiveTimeout(Duration timeout) {
 void _requireNonNegative(int value, String name) {
   if (value < 0) {
     throw RangeError.value(value, name, 'The value cannot be negative.');
+  }
+}
+
+void _requireUint32(int value, String name) {
+  if (value < 0 || value > 0xffffffff) {
+    throw RangeError.range(value, 0, 0xffffffff, name);
   }
 }
 

@@ -118,6 +118,9 @@ void main() {
           path: MapArchiveEntryPaths.scenarioChk,
           uncompressedSizeBytes: 3,
           compressedSizeBytes: 2,
+          flags: 0x80000200,
+          locale: 0,
+          nameIsSynthetic: false,
         ),
       ];
       final metadata = MapArchiveMetadata(
@@ -125,19 +128,31 @@ void main() {
         formatVersion: 1,
         totalEntryCount: 2,
         entries: entries,
+        listingComplete: false,
       );
 
       entries.add(
-        MapArchiveEntryMetadata(path: '(listfile)', uncompressedSizeBytes: 10),
+        MapArchiveEntryMetadata(
+          path: '(listfile)',
+          uncompressedSizeBytes: 10,
+          compressedSizeBytes: 8,
+          flags: 0x80000200,
+          locale: 0,
+          nameIsSynthetic: false,
+        ),
       );
 
       expect(metadata.entries, hasLength(1));
+      expect(metadata.entries.single.isEncrypted, isFalse);
+      expect(MapArchiveEntryPaths.isInternal('(LISTFILE)'), isTrue);
       expect(() => metadata.entries.clear(), throwsUnsupportedError);
       expect(
         () => MapArchiveMetadata(
           archiveSizeBytes: 100,
+          formatVersion: 1,
           totalEntryCount: 0,
           entries: metadata.entries,
+          listingComplete: false,
         ),
         throwsArgumentError,
       );
@@ -145,6 +160,42 @@ void main() {
         () => MapArchiveEntryMetadata(
           path: '(listfile)',
           uncompressedSizeBytes: -1,
+          compressedSizeBytes: 0,
+          flags: 0,
+          locale: 0,
+          nameIsSynthetic: false,
+        ),
+        throwsRangeError,
+      );
+      expect(
+        () => MapArchiveMetadata(
+          archiveSizeBytes: 100,
+          formatVersion: 1,
+          totalEntryCount: 2,
+          entries: metadata.entries,
+          listingComplete: true,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => MapArchiveMetadata(
+          archiveSizeBytes: 100,
+          formatVersion: 1,
+          totalEntryCount: 2,
+          entries: metadata.entries,
+          listingComplete: false,
+          listingNativeError: 0,
+        ),
+        throwsRangeError,
+      );
+      expect(
+        () => MapArchiveEntryMetadata(
+          path: '(listfile)',
+          uncompressedSizeBytes: 1,
+          compressedSizeBytes: 1,
+          flags: 0x100000000,
+          locale: 0,
+          nameIsSynthetic: false,
         ),
         throwsRangeError,
       );
@@ -153,16 +204,42 @@ void main() {
     test('requires exactly one matching scenario entry and byte size', () {
       final noScenarioMetadata = MapArchiveMetadata(
         archiveSizeBytes: 100,
+        formatVersion: 1,
+        totalEntryCount: 0,
         entries: const [],
+        listingComplete: true,
       );
       final wrongSizeMetadata = MapArchiveMetadata(
         archiveSizeBytes: 100,
+        formatVersion: 1,
+        totalEntryCount: 1,
         entries: [
           MapArchiveEntryMetadata(
             path: MapArchiveEntryPaths.scenarioChk,
             uncompressedSizeBytes: 4,
+            compressedSizeBytes: 4,
+            flags: 0x80000000,
+            locale: 0,
+            nameIsSynthetic: false,
           ),
         ],
+        listingComplete: true,
+      );
+      final caseVariantMetadata = MapArchiveMetadata(
+        archiveSizeBytes: 100,
+        formatVersion: 1,
+        totalEntryCount: 1,
+        entries: [
+          MapArchiveEntryMetadata(
+            path: r'STAREDIT/SCENARIO.CHK',
+            uncompressedSizeBytes: 3,
+            compressedSizeBytes: 3,
+            flags: 0x80000000,
+            locale: 0,
+            nameIsSynthetic: false,
+          ),
+        ],
+        listingComplete: true,
       );
 
       expect(
@@ -180,6 +257,14 @@ void main() {
           metadata: wrongSizeMetadata,
         ),
         throwsArgumentError,
+      );
+      expect(
+        ExtractedMap(
+          sourcePath: r'C:\Maps\input.scx',
+          scenarioChkBytes: const [1, 2, 3],
+          metadata: caseVariantMetadata,
+        ).scenarioChkBytes,
+        [1, 2, 3],
       );
     });
 
@@ -233,14 +318,19 @@ ExtractedMap _createExtractedMap({List<int> bytes = const [1, 2, 3]}) {
     scenarioChkBytes: bytes,
     metadata: MapArchiveMetadata(
       archiveSizeBytes: 100,
+      formatVersion: 1,
       totalEntryCount: 1,
       entries: [
         MapArchiveEntryMetadata(
           path: MapArchiveEntryPaths.scenarioChk,
           uncompressedSizeBytes: bytes.length,
           compressedSizeBytes: bytes.length,
+          flags: 0x80000200,
+          locale: 0,
+          nameIsSynthetic: false,
         ),
       ],
+      listingComplete: true,
     ),
   );
 }

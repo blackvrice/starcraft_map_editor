@@ -84,10 +84,15 @@ StormLib 연동 helper는
 - 줄바꿈으로 끝나는 단일 JSON stdin 레코드 최대 64 KiB
 - stdout/stderr 캡처 각각 최대 1 MiB, 초과분은 메모리에 보관하지 않고 계속 소비
 - 추출 `scenario.chk` 기본 최대 64 MiB
+- 아카이브 응답 목록 최대 1,024개, 동일 block index는 한 번만 노출
 - `protocolVersion`, request ID, 작업, helper/StormLib 버전의 완전 일치
 - helper 작업 디렉터리와 동일한 기존 디렉터리 안의 새 CHK 출력만 허용
 - 원본 아카이브 read-only open과 기존 임시 출력 덮어쓰기 거부
-- StormLib 메타데이터, 추출 파일 크기, Dart에서 읽은 바이트 길이의 일치
+- StormLib 전체/열거 항목 수와 목록 완전성, MPQ version, uint32 크기·flags·
+  locale, `scenario.chk` 목록/추출 메타데이터와 Dart에서 읽은 바이트 길이의
+  일치
+- listfile 없는 합성 이름은 진단 표시로만 사용하고 원본 경로나 저장 대상
+  이름으로 추측하지 않음
 
 ## 6. 경로 안전
 

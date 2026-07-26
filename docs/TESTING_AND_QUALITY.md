@@ -126,19 +126,20 @@ UTF-8 및 제어 바이트, 미참조 꼬리 데이터, 잘린 표와 잘못된 
 `test/application/map_archive_gateway_test.dart`는 실제 파일 시스템이나
 StormLib 없이 가짜 `MapArchiveGateway`를 대입해 open, 임시 쓰기, 취소 계약을
 검증한다. 요청/결과 바이트와 메타데이터의 불변성, 경로·timeout 경계,
-바이트 값 범위, `scenario.chk` 항목과 추출 크기의 일치, 성공/실패 진단
-불변식을 단위 테스트한다.
+바이트 값 범위, 목록 완전성, uint32 entry metadata, `scenario.chk` 항목과
+추출 크기의 일치, 성공/실패 진단 불변식을 단위 테스트한다.
 
 `test/infrastructure/process_map_archive_gateway_test.dart`는 셸을 사용하지 않고
 고정 PowerShell fixture 프로세스를 실행해 성공, 구조화 오류, 손상 응답,
+전체/불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ version, 암호화 항목,
 대량 stderr, timeout, 취소, 상대 경로 차단과 임시 디렉터리 정리를 검증한다.
 
 `map_archive_helper_native_test`는 StormLib로 테스트 중 MPQ를 직접 생성해 한글
-경로 추출, 원본 byte-exact 불변, 누락 CHK, 기존 출력 보존을 검증한다. Windows
-CI는 이 native CTest 뒤에 같은 fixture builder가 만든 MPQ를 패키지의 실제
-helper와 `ProcessMapArchiveGateway`로 다시 여는 end-to-end 스모크 테스트를
-실행한다. 테스트 맵은 실행 중 임시로 생성되며 저장소에 제3자 맵을 포함하지
-않는다.
+경로 추출, 원본 byte-exact 불변, 내부 listfile 기반 완전 목록, listfile 없는
+합성 이름, 누락 CHK, 기존 출력 보존을 검증한다. Windows CI는 이 native CTest
+뒤에 같은 fixture builder가 만든 3-entry MPQ를 패키지의 실제 helper와
+`ProcessMapArchiveGateway`로 다시 열어 목록과 추출 바이트를 검증한다. 테스트
+맵은 실행 중 임시로 생성되며 저장소에 제3자 맵을 포함하지 않는다.
 
 ## 4. 필수 회귀 테스트
 

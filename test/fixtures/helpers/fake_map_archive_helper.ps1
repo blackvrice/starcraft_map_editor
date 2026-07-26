@@ -8,7 +8,7 @@ $baseResponse = [ordered]@{
     protocolVersion = 1
     requestId = [string]$request.requestId
     operation = [string]$request.operation
-    helperVersion = '0.1.0'
+    helperVersion = '0.2.0'
     stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a'
 }
 
@@ -45,9 +45,68 @@ if ($mode -eq 'large-stderr') {
 )
 
 $baseResponse.status = 'success'
+$entries = @(
+    [ordered]@{
+        path = 'staredit\scenario.chk'
+        uncompressedSizeBytes = $scenarioBytes.Length
+        compressedSizeBytes = $scenarioBytes.Length
+        flags = [uint32]2147484160
+        locale = 0
+        nameIsSynthetic = $false
+    },
+    [ordered]@{
+        path = '(listfile)'
+        uncompressedSizeBytes = 24
+        compressedSizeBytes = 20
+        flags = [uint32]2147484160
+        locale = 0
+        nameIsSynthetic = $false
+    }
+)
+$formatVersion = 1
+$totalEntryCount = 2
+$listingComplete = $true
+$listingNativeError = $null
+
+if ($mode -eq 'listing-warning') {
+    $entries[1].path = 'File00000001.xxx'
+    $entries[1].nameIsSynthetic = $true
+    $totalEntryCount = 3
+    $listingComplete = $false
+    $listingNativeError = 299
+}
+
+if ($mode -eq 'format-warning') {
+    $formatVersion = 2
+}
+
+if ($mode -eq 'encrypted') {
+    $entries[0].flags = [uint32]2147549696
+}
+
+if ($mode -eq 'duplicate-path') {
+    $entries += [ordered]@{
+        path = '(LISTFILE)'
+        uncompressedSizeBytes = 24
+        compressedSizeBytes = 20
+        flags = [uint32]2147484160
+        locale = 0
+        nameIsSynthetic = $false
+    }
+    $totalEntryCount = 3
+}
+
+if ($mode -eq 'invalid-listing') {
+    $totalEntryCount = 3
+}
+
 $baseResponse.archive = [ordered]@{
     sizeBytes = 128
-    totalEntryCount = 2
+    formatVersion = $formatVersion
+    totalEntryCount = $totalEntryCount
+    listingComplete = $listingComplete
+    listingNativeError = $listingNativeError
+    entries = $entries
 }
 $baseResponse.scenario = [ordered]@{
     archivePath = 'staredit\scenario.chk'

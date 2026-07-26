@@ -84,12 +84,144 @@ void main() {
           0,
         ]);
         expect(result.extractedMap?.metadata.archiveSizeBytes, 128);
+        expect(result.extractedMap?.metadata.formatVersion, 1);
         expect(result.extractedMap?.metadata.totalEntryCount, 2);
+        expect(result.extractedMap?.metadata.listingComplete, isTrue);
+        expect(result.extractedMap?.metadata.listingNativeError, isNull);
         expect(
-          result.extractedMap?.metadata.entries.single.path,
-          r'staredit\scenario.chk',
+          result.extractedMap?.metadata.entries.map((entry) => entry.path),
+          [r'staredit\scenario.chk', '(listfile)'],
         );
+        expect(result.extractedMap?.metadata.entries.first.flags, 0x80000200);
+        expect(result.extractedMap?.metadata.entries.first.locale, 0);
+        expect(result.diagnostics, isEmpty);
         expect(temporaryRoot.listSync().whereType<Directory>(), isEmpty);
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'returns warnings for incomplete and synthetic archive listings',
+      () async {
+        final sourcePath = await createSource('listing-warning');
+        final gateway = createGateway();
+
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-listing-warning',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(result.extractedMap?.metadata.listingComplete, isFalse);
+        expect(result.extractedMap?.metadata.listingNativeError, 299);
+        expect(result.diagnostics.map((diagnostic) => diagnostic.code), [
+          MapArchiveDiagnosticCodes.listingIncomplete,
+          MapArchiveDiagnosticCodes.syntheticEntryNames,
+        ]);
+        expect(
+          result.diagnostics.every(
+            (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
+          ),
+          isTrue,
+        );
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'warns when the archive format version is unexpected',
+      () async {
+        final sourcePath = await createSource('format-warning');
+        final gateway = createGateway();
+
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-format-warning',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(result.extractedMap?.metadata.formatVersion, 2);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.unexpectedFormatVersion,
+        );
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'reports encrypted entries as nonblocking information',
+      () async {
+        final sourcePath = await createSource('encrypted');
+        final gateway = createGateway();
+
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-encrypted',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(result.extractedMap?.metadata.entries.first.isEncrypted, isTrue);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.encryptedEntries,
+        );
+        expect(result.diagnostics.single.severity, DiagnosticSeverity.info);
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'warns about duplicate archive paths case-insensitively',
+      () async {
+        final sourcePath = await createSource('duplicate-path');
+        final gateway = createGateway();
+
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-duplicate-path',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isTrue);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.duplicateEntryPaths,
+        );
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'rejects an inconsistent complete archive listing',
+      () async {
+        final sourcePath = await createSource('invalid-listing');
+        final gateway = createGateway();
+
+        final result = await gateway.open(
+          MapArchiveOpenRequest(
+            operationId: 'open-invalid-listing',
+            sourcePath: sourcePath,
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isFalse);
+        expect(
+          result.diagnostics.single.code,
+          MapArchiveDiagnosticCodes.invalidResponse,
+        );
       },
       skip: !Platform.isWindows,
     );

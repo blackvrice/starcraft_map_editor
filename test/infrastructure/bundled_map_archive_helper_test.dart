@@ -44,10 +44,16 @@ void main() {
         59,
         0,
       ]);
+      expect(result.extractedMap?.metadata.formatVersion, 1);
+      expect(result.extractedMap?.metadata.totalEntryCount, 3);
+      expect(result.extractedMap?.metadata.listingComplete, isTrue);
       expect(
-        result.extractedMap?.metadata.entries.single.path,
-        MapArchiveEntryPaths.scenarioChk,
+        result.extractedMap?.metadata.entries
+            .map((entry) => entry.path)
+            .toSet(),
+        {MapArchiveEntryPaths.scenarioChk, r'staredit\units.dat', '(listfile)'},
       );
+      expect(result.diagnostics, isEmpty);
       expect(sourceBytesAfter, sourceBytesBefore);
     },
     skip: missingEnvironment

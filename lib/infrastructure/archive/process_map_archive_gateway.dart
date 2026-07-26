@@ -19,6 +19,11 @@ abstract final class MapArchiveDiagnosticCodes {
   static const scenarioReadFailed = 'ARCHIVE_SCENARIO_READ_FAILED';
   static const temporaryDirectoryFailed = 'ARCHIVE_TEMP_DIRECTORY_FAILED';
   static const writeNotImplemented = 'ARCHIVE_WRITE_NOT_IMPLEMENTED';
+  static const listingIncomplete = 'ARCHIVE_LISTING_INCOMPLETE';
+  static const syntheticEntryNames = 'ARCHIVE_ENTRY_NAMES_SYNTHETIC';
+  static const duplicateEntryPaths = 'ARCHIVE_ENTRY_PATHS_DUPLICATED';
+  static const unexpectedFormatVersion = 'ARCHIVE_FORMAT_VERSION_UNEXPECTED';
+  static const encryptedEntries = 'ARCHIVE_ENCRYPTED_ENTRIES_PRESENT';
 }
 
 class ProcessMapArchiveGateway implements MapArchiveGateway {
@@ -62,8 +67,9 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
   }
 
   static const protocolVersion = 1;
-  static const helperVersion = '0.1.0';
+  static const helperVersion = '0.2.0';
   static const stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
+  static const maximumListedArchiveEntries = 1024;
 
   final String helperExecutablePath;
   final List<String> helperArguments;
@@ -261,16 +267,14 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
           scenarioChkBytes: scenarioBytes,
           metadata: MapArchiveMetadata(
             archiveSizeBytes: success.archiveSizeBytes,
+            formatVersion: success.formatVersion,
             totalEntryCount: success.totalEntryCount,
-            entries: [
-              MapArchiveEntryMetadata(
-                path: MapArchiveEntryPaths.scenarioChk,
-                uncompressedSizeBytes: success.uncompressedSizeBytes,
-                compressedSizeBytes: success.compressedSizeBytes,
-              ),
-            ],
+            entries: success.entries,
+            listingComplete: success.listingComplete,
+            listingNativeError: success.listingNativeError,
           ),
         ),
+        diagnostics: _archiveDiagnostics(success, request.sourcePath),
       );
     } on ProcessException catch (error) {
       return _openFailure(
@@ -432,28 +436,208 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
     }
 
     final archiveSizeBytes = archive['sizeBytes'];
+    final formatVersion = archive['formatVersion'];
     final totalEntryCount = archive['totalEntryCount'];
+    final listingComplete = archive['listingComplete'];
+    final listingNativeError = archive['listingNativeError'];
+    final rawEntries = archive['entries'];
     final uncompressedSizeBytes = scenario['uncompressedSizeBytes'];
     final compressedSizeBytes = scenario['compressedSizeBytes'];
     if (archiveSizeBytes is! int ||
         archiveSizeBytes < 0 ||
+        formatVersion is! int ||
+        formatVersion <= 0 ||
+        !_isUint32(formatVersion) ||
         totalEntryCount is! int ||
         totalEntryCount < 1 ||
+        !_isUint32(totalEntryCount) ||
+        listingComplete is! bool ||
+        rawEntries is! List<dynamic> ||
+        rawEntries.length > maximumListedArchiveEntries ||
         uncompressedSizeBytes is! int ||
         uncompressedSizeBytes < 0 ||
+        !_isUint32(uncompressedSizeBytes) ||
         compressedSizeBytes is! int ||
-        compressedSizeBytes < 0) {
+        compressedSizeBytes < 0 ||
+        !_isUint32(compressedSizeBytes)) {
       throw const FormatException('The helper metadata values are invalid.');
+    }
+    if ((listingComplete && listingNativeError != null) ||
+        (!listingComplete &&
+            (listingNativeError is! int ||
+                !_isUint32(listingNativeError) ||
+                listingNativeError == 0))) {
+      throw const FormatException(
+        'The archive listing status is inconsistent.',
+      );
+    }
+
+    final entries = <MapArchiveEntryMetadata>[];
+    for (final rawEntry in rawEntries) {
+      if (rawEntry is! Map<String, dynamic>) {
+        throw const FormatException('An archive entry payload is invalid.');
+      }
+      final path = rawEntry['path'];
+      final entrySize = rawEntry['uncompressedSizeBytes'];
+      final entryCompressedSize = rawEntry['compressedSizeBytes'];
+      final flags = rawEntry['flags'];
+      final locale = rawEntry['locale'];
+      final nameIsSynthetic = rawEntry['nameIsSynthetic'];
+      if (path is! String ||
+          path.trim().isEmpty ||
+          entrySize is! int ||
+          entrySize < 0 ||
+          !_isUint32(entrySize) ||
+          entryCompressedSize is! int ||
+          entryCompressedSize < 0 ||
+          !_isUint32(entryCompressedSize) ||
+          flags is! int ||
+          !_isUint32(flags) ||
+          locale is! int ||
+          !_isUint32(locale) ||
+          nameIsSynthetic is! bool) {
+        throw const FormatException(
+          'An archive entry metadata value is invalid.',
+        );
+      }
+      entries.add(
+        MapArchiveEntryMetadata(
+          path: path,
+          uncompressedSizeBytes: entrySize,
+          compressedSizeBytes: entryCompressedSize,
+          flags: flags,
+          locale: locale,
+          nameIsSynthetic: nameIsSynthetic,
+        ),
+      );
+    }
+    if (entries.length > totalEntryCount ||
+        (listingComplete && entries.length != totalEntryCount)) {
+      throw const FormatException('The archive entry count is inconsistent.');
+    }
+    final scenarioEntries = entries.where(
+      (entry) => MapArchiveEntryPaths.isScenarioChk(entry.path),
+    );
+    if (scenarioEntries.length != 1 ||
+        scenarioEntries.single.uncompressedSizeBytes != uncompressedSizeBytes ||
+        scenarioEntries.single.compressedSizeBytes != compressedSizeBytes) {
+      throw const FormatException(
+        'The scenario metadata does not match the archive listing.',
+      );
     }
 
     return _ArchiveHelperResponse.success(
       _ArchiveHelperSuccess(
         archiveSizeBytes: archiveSizeBytes,
+        formatVersion: formatVersion,
         totalEntryCount: totalEntryCount,
+        entries: entries,
+        listingComplete: listingComplete,
+        listingNativeError: listingNativeError as int?,
         uncompressedSizeBytes: uncompressedSizeBytes,
         compressedSizeBytes: compressedSizeBytes,
       ),
     );
+  }
+
+  List<EditorDiagnostic> _archiveDiagnostics(
+    _ArchiveHelperSuccess success,
+    String sourcePath,
+  ) {
+    final diagnostics = <EditorDiagnostic>[];
+    if (!success.listingComplete) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: MapArchiveDiagnosticCodes.listingIncomplete,
+          message: 'The archive entry listing is incomplete.',
+          severity: DiagnosticSeverity.warning,
+          stage: DiagnosticStage.archive,
+          filePath: sourcePath,
+          remediation:
+              'Editing can continue, but verify protected or unnamed entries '
+              'before saving.',
+          rawDetails:
+              'listedEntries=${success.entries.length}; '
+              'totalEntries=${success.totalEntryCount}; '
+              'nativeError=${success.listingNativeError}',
+        ),
+      );
+    }
+
+    final syntheticNameCount = success.entries
+        .where((entry) => entry.nameIsSynthetic)
+        .length;
+    if (syntheticNameCount > 0) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: MapArchiveDiagnosticCodes.syntheticEntryNames,
+          message: 'Some archive entry names were recovered synthetically.',
+          severity: DiagnosticSeverity.warning,
+          stage: DiagnosticStage.archive,
+          filePath: sourcePath,
+          remediation:
+              'Treat synthetic names as diagnostic labels, not original paths.',
+          rawDetails: 'syntheticEntries=$syntheticNameCount',
+        ),
+      );
+    }
+
+    final normalizedPaths = <String>{};
+    var duplicatePathCount = 0;
+    for (final entry in success.entries) {
+      final normalizedPath = entry.path.replaceAll('/', r'\').toLowerCase();
+      if (!normalizedPaths.add(normalizedPath)) {
+        duplicatePathCount++;
+      }
+    }
+    if (duplicatePathCount > 0) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: MapArchiveDiagnosticCodes.duplicateEntryPaths,
+          message: 'The archive contains duplicate entry paths.',
+          severity: DiagnosticSeverity.warning,
+          stage: DiagnosticStage.archive,
+          filePath: sourcePath,
+          remediation:
+              'Review locale variants and duplicate entries before saving.',
+          rawDetails: 'duplicateEntries=$duplicatePathCount',
+        ),
+      );
+    }
+
+    if (success.formatVersion != 1) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: MapArchiveDiagnosticCodes.unexpectedFormatVersion,
+          message: 'The map uses an unexpected MPQ format version.',
+          severity: DiagnosticSeverity.warning,
+          stage: DiagnosticStage.archive,
+          filePath: sourcePath,
+          remediation:
+              'Use Save As and re-open the output before replacing any map.',
+          rawDetails: 'formatVersion=${success.formatVersion}',
+        ),
+      );
+    }
+
+    final encryptedEntryCount = success.entries
+        .where((entry) => entry.isEncrypted && !entry.isInternal)
+        .length;
+    if (encryptedEntryCount > 0) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: MapArchiveDiagnosticCodes.encryptedEntries,
+          message: 'The archive contains encrypted entries.',
+          severity: DiagnosticSeverity.info,
+          stage: DiagnosticStage.archive,
+          filePath: sourcePath,
+          remediation:
+              'Encrypted entries are reported without attempting recovery.',
+          rawDetails: 'encryptedEntries=$encryptedEntryCount',
+        ),
+      );
+    }
+    return diagnostics;
   }
 
   Map<String, String> _minimalEnvironment(String temporaryPath) {
@@ -510,13 +694,21 @@ class _ArchiveHelperResponse {
 class _ArchiveHelperSuccess {
   const _ArchiveHelperSuccess({
     required this.archiveSizeBytes,
+    required this.formatVersion,
     required this.totalEntryCount,
+    required this.entries,
+    required this.listingComplete,
+    required this.listingNativeError,
     required this.uncompressedSizeBytes,
     required this.compressedSizeBytes,
   });
 
   final int archiveSizeBytes;
+  final int formatVersion;
   final int totalEntryCount;
+  final List<MapArchiveEntryMetadata> entries;
+  final bool listingComplete;
+  final int? listingNativeError;
   final int uncompressedSizeBytes;
   final int compressedSizeBytes;
 }
@@ -582,6 +774,8 @@ bool _isAbsoluteWindowsPath(String path) {
     r'^(?:[a-zA-Z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+(?:[\\/]|$))',
   ).hasMatch(path);
 }
+
+bool _isUint32(int value) => value >= 0 && value <= 0xffffffff;
 
 String _truncate(String value, int maximumLength) {
   if (value.length <= maximumLength) {
