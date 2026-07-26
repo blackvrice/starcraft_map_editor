@@ -54,8 +54,14 @@ final class EudBuildConfiguration {
        environmentOverrides = EudEnvironmentRules.copyAndValidate(
          environmentOverrides,
        ) {
-    _requireExtension(this.baseMapPath, const {'.scm', '.scx'}, 'baseMapPath');
-    _requireExtension(this.entrySourcePath, const {'.eps'}, 'entrySourcePath');
+    const mapExtensions = {'.scm', '.scx'};
+    const sourceExtensions = {'.eps'};
+    _requireExtension(this.baseMapPath, mapExtensions, 'baseMapPath');
+    _requireExtension(
+      this.entrySourcePath,
+      sourceExtensions,
+      'entrySourcePath',
+    );
     _requireExtension(this.outputMapPath, {
       compilerProfile.outputExtension,
     }, 'outputMapPath');
@@ -130,7 +136,7 @@ String _requireAbsoluteWindowsPath(String value, String name) {
       value,
       name,
       'The path must be an absolute Windows drive or UNC path without '
-          'surrounding whitespace.',
+      'surrounding whitespace.',
     );
   }
   _validatePathSegments(value, name);
@@ -156,7 +162,8 @@ bool _isAbsoluteWindowsPath(String path) {
 void _validatePathSegments(String path, String name) {
   final normalized = path.replaceAll('/', r'\');
   final isDrivePath = RegExp(r'^[a-zA-Z]:\\').hasMatch(normalized);
-  final body = isDrivePath ? normalized.substring(3) : normalized.substring(2);
+  final rootOffset = isDrivePath ? 3 : 2;
+  final body = normalized.substring(rootOffset);
   final segments = body.split(RegExp(r'\\+'));
   for (final segment in segments) {
     if (segment.isEmpty) {
