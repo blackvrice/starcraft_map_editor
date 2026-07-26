@@ -195,8 +195,11 @@ abstract interface class EditorCommand {
 
 ```dart
 abstract interface class MapArchiveGateway {
-  Future<ExtractedMap> open(String path);
-  Future<void> writeAs(ArchiveWriteRequest request);
+  Future<MapArchiveOpenResult> open(MapArchiveOpenRequest request);
+  Future<MapArchiveWriteResult> writeTemporary(
+    MapArchiveWriteRequest request,
+  );
+  Future<bool> cancel(String operationId);
 }
 
 abstract interface class EudCompilerGateway {
@@ -210,6 +213,20 @@ abstract interface class SafeFileWriter {
 ```
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
+
+`MapArchiveGateway` 포트는 Application 계층의 계약만 표현한다. open 요청은
+operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK 바이트와
+아카이브 메타데이터를 함께 반환한다. 임시 쓰기 요청은 원본 경로와 서로 다른
+앱 소유 임시 출력 경로를 요구한다. 결과 모델은 다음 불변식을 강제한다.
+
+- 바이너리 요청과 결과는 0~255 범위를 검사한 뒤 방어적으로 복사하며,
+  메타데이터 목록과 함께 읽기 전용 값으로 노출한다.
+- 추출 성공에는 정확히 하나의 `staredit\scenario.chk` 메타데이터가 있고
+  선언된 비압축 크기와 반환 바이트 길이가 같아야 한다.
+- 성공 결과에는 저장을 차단하는 진단이 없고 실패 결과에는 최소 하나의
+  차단 진단이 있어야 한다.
+- timeout은 명시적인 양수이며 취소는 Application operation ID로 요청한다.
+- 포트에는 helper 실행 파일, JSON 프로토콜, StormLib 타입이 노출되지 않는다.
 
 ### MapArchiveGateway 구현 경계
 

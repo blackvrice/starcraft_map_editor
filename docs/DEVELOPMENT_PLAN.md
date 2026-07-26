@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | StormLib helper process 결정, `.scm/.scx` Open/Save As 대기 |
+| M3. 맵 아카이브 입출력 | 진행 중 | helper 결정·`MapArchiveGateway` 포트 완료, MPQ 어댑터 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -101,7 +101,7 @@
 목표: 보호되지 않은 `.scm/.scx`에서 CHK를 추출하고, 새 맵으로 안전하게 저장한다.
 
 - [x] StormLib 브리지 방식 FFI/helper process 비교와 ADR 작성
-- [ ] `MapArchiveGateway` 포트 구현
+- [x] `MapArchiveGateway` 포트 구현
 - [ ] `staredit\scenario.chk` 탐색과 추출
 - [ ] 아카이브 목록과 기본 메타데이터 진단
 - [ ] Open Map UI와 최근 파일 연결
@@ -119,6 +119,12 @@
   `map_archive_helper.exe`를 요청마다 실행한다. 앱은 구조화 프로토콜, 임시
   파일, fingerprint와 재열기 검증을 소유하며 helper는 원본을 수정하거나
   최종 출력을 승격하지 않는다.
+- `lib/application/ports/map_archive_gateway.dart`는 open, 임시 아카이브 쓰기,
+  operation ID 기반 취소를 정의한다. 요청/결과 값은 경로와 timeout, 읽기 전용
+  CHK 바이트, 아카이브 메타데이터, 성공/실패 진단 불변식을 검증하며 helper나
+  StormLib 타입을 노출하지 않는다.
+- `test/application/map_archive_gateway_test.dart`는 가짜 어댑터 대입과 함께
+  계약의 불변성, 경계값, 진단 규칙을 검증한다.
 
 완료 조건:
 

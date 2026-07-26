@@ -123,6 +123,12 @@ UTF-8 및 제어 바이트, 미참조 꼬리 데이터, 잘린 표와 잘못된 
 문자열 변경 테스트는 대상 offset과 추가된 바이트 외의 기존 payload가 동일한지
 인덱스별로 확인한다.
 
+`test/application/map_archive_gateway_test.dart`는 실제 파일 시스템이나
+StormLib 없이 가짜 `MapArchiveGateway`를 대입해 open, 임시 쓰기, 취소 계약을
+검증한다. 요청/결과 바이트와 메타데이터의 불변성, 경로·timeout 경계,
+바이트 값 범위, `scenario.chk` 항목과 추출 크기의 일치, 성공/실패 진단
+불변식을 단위 테스트한다.
+
 ## 4. 필수 회귀 테스트
 
 ### CHK
