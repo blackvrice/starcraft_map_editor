@@ -25,7 +25,7 @@ Windows용 StarCraft: Remastered UMS 맵 에디터를 만드는 오픈 소스 �
 
 ## 개발 시작
 
-현재 Flutter `main` 채널의 개발 버전을 사용하고 있습니다. 초기 기반 작업이 끝나기 전까지 SDK 버전은 저장소의 `pubspec.lock`과 CI 설정을 기준으로 맞춥니다.
+Flutter `3.44.8` stable을 기준으로 사용합니다. FVM을 사용하는 경우 저장소의 `.fvmrc`가 같은 버전을 선택하며, CI도 동일한 버전을 설치합니다.
 
 ```powershell
 flutter pub get
@@ -51,4 +51,4 @@ flutter run -d windows
 
 ## 라이선스
 
-프로젝트 자체 라이선스는 아직 결정되지 않았습니다. 라이선스가 추가되기 전에는 소스의 재배포 또는 파생 배포 조건이 명확하지 않으므로, 외부 공개 기여를 받기 전에 라이선스를 먼저 확정해야 합니다.
+이 프로젝트는 [MIT License](LICENSE)로 배포됩니다. 외부 도구와 바이너리는 각각의 라이선스를 따릅니다.

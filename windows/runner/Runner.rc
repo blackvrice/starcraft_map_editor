@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.starcraft" "\0"
-            VALUE "FileDescription", "starcraft_map_editor" "\0"
+            VALUE "CompanyName", "blackvrice" "\0"
+            VALUE "FileDescription", "StarCraft Map Editor" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "starcraft_map_editor" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.starcraft. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 blackvrice." "\0"
             VALUE "OriginalFilename", "starcraft_map_editor.exe" "\0"
-            VALUE "ProductName", "starcraft_map_editor" "\0"
+            VALUE "ProductName", "StarCraft Map Editor" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

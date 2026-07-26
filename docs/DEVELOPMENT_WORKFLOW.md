@@ -19,7 +19,7 @@ flutter test
 flutter run -d windows
 ```
 
-현재 SDK가 Flutter `main` 개발 버전이므로, M0에서 stable 또는 정확한 revision을 선택해 CI와 로컬 환경을 맞춰야 한다.
+기준 SDK는 Flutter `3.44.8` stable과 Dart `3.12`다. FVM 사용 시 저장소의 `.fvmrc`로 같은 버전을 선택한다. 다른 SDK로 작업했다면 완료 보고에 그 차이를 기록하고, CI 기준 버전에서도 검증한다.
 
 ## 3. 작업 단위
 

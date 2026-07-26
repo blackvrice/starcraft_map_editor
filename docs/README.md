@@ -34,6 +34,7 @@
 - 대상 게임: StarCraft: Remastered
 - 대상 맵: 보호되지 않은 UMS `.scm`/`.scx`
 - UI: Flutter desktop
+- 도구 체인: Flutter 3.44.8 stable / Dart 3.12
 - EUD 언어/컴파일러: epScript와 euddraft/eudplib
 - 저장 기본값: 원본과 다른 경로로 Save As
 - 첫 수직 기능: 맵 선택 → epScript 편집 → 빌드 → 새 출력 맵 생성
