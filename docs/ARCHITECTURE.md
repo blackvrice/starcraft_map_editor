@@ -17,8 +17,10 @@ Windows와 StarCraft: Remastered를 우선 지원한다. 모바일과 웹 디렉
 ```mermaid
 flowchart LR
     User["맵 제작자"] --> App["Flutter Desktop Editor"]
-    App --> Archive["MPQ Archive Adapter"]
-    Archive --> Map[".scm / .scx"]
+    App --> Archive["MapArchiveGateway"]
+    Archive --> Helper["map_archive_helper.exe"]
+    Helper --> StormLib["StormLib"]
+    Helper --> Map[".scm / .scx"]
     App --> Compiler["euddraft Adapter"]
     Compiler --> Tool["euddraft / eudplib"]
     Tool --> Output["EUD output map"]
@@ -36,7 +38,7 @@ flowchart TB
     Application["Application\nuse cases, commands, document session"]
     Domain["Domain\nmap model, CHK model, validation"]
     Infrastructure["Infrastructure\nfile system, FFI, processes, settings"]
-    Native["Native / External\nStormLib bridge, euddraft"]
+    Native["Native / External\nmap archive helper, StormLib, euddraft"]
 
     Presentation --> Application
     Application --> Domain
@@ -66,7 +68,7 @@ flowchart TB
 
 ### Infrastructure
 
-- MPQ 네이티브 브리지
+- `MapArchiveGateway`와 번들된 MPQ helper process 어댑터
 - 로컬 파일 시스템, 원자적 저장, 자동 백업
 - euddraft 프로세스 실행과 진단 변환
 - 설정과 최근 프로젝트 저장
@@ -102,7 +104,7 @@ lib/
     trigger_editor/
     eud_editor/
 native/
-  map_bridge/
+  map_archive_helper/
 test/
   unit/
   integration/
@@ -209,6 +211,24 @@ abstract interface class SafeFileWriter {
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
 
+### MapArchiveGateway 구현 경계
+
+`MapArchiveGateway`의 StormLib 연동은
+[ADR-0004](decisions/0004-stormlib-helper-process.md)에 따라 번들된
+`map_archive_helper.exe`를 요청마다 별도 프로세스로 실행한다.
+
+- 앱은 절대 경로의 helper를 셸 없이 실행하고 버전이 있는 UTF-8 JSON 요청을
+  stdin으로 전달한다.
+- helper는 `inspect`, `extractScenario`, `replaceScenario`만 제공하며 MVP에서
+  접근 가능한 항목은 정확히 `staredit\scenario.chk`다.
+- 바이너리 CHK는 앱 소유 요청별 임시 디렉터리의 파일로 교환한다.
+- stdout의 구조화 응답과 stderr를 동시에 소비하고 종료 코드, 프로토콜,
+  최종 응답을 모두 확인한다.
+- 입력 fingerprint, CHK/출력 재검증, 최종 승격은 Application 계층이 소유한다.
+  helper는 원본을 제자리 수정하거나 최종 출력 경로를 승격하지 않는다.
+- timeout, 취소, 네이티브 크래시는 작업 실패로 변환하고 앱이 만든 정확한
+  임시 디렉터리만 정리한다.
+
 ## 8. 주요 데이터 흐름
 
 ### 맵 열기
@@ -305,5 +325,5 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 | Windows/SC:R 우선 | 승인 | [ADR-0001](decisions/0001-windows-remastered-first.md) |
 | CHK 원시 섹션 무손실 보존 | 승인 | [ADR-0002](decisions/0002-lossless-chk-model.md) |
 | EUD 컴파일러를 외부 프로세스로 격리 | 승인 | [ADR-0003](decisions/0003-external-euddraft-adapter.md) |
-| MPQ 브리지 구현 방식 | 검토 필요 | StormLib FFI와 helper process 비교 필요 |
+| MPQ 브리지 구현 방식 | 승인 | [ADR-0004](decisions/0004-stormlib-helper-process.md) |
 | 프로젝트 파일 형식 | 검토 필요 | EUD 수직 기능 구현 전 결정 |

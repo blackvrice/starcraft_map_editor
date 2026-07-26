@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 대기 | `.scm/.scx` Open/Save As |
+| M3. 맵 아카이브 입출력 | 진행 중 | StormLib helper process 결정, `.scm/.scx` Open/Save As 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -100,7 +100,7 @@
 
 목표: 보호되지 않은 `.scm/.scx`에서 CHK를 추출하고, 새 맵으로 안전하게 저장한다.
 
-- [ ] StormLib 브리지 방식 FFI/helper process 비교와 ADR 작성
+- [x] StormLib 브리지 방식 FFI/helper process 비교와 ADR 작성
 - [ ] `MapArchiveGateway` 포트 구현
 - [ ] `staredit\scenario.chk` 탐색과 추출
 - [ ] 아카이브 목록과 기본 메타데이터 진단
@@ -109,6 +109,16 @@
 - [ ] 입력 파일 fingerprint와 외부 변경 감지
 - [ ] 원본 덮어쓰기 방지와 백업 정책 테스트
 - [ ] 재배포 가능한 자체 제작 `.scx` 통합 픽스처 추가
+
+검증 메모:
+
+- [ADR-0004](decisions/0004-stormlib-helper-process.md)에서 직접 FFI와 작은
+  C ABI 래퍼, helper process를 크래시 격리, 취소, 테스트, 배포, 성능 기준으로
+  비교했다.
+- MVP는 고정된 StormLib를 정적으로 링크한 번들
+  `map_archive_helper.exe`를 요청마다 실행한다. 앱은 구조화 프로토콜, 임시
+  파일, fingerprint와 재열기 검증을 소유하며 helper는 원본을 수정하거나
+  최종 출력을 승격하지 않는다.
 
 완료 조건:
 
