@@ -179,6 +179,9 @@ epScript 모드와 Clean/Modified 상태를 표시하며 맵 탭으로 이동해
 Build Log 상단은 build ID, euddraft 버전, 성공·실패·취소 결과와 종료 코드,
 UTC 시작·종료 시각을 먼저 보여준다. 아래에는 순서가 유지된 각 줄을
 `[stdout]` 또는 `[stderr]`로 구분하고 구조화 진단 코드를 함께 표시한다.
+구조화 진단에 위치가 있으면 Build Log 메시지 앞과 Problems 행 오른쪽에
+`file:line[:column]`을 표시한다. 현재 공식 epScript 오류는 파일과 행만
+제공하므로 열을 추정해 보여주지 않는다.
 최근 20개 기록은 현재 앱 세션에서 유지되지만 원시 로그를 사용자 동의 없이
 파일로 저장하지 않는다.
 

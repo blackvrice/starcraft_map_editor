@@ -197,7 +197,7 @@
 - [x] 최소 epScript 코드 편집기와 변경 상태 구현
 - [x] Build/Cancel 명령과 출력 패널 구현
 - [x] stdout/stderr, 종료 코드, 도구 버전 기록
-- [ ] 가능한 오류의 파일/행/열 진단 변환
+- [x] 가능한 오류의 파일/행/열 진단 변환
 - [ ] 임시 출력과 성공 출력 승격 구현
 - [ ] 가짜 컴파일러를 이용한 성공/실패/취소 통합 테스트
 - [ ] 실제 euddraft와 자체 제작 테스트 맵 빌드 스모크 테스트
@@ -258,6 +258,15 @@
   원시 줄을 `[stdout]`/`[stderr]`로 구분한다. 단위·위젯 테스트는 로그 순서,
   타임스탬프 정규화, 종료 코드, 실패·취소 진단과 기록 상한을 검증한다.
   원시 로그의 디스크 저장과 개인정보 제거 내보내기는 후속 manifest 작업이다.
+- `EudCompilerDiagnosticParser` 포트는 외부 도구의 원시 줄을 선택적 구조화
+  진단으로 변환한다. `EuddraftDiagnosticParser`는 공식 eudplib epScript의
+  stderr 형식인 `[Error code] Module "file" Line line : message`만 보수적으로
+  인식해 코드·파일·행을 보존한다. 현재 형식에 열이 없으므로 임의로 추정하지
+  않으며, 인식 여부와 관계없이 원시 stdout/stderr는 Build Log에 남긴다.
+- 컨트롤러 테스트는 하나의 stderr 줄이 원시 기록과 진단 이벤트 양쪽에
+  남는지 검증한다. 파서 테스트는 Windows 공백 경로, 한글 모듈, 음수 오류
+  코드와 미지원 줄을, 위젯 테스트는 `main.eps:line[:column]` 위치가 Problems와
+  Build Log에 표시되는지를 검증한다.
 
 완료 조건:
 

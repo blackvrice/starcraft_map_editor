@@ -5,9 +5,11 @@ import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_record.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
+import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 
 void main() {
   test('runs a prepared build and forwards its log events', () async {
@@ -31,6 +33,7 @@ void main() {
     });
     final controller = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
       clock: _SequenceClock([
         DateTime.utc(2026, 7, 26, 3),
@@ -83,6 +86,7 @@ void main() {
     });
     final controller = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
     addTearDown(controller.dispose);
@@ -97,11 +101,63 @@ void main() {
     expect(progressController.current?.message, contains('could not'));
   });
 
+  test('converts compiler stderr while preserving the raw log line', () async {
+    final progressController = OperationProgressController();
+    final gateway = _ScriptedEudCompilerGateway((request) {
+      return Stream.fromIterable([
+        EudBuildEvent.stderrLine(
+          buildId: request.buildId,
+          text:
+              r'[Error 7041] Module "C:\Project\EUD Source\main.eps" '
+              'Line 27 : Undefined function SpawnBoss',
+        ),
+        EudBuildEvent.failed(
+          buildId: request.buildId,
+          diagnostic: _blockingDiagnostic(
+            code: 'EUD_BUILD_PROCESS_FAILED',
+            message: 'euddraft exited with a failure code.',
+          ),
+          exitCode: 1,
+        ),
+      ]);
+    });
+    final controller = EudBuildController(
+      compilerGateway: gateway,
+      diagnosticParser: const EuddraftDiagnosticParser(),
+      operationProgressController: progressController,
+      clock: _SequenceClock([
+        DateTime.utc(2026, 7, 26, 4),
+        DateTime.utc(2026, 7, 26, 4, 0, 1),
+        DateTime.utc(2026, 7, 26, 4, 0, 2),
+      ]).call,
+    );
+    addTearDown(controller.dispose);
+    addTearDown(progressController.dispose);
+    controller.prepare(_request('diagnostic-build'));
+
+    expect(await controller.start(), isFalse);
+
+    expect(controller.state.events.map((event) => event.kind), [
+      EudBuildEventKind.stderrLine,
+      EudBuildEventKind.diagnostic,
+      EudBuildEventKind.failed,
+    ]);
+    final parsedDiagnostic = controller.state.diagnostics.first;
+    expect(parsedDiagnostic.code, 'EUD_EPSCRIPT_ERROR_7041');
+    expect(parsedDiagnostic.filePath, r'C:\Project\EUD Source\main.eps');
+    expect(parsedDiagnostic.sourceLine, 27);
+    final record = controller.state.latestRecord!;
+    expect(record.stderrLines.single, contains('[Error 7041]'));
+    expect(record.diagnostics.first, same(parsedDiagnostic));
+    expect(record.diagnostics.last.code, 'EUD_BUILD_PROCESS_FAILED');
+  });
+
   test('requests cancellation and waits for the cancelled event', () async {
     final progressController = OperationProgressController();
     final gateway = _CancellableEudCompilerGateway();
     final controller = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
     addTearDown(controller.dispose);
@@ -126,6 +182,7 @@ void main() {
     final gateway = _ScriptedEudCompilerGateway((_) => const Stream.empty());
     final controller = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
     addTearDown(controller.dispose);
@@ -150,6 +207,7 @@ void main() {
     });
     final controller = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
       maximumBuildRecords: 2,
     );

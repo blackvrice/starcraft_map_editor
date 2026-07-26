@@ -1815,7 +1815,9 @@ List<_EudBuildLogItem> _buildLogItems(EudBuildRecord record) {
       _EudBuildLogItem(
         icon: _diagnosticIcon(diagnostic.severity),
         color: _diagnosticColor(diagnostic.severity),
-        text: '[${diagnostic.code}] ${diagnostic.message}',
+        text:
+            '[${diagnostic.code}] '
+            '${_diagnosticLocationPrefix(diagnostic)}${diagnostic.message}',
       ),
   ];
   return items;
@@ -1887,11 +1889,50 @@ class _DiagnosticList extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
             ),
+            if (_diagnosticLocationLabel(diagnostic) case final location?)
+              Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(
+                  location,
+                  style: const TextStyle(
+                    color: Color(0xFF8994A8),
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                  ),
+                ),
+              ),
           ],
         );
       },
     );
   }
+}
+
+String _diagnosticLocationPrefix(EditorDiagnostic diagnostic) {
+  final location = _diagnosticLocationLabel(diagnostic);
+  return location == null ? '' : '$location: ';
+}
+
+String? _diagnosticLocationLabel(EditorDiagnostic diagnostic) {
+  final filePath = diagnostic.filePath?.trim();
+  final line = diagnostic.sourceLine;
+  final column = diagnostic.sourceColumn;
+  if ((filePath == null || filePath.isEmpty) &&
+      line == null &&
+      column == null) {
+    return null;
+  }
+
+  final segments = filePath
+      ?.replaceAll(r'\', '/')
+      .split('/')
+      .where((segment) => segment.isNotEmpty);
+  final fileName = segments == null || segments.isEmpty ? null : segments.last;
+  return [
+    ?fileName,
+    if (line != null) '$line',
+    if (column != null) '$column',
+  ].join(':');
 }
 
 class _OperationSummary extends StatelessWidget {

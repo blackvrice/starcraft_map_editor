@@ -11,6 +11,7 @@ import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
@@ -20,6 +21,7 @@ import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dar
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
+import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 
 void main() {
   testWidgets('renders the desktop editor shell', (tester) async {
@@ -82,6 +84,7 @@ void main() {
     final progressController = OperationProgressController();
     final buildController = EudBuildController(
       compilerGateway: _ScriptedEudCompilerGateway(),
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     )..prepare(_eudBuildRequest('widget-build'));
     addTearDown(buildController.dispose);
@@ -119,6 +122,7 @@ void main() {
     final gateway = _CancellableEudCompilerGateway();
     final buildController = EudBuildController(
       compilerGateway: gateway,
+      diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     )..prepare(_eudBuildRequest('widget-cancel'));
     addTearDown(buildController.dispose);
@@ -149,6 +153,52 @@ void main() {
       find.text('[EUD_TEST_CANCELLED] Test build cancelled.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('shows parsed euddraft source locations in log and problems', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final progressController = OperationProgressController();
+    final buildController = EudBuildController(
+      compilerGateway: _DiagnosticEudCompilerGateway(),
+      diagnosticParser: const EuddraftDiagnosticParser(),
+      operationProgressController: progressController,
+    )..prepare(_eudBuildRequest('widget-diagnostic'));
+    addTearDown(buildController.dispose);
+    addTearDown(progressController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        eudBuildController: buildController,
+        operationProgressController: progressController,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('toolbar-build-eud')));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const Key('eud-build-log')),
+      const Offset(0, -160),
+    );
+    await tester.pump();
+    expect(
+      find.text(
+        '[EUD_EPSCRIPT_ERROR_7041] '
+        'main.eps:14: Undefined function SpawnBoss',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('output-tab-problems')));
+    await tester.pump();
+    expect(find.text('EUD_EPSCRIPT_ERROR_7041'), findsOneWidget);
+    expect(find.text('Undefined function SpawnBoss'), findsOneWidget);
+    expect(find.text('main.eps:14'), findsOneWidget);
+    expect(find.text('helpers.py:8:5'), findsOneWidget);
   });
 
   testWidgets('edits epScript and displays its dirty state', (tester) async {
@@ -343,6 +393,7 @@ Widget _createTestApp({
       eudBuildController ??
       EudBuildController(
         compilerGateway: _UnusedEudCompilerGateway(),
+        diagnosticParser: const IgnoreEudCompilerDiagnostics(),
         operationProgressController: resolvedProgressController,
       );
   final resolvedFingerprintGateway = _FakeMapFileFingerprintGateway();
@@ -440,6 +491,40 @@ final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
       ),
       EudBuildEvent.stderrLine(buildId: request.buildId, text: 'Test warning'),
       EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
+    ]);
+  }
+
+  @override
+  Future<bool> cancel(String buildId) async => false;
+}
+
+final class _DiagnosticEudCompilerGateway implements EudCompilerGateway {
+  @override
+  Stream<EudBuildEvent> build(EudBuildRequest request) {
+    return Stream.fromIterable([
+      EudBuildEvent.started(
+        buildId: request.buildId,
+        toolVersion: request.tool.version,
+      ),
+      EudBuildEvent.stderrLine(
+        buildId: request.buildId,
+        text:
+            r'[Error 7041] Module "C:\Project\EUD Source\main.eps" '
+            'Line 14 : Undefined function SpawnBoss',
+      ),
+      EudBuildEvent.failed(
+        buildId: request.buildId,
+        diagnostic: const EditorDiagnostic(
+          code: 'EUD_TEST_PYTHON_FAILURE',
+          message: 'A Python helper failed.',
+          severity: DiagnosticSeverity.error,
+          stage: DiagnosticStage.compile,
+          filePath: r'C:\Project\EUD Source\helpers.py',
+          sourceLine: 8,
+          sourceColumn: 5,
+        ),
+        exitCode: 1,
+      ),
     ]);
   }
 

@@ -8,6 +8,7 @@ import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
+import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
 import '../infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 import '../infrastructure/filesystem/local_map_save_file_gateway.dart';
@@ -25,6 +26,7 @@ void bootstrap() {
   final archiveGateway = ProcessMapArchiveGateway.bundled();
   final eudBuildController = EudBuildController(
     compilerGateway: ProcessEudCompilerGateway(),
+    diagnosticParser: const EuddraftDiagnosticParser(),
     operationProgressController: operationProgressController,
   );
   final fingerprintGateway = LocalMapFileFingerprintGateway();

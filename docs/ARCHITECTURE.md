@@ -268,6 +268,14 @@ Build 중복 실행을 차단하며 취소는 활성 build ID로만 전달한다
 종결한다. Presentation은 이 상태만 구독해 Build/Cancel 활성 상태와 현재
 세션의 빌드 기록을 표시한다.
 
+`EudCompilerDiagnosticParser`는 Application 계층이 소유하는 선택적 변환
+포트다. Infrastructure의 `EuddraftDiagnosticParser`는 공식 epScript
+컴파일러가 stderr에 내보내는 구조화된 오류 한 줄만 인식하고
+`EditorDiagnostic`의 코드·파일·행으로 변환한다. 알 수 없는 줄, stdout의
+유사 문자열, 현재 형식이 제공하지 않는 열은 추정하지 않는다. 컨트롤러는
+원시 줄을 먼저 기록한 뒤 파서가 반환한 진단을 별도 이벤트로 추가하므로
+어댑터의 해석 가능 범위와 관계없이 원본 증거가 유지된다.
+
 각 실행은 `EudBuildRecord` 불변 스냅샷으로 남는다. build ID, 실제 euddraft
 버전, UTC 시작·종료 시각, 실행 상태, 선택적 종료 코드, 순서를 유지한
 `stdout`/`stderr` 줄과 구조화 진단을 가진다. 로그 줄에는 채널과 캡처 시각이

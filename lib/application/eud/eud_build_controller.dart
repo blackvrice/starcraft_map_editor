@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
+import '../ports/eud_compiler_diagnostic_parser.dart';
 import '../ports/eud_compiler_gateway.dart';
 import 'eud_build_record.dart';
 
@@ -112,6 +113,7 @@ final class EudBuildState {
 final class EudBuildController {
   EudBuildController({
     required this.compilerGateway,
+    required this.diagnosticParser,
     required this.operationProgressController,
     DateTime Function()? clock,
     this.maximumBuildRecords = 20,
@@ -126,6 +128,7 @@ final class EudBuildController {
   }
 
   final EudCompilerGateway compilerGateway;
+  final EudCompilerDiagnosticParser diagnosticParser;
   final OperationProgressController operationProgressController;
   final int maximumBuildRecords;
   final DateTime Function() _clock;
@@ -333,27 +336,19 @@ final class EudBuildController {
         );
         return;
       case EudBuildEventKind.stdoutLine:
-        _emit(
-          _state.append(
-            event,
-            record: record.appendLog(
-              channel: EudBuildLogChannel.stdout,
-              text: event.text ?? '',
-              capturedAt: _clock(),
-            ),
-          ),
+        _appendOutput(
+          event: event,
+          outputChannel: EudCompilerOutputChannel.stdout,
+          logChannel: EudBuildLogChannel.stdout,
+          record: record,
         );
         return;
       case EudBuildEventKind.stderrLine:
-        _emit(
-          _state.append(
-            event,
-            record: record.appendLog(
-              channel: EudBuildLogChannel.stderr,
-              text: event.text ?? '',
-              capturedAt: _clock(),
-            ),
-          ),
+        _appendOutput(
+          event: event,
+          outputChannel: EudCompilerOutputChannel.stderr,
+          logChannel: EudBuildLogChannel.stderr,
+          record: record,
         );
         return;
       case EudBuildEventKind.diagnostic:
@@ -420,6 +415,46 @@ final class EudBuildController {
         );
         return;
     }
+  }
+
+  void _appendOutput({
+    required EudBuildEvent event,
+    required EudCompilerOutputChannel outputChannel,
+    required EudBuildLogChannel logChannel,
+    required EudBuildRecord record,
+  }) {
+    final text = event.text ?? '';
+    _emit(
+      _state.append(
+        event,
+        record: record.appendLog(
+          channel: logChannel,
+          text: text,
+          capturedAt: _clock(),
+        ),
+      ),
+    );
+
+    final diagnostic = diagnosticParser.parseLine(
+      channel: outputChannel,
+      text: text,
+    );
+    if (diagnostic == null) {
+      return;
+    }
+
+    final diagnosticEvent = EudBuildEvent.diagnostic(
+      buildId: event.buildId,
+      diagnostic: diagnostic,
+    );
+    _emit(
+      _state.append(
+        diagnosticEvent,
+        record: _requireLatestRecord(
+          event.buildId,
+        ).appendDiagnostic(diagnostic),
+      ),
+    );
   }
 
   void _handleDone() {

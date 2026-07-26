@@ -232,7 +232,10 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 - stdout/stderr 채널·순서·캡처 시각 보존과 기록 불변성
 - 성공·실패·취소 기록과 세션 내 최근 기록 상한
 - 성공 종료지만 출력 없음
-- 컴파일 오류 위치 파싱
+- 공식 epScript stderr 오류의 코드·Windows/한글 경로·행 파싱
+- stdout 유사 문자열, 알 수 없는 줄과 현재 형식에 없는 열을 추정하지 않음
+- 원시 stderr 보존과 파생 진단의 동일 빌드 기록 병행 저장
+- Problems와 Build Log의 `file:line[:column]` 위치 표시
 - 입력 맵 불변
 
 ## 5. 성능 기준
