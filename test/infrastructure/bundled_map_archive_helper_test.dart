@@ -14,13 +14,21 @@ void main() {
       mapPath.isEmpty;
 
   test(
-    'bundled helper extracts a self-created MPQ without changing its source',
+    'bundled helper extracts, replaces, and reopens without changing source',
     () async {
       final sourceFile = File(mapPath!);
       final sourceBytesBefore = await sourceFile.readAsBytes();
       final gateway = ProcessMapArchiveGateway(
         helperExecutablePath: helperPath!,
       );
+      final saveWorkspace = await Directory.systemTemp.createTemp(
+        'starcraft_map_editor_bundled_save_',
+      );
+      addTearDown(() async {
+        if (await saveWorkspace.exists()) {
+          await saveWorkspace.delete(recursive: true);
+        }
+      });
 
       final result = await gateway.open(
         MapArchiveOpenRequest(
@@ -55,6 +63,42 @@ void main() {
       );
       expect(result.diagnostics, isEmpty);
       expect(sourceBytesAfter, sourceBytesBefore);
+
+      final temporaryOutputPath =
+          '${saveWorkspace.path}${Platform.pathSeparator}saved.scx';
+      final replacementChk = [86, 69, 82, 32, 2, 0, 0, 0, 205, 0];
+      final writeResult = await gateway.writeTemporary(
+        MapArchiveWriteRequest(
+          operationId: 'bundled-helper-write-smoke',
+          sourcePath: sourceFile.path,
+          temporaryOutputPath: temporaryOutputPath,
+          scenarioChkBytes: replacementChk,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+      expect(
+        writeResult.isSuccess,
+        isTrue,
+        reason: '${writeResult.diagnostics}',
+      );
+
+      final reopened = await gateway.open(
+        MapArchiveOpenRequest(
+          operationId: 'bundled-helper-reopen-smoke',
+          sourcePath: temporaryOutputPath,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+
+      expect(reopened.isSuccess, isTrue, reason: '${reopened.diagnostics}');
+      expect(reopened.extractedMap?.scenarioChkBytes, replacementChk);
+      expect(
+        reopened.extractedMap?.metadata.entries
+            .map((entry) => entry.path)
+            .toSet(),
+        {MapArchiveEntryPaths.scenarioChk, r'staredit\units.dat', '(listfile)'},
+      );
+      expect(await sourceFile.readAsBytes(), sourceBytesBefore);
     },
     skip: missingEnvironment
         ? 'Set MAP_ARCHIVE_HELPER_PATH and MAP_ARCHIVE_TEST_MAP after build.'

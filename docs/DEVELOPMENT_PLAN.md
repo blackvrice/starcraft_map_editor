@@ -14,7 +14,7 @@
 | M0. 제품·기술 기준선 | 완료 | 문서, MIT, Flutter 3.44.8, Windows CI |
 | M1. 데스크톱 기반 | 완료 | 계층 구조, 에디터 셸, 최근 맵, 작업 진행 |
 | M2. CHK 무손실 코어 | 완료 | raw 왕복, 메타데이터·문자열 typed view, 구조 진단 |
-| M3. 맵 아카이브 입출력 | 진행 중 | CHK 추출·목록·Open Map UI·최근 파일 완료, Save As 대기 |
+| M3. 맵 아카이브 입출력 | 진행 중 | Open Map과 검증형 Save As 완료, fingerprint·백업 정책 대기 |
 | M4. EUD 수직 기능 | 대기 | epScript → 새 EUD 맵 |
 | M5. 맵 캔버스와 지형 | 대기 | 지형 탐색/편집 |
 | M6. 객체와 로케이션 | 대기 | 유닛·객체 편집 |
@@ -105,7 +105,7 @@
 - [x] `staredit\scenario.chk` 탐색과 추출
 - [x] 아카이브 목록과 기본 메타데이터 진단
 - [x] Open Map UI와 최근 파일 연결
-- [ ] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
+- [x] Save As 임시 출력 → 재열기 → 검증 → 승격 흐름 구현
 - [ ] 입력 파일 fingerprint와 외부 변경 감지
 - [ ] 원본 덮어쓰기 방지와 백업 정책 테스트
 - [ ] 재배포 가능한 자체 제작 `.scx` 통합 픽스처 추가
@@ -125,28 +125,35 @@
   StormLib 타입을 노출하지 않는다.
 - `test/application/map_archive_gateway_test.dart`는 가짜 어댑터 대입과 함께
   계약의 불변성, 경계값, 진단 규칙을 검증한다.
-- `native/map_archive_helper`는 pinned StormLib를 정적으로 링크해 원본을
-  read-only로 열고 정확히 `staredit\scenario.chk`만 새 임시 파일로 추출한다.
-  고정 JSON 프로토콜과 입력/출력/CHK 크기 상한, 기존 출력 거부를 적용한다.
+- `native/map_archive_helper`는 pinned StormLib를 정적으로 링크한다. 열기는
+  원본을 read-only로 열어 정확히 `staredit\scenario.chk`만 추출한다. 저장은
+  원본을 새 임시 MPQ로 복사한 뒤 복사본의 해당 항목만 교체한다. 고정 JSON
+  프로토콜과 입력/출력/CHK 크기 상한, 기존 출력 거부를 적용한다.
 - `ProcessMapArchiveGateway`는 절대 경로 helper를 셸 없이 실행하고 프로토콜,
   버전, 종료 코드, 메타데이터와 실제 파일 크기를 검증한다. stdout/stderr를
   동시에 소비하며 timeout, operation ID 취소와 정확한 임시 디렉터리 정리를
   제공한다.
-- helper `0.2.0`과 Dart 어댑터는 최대 1,024개의 아카이브 엔트리를 열거하고
+- helper `0.3.0`과 Dart 어댑터는 최대 1,024개의 아카이브 엔트리를 열거하고
   MPQ format version, 전체/열거 항목 수, 항목별 압축·비압축 크기, flags,
   locale과 합성 이름 여부를 반환한다. 불완전 목록, 합성 이름, 대소문자를
   무시한 중복 경로, 예상 밖 format version은 비차단 경고로, 암호화 항목은
   내부 MPQ 관리 파일을 제외하고 정보 진단으로 노출한다.
 - native CTest는 자체 생성 MPQ의 한글 경로 추출, 원본 byte-exact 불변,
-  완전한 내부 listfile과 listfile 없는 합성 이름, CHK 누락과 출력 충돌을
-  검증한다. Dart 프로세스 테스트와 패키지의 실제 helper end-to-end 스모크
-  테스트가 전체 목록, 진단, 성공/오류/손상 응답/대량 출력/timeout/취소를
-  검증한다.
+  완전한 내부 listfile과 listfile 없는 합성 이름, CHK 누락과 출력 충돌,
+  복사본 CHK 교체와 비대상 엔트리 보존을 검증한다. Dart 프로세스 테스트와
+  패키지의 실제 helper end-to-end 스모크 테스트가 전체 목록, 임시 쓰기와
+  재열기, 진단, 성공/오류/손상 응답/대량 출력/timeout/취소를 검증한다.
 - `OpenMapController`는 Windows 파일 선택 또는 최근 맵 경로를 받아
   `MapArchiveGateway` 추출, raw CHK 파싱, typed 메타데이터 검증, 최근 파일
   기록을 한 유스케이스로 조립한다. 성공한 맵만 최근 목록에 기록하며 raw CHK
   구조 오류는 열기를 실패시키고 typed view 오류는 제한된 읽기 전용 세션으로
   표시한다.
+- `SaveMapController`는 Windows Save As 경로를 선택하고 최종 경로와 같은
+  디렉터리에 앱 소유 임시 작업 공간을 만든다. raw CHK 인코딩, helper 임시
+  아카이브 쓰기, 임시 맵 재열기, CHK byte-exact 비교와 파싱이 모두 성공한
+  뒤에만 rename으로 최종 출력에 승격하고 저장된 경로를 현재 세션으로 채택한다.
+  원본과 같은 경로 및 기존 출력은 거부한다. 기존 출력 교체와 복구 백업은
+  별도 백업 정책 항목에서 구현한다.
 - Windows runner의 기본 파일 대화상자는 `.scm`/`.scx` 필터를 적용하고
   method channel 뒤의 `MapFilePicker` 포트로 노출된다. 위젯은 파일 시스템이나
   네이티브 API를 직접 호출하지 않는다.

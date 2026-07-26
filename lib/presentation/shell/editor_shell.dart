@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../application/commands/editor_command_dispatcher.dart';
 import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
+import '../../application/documents/save_map_controller.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
@@ -16,6 +17,7 @@ class EditorShell extends StatefulWidget {
   const EditorShell({
     required this.commandDispatcher,
     required this.openMapController,
+    required this.saveMapController,
     required this.operationProgressController,
     required this.recentProjectsService,
     super.key,
@@ -23,6 +25,7 @@ class EditorShell extends StatefulWidget {
 
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
+  final SaveMapController saveMapController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
 
@@ -33,12 +36,16 @@ class EditorShell extends StatefulWidget {
 class _EditorShellState extends State<EditorShell> {
   late Future<List<RecentProject>> _recentProjects;
   late StreamSubscription<OpenMapState> _openMapSubscription;
+  late StreamSubscription<SaveMapState> _saveMapSubscription;
+  late List<EditorDiagnostic> _visibleDiagnostics;
 
   @override
   void initState() {
     super.initState();
     _recentProjects = widget.recentProjectsService.load();
+    _visibleDiagnostics = widget.openMapController.state.diagnostics;
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
+    _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
   }
 
   @override
@@ -51,6 +58,10 @@ class _EditorShellState extends State<EditorShell> {
       unawaited(_openMapSubscription.cancel());
       _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     }
+    if (oldWidget.saveMapController != widget.saveMapController) {
+      unawaited(_saveMapSubscription.cancel());
+      _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
+    }
   }
 
   StreamSubscription<OpenMapState> _listenForOpenedMaps(
@@ -59,7 +70,23 @@ class _EditorShellState extends State<EditorShell> {
     return controller.changes.listen((state) {
       if (mounted) {
         setState(() {
+          _visibleDiagnostics = state.diagnostics;
           if (state.status == OpenMapStatus.opened) {
+            _recentProjects = widget.recentProjectsService.load();
+          }
+        });
+      }
+    });
+  }
+
+  StreamSubscription<SaveMapState> _listenForSavedMaps(
+    SaveMapController controller,
+  ) {
+    return controller.changes.listen((state) {
+      if (mounted) {
+        setState(() {
+          _visibleDiagnostics = state.diagnostics;
+          if (state.status == SaveMapStatus.saved) {
             _recentProjects = widget.recentProjectsService.load();
           }
         });
@@ -70,6 +97,7 @@ class _EditorShellState extends State<EditorShell> {
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
+    unawaited(_saveMapSubscription.cancel());
     super.dispose();
   }
 
@@ -99,7 +127,9 @@ class _EditorShellState extends State<EditorShell> {
   @override
   Widget build(BuildContext context) {
     final openMap = _callbackFor(EditorCommandId.openMap);
-    final saveAs = _callbackFor(EditorCommandId.saveAs);
+    final saveAs = widget.openMapController.state.session == null
+        ? null
+        : _callbackFor(EditorCommandId.saveAs);
     final buildEud = _callbackFor(EditorCommandId.buildEud);
 
     final shortcuts = <ShortcutActivator, VoidCallback>{};
@@ -184,8 +214,7 @@ class _EditorShellState extends State<EditorShell> {
                       children: [
                         _OutputPanel(
                           progress: snapshot.data,
-                          diagnostics:
-                              widget.openMapController.state.diagnostics,
+                          diagnostics: _visibleDiagnostics,
                         ),
                         const Divider(height: 1),
                         _StatusBar(
@@ -305,6 +334,7 @@ class _EditorToolbar extends StatelessWidget {
                     icon: const Icon(Icons.folder_open),
                   ),
                   IconButton(
+                    key: const Key('toolbar-save-as'),
                     onPressed: saveAs,
                     tooltip: 'Save As',
                     icon: const Icon(Icons.save_outlined),
@@ -323,6 +353,7 @@ class _EditorToolbar extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   TextButton.icon(
+                    key: const Key('toolbar-save-as'),
                     onPressed: saveAs,
                     icon: const Icon(Icons.save_outlined),
                     label: const Text('Save As'),

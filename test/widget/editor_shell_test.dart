@@ -5,10 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
+import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
+import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
@@ -152,6 +154,12 @@ void main() {
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
     expect(find.text('Read-only preview'), findsWidgets);
     expect(
+      tester
+          .widget<TextButton>(find.byKey(const Key('toolbar-save-as')))
+          .onPressed,
+      isNotNull,
+    );
+    expect(
       (await recentProjectsService.load()).single.path,
       r'C:\Maps\Arena.scx',
     );
@@ -161,6 +169,7 @@ void main() {
 Widget _createTestApp({
   EditorCommandDispatcher? dispatcher,
   OpenMapController? openMapController,
+  SaveMapController? saveMapController,
   OperationProgressController? operationProgressController,
   RecentProjectsService? recentProjectsService,
   InMemorySettingsStore? settingsStore,
@@ -178,6 +187,15 @@ Widget _createTestApp({
         recentProjectsService: resolvedRecentProjectsService,
         operationProgressController: resolvedProgressController,
       );
+  final resolvedSaveMapController =
+      saveMapController ??
+      SaveMapController(
+        archiveGateway: _UnusedMapArchiveGateway(),
+        filePicker: _FakeMapFilePicker(null),
+        saveFileGateway: _UnusedMapSaveFileGateway(),
+        openMapController: resolvedOpenMapController,
+        operationProgressController: resolvedProgressController,
+      );
   final resolvedDispatcher =
       dispatcher ??
       EditorCommandDispatcher({
@@ -186,11 +204,15 @@ Widget _createTestApp({
             sourcePath: argument is String ? argument : null,
           );
         },
+        EditorCommandId.saveAs: (_) async {
+          await resolvedSaveMapController.saveAs();
+        },
       });
   return StarCraftMapEditorApp(
     dependencies: EditorAppDependencies(
       commandDispatcher: resolvedDispatcher,
       openMapController: resolvedOpenMapController,
+      saveMapController: resolvedSaveMapController,
       operationProgressController: resolvedProgressController,
       recentProjectsService: resolvedRecentProjectsService,
       settingsStore: resolvedSettingsStore,
@@ -205,6 +227,10 @@ class _FakeMapFilePicker implements MapFilePicker {
 
   @override
   Future<String?> pickMapPath() async => path;
+
+  @override
+  Future<String?> pickSaveMapPath({required String suggestedName}) async =>
+      null;
 }
 
 class _FakeMapArchiveGateway implements MapArchiveGateway {
@@ -239,6 +265,31 @@ class _UnusedMapArchiveGateway implements MapArchiveGateway {
 
   @override
   Future<bool> cancel(String operationId) async => false;
+}
+
+class _UnusedMapSaveFileGateway implements MapSaveFileGateway {
+  @override
+  Future<void> cleanup(MapSaveWorkspace workspace) async {}
+
+  @override
+  Future<MapSaveWorkspace> createWorkspace(String destinationPath) {
+    throw StateError('The save file gateway is not used by this test.');
+  }
+
+  @override
+  Future<bool> destinationExists(String path) async => false;
+
+  @override
+  Future<void> promote({
+    required MapSaveWorkspace workspace,
+    required String destinationPath,
+  }) {
+    throw StateError('The save file gateway is not used by this test.');
+  }
+
+  @override
+  Future<bool> refersToSameLocation(String leftPath, String rightPath) async =>
+      false;
 }
 
 ExtractedMap _createExtractedMap() {

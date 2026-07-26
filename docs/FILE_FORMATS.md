@@ -57,6 +57,11 @@ listfile 없이 복원한 이름, 대소문자를 무시한 중복 경로, MPQ v
 5. 구조 및 변경 의도를 검증한다.
 6. 검증 성공 후에만 사용자가 지정한 출력 경로로 승격한다.
 
+helper `0.3.0`의 `replaceScenario`는 원본 MPQ 전체를 새 임시 출력으로 복사한
+뒤 정확히 `staredit\scenario.chk`만 교체한다. 애플리케이션은 임시 출력을
+`extractScenario`로 다시 열어 인코딩한 CHK와 byte-exact 비교하고 raw 파싱에
+성공한 경우에만 같은 디렉터리의 새 최종 경로로 rename한다.
+
 원본 덮어쓰기는 MVP 이후 별도 기능으로 검토한다. 지원하더라도 자동 백업과 외부 변경 감지가 선행되어야 한다.
 
 ## 4. Raw CHK 모델

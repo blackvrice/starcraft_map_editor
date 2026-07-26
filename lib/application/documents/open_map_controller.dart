@@ -277,6 +277,44 @@ class OpenMapController {
     }
   }
 
+  Future<OpenMapState> adoptSavedSession(OpenedMapSession session) async {
+    final diagnostics = [...session.diagnostics];
+    try {
+      await recentProjectsService.recordOpened(
+        session.sourcePath,
+        openedAt: _clock(),
+      );
+    } on Object catch (error) {
+      diagnostics.add(
+        EditorDiagnostic(
+          code: OpenMapDiagnosticCodes.recentProjectUpdateFailed,
+          message:
+              'The map was saved, but the recent maps list was not updated.',
+          severity: DiagnosticSeverity.warning,
+          stage: DiagnosticStage.application,
+          filePath: session.sourcePath,
+          remediation:
+              'Check access to the application settings folder and reopen '
+              'the saved map.',
+          rawDetails: '$error',
+        ),
+      );
+    }
+
+    final adoptedSession = OpenedMapSession(
+      extractedMap: session.extractedMap,
+      rawDocument: session.rawDocument,
+      metadataViews: session.metadataViews,
+      diagnostics: diagnostics,
+    );
+    return _emit(
+      OpenMapState.opened(
+        openedSession: adoptedSession,
+        diagnostics: diagnostics,
+      ),
+    );
+  }
+
   Future<String?> _selectMapPath() async {
     try {
       return await filePicker.pickMapPath();

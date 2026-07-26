@@ -17,8 +17,15 @@ abstract final class MapArchiveDiagnosticCodes {
   static const invalidResponse = 'ARCHIVE_HELPER_INVALID_RESPONSE';
   static const scenarioTooLarge = 'ARCHIVE_SCENARIO_TOO_LARGE';
   static const scenarioReadFailed = 'ARCHIVE_SCENARIO_READ_FAILED';
+  static const scenarioWriteFailed = 'ARCHIVE_SCENARIO_WRITE_FAILED';
   static const temporaryDirectoryFailed = 'ARCHIVE_TEMP_DIRECTORY_FAILED';
-  static const writeNotImplemented = 'ARCHIVE_WRITE_NOT_IMPLEMENTED';
+  static const invalidTemporaryOutputPath =
+      'ARCHIVE_TEMP_OUTPUT_PATH_NOT_ABSOLUTE';
+  static const sourceOutputSame = 'ARCHIVE_SOURCE_OUTPUT_SAME';
+  static const temporaryOutputExists = 'ARCHIVE_OUTPUT_ALREADY_EXISTS';
+  static const temporaryOutputMissing = 'ARCHIVE_TEMP_OUTPUT_MISSING';
+  static const temporaryOutputSizeMismatch =
+      'ARCHIVE_TEMP_OUTPUT_SIZE_MISMATCH';
   static const listingIncomplete = 'ARCHIVE_LISTING_INCOMPLETE';
   static const syntheticEntryNames = 'ARCHIVE_ENTRY_NAMES_SYNTHETIC';
   static const duplicateEntryPaths = 'ARCHIVE_ENTRY_PATHS_DUPLICATED';
@@ -67,7 +74,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
   }
 
   static const protocolVersion = 1;
-  static const helperVersion = '0.2.0';
+  static const helperVersion = '0.3.0';
   static const stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
   static const maximumListedArchiveEntries = 1024;
 
@@ -310,18 +317,285 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
   Future<MapArchiveWriteResult> writeTemporary(
     MapArchiveWriteRequest request,
   ) async {
-    return MapArchiveWriteResult.failure(
-      diagnostics: [
-        EditorDiagnostic(
-          code: MapArchiveDiagnosticCodes.writeNotImplemented,
-          message: 'Temporary MPQ writing is not implemented yet.',
-          severity: DiagnosticSeverity.error,
-          stage: DiagnosticStage.save,
-          filePath: request.sourcePath,
-          remediation: 'Open maps read-only until Save As is implemented.',
-        ),
-      ],
+    if (!_isAbsoluteWindowsPath(request.sourcePath)) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.invalidSourcePath,
+        message: 'The source map path must be an absolute Windows path.',
+        filePath: request.sourcePath,
+        remediation: 'Open the source map again using the Open Map dialog.',
+      );
+    }
+    if (!_isAbsoluteWindowsPath(request.temporaryOutputPath)) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.invalidTemporaryOutputPath,
+        message: 'The temporary output path must be an absolute Windows path.',
+        filePath: request.temporaryOutputPath,
+        remediation: 'Create the Save As workspace again.',
+      );
+    }
+    if (_sameWindowsPath(request.sourcePath, request.temporaryOutputPath)) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.sourceOutputSame,
+        message: 'The source map cannot be used as temporary output.',
+        filePath: request.sourcePath,
+        remediation: 'Choose a different Save As destination.',
+      );
+    }
+    if (_activeProcesses.containsKey(request.operationId)) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.duplicateOperation,
+        message: 'An archive operation with the same ID is already active.',
+        filePath: request.sourcePath,
+        remediation: 'Wait for the active operation or cancel it first.',
+      );
+    }
+
+    final helperFile = File(helperExecutablePath);
+    if (!await helperFile.exists()) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.helperNotFound,
+        message: 'The bundled map archive helper is missing.',
+        filePath: request.sourcePath,
+        remediation: 'Repair or reinstall the application.',
+      );
+    }
+
+    final temporaryOutput = File(request.temporaryOutputPath);
+    try {
+      if (await temporaryOutput.exists()) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.temporaryOutputExists,
+          message: 'The temporary archive output already exists.',
+          filePath: request.temporaryOutputPath,
+          remediation: 'Create a fresh Save As workspace and retry.',
+        );
+      }
+      if (!await temporaryOutput.parent.exists()) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.temporaryDirectoryFailed,
+          message: 'The temporary Save As workspace does not exist.',
+          filePath: request.temporaryOutputPath,
+          remediation: 'Create the Save As workspace again.',
+        );
+      }
+    } on FileSystemException catch (error) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.temporaryDirectoryFailed,
+        message: 'The temporary Save As workspace could not be inspected.',
+        filePath: request.temporaryOutputPath,
+        remediation: 'Check destination folder permissions and retry.',
+        rawDetails: error.osError?.errorCode.toString(),
+      );
+    }
+
+    final scenarioInput = File(
+      '${temporaryOutput.parent.path}${Platform.pathSeparator}'
+      'scenario-input.chk',
     );
+    Process? process;
+    try {
+      if (await scenarioInput.exists()) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.scenarioWriteFailed,
+          message: 'The temporary scenario input path already exists.',
+          filePath: scenarioInput.path,
+          remediation: 'Create a fresh Save As workspace and retry.',
+        );
+      }
+      await scenarioInput.create(exclusive: true);
+      final scenarioHandle = await scenarioInput.open(mode: FileMode.writeOnly);
+      try {
+        await scenarioHandle.writeFrom(request.scenarioChkBytes);
+        await scenarioHandle.flush();
+      } finally {
+        await scenarioHandle.close();
+      }
+
+      process = await Process.start(
+        helperExecutablePath,
+        helperArguments,
+        workingDirectory: temporaryOutput.parent.path,
+        environment: _minimalEnvironment(temporaryOutput.parent.path),
+        includeParentEnvironment: false,
+        runInShell: false,
+        mode: ProcessStartMode.normal,
+      );
+      _activeProcesses[request.operationId] = process;
+
+      final stdoutFuture = _captureOutput(
+        process.stdout,
+        maximumProcessOutputBytes,
+      );
+      final stderrFuture = _captureOutput(
+        process.stderr,
+        maximumProcessOutputBytes,
+      );
+
+      process.stdin.writeln(
+        jsonEncode({
+          'protocolVersion': protocolVersion,
+          'requestId': request.operationId,
+          'operation': 'replaceScenario',
+          'sourcePath': request.sourcePath,
+          'scenarioInputPath': scenarioInput.path,
+          'archiveOutputPath': request.temporaryOutputPath,
+        }),
+      );
+      await process.stdin.flush();
+      await process.stdin.close();
+
+      final int exitCode;
+      try {
+        exitCode = await process.exitCode.timeout(request.timeout);
+      } on TimeoutException {
+        process.kill(ProcessSignal.sigkill);
+        final terminated = await _waitForTermination(process);
+        final stderr = terminated
+            ? await stderrFuture
+            : const _CapturedOutput(text: '', exceededLimit: false);
+        if (terminated) {
+          await stdoutFuture;
+        }
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.timedOut,
+          message: 'The temporary archive writer timed out.',
+          filePath: request.sourcePath,
+          remediation: 'Retry the operation or inspect the map for corruption.',
+          rawDetails: _rawProcessDetails(
+            stderr: stderr,
+            processTerminated: terminated,
+          ),
+        );
+      }
+
+      final stdout = await stdoutFuture;
+      final stderr = await stderrFuture;
+      if (_cancelledOperationIds.remove(request.operationId)) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.cancelled,
+          message: 'The map archive write was cancelled.',
+          filePath: request.sourcePath,
+          remediation: 'Run Save As again when ready.',
+          rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
+        );
+      }
+      if (stdout.exceededLimit || stderr.exceededLimit) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.outputLimitExceeded,
+          message: 'The map archive helper produced too much output.',
+          filePath: request.sourcePath,
+          remediation: 'Repair the application or report the helper failure.',
+          rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
+        );
+      }
+
+      final response = _parseWriteResponse(
+        stdout.text,
+        request.operationId,
+        exitCode,
+      );
+      if (response.error != null) {
+        return _writeFailure(
+          code: response.error!.code,
+          message: response.error!.message,
+          filePath: request.sourcePath,
+          remediation: _remediationFor(response.error!.code),
+          rawDetails: _rawProcessDetails(
+            exitCode: exitCode,
+            helperStage: response.error!.stage,
+            nativeError: response.error!.nativeError,
+            stderr: stderr,
+          ),
+        );
+      }
+
+      final success = response.success!;
+      if (success.scenarioSizeBytes != request.scenarioChkBytes.length) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.invalidResponse,
+          message: 'The helper reported an unexpected scenario.chk size.',
+          filePath: request.temporaryOutputPath,
+          remediation: 'Repair the application or report the helper failure.',
+          rawDetails:
+              'reportedBytes=${success.scenarioSizeBytes}; '
+              'expectedBytes=${request.scenarioChkBytes.length}',
+        );
+      }
+
+      final int actualOutputSize;
+      try {
+        if (!await temporaryOutput.exists()) {
+          return _writeFailure(
+            code: MapArchiveDiagnosticCodes.temporaryOutputMissing,
+            message: 'The helper did not create the temporary map archive.',
+            filePath: request.temporaryOutputPath,
+            remediation: 'Retry Save As or repair the application.',
+          );
+        }
+        actualOutputSize = await temporaryOutput.length();
+      } on FileSystemException catch (error) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.temporaryOutputMissing,
+          message: 'The temporary map archive could not be inspected.',
+          filePath: request.temporaryOutputPath,
+          remediation: 'Check destination folder permissions and retry.',
+          rawDetails: error.osError?.errorCode.toString(),
+        );
+      }
+      if (actualOutputSize != success.archiveSizeBytes) {
+        return _writeFailure(
+          code: MapArchiveDiagnosticCodes.temporaryOutputSizeMismatch,
+          message: 'The temporary map size does not match helper metadata.',
+          filePath: request.temporaryOutputPath,
+          remediation: 'Repair the application or report the helper failure.',
+          rawDetails:
+              'actualBytes=$actualOutputSize; '
+              'reportedBytes=${success.archiveSizeBytes}',
+        );
+      }
+
+      return MapArchiveWriteResult.success(
+        temporaryOutputPath: request.temporaryOutputPath,
+      );
+    } on ProcessException catch (error) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.startFailed,
+        message: 'The map archive helper could not be started.',
+        filePath: request.sourcePath,
+        remediation: 'Repair or reinstall the application.',
+        rawDetails: error.errorCode.toString(),
+      );
+    } on FileSystemException catch (error) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.scenarioWriteFailed,
+        message: 'The temporary scenario input could not be written.',
+        filePath: scenarioInput.path,
+        remediation:
+            'Check destination folder permissions and free disk space.',
+        rawDetails: error.osError?.errorCode.toString(),
+      );
+    } on FormatException catch (error) {
+      return _writeFailure(
+        code: MapArchiveDiagnosticCodes.invalidResponse,
+        message: 'The map archive helper returned an invalid response.',
+        filePath: request.sourcePath,
+        remediation: 'Repair the application or report the helper failure.',
+        rawDetails: error.message,
+      );
+    } finally {
+      final activeProcess = _activeProcesses[request.operationId];
+      if (activeProcess == process) {
+        _activeProcesses.remove(request.operationId);
+      }
+      _cancelledOperationIds.remove(request.operationId);
+      try {
+        if (await scenarioInput.exists()) {
+          await scenarioInput.delete();
+        }
+      } on FileSystemException {
+        // Cleanup is restricted to the exact app-created CHK input.
+      }
+    }
   }
 
   @override
@@ -353,6 +627,28 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
           message: message,
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.archive,
+          filePath: filePath,
+          remediation: remediation,
+          rawDetails: rawDetails,
+        ),
+      ],
+    );
+  }
+
+  MapArchiveWriteResult _writeFailure({
+    required String code,
+    required String message,
+    required String filePath,
+    required String remediation,
+    String? rawDetails,
+  }) {
+    return MapArchiveWriteResult.failure(
+      diagnostics: [
+        EditorDiagnostic(
+          code: code,
+          message: message,
+          severity: DiagnosticSeverity.error,
+          stage: DiagnosticStage.save,
           filePath: filePath,
           remediation: remediation,
           rawDetails: rawDetails,
@@ -540,6 +836,96 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
     );
   }
 
+  _ArchiveHelperWriteResponse _parseWriteResponse(
+    String output,
+    String operationId,
+    int exitCode,
+  ) {
+    final lines = const LineSplitter()
+        .convert(output)
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+    if (lines.length != 1) {
+      throw const FormatException(
+        'Expected exactly one nonempty helper response line.',
+      );
+    }
+
+    final decoded = jsonDecode(lines.single);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['protocolVersion'] != protocolVersion ||
+        decoded['requestId'] != operationId ||
+        decoded['operation'] != 'replaceScenario' ||
+        decoded['helperVersion'] != helperVersion ||
+        decoded['stormLibRevision'] != stormLibRevision) {
+      throw const FormatException(
+        'The helper response identity or version does not match.',
+      );
+    }
+
+    final status = decoded['status'];
+    if (status == 'error') {
+      if (exitCode == 0) {
+        throw const FormatException(
+          'An error response cannot use a successful exit code.',
+        );
+      }
+      return _ArchiveHelperWriteResponse.error(
+        _parseHelperError(decoded['error']),
+      );
+    }
+    if (status != 'success' || exitCode != 0) {
+      throw const FormatException(
+        'The helper status and exit code are inconsistent.',
+      );
+    }
+
+    final outputMetadata = decoded['output'];
+    if (outputMetadata is! Map<String, dynamic>) {
+      throw const FormatException('The helper write payload is missing.');
+    }
+    final archiveSizeBytes = outputMetadata['archiveSizeBytes'];
+    final scenarioSizeBytes = outputMetadata['scenarioSizeBytes'];
+    if (archiveSizeBytes is! int ||
+        archiveSizeBytes <= 0 ||
+        scenarioSizeBytes is! int ||
+        scenarioSizeBytes < 0 ||
+        !_isUint32(scenarioSizeBytes)) {
+      throw const FormatException('The helper write metadata is invalid.');
+    }
+    return _ArchiveHelperWriteResponse.success(
+      _ArchiveHelperWriteSuccess(
+        archiveSizeBytes: archiveSizeBytes,
+        scenarioSizeBytes: scenarioSizeBytes,
+      ),
+    );
+  }
+
+  _ArchiveHelperError _parseHelperError(Object? value) {
+    if (value is! Map<String, dynamic>) {
+      throw const FormatException('The helper error payload is missing.');
+    }
+    final code = value['code'];
+    final message = value['message'];
+    final stage = value['stage'];
+    final nativeError = value['nativeError'];
+    if (code is! String ||
+        code.isEmpty ||
+        message is! String ||
+        message.isEmpty ||
+        stage is! String ||
+        nativeError is! int ||
+        nativeError < 0) {
+      throw const FormatException('The helper error payload is invalid.');
+    }
+    return _ArchiveHelperError(
+      code: code,
+      message: message,
+      stage: stage,
+      nativeError: nativeError,
+    );
+  }
+
   List<EditorDiagnostic> _archiveDiagnostics(
     _ArchiveHelperSuccess success,
     String sourcePath,
@@ -713,6 +1099,25 @@ class _ArchiveHelperSuccess {
   final int compressedSizeBytes;
 }
 
+class _ArchiveHelperWriteResponse {
+  const _ArchiveHelperWriteResponse.success(this.success) : error = null;
+
+  const _ArchiveHelperWriteResponse.error(this.error) : success = null;
+
+  final _ArchiveHelperWriteSuccess? success;
+  final _ArchiveHelperError? error;
+}
+
+class _ArchiveHelperWriteSuccess {
+  const _ArchiveHelperWriteSuccess({
+    required this.archiveSizeBytes,
+    required this.scenarioSizeBytes,
+  });
+
+  final int archiveSizeBytes;
+  final int scenarioSizeBytes;
+}
+
 class _ArchiveHelperError {
   const _ArchiveHelperError({
     required this.code,
@@ -773,6 +1178,15 @@ bool _isAbsoluteWindowsPath(String path) {
   return RegExp(
     r'^(?:[a-zA-Z]:[\\/]|\\\\[^\\/]+[\\/][^\\/]+(?:[\\/]|$))',
   ).hasMatch(path);
+}
+
+bool _sameWindowsPath(String left, String right) {
+  String normalize(String value) => value
+      .replaceAll('/', r'\')
+      .replaceAll(RegExp(r'\\+'), r'\')
+      .toLowerCase();
+
+  return normalize(left) == normalize(right);
 }
 
 bool _isUint32(int value) => value >= 0 && value <= 0xffffffff;

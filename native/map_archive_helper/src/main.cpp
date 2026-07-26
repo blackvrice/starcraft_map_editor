@@ -17,7 +17,7 @@ using json = nlohmann::json;
 
 constexpr std::int32_t kProtocolVersion = 1;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
-constexpr char kHelperVersion[] = "0.2.0";
+constexpr char kHelperVersion[] = "0.3.0";
 constexpr char kStormLibRevision[] =
     "c91595a1a1b7b515567bd62a60af066914a29a6a";
 
@@ -121,8 +121,7 @@ int main() {
         !request["protocolVersion"].is_number_integer() ||
         !IsNonEmptyString(request, "requestId") ||
         !IsNonEmptyString(request, "operation") ||
-        !IsNonEmptyString(request, "sourcePath") ||
-        !IsNonEmptyString(request, "scenarioOutputPath")) {
+        !IsNonEmptyString(request, "sourcePath")) {
       return WriteError(
           "",
           "",
@@ -146,7 +145,8 @@ int main() {
           ERROR_REVISION_MISMATCH,
           2);
     }
-    if (operation != "extractScenario") {
+    if (operation != "extractScenario" &&
+        operation != "replaceScenario") {
       return WriteError(
           request_id,
           operation,
@@ -169,11 +169,7 @@ int main() {
 
     const auto source_path = std::filesystem::u8path(
         request["sourcePath"].get<std::string>());
-    const auto output_path = std::filesystem::u8path(
-        request["scenarioOutputPath"].get<std::string>());
-    if (!source_path.is_absolute() ||
-        !output_path.is_absolute() ||
-        !IsOutputInsideWorkingDirectory(output_path)) {
+    if (!source_path.is_absolute()) {
       return WriteError(
           request_id,
           operation,
@@ -184,9 +180,114 @@ int main() {
           2);
     }
 
-    const auto result = starcraft_map_editor::archive::ExtractScenario(
+    if (operation == "extractScenario") {
+      if (!IsNonEmptyString(request, "scenarioOutputPath")) {
+        return WriteError(
+            request_id,
+            operation,
+            "ARCHIVE_PROTOCOL_INVALID_REQUEST",
+            "The extract request is missing scenarioOutputPath.",
+            "protocol",
+            ERROR_INVALID_DATA,
+            2);
+      }
+      const auto output_path = std::filesystem::u8path(
+          request["scenarioOutputPath"].get<std::string>());
+      if (!output_path.is_absolute() ||
+          !IsOutputInsideWorkingDirectory(output_path)) {
+        return WriteError(
+            request_id,
+            operation,
+            "ARCHIVE_PATH_NOT_ALLOWED",
+            "The request contains a path outside the allowed boundary.",
+            "validate",
+            ERROR_ACCESS_DENIED,
+            2);
+      }
+
+      const auto result = starcraft_map_editor::archive::ExtractScenario(
+          source_path,
+          output_path);
+      if (!result.success) {
+        return WriteError(
+            request_id,
+            operation,
+            result.error_code,
+            result.message,
+            result.stage,
+            result.native_error,
+            3);
+      }
+
+      auto response = BaseResponse(request_id, operation);
+      response["status"] = "success";
+      auto entries = json::array();
+      for (const auto& entry : result.archive.entries) {
+        entries.push_back({
+            {"path", entry.path},
+            {"uncompressedSizeBytes", entry.uncompressed_size_bytes},
+            {"compressedSizeBytes", entry.compressed_size_bytes},
+            {"flags", entry.flags},
+            {"locale", entry.locale},
+            {"nameIsSynthetic", entry.name_is_synthetic},
+        });
+      }
+      response["archive"] = {
+          {"sizeBytes", result.archive.archive_size_bytes},
+          {"formatVersion", result.archive.format_version},
+          {"totalEntryCount", result.archive.total_entry_count},
+          {"listingComplete", result.archive.listing_complete},
+          {"listingNativeError",
+           result.archive.listing_complete
+               ? json(nullptr)
+               : json(result.archive.listing_native_error)},
+          {"entries", std::move(entries)},
+      };
+      response["scenario"] = {
+          {"archivePath",
+           starcraft_map_editor::archive::kScenarioArchivePath},
+          {"uncompressedSizeBytes",
+           result.scenario.uncompressed_size_bytes},
+          {"compressedSizeBytes",
+           result.scenario.compressed_size_bytes},
+      };
+      std::cout << response.dump() << '\n';
+      return 0;
+    }
+
+    if (!IsNonEmptyString(request, "scenarioInputPath") ||
+        !IsNonEmptyString(request, "archiveOutputPath")) {
+      return WriteError(
+          request_id,
+          operation,
+          "ARCHIVE_PROTOCOL_INVALID_REQUEST",
+          "The replace request is missing an input or output path.",
+          "protocol",
+          ERROR_INVALID_DATA,
+          2);
+    }
+    const auto scenario_input_path = std::filesystem::u8path(
+        request["scenarioInputPath"].get<std::string>());
+    const auto archive_output_path = std::filesystem::u8path(
+        request["archiveOutputPath"].get<std::string>());
+    if (!scenario_input_path.is_absolute() ||
+        !archive_output_path.is_absolute() ||
+        !IsOutputInsideWorkingDirectory(scenario_input_path) ||
+        !IsOutputInsideWorkingDirectory(archive_output_path)) {
+      return WriteError(
+          request_id,
+          operation,
+          "ARCHIVE_PATH_NOT_ALLOWED",
+          "The request contains a path outside the allowed boundary.",
+          "validate",
+          ERROR_ACCESS_DENIED,
+          2);
+    }
+
+    const auto result = starcraft_map_editor::archive::ReplaceScenario(
         source_path,
-        output_path);
+        scenario_input_path,
+        archive_output_path);
     if (!result.success) {
       return WriteError(
           request_id,
@@ -200,35 +301,9 @@ int main() {
 
     auto response = BaseResponse(request_id, operation);
     response["status"] = "success";
-    auto entries = json::array();
-    for (const auto& entry : result.archive.entries) {
-      entries.push_back({
-          {"path", entry.path},
-          {"uncompressedSizeBytes", entry.uncompressed_size_bytes},
-          {"compressedSizeBytes", entry.compressed_size_bytes},
-          {"flags", entry.flags},
-          {"locale", entry.locale},
-          {"nameIsSynthetic", entry.name_is_synthetic},
-      });
-    }
-    response["archive"] = {
-        {"sizeBytes", result.archive.archive_size_bytes},
-        {"formatVersion", result.archive.format_version},
-        {"totalEntryCount", result.archive.total_entry_count},
-        {"listingComplete", result.archive.listing_complete},
-        {"listingNativeError",
-         result.archive.listing_complete
-             ? json(nullptr)
-             : json(result.archive.listing_native_error)},
-        {"entries", std::move(entries)},
-    };
-    response["scenario"] = {
-        {"archivePath",
-         starcraft_map_editor::archive::kScenarioArchivePath},
-        {"uncompressedSizeBytes",
-         result.scenario.uncompressed_size_bytes},
-        {"compressedSizeBytes",
-         result.scenario.compressed_size_bytes},
+    response["output"] = {
+        {"archiveSizeBytes", result.archive_size_bytes},
+        {"scenarioSizeBytes", result.scenario_size_bytes},
     };
     std::cout << response.dump() << '\n';
     return 0;

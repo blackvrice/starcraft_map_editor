@@ -138,17 +138,28 @@ Windows runner와 동일한 method channel 계약에서 선택 경로와 취소�
 열린 파일명, 맵 크기, 아카이브 목록, Inspector와 읽기 전용 상태가 표시되는지
 검증한다.
 
+`test/application/save_map_controller_test.dart`는 임시 아카이브 쓰기, 재열기,
+CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. 원본과 같은 경로,
+기존 출력, helper 쓰기 실패, 재열기 바이트 불일치와 승격 실패에서는 최종
+승격이 호출되지 않고 작업 공간이 정리되는지도 확인한다.
+`test/infrastructure/local_map_save_file_gateway_test.dart`는 최종 출력과 같은
+디렉터리의 작업 공간, 새 파일 rename, 기존 파일 보존과 경로 동일성 검사를
+실제 파일 시스템에서 확인한다.
+
 `test/infrastructure/process_map_archive_gateway_test.dart`는 셸을 사용하지 않고
 고정 PowerShell fixture 프로세스를 실행해 성공, 구조화 오류, 손상 응답,
 전체/불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ version, 암호화 항목,
-대량 stderr, timeout, 취소, 상대 경로 차단과 임시 디렉터리 정리를 검증한다.
+대량 stderr, timeout, 취소, 상대 경로 차단, 임시 CHK 교체 요청과 helper
+메타데이터/실제 출력 크기 교차 검증을 확인한다.
 
 `map_archive_helper_native_test`는 StormLib로 테스트 중 MPQ를 직접 생성해 한글
 경로 추출, 원본 byte-exact 불변, 내부 listfile 기반 완전 목록, listfile 없는
-합성 이름, 누락 CHK, 기존 출력 보존을 검증한다. Windows CI는 이 native CTest
+합성 이름, 누락 CHK, 기존 출력 보존, 복사본 CHK 교체, 비대상 엔트리 보존과
+원본 byte-exact 불변을 검증한다. Windows CI는 이 native CTest
 뒤에 같은 fixture builder가 만든 3-entry MPQ를 패키지의 실제 helper와
-`ProcessMapArchiveGateway`로 다시 열어 목록과 추출 바이트를 검증한다. 테스트
-맵은 실행 중 임시로 생성되며 저장소에 제3자 맵을 포함하지 않는다.
+`ProcessMapArchiveGateway`로 열고, 새 CHK를 임시 MPQ에 쓴 뒤 재열어 목록과
+교체 바이트 및 원본 불변을 검증한다. 테스트 맵은 실행 중 임시로 생성되며
+저장소에 제3자 맵을 포함하지 않는다.
 
 ## 4. 필수 회귀 테스트
 

@@ -3,9 +3,41 @@
 #include <commdlg.h>
 
 #include <optional>
+#include <string>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "utils.h"
+
+namespace {
+
+std::wstring Utf16FromUtf8String(const std::string& value) {
+  if (value.empty()) {
+    return {};
+  }
+  const int length = MultiByteToWideChar(
+      CP_UTF8,
+      MB_ERR_INVALID_CHARS,
+      value.data(),
+      static_cast<int>(value.size()),
+      nullptr,
+      0);
+  if (length <= 0) {
+    return {};
+  }
+  std::wstring converted(static_cast<std::size_t>(length), L'\0');
+  if (MultiByteToWideChar(
+          CP_UTF8,
+          MB_ERR_INVALID_CHARS,
+          value.data(),
+          static_cast<int>(value.size()),
+          converted.data(),
+          length) != length) {
+    return {};
+  }
+  return converted;
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -37,12 +69,34 @@ bool FlutterWindow::OnCreate() {
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
                  result) {
-        if (call.method_name() != "openMap") {
+        const bool is_open = call.method_name() == "openMap";
+        const bool is_save = call.method_name() == "saveMap";
+        if (!is_open && !is_save) {
           result->NotImplemented();
           return;
         }
 
         wchar_t selected_path[32768] = {};
+        if (is_save) {
+          const auto* arguments =
+              std::get_if<flutter::EncodableMap>(call.arguments());
+          if (arguments != nullptr) {
+            const auto iterator = arguments->find(
+                flutter::EncodableValue("suggestedName"));
+            if (iterator != arguments->end()) {
+              const auto* suggested_name =
+                  std::get_if<std::string>(&iterator->second);
+              if (suggested_name != nullptr) {
+                const auto converted =
+                    Utf16FromUtf8String(*suggested_name);
+                wcsncpy_s(
+                    selected_path,
+                    converted.c_str(),
+                    _TRUNCATE);
+              }
+            }
+          }
+        }
         constexpr wchar_t filter[] =
             L"StarCraft maps (*.scm;*.scx)\0*.scm;*.scx\0"
             L"All files (*.*)\0*.*\0";
@@ -54,11 +108,19 @@ bool FlutterWindow::OnCreate() {
             static_cast<DWORD>(sizeof(selected_path) / sizeof(wchar_t));
         dialog.lpstrFilter = filter;
         dialog.nFilterIndex = 1;
-        dialog.lpstrTitle = L"Open StarCraft Map";
-        dialog.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |
-                       OFN_NOCHANGEDIR;
+        dialog.lpstrTitle =
+            is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As";
+        dialog.lpstrDefExt = L"scx";
+        dialog.Flags =
+            OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+        if (is_open) {
+          dialog.Flags |= OFN_FILEMUSTEXIST;
+        }
 
-        if (::GetOpenFileNameW(&dialog)) {
+        const BOOL accepted = is_open
+                                  ? ::GetOpenFileNameW(&dialog)
+                                  : ::GetSaveFileNameW(&dialog);
+        if (accepted) {
           result->Success(flutter::EncodableValue(Utf8FromUtf16(selected_path)));
           return;
         }

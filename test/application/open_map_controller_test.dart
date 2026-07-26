@@ -225,6 +225,11 @@ class _FakeMapFilePicker implements MapFilePicker {
     invocationCount++;
     return path;
   }
+
+  @override
+  Future<String?> pickSaveMapPath({required String suggestedName}) {
+    throw UnimplementedError();
+  }
 }
 
 class _FakeMapArchiveGateway implements MapArchiveGateway {

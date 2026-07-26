@@ -34,4 +34,19 @@ void main() {
 
     expect(await picker.pickMapPath(), isNull);
   });
+
+  test('passes a suggested name to the native save dialog', () async {
+    MethodCall? receivedCall;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          receivedCall = call;
+          return r'C:\Maps\Arena Copy.scx';
+        });
+
+    final path = await picker.pickSaveMapPath(suggestedName: 'Arena Copy.scx');
+
+    expect(receivedCall!.method, MethodChannelMapFilePicker.saveMapMethod);
+    expect(receivedCall!.arguments, {'suggestedName': 'Arena Copy.scx'});
+    expect(path, r'C:\Maps\Arena Copy.scx');
+  });
 }

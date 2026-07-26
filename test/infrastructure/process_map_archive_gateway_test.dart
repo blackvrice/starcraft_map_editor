@@ -403,18 +403,83 @@ void main() {
     );
 
     test(
-      'keeps archive writing disabled until Save As is implemented',
+      'writes a temporary archive through a real process',
       () async {
         final sourcePath = await createSource('success');
+        final sourceBytesBefore = await File(sourcePath).readAsBytes();
+        final workspace = await Directory(
+          '${temporaryRoot.path}${Platform.pathSeparator}write-workspace',
+        ).create();
+        final outputPath =
+            '${workspace.path}${Platform.pathSeparator}output.scx';
         final gateway = createGateway();
 
         final result = await gateway.writeTemporary(
           MapArchiveWriteRequest(
-            operationId: 'write-not-ready',
+            operationId: 'write-success',
+            sourcePath: sourcePath,
+            temporaryOutputPath: outputPath,
+            scenarioChkBytes: const [1, 2, 3, 4],
+            timeout: const Duration(seconds: 10),
+          ),
+        );
+
+        expect(result.isSuccess, isTrue, reason: '${result.diagnostics}');
+        expect(result.temporaryOutputPath, outputPath);
+        expect(await File(outputPath).readAsBytes(), sourceBytesBefore);
+        expect(await File(sourcePath).readAsBytes(), sourceBytesBefore);
+        expect(
+          File(
+            '${workspace.path}${Platform.pathSeparator}scenario-input.chk',
+          ).existsSync(),
+          isFalse,
+        );
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test('refuses an existing temporary archive output', () async {
+      final sourcePath = await createSource('success');
+      final output = File(
+        '${temporaryRoot.path}${Platform.pathSeparator}existing-output.scx',
+      );
+      await output.writeAsBytes(const [9, 8, 7]);
+      final gateway = createGateway();
+
+      final result = await gateway.writeTemporary(
+        MapArchiveWriteRequest(
+          operationId: 'write-existing',
+          sourcePath: sourcePath,
+          temporaryOutputPath: output.path,
+          scenarioChkBytes: const [1, 2, 3, 4],
+          timeout: const Duration(seconds: 10),
+        ),
+      );
+
+      expect(result.isSuccess, isFalse);
+      expect(
+        result.diagnostics.single.code,
+        MapArchiveDiagnosticCodes.temporaryOutputExists,
+      );
+      expect(await output.readAsBytes(), [9, 8, 7]);
+    }, skip: !Platform.isWindows);
+
+    test(
+      'rejects write metadata that does not match the output',
+      () async {
+        final sourcePath = await createSource('write-size-mismatch');
+        final workspace = await Directory(
+          '${temporaryRoot.path}${Platform.pathSeparator}mismatch-workspace',
+        ).create();
+        final gateway = createGateway();
+
+        final result = await gateway.writeTemporary(
+          MapArchiveWriteRequest(
+            operationId: 'write-size-mismatch',
             sourcePath: sourcePath,
             temporaryOutputPath:
-                '${temporaryRoot.path}${Platform.pathSeparator}output.scx',
-            scenarioChkBytes: const [],
+                '${workspace.path}${Platform.pathSeparator}output.scx',
+            scenarioChkBytes: const [1, 2, 3, 4],
             timeout: const Duration(seconds: 10),
           ),
         );
@@ -422,7 +487,7 @@ void main() {
         expect(result.isSuccess, isFalse);
         expect(
           result.diagnostics.single.code,
-          MapArchiveDiagnosticCodes.writeNotImplemented,
+          MapArchiveDiagnosticCodes.temporaryOutputSizeMismatch,
         );
       },
       skip: !Platform.isWindows,

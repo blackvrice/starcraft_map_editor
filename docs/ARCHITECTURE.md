@@ -219,9 +219,14 @@ abstract interface class MapFilePicker {
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
 
 `MapFilePicker`는 사용자가 선택한 절대 경로 또는 취소를 뜻하는 `null`만
-Application 계층에 반환한다. Windows의 `GetOpenFileNameW`와 Flutter method
-channel 세부사항은 Infrastructure와 runner에 남고 Presentation은 Open Map
-명령만 전달한다.
+Application 계층에 반환한다. Windows의 `GetOpenFileNameW`/
+`GetSaveFileNameW`와 Flutter method channel 세부사항은 Infrastructure와
+runner에 남고 Presentation은 Open Map/Save As 명령만 전달한다.
+
+`MapSaveFileGateway`는 최종 경로 존재 여부와 경로 동일성 확인, 최종 경로의
+같은 디렉터리에 앱 소유 임시 작업 공간 생성, 검증된 파일의 rename 승격,
+정확한 작업 공간 정리를 추상화한다. 현재 정책은 원본 또는 기존 출력 경로를
+교체하지 않으며, 같은 볼륨의 새 경로에만 승격한다.
 
 `MapArchiveGateway` 포트는 Application 계층의 계약만 표현한다. open 요청은
 operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK 바이트와
@@ -246,7 +251,7 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - 앱은 절대 경로의 helper를 셸 없이 실행하고 버전이 있는 UTF-8 JSON 요청을
   줄바꿈으로 끝나는 단일 stdin 레코드로 전달한다. helper는 EOF를 기다리지 않고
   첫 줄을 받은 즉시 처리한다.
-- helper는 `inspect`, `extractScenario`, `replaceScenario`만 제공하며 MVP에서
+- 현재 helper는 `extractScenario`, `replaceScenario`만 제공하며 MVP에서
   접근 가능한 항목은 정확히 `staredit\scenario.chk`다.
 - 바이너리 CHK는 앱 소유 요청별 임시 디렉터리의 파일로 교환한다.
 - stdout의 구조화 응답과 stderr를 동시에 소비하고 종료 코드, 프로토콜,
@@ -259,12 +264,13 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 2026-07-26 구현 기준선:
 
 - `native/map_archive_helper`는 고정된 StormLib revision을 정적으로 링크하고
-  `extractScenario` 프로토콜만 제공한다. 원본은 `MPQ_OPEN_READ_ONLY`로 열며
-  기존 CHK 출력 파일을 덮어쓰지 않는다.
+  `extractScenario`와 `replaceScenario` 프로토콜을 제공한다. 추출 원본은
+  `MPQ_OPEN_READ_ONLY`로 열고, 교체는 원본을 새 임시 MPQ로 복사한 뒤 복사본의
+  `scenario.chk`만 바꾼다. 기존 CHK/MPQ 출력 파일을 덮어쓰지 않는다.
 - `ProcessMapArchiveGateway`는 요청별 임시 디렉터리를 만들고 helper와
   `protocolVersion=1` JSON으로 통신한다. 성공 응답의 request ID, 작업,
   helper/StormLib 버전, 메타데이터와 실제 추출 파일 크기를 모두 검증한다.
-- helper `0.2.0`은 StormLib 내부 listfile과 파일 테이블을 이용해 최대
+- helper `0.3.0`은 StormLib 내부 listfile과 파일 테이블을 이용해 최대
   1,024개 항목을 열거한다. 응답에는 MPQ format version, 전체 항목 수,
   목록 완전성, 항목별 경로·압축/비압축 크기·flags·locale·합성 이름 여부가
   포함된다. 동일 block index의 locale hash 항목은 한 번만 노출한다.
@@ -275,8 +281,9 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - helper stdin은 64 KiB, Dart가 보존하는 stdout/stderr는 스트림별 1 MiB,
   추출 CHK는 기본 64 MiB로 제한한다. 출력 스트림은 제한을 넘은 뒤에도
   버리면서 끝까지 소비해 파이프 교착을 막는다.
-- timeout과 operation ID 취소는 helper 프로세스를 종료하며, 임시 쓰기는
-  Save As 구현 전까지 `ARCHIVE_WRITE_NOT_IMPLEMENTED` 진단으로 차단한다.
+- timeout과 operation ID 취소는 helper 프로세스를 종료한다. 임시 쓰기는
+  CHK 입력과 MPQ 출력이 같은 앱 소유 작업 디렉터리에 있는지, helper 응답의
+  CHK/아카이브 크기와 실제 파일이 일치하는지 검증한다.
 
 ## 8. 주요 데이터 흐름
 
@@ -326,12 +333,20 @@ sequenceDiagram
     Encoder-->>SaveAs: scenario.chk bytes
     SaveAs->>Archive: write temporary archive
     Archive-->>SaveAs: temporary output
-    SaveAs->>Validator: reopen and validate
-    Validator-->>SaveAs: success
+    SaveAs->>Archive: reopen temporary output
+    Archive-->>SaveAs: scenario.chk + metadata
+    SaveAs->>Validator: compare bytes and parse CHK
+    Validator-->>SaveAs: verified
+    SaveAs->>SaveAs: rename to new final path
     SaveAs-->>UI: finalized output
 ```
 
-검증 실패 시 임시 파일은 최종 출력으로 승격하지 않는다.
+2026-07-26 기준 `SaveMapController`가 이 흐름을 조정한다. 원본과 같은 경로,
+기존 최종 경로, 지원하지 않는 확장자를 먼저 거부한다. 최종 경로와 같은
+디렉터리에 만든 임시 작업 공간에서만 helper를 실행하고, 재열기 CHK가 인코딩
+바이트와 정확히 같으며 raw 파싱에 성공한 뒤에만 최종 경로로 rename한다.
+성공 시 검증된 출력을 현재 문서 세션과 최근 파일로 채택한다. 검증 실패 시
+임시 파일은 최종 출력으로 승격하지 않는다.
 
 ### EUD 빌드
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
+import '../application/documents/save_map_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
 import '../application/recent_projects/recent_projects_service.dart';
@@ -11,6 +12,7 @@ class EditorAppDependencies {
   const EditorAppDependencies({
     required this.commandDispatcher,
     required this.openMapController,
+    required this.saveMapController,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.settingsStore,
@@ -18,6 +20,7 @@ class EditorAppDependencies {
 
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
+  final SaveMapController saveMapController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final SettingsStore settingsStore;
@@ -47,6 +50,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
       home: EditorShell(
         commandDispatcher: dependencies.commandDispatcher,
         openMapController: dependencies.openMapController,
+        saveMapController: dependencies.saveMapController,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,
       ),

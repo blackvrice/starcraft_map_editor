@@ -28,6 +28,14 @@ class ArchiveHandle final {
 
   HANDLE get() const { return handle_; }
 
+  bool Close() {
+    if (handle_ == nullptr) {
+      return true;
+    }
+    const HANDLE handle = std::exchange(handle_, nullptr);
+    return SFileCloseArchive(handle);
+  }
+
  private:
   HANDLE handle_ = nullptr;
 };
@@ -74,6 +82,19 @@ ExtractResult Failure(
     std::string stage,
     const DWORD native_error) {
   ExtractResult result;
+  result.error_code = std::move(code);
+  result.message = std::move(message);
+  result.stage = std::move(stage);
+  result.native_error = native_error;
+  return result;
+}
+
+ReplaceResult ReplaceFailure(
+    std::string code,
+    std::string message,
+    std::string stage,
+    const DWORD native_error) {
+  ReplaceResult result;
   result.error_code = std::move(code);
   result.message = std::move(message);
   result.stage = std::move(stage);
@@ -345,9 +366,12 @@ ExtractResult ExtractScenario(
           archive.get(),
           kScenarioArchivePath,
           scenario_output_path.c_str(),
-          SFILE_OPEN_FROM_MPQ)) {
+           SFILE_OPEN_FROM_MPQ)) {
     const DWORD native_error = GetLastError();
-    RemovePartialOutput(scenario_output_path);
+    if (native_error != ERROR_FILE_EXISTS &&
+        native_error != ERROR_ALREADY_EXISTS) {
+      RemovePartialOutput(scenario_output_path);
+    }
     return Failure(
         "ARCHIVE_SCENARIO_EXTRACT_FAILED",
         "scenario.chk could not be extracted.",
@@ -383,6 +407,179 @@ ExtractResult ExtractScenario(
       uncompressed_size,
       compressed_size,
       &result.archive);
+  return result;
+}
+
+ReplaceResult ReplaceScenario(
+    const std::filesystem::path& source_archive_path,
+    const std::filesystem::path& scenario_input_path,
+    const std::filesystem::path& archive_output_path) {
+  if (!source_archive_path.is_absolute() ||
+      !scenario_input_path.is_absolute() ||
+      !archive_output_path.is_absolute()) {
+    return ReplaceFailure(
+        "ARCHIVE_PATH_NOT_ABSOLUTE",
+        "Source, scenario input, and output paths must be absolute.",
+        "validate",
+        ERROR_INVALID_PARAMETER);
+  }
+
+  std::error_code file_error;
+  const auto canonical_source =
+      std::filesystem::weakly_canonical(source_archive_path, file_error);
+  if (file_error) {
+    return ReplaceFailure(
+        "ARCHIVE_SOURCE_PATH_CHECK_FAILED",
+        "The source archive path could not be resolved.",
+        "validate",
+        static_cast<DWORD>(file_error.value()));
+  }
+  const auto canonical_output =
+      std::filesystem::weakly_canonical(archive_output_path, file_error);
+  if (file_error) {
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_PATH_CHECK_FAILED",
+        "The archive output path could not be resolved.",
+        "validate",
+        static_cast<DWORD>(file_error.value()));
+  }
+  if (_wcsicmp(
+          canonical_source.c_str(),
+          canonical_output.c_str()) == 0) {
+    return ReplaceFailure(
+        "ARCHIVE_SOURCE_OUTPUT_SAME",
+        "The source and temporary output paths must differ.",
+        "validate",
+        ERROR_INVALID_PARAMETER);
+  }
+
+  if (std::filesystem::exists(archive_output_path, file_error)) {
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_ALREADY_EXISTS",
+        "The temporary archive output path already exists.",
+        "validate",
+        ERROR_FILE_EXISTS);
+  }
+  if (file_error) {
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_PATH_CHECK_FAILED",
+        "The temporary archive output path could not be checked.",
+        "validate",
+        static_cast<DWORD>(file_error.value()));
+  }
+
+  const auto scenario_size =
+      std::filesystem::file_size(scenario_input_path, file_error);
+  if (file_error) {
+    return ReplaceFailure(
+        "ARCHIVE_SCENARIO_INPUT_READ_FAILED",
+        "The replacement scenario.chk input could not be read.",
+        "validate",
+        static_cast<DWORD>(file_error.value()));
+  }
+  if (scenario_size > 0xffffffffULL) {
+    return ReplaceFailure(
+        "ARCHIVE_SCENARIO_INPUT_TOO_LARGE",
+        "The replacement scenario.chk exceeds the MPQ file size limit.",
+        "validate",
+        ERROR_FILE_TOO_LARGE);
+  }
+
+  if (!std::filesystem::copy_file(
+          source_archive_path,
+          archive_output_path,
+          std::filesystem::copy_options::none,
+          file_error)) {
+    const DWORD native_error =
+        file_error
+            ? static_cast<DWORD>(file_error.value())
+            : ERROR_WRITE_FAULT;
+    if (native_error != ERROR_FILE_EXISTS &&
+        native_error != ERROR_ALREADY_EXISTS) {
+      RemovePartialOutput(archive_output_path);
+    }
+    return ReplaceFailure(
+        "ARCHIVE_SOURCE_COPY_FAILED",
+        "The source archive could not be copied to temporary output.",
+        "copy",
+        native_error);
+  }
+
+  const DWORD output_attributes =
+      GetFileAttributesW(archive_output_path.c_str());
+  if (output_attributes == INVALID_FILE_ATTRIBUTES ||
+      ((output_attributes & FILE_ATTRIBUTE_READONLY) != 0 &&
+       !SetFileAttributesW(
+           archive_output_path.c_str(),
+           output_attributes & ~FILE_ATTRIBUTE_READONLY))) {
+    const DWORD native_error = GetLastError();
+    RemovePartialOutput(archive_output_path);
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_ATTRIBUTE_UPDATE_FAILED",
+        "The temporary archive could not be made writable.",
+        "copy",
+        native_error);
+  }
+
+  HANDLE raw_archive = nullptr;
+  if (!SFileOpenArchive(
+          archive_output_path.c_str(),
+          0,
+          0,
+          &raw_archive)) {
+    const DWORD native_error = GetLastError();
+    RemovePartialOutput(archive_output_path);
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_OPEN_FAILED",
+        "The temporary archive could not be opened for writing.",
+        "open",
+        native_error);
+  }
+  ArchiveHandle archive(raw_archive);
+
+  if (!SFileAddFileEx(
+          archive.get(),
+          scenario_input_path.c_str(),
+          kScenarioArchivePath,
+          MPQ_FILE_REPLACEEXISTING | MPQ_FILE_COMPRESS,
+          MPQ_COMPRESSION_ZLIB,
+          MPQ_COMPRESSION_ZLIB)) {
+    const DWORD native_error = GetLastError();
+    archive.Close();
+    RemovePartialOutput(archive_output_path);
+    return ReplaceFailure(
+        "ARCHIVE_SCENARIO_REPLACE_FAILED",
+        "scenario.chk could not be replaced in the temporary archive.",
+        "replace",
+        native_error);
+  }
+
+  if (!archive.Close()) {
+    const DWORD native_error = GetLastError();
+    RemovePartialOutput(archive_output_path);
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_CLOSE_FAILED",
+        "The temporary archive could not be finalized.",
+        "finalize",
+        native_error);
+  }
+
+  const auto archive_size =
+      std::filesystem::file_size(archive_output_path, file_error);
+  if (file_error) {
+    const DWORD native_error = static_cast<DWORD>(file_error.value());
+    RemovePartialOutput(archive_output_path);
+    return ReplaceFailure(
+        "ARCHIVE_OUTPUT_VERIFY_FAILED",
+        "The temporary archive output could not be verified.",
+        "verify",
+        native_error);
+  }
+
+  ReplaceResult result;
+  result.success = true;
+  result.archive_size_bytes = archive_size;
+  result.scenario_size_bytes = scenario_size;
   return result;
 }
 

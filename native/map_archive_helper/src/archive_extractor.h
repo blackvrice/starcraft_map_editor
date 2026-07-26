@@ -44,8 +44,23 @@ struct ExtractResult {
   std::uint32_t native_error = 0;
 };
 
+struct ReplaceResult {
+  bool success = false;
+  std::uint64_t archive_size_bytes = 0;
+  std::uint64_t scenario_size_bytes = 0;
+  std::string error_code;
+  std::string message;
+  std::string stage;
+  std::uint32_t native_error = 0;
+};
+
 ExtractResult ExtractScenario(
     const std::filesystem::path& source_archive_path,
     const std::filesystem::path& scenario_output_path);
+
+ReplaceResult ReplaceScenario(
+    const std::filesystem::path& source_archive_path,
+    const std::filesystem::path& scenario_input_path,
+    const std::filesystem::path& archive_output_path);
 
 }  // namespace starcraft_map_editor::archive

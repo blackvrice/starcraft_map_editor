@@ -8,7 +8,7 @@ $baseResponse = [ordered]@{
     protocolVersion = 1
     requestId = [string]$request.requestId
     operation = [string]$request.operation
-    helperVersion = '0.2.0'
+    helperVersion = '0.3.0'
     stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a'
 }
 
@@ -36,6 +36,26 @@ if ($mode -eq 'error') {
 
 if ($mode -eq 'large-stderr') {
     [Console]::Error.Write(('x' * 100000))
+}
+
+if ([string]$request.operation -eq 'replaceScenario') {
+    [IO.File]::Copy(
+        [string]$request.sourcePath,
+        [string]$request.archiveOutputPath,
+        $false
+    )
+    $baseResponse.status = 'success'
+    $archiveSize = (Get-Item -LiteralPath ([string]$request.archiveOutputPath)).Length
+    $scenarioSize = (Get-Item -LiteralPath ([string]$request.scenarioInputPath)).Length
+    if ($mode -eq 'write-size-mismatch') {
+        $archiveSize++
+    }
+    $baseResponse.output = [ordered]@{
+        archiveSizeBytes = $archiveSize
+        scenarioSizeBytes = $scenarioSize
+    }
+    [Console]::Out.WriteLine(($baseResponse | ConvertTo-Json -Compress -Depth 5))
+    exit 0
 }
 
 [byte[]]$scenarioBytes = 86, 69, 82, 32, 2, 0, 0, 0, 59, 0
