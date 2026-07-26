@@ -7,13 +7,15 @@ import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/ports/eud_build_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_parser.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
-import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
@@ -83,7 +85,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     final progressController = OperationProgressController();
     final buildController = EudBuildController(
-      compilerGateway: _ScriptedEudCompilerGateway(),
+      buildGateway: _ScriptedEudCompilerGateway(),
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     )..prepare(_eudBuildRequest('widget-build'));
@@ -121,7 +123,7 @@ void main() {
     final progressController = OperationProgressController();
     final gateway = _CancellableEudCompilerGateway();
     final buildController = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     )..prepare(_eudBuildRequest('widget-cancel'));
@@ -164,7 +166,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     final progressController = OperationProgressController();
     final buildController = EudBuildController(
-      compilerGateway: _DiagnosticEudCompilerGateway(),
+      buildGateway: _DiagnosticEudCompilerGateway(),
       diagnosticParser: const EuddraftDiagnosticParser(),
       operationProgressController: progressController,
     )..prepare(_eudBuildRequest('widget-diagnostic'));
@@ -392,7 +394,7 @@ Widget _createTestApp({
   final resolvedEudBuildController =
       eudBuildController ??
       EudBuildController(
-        compilerGateway: _UnusedEudCompilerGateway(),
+        buildGateway: _UnusedEudCompilerGateway(),
         diagnosticParser: const IgnoreEudCompilerDiagnostics(),
         operationProgressController: resolvedProgressController,
       );
@@ -451,9 +453,15 @@ Widget _createTestApp({
   );
 }
 
-EudBuildRequest _eudBuildRequest(String buildId) {
-  return EudBuildRequest(
+EudBuildPlan _eudBuildRequest(String buildId) {
+  return EudBuildPlan(
     buildId: buildId,
+    configuration: EudBuildConfiguration(
+      baseMapPath: r'C:\Project\base\Base.scx',
+      sourceRootPath: r'C:\Project\src',
+      entrySourcePath: r'C:\Project\src\main.eps',
+      outputMapPath: r'C:\Project\build\Output.scx',
+    ),
     tool: EudToolInfo(
       pathSource: EudToolPathSource.projectProfile,
       installationPath: r'C:\Tools\euddraft',
@@ -462,14 +470,13 @@ EudBuildRequest _eudBuildRequest(String buildId) {
       version: EudToolVersion.parse('0.10.2.5'),
       companionPaths: const [r'C:\Tools\euddraft\python3.dll'],
     ),
-    settingsFilePath: r'C:\Project\.build\request.eds',
     timeout: const Duration(minutes: 2),
   );
 }
 
-final class _UnusedEudCompilerGateway implements EudCompilerGateway {
+final class _UnusedEudCompilerGateway implements EudBuildGateway {
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) {
+  Stream<EudBuildEvent> build(EudBuildPlan request) {
     throw StateError('The EUD compiler gateway is not used by this test.');
   }
 
@@ -477,9 +484,9 @@ final class _UnusedEudCompilerGateway implements EudCompilerGateway {
   Future<bool> cancel(String buildId) async => false;
 }
 
-final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
+final class _ScriptedEudCompilerGateway implements EudBuildGateway {
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) {
+  Stream<EudBuildEvent> build(EudBuildPlan request) {
     return Stream.fromIterable([
       EudBuildEvent.started(
         buildId: request.buildId,
@@ -490,6 +497,7 @@ final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
         text: 'Compiling main.eps',
       ),
       EudBuildEvent.stderrLine(buildId: request.buildId, text: 'Test warning'),
+      EudBuildEvent.finalizing(buildId: request.buildId),
       EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
     ]);
   }
@@ -498,9 +506,9 @@ final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
   Future<bool> cancel(String buildId) async => false;
 }
 
-final class _DiagnosticEudCompilerGateway implements EudCompilerGateway {
+final class _DiagnosticEudCompilerGateway implements EudBuildGateway {
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) {
+  Stream<EudBuildEvent> build(EudBuildPlan request) {
     return Stream.fromIterable([
       EudBuildEvent.started(
         buildId: request.buildId,
@@ -532,14 +540,14 @@ final class _DiagnosticEudCompilerGateway implements EudCompilerGateway {
   Future<bool> cancel(String buildId) async => false;
 }
 
-final class _CancellableEudCompilerGateway implements EudCompilerGateway {
+final class _CancellableEudCompilerGateway implements EudBuildGateway {
   final StreamController<EudBuildEvent> _events =
       StreamController<EudBuildEvent>();
 
   String? cancelledBuildId;
 
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) {
+  Stream<EudBuildEvent> build(EudBuildPlan request) {
     scheduleMicrotask(() {
       _events.add(
         EudBuildEvent.started(

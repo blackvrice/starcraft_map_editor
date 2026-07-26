@@ -232,6 +232,13 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 - stdout/stderr 채널·순서·캡처 시각 보존과 기록 불변성
 - 성공·실패·취소 기록과 세션 내 최근 기록 상한
 - 성공 종료지만 출력 없음
+- 공백·한글 경로에서 공식 `[main] input/output`과 절대 `.eps` 섹션을 가진
+  일회성 UTF-8 `.eds` 생성
+- 임시 출력 MPQ 재열기, 손상 CHK와 `VER`/`DIM`/`ERA` 최소 구조 거부
+- 기준 맵·진입 소스·기존 출력 fingerprint의 승격 직전 재확인
+- 빌드 중 새 출력 생성과 기존 출력 변경·삭제 시 승격 거부
+- 확인된 기존 출력의 고유 백업, 승격 실패 자동 복원과 복원 실패 백업 보존
+- 성공·컴파일 실패·검증 실패 뒤 앱 소유 작업 공간 정리
 - 공식 epScript stderr 오류의 코드·Windows/한글 경로·행 파싱
 - stdout 유사 문자열, 알 수 없는 줄과 현재 형식에 없는 열을 추정하지 않음
 - 원시 stderr 보존과 파생 진단의 동일 빌드 기록 병행 저장
@@ -301,6 +308,8 @@ flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 flutter test test/application/eud_build_configuration_test.dart `
   test/application/eud_source_controller_test.dart `
   test/application/eud_compiler_gateway_test.dart `
+  test/application/safe_eud_build_pipeline_test.dart `
+  test/infrastructure/local_eud_build_file_gateway_test.dart `
   test/infrastructure/process_eud_compiler_gateway_test.dart `
   test/widget/editor_shell_test.dart
 ```

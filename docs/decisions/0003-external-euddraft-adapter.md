@@ -57,5 +57,9 @@ euddraft/eudplib는 Python 기반 도구와 네이티브 구성요소를 포함�
 - 부모 환경은 Windows 실행 allowlist만 상속하고 명시적 override를 추가한다.
 - timeout, build ID 취소와 구독 취소는 소유 토큰이 일치하는 프로세스만
   종료한다.
-- 종료 코드 0은 프로세스 단계 성공일 뿐이다. 임시 출력 검증, 원본 fingerprint
-  재확인과 최종 승격은 후속 Application 파이프라인이 담당한다.
+- 종료 코드 0은 프로세스 단계 성공일 뿐이다. `SafeEudBuildPipeline`이
+  앱 소유 작업 공간의 출력 MPQ/CHK를 검증하고 기준 맵·진입 소스·기존 출력
+  fingerprint를 재확인한 뒤 최종 경로로 승격한다.
+- `LocalEudBuildFileGateway`는 공식 `[main] input/output`과 절대 epScript
+  플러그인 섹션을 가진 일회성 UTF-8 `.eds`를 최종 출력의 형제 작업 공간에
+  만든다. 기존 출력 교체는 명시적 계획에서만 허용하고 백업·자동 복원한다.

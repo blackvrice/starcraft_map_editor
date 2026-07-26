@@ -1749,6 +1749,7 @@ String _emptyMessage(EudBuildStatus status) {
     EudBuildStatus.ready => 'Ready to build',
     EudBuildStatus.running => 'Starting euddraft…',
     EudBuildStatus.cancelling => 'Stopping euddraft…',
+    EudBuildStatus.finalizing => 'Validating and promoting output…',
     EudBuildStatus.succeeded => 'Build completed',
     EudBuildStatus.failed => 'Build failed without output',
     EudBuildStatus.cancelled => 'Build cancelled',

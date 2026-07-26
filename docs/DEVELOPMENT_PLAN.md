@@ -198,7 +198,7 @@
 - [x] Build/Cancel 명령과 출력 패널 구현
 - [x] stdout/stderr, 종료 코드, 도구 버전 기록
 - [x] 가능한 오류의 파일/행/열 진단 변환
-- [ ] 임시 출력과 성공 출력 승격 구현
+- [x] 임시 출력과 성공 출력 승격 구현
 - [ ] 가짜 컴파일러를 이용한 성공/실패/취소 통합 테스트
 - [ ] 실제 euddraft와 자체 제작 테스트 맵 빌드 스모크 테스트
 
@@ -221,14 +221,15 @@
 - Windows PowerShell 가짜 컴파일러 테스트는 공백/한글 경로, UTF-8 양쪽
   로그, 비정상 종료, timeout, 사용자 취소, 중복 ID 격리, 출력 상한,
   환경 변수 최소 상속, 잘못된 경로와 시작 실패를 실제 프로세스로 검증한다.
-  이 단계의 성공은 종료 코드 0까지이며 출력 맵 검증·승격은 후속 항목이다.
+  이 프로세스 포트의 성공은 종료 코드 0까지이며 전체 빌드 성공은
+  `SafeEudBuildPipeline`이 출력 검증·승격을 마친 뒤에만 게시한다.
 - `EudBuildConfiguration`은 `scr-euddraft` 프로필과 기준 `.scm/.scx`, 소스
   루트 내부 진입 `.eps`, 기준 및 소스 트리와 분리된 출력 `.scx`, 선택적 도구
   경로와 불변 옵션·환경 override를 Application 계층에 고정한다.
 - 단위 테스트는 drive/UNC 절대 경로, 확장자, 기준/출력 충돌, 소스 포함 관계,
   위험한 Windows 경로 세그먼트, 옵션·환경 유효성, 방어적 복사와 도구
-  검사·컴파일러 요청 변환을 검증한다. 파일 존재·canonical 경로와 `.eds`
-  생성은 후속 빌드 파이프라인 책임이다.
+  검사·컴파일러 요청 변환을 검증한다. `LocalEudBuildFileGateway`는 파일
+  존재·종류와 canonical 포함 관계를 다시 확인하고 일회성 `.eds`를 만든다.
 - `EudSourceDocument`와 `EudSourceController`는 단일 epScript 문서의 immutable
   snapshot, 저장 기준선, revision과 dirty 계산을 Application 계층에 둔다.
   dirty 문서는 명시적 discard 없이는 교체하거나 닫을 수 없다.
@@ -236,18 +237,36 @@
   Project/Inspector와 상태 표시줄의 Clean/Modified 표시를 제공한다. 위젯
   테스트는 입력 후 dirty 전환과 탭 왕복 시 텍스트 보존을 검증한다. 실제
   `.eps` 열기·저장과 외부 변경 감지는 후속 파일 I/O 작업이다.
-- `EudBuildController`는 준비된 요청을 `ready/running/cancelling`과 세 종료
-  상태로 조립하고 같은 operation 진행 모델에 컴파일 상태를 게시한다. 중복
-  시작을 막고 활성 build ID만 취소하며, 이벤트 스트림 오류·결과 없는 종료·
-  ID 불일치를 구조화 실패로 바꾼다.
+- `EudBuildController`는 준비된 `EudBuildPlan`을
+  `ready/running/cancelling/finalizing`과 세 종료 상태로 조립하고 같은
+  operation 진행 모델에 컴파일·검증 상태를 게시한다. 중복 시작을 막고 활성
+  build ID만 취소하며, 이벤트 스트림 오류·결과 없는 종료·ID 불일치를
+  구조화 실패로 바꾼다.
 - 셸은 EUD Build/Cancel 명령과 `Ctrl+B`/`Ctrl+Shift+B`를 연결하고 실행 중
   도구 모음 버튼을 Cancel로 전환한다. Problems/Output/Build Log 탭은 각각
   구조화 진단, 일반 작업 진행, 현재 빌드의 원시 이벤트를 표시한다. 빌드
   시작 시 Build Log를 자동 선택한다.
 - 단위·위젯 테스트는 설정 전 Build 비활성, 성공 stdout/stderr 표시, 실패
-  진단, 취소 요청과 버튼 복귀, 결과 없는 스트림의 안전한 실패를 검증한다.
-  일회성 `.eds`를 생성해 요청을 준비하는 파이프라인은 후속 항목이므로
-  부트스트랩은 임의 설정 경로로 euddraft를 실행하지 않는다.
+  진단, 취소 요청과 버튼 복귀, finalizing 전환, 결과 없는 스트림의 안전한
+  실패를 검증한다. 부트스트랩은 안전 파이프라인을 실제 포트에 연결하지만
+  프로젝트 설정 UI가 `EudBuildPlan`을 준비하기 전에는 임의 경로로
+  euddraft를 실행하지 않는다.
+- `SafeEudBuildPipeline`은 빌드 직전 도구를 다시 검사하고 기준 맵·진입
+  epScript·기존 출력 fingerprint를 기록한 뒤, 최종 출력과 같은 디렉터리의
+  앱 소유 작업 공간에 UTF-8 `.eds`와 임시 `.scx` 경로를 만든다. 공식
+  `[main] input/output`과 절대 epScript 플러그인 섹션만 직렬화하며
+  `input`/`output`을 사용자 옵션으로 덮어쓸 수 없다.
+- 종료 코드 0 뒤에도 임시 파일 존재·비어 있지 않음, MPQ 재열기,
+  `scenario.chk` raw 파싱, `VER`/`DIM`/`ERA` 최소 구조를 검사한다. 기준 맵과
+  진입 소스, 기존 출력의 fingerprint를 승격 직전에 다시 비교하고 하나라도
+  달라지면 성공을 게시하지 않는다.
+- 검증된 임시 출력만 같은 볼륨에서 rename한다. 확인된 기존 출력은 고유
+  `.backup-eud-<작업 토큰>.bak`로 보존하고, 승격 실패 시 자동 복원한다.
+  복원도 실패하면 백업 경로를 복구 진단으로 남기며 일반 작업 공간 정리에서
+  삭제하지 않는다.
+- 파이프라인·파일 시스템 테스트는 프로세스 성공 뒤 출력 누락, 손상 CHK,
+  빌드 중 기준/출력 변경, 기존 출력 백업, 승격 실패 복원, 복원 실패 백업
+  보존, 공백·한글 경로의 `.eds` 생성과 앱 소유 작업 공간 정리를 검증한다.
 - `EudBuildRecord`는 build ID, euddraft 버전, UTC 시작·종료 시각, 실행
   상태, 선택적 종료 코드, 캡처 시각과 채널이 붙은 stdout/stderr, 진단을
   불변 스냅샷으로 보존한다. 성공 기록은 종료 코드 0을 강제한다.

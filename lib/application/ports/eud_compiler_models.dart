@@ -7,6 +7,7 @@ enum EudBuildEventKind {
   stdoutLine,
   stderrLine,
   diagnostic,
+  finalizing,
   cancelled,
   failed,
   succeeded,
@@ -94,6 +95,13 @@ final class EudBuildEvent {
       kind: EudBuildEventKind.diagnostic,
       buildId: buildId,
       diagnostic: diagnostic,
+    );
+  }
+
+  factory EudBuildEvent.finalizing({required String buildId}) {
+    return EudBuildEvent._(
+      kind: EudBuildEventKind.finalizing,
+      buildId: buildId,
     );
   }
 

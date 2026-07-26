@@ -3,8 +3,9 @@ import 'dart:async';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
+import '../ports/eud_build_gateway.dart';
 import '../ports/eud_compiler_diagnostic_parser.dart';
-import '../ports/eud_compiler_gateway.dart';
+import '../ports/eud_compiler_models.dart';
 import 'eud_build_record.dart';
 
 abstract final class EudBuildControllerDiagnosticCodes {
@@ -18,6 +19,7 @@ enum EudBuildStatus {
   ready,
   running,
   cancelling,
+  finalizing,
   succeeded,
   failed,
   cancelled,
@@ -26,7 +28,7 @@ enum EudBuildStatus {
 final class EudBuildState {
   EudBuildState._({
     required this.status,
-    required this.request,
+    required this.plan,
     required Iterable<EudBuildEvent> events,
     required Iterable<EudBuildRecord> records,
   }) : events = List.unmodifiable(events),
@@ -37,35 +39,37 @@ final class EudBuildState {
   }) {
     return EudBuildState._(
       status: EudBuildStatus.notConfigured,
-      request: null,
+      plan: null,
       events: const [],
       records: records,
     );
   }
 
   factory EudBuildState.ready(
-    EudBuildRequest request, {
+    EudBuildPlan plan, {
     Iterable<EudBuildRecord> records = const [],
   }) {
     return EudBuildState._(
       status: EudBuildStatus.ready,
-      request: request,
+      plan: plan,
       events: const [],
       records: records,
     );
   }
 
   final EudBuildStatus status;
-  final EudBuildRequest? request;
+  final EudBuildPlan? plan;
   final List<EudBuildEvent> events;
   final List<EudBuildRecord> records;
 
   EudBuildRecord? get latestRecord => records.isEmpty ? null : records.last;
 
-  bool get isConfigured => request != null;
+  bool get isConfigured => plan != null;
 
   bool get isActive =>
-      status == EudBuildStatus.running || status == EudBuildStatus.cancelling;
+      status == EudBuildStatus.running ||
+      status == EudBuildStatus.cancelling ||
+      status == EudBuildStatus.finalizing;
 
   bool get canCancel => status == EudBuildStatus.running;
 
@@ -84,7 +88,7 @@ final class EudBuildState {
   }) {
     return EudBuildState._(
       status: status,
-      request: request,
+      plan: plan,
       events: [...events, ?event],
       records: _replaceLatestRecord(record),
     );
@@ -93,7 +97,7 @@ final class EudBuildState {
   EudBuildState append(EudBuildEvent event, {EudBuildRecord? record}) {
     return EudBuildState._(
       status: status,
-      request: request,
+      plan: plan,
       events: [...events, event],
       records: _replaceLatestRecord(record),
     );
@@ -112,7 +116,7 @@ final class EudBuildState {
 
 final class EudBuildController {
   EudBuildController({
-    required this.compilerGateway,
+    required this.buildGateway,
     required this.diagnosticParser,
     required this.operationProgressController,
     DateTime Function()? clock,
@@ -127,7 +131,7 @@ final class EudBuildController {
     }
   }
 
-  final EudCompilerGateway compilerGateway;
+  final EudBuildGateway buildGateway;
   final EudCompilerDiagnosticParser diagnosticParser;
   final OperationProgressController operationProgressController;
   final int maximumBuildRecords;
@@ -153,12 +157,12 @@ final class EudBuildController {
         operationAvailable;
   }
 
-  void prepare(EudBuildRequest request) {
+  void prepare(EudBuildPlan plan) {
     _requireNotDisposed();
     if (_state.isActive || _subscription != null) {
       throw StateError('Cannot replace an active EUD build request.');
     }
-    _emit(EudBuildState.ready(request, records: _state.records));
+    _emit(EudBuildState.ready(plan, records: _state.records));
   }
 
   void clearPreparation() {
@@ -175,9 +179,9 @@ final class EudBuildController {
       return Future.value(false);
     }
 
-    final request = _state.request!;
+    final plan = _state.plan!;
     operationProgressController.start(
-      operationId: request.buildId,
+      operationId: plan.buildId,
       label: 'Building EUD map',
       message: 'Waiting for euddraft to start',
       canCancel: true,
@@ -185,12 +189,12 @@ final class EudBuildController {
     _emit(
       EudBuildState._(
         status: EudBuildStatus.running,
-        request: request,
+        plan: plan,
         events: const [],
         records: _appendBuildRecord(
           EudBuildRecord.running(
-            buildId: request.buildId,
-            toolVersion: request.tool.version,
+            buildId: plan.buildId,
+            toolVersion: plan.tool.version,
             startedAt: _clock(),
           ),
         ),
@@ -201,12 +205,12 @@ final class EudBuildController {
     _completion = completion;
     try {
       var completedDuringListen = false;
-      final subscription = compilerGateway
-          .build(request)
+      final subscription = buildGateway
+          .build(plan)
           .listen(
             _handleEvent,
             onError: (Object error, StackTrace stackTrace) {
-              unawaited(compilerGateway.cancel(request.buildId));
+              unawaited(buildGateway.cancel(plan.buildId));
               _finishUnexpectedly(
                 code: EudBuildControllerDiagnosticCodes.eventStreamFailed,
                 message: 'The euddraft event stream failed unexpectedly.',
@@ -239,10 +243,10 @@ final class EudBuildController {
       return false;
     }
 
-    final request = _state.request!;
+    final plan = _state.plan!;
     _emit(_state.transition(EudBuildStatus.cancelling));
     operationProgressController.update(
-      operationId: request.buildId,
+      operationId: plan.buildId,
       phase: OperationPhase.compiling,
       message: 'Stopping euddraft',
       canCancel: false,
@@ -250,7 +254,7 @@ final class EudBuildController {
 
     final bool accepted;
     try {
-      accepted = await compilerGateway.cancel(request.buildId);
+      accepted = await buildGateway.cancel(plan.buildId);
     } on Object catch (error, stackTrace) {
       _finishUnexpectedly(
         code: EudBuildControllerDiagnosticCodes.eventStreamFailed,
@@ -269,10 +273,10 @@ final class EudBuildController {
     }
     if (!accepted &&
         _state.status == EudBuildStatus.cancelling &&
-        _state.request?.buildId == request.buildId) {
+        _state.plan?.buildId == plan.buildId) {
       _emit(_state.transition(EudBuildStatus.running));
       operationProgressController.update(
-        operationId: request.buildId,
+        operationId: plan.buildId,
         phase: OperationPhase.compiling,
         message: 'euddraft is still running',
         canCancel: true,
@@ -298,15 +302,15 @@ final class EudBuildController {
   }
 
   void _handleEvent(EudBuildEvent event) {
-    final request = _state.request;
-    if (request == null || event.buildId != request.buildId) {
-      if (request != null) {
-        unawaited(compilerGateway.cancel(request.buildId));
+    final plan = _state.plan;
+    if (plan == null || event.buildId != plan.buildId) {
+      if (plan != null) {
+        unawaited(buildGateway.cancel(plan.buildId));
       }
       _finishUnexpectedly(
         code: EudBuildControllerDiagnosticCodes.eventBuildIdMismatch,
         message: 'euddraft returned an event for a different build.',
-        rawDetails: 'expected=${request?.buildId}; actual=${event.buildId}',
+        rawDetails: 'expected=${plan?.buildId}; actual=${event.buildId}',
       );
       return;
     }
@@ -314,7 +318,7 @@ final class EudBuildController {
       return;
     }
 
-    final record = _requireLatestRecord(request.buildId);
+    final record = _requireLatestRecord(plan.buildId);
     switch (event.kind) {
       case EudBuildEventKind.started:
         _emit(
@@ -327,7 +331,7 @@ final class EudBuildController {
         );
         final cancelling = _state.status == EudBuildStatus.cancelling;
         operationProgressController.update(
-          operationId: request.buildId,
+          operationId: plan.buildId,
           phase: OperationPhase.compiling,
           message: cancelling
               ? 'Stopping euddraft'
@@ -361,6 +365,16 @@ final class EudBuildController {
           ),
         );
         return;
+      case EudBuildEventKind.finalizing:
+        _emit(_state.transition(EudBuildStatus.finalizing, event: event));
+        operationProgressController.update(
+          operationId: plan.buildId,
+          phase: OperationPhase.verifying,
+          message: 'Validating and promoting the generated EUD map',
+          fraction: 0.85,
+          canCancel: false,
+        );
+        return;
       case EudBuildEventKind.cancelled:
         _emit(
           _state.transition(
@@ -375,7 +389,7 @@ final class EudBuildController {
           ),
         );
         operationProgressController.cancel(
-          operationId: request.buildId,
+          operationId: plan.buildId,
           message: event.diagnostic?.message ?? 'EUD build was cancelled',
         );
         return;
@@ -393,7 +407,7 @@ final class EudBuildController {
           ),
         );
         operationProgressController.fail(
-          operationId: request.buildId,
+          operationId: plan.buildId,
           message: event.diagnostic?.message ?? 'EUD build failed',
         );
         return;
@@ -410,8 +424,8 @@ final class EudBuildController {
           ),
         );
         operationProgressController.succeed(
-          operationId: request.buildId,
-          message: 'EUD build process completed',
+          operationId: plan.buildId,
+          message: 'EUD map built, verified, and promoted',
         );
         return;
     }
@@ -479,20 +493,20 @@ final class EudBuildController {
     if (!_state.isActive) {
       return;
     }
-    final request = _state.request!;
+    final plan = _state.plan!;
     final event = EudBuildEvent.failed(
-      buildId: request.buildId,
+      buildId: plan.buildId,
       diagnostic: EditorDiagnostic(
         code: code,
         message: message,
         severity: DiagnosticSeverity.error,
         stage: DiagnosticStage.compile,
-        filePath: request.settingsFilePath,
+        filePath: plan.configuration.entrySourcePath,
         remediation: 'Inspect the build log and retry.',
         rawDetails: rawDetails,
       ),
     );
-    final record = _requireLatestRecord(request.buildId).complete(
+    final record = _requireLatestRecord(plan.buildId).complete(
       status: EudBuildRecordStatus.failed,
       completedAt: _clock(),
       diagnostic: event.diagnostic,
@@ -501,7 +515,7 @@ final class EudBuildController {
       _state.transition(EudBuildStatus.failed, event: event, record: record),
     );
     operationProgressController.fail(
-      operationId: request.buildId,
+      operationId: plan.buildId,
       message: message,
     );
   }

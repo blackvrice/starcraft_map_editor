@@ -82,12 +82,15 @@ void main() {
         toolVersion: EudToolVersion.parse('0.10.2.5'),
       );
       final stdout = EudBuildEvent.stdoutLine(buildId: 'build', text: 'line');
+      final finalizing = EudBuildEvent.finalizing(buildId: 'build');
       final succeeded = EudBuildEvent.succeeded(buildId: 'build', exitCode: 0);
 
       expect(started.kind, EudBuildEventKind.started);
       expect(started.toolVersion.toString(), '0.10.2.5');
       expect(stdout.kind, EudBuildEventKind.stdoutLine);
       expect(stdout.text, 'line');
+      expect(finalizing.kind, EudBuildEventKind.finalizing);
+      expect(finalizing.isTerminal, isFalse);
       expect(started.isTerminal, isFalse);
       expect(succeeded.isTerminal, isTrue);
       expect(

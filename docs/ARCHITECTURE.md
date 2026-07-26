@@ -216,6 +216,20 @@ abstract interface class EudCompilerGateway {
   Future<bool> cancel(String buildId);
 }
 
+abstract interface class EudBuildGateway {
+  Stream<EudBuildEvent> build(EudBuildPlan plan);
+  Future<bool> cancel(String buildId);
+}
+
+abstract interface class EudBuildFileGateway {
+  Future<void> validateInputs(EudBuildConfiguration configuration);
+  Future<EudBuildWorkspace> createWorkspace(
+    EudBuildConfiguration configuration,
+  );
+  Future<EudBuildPromotionResult> promote(...);
+  Future<void> cleanup(EudBuildWorkspace workspace);
+}
+
 abstract interface class SafeFileWriter {
   Future<VerifiedWriteResult> writeVerified(WriteRequest request);
 }
@@ -260,13 +274,20 @@ euddraft 설치 무결성을 Application 계층 계약으로 노출한다.
 프로세스 단계 성공일 뿐이며 출력 파일 검사와 최종 승격은 이후 Application
 파이프라인 책임이다.
 
-`EudBuildController`는 준비된 단일 `EudBuildRequest`와 게이트웨이 이벤트
-스트림을 `ready/running/cancelling/succeeded/failed/cancelled` 상태로
-조립한다. 같은 `OperationProgressController`에 컴파일 단계를 게시하고,
-Build 중복 실행을 차단하며 취소는 활성 build ID로만 전달한다. 이벤트
-스트림 오류, 결과 없는 종료와 build ID 불일치는 구조화 진단을 가진 실패로
-종결한다. Presentation은 이 상태만 구독해 Build/Cancel 활성 상태와 현재
-세션의 빌드 기록을 표시한다.
+`SafeEudBuildPipeline`은 상위 `EudBuildGateway` 구현이며
+`EudCompilerGateway`의 프로세스 성공을 그대로 노출하지 않는다. 도구 재검사,
+입력·소스·기존 출력 fingerprint, 일회성 `.eds`, 임시 출력 재열기와 CHK 최소
+구조 검증, 경합 재확인 및 rename 승격을 조정한다. 이 파이프라인의
+`succeeded`만 전체 빌드 성공을 뜻한다.
+
+`EudBuildController`는 준비된 단일 `EudBuildPlan`과 상위 게이트웨이 이벤트
+스트림을
+`ready/running/cancelling/finalizing/succeeded/failed/cancelled` 상태로
+조립한다. 같은 `OperationProgressController`에 컴파일과 검증 단계를
+게시하고, Build 중복 실행을 차단하며 취소는 컴파일 중인 활성 build ID로만
+전달한다. 이벤트 스트림 오류, 결과 없는 종료와 build ID 불일치는 구조화
+진단을 가진 실패로 종결한다. Presentation은 이 상태만 구독해 Build/Cancel
+활성 상태와 현재 세션의 빌드 기록을 표시한다.
 
 `EudCompilerDiagnosticParser`는 Application 계층이 소유하는 선택적 변환
 포트다. Infrastructure의 `EuddraftDiagnosticParser`는 공식 epScript
@@ -284,13 +305,14 @@ Build 중복 실행을 차단하며 취소는 활성 build ID로만 전달한다
 직전 결과를 잃지 않는다.
 
 원시 도구 출력에는 개인 경로나 토큰이 포함될 수 있으므로 이 기록은 현재
-세션 메모리에만 둔다. 디스크 manifest, 앱·프로필·eudplib 버전, 개인정보
-제거본 내보내기는 출력 검증·승격 파이프라인과 함께 구현한다.
+세션 메모리에만 둔다. 디스크 manifest, 앱·프로필·eudplib 버전과 개인정보
+제거본 내보내기는 후속 작업이다.
 
-컨트롤러는 임의의 기본 경로나 설정을 만들지 않는다. 도구 검사와 일회성
-`.eds` 생성까지 마친 후속 빌드 파이프라인이 요청을 `prepare`하기 전에는
-Build 명령이 비활성 상태다. 이 경계로 아직 구현되지 않은 설정 생성을 UI나
-프로세스 어댑터가 추측하지 않도록 한다.
+컨트롤러는 임의의 기본 경로나 설정을 만들지 않는다. 프로젝트 설정 흐름이
+검사된 도구와 `EudBuildConfiguration`을 가진 `EudBuildPlan`을 `prepare`하기
+전에는 Build 명령이 비활성 상태다. `.eds`와 임시 출력은 Build 동작 시
+`LocalEudBuildFileGateway`가 최종 출력의 형제 작업 공간에 만들고 종료 경로
+마다 정확히 그 앱 소유 디렉터리만 정리한다.
 
 어댑터는 Windows 기본 환경 변수 중 실행에 필요한 allowlist만 상속하고,
 스트림마다 기본 1 MiB까지만 메모리에 전달한다. 초과분도 프로세스 종료까지
@@ -469,10 +491,11 @@ Windows Save As 확인을 승인한 경우에만 허용한다. 최종 경로와 
 
 먼저 `EudBuildConfiguration`이 기준 맵, 소스 루트와 진입점, 별도 출력 경로와
 프로필을 고정한다. 이 모델이 만든 검사 요청으로 `EudToolInspector`가 선택된
-설치의 경로, 지원 버전과 companion 파일을 검증한다. 후속 파이프라인은 설정을
-임시 `.eds`로 직렬화하고 컴파일러 요청을 만들어 euddraft 어댑터를 별도
-프로세스로 실행한다. 출력 맵은 성공 후 다시 열어 최소 구조를 검증한다. 자세한
-내용은 [EUD 연동](EUD_INTEGRATION.md)을 따른다.
+설치의 경로, 지원 버전과 companion 파일을 검증한다. `SafeEudBuildPipeline`은
+Build 직전 설치를 다시 검사하고 설정을 임시 `.eds`로 직렬화해 euddraft
+어댑터를 별도 프로세스로 실행한다. 프로세스 종료 코드 0 뒤 출력 맵을 다시
+열어 MPQ/CHK 최소 구조, 입력·소스·기존 출력 불변성을 검증한 뒤에만 최종
+경로로 승격한다. 자세한 내용은 [EUD 연동](EUD_INTEGRATION.md)을 따른다.
 
 ## 9. 동시성과 성능
 

@@ -58,9 +58,11 @@ EudBuildConfiguration
   거부한다.
 
 이 검증은 파일 시스템에 접근하지 않는 어휘적 경계다. 파일 존재, 일반 파일
-여부, symbolic link와 canonical 경로 동일성, 작업 중 fingerprint는 후속 빌드
-파이프라인에서 실행 직전에 다시 검증한다. `compilerOptions`는 향후 생성할
-`.eds` 설정에 직렬화하며 euddraft 명령줄 인자로 직접 전달하지 않는다.
+여부, symbolic link와 canonical 경로 동일성, 작업 중 fingerprint는
+`SafeEudBuildPipeline`과 `LocalEudBuildFileGateway`가 실행 직전에 다시
+검증한다. `compilerOptions`는 앱 소유 작업 공간의 `.eds` `[main]` 설정에
+직렬화하며 euddraft 명령줄 인자로 직접 전달하지 않는다. 안전 파이프라인이
+관리하는 `input`과 `output` 키는 사용자 옵션으로 덮어쓸 수 없다.
 
 권장 사용자 폴더 예시:
 
@@ -162,6 +164,7 @@ EudBuildEvent
   stdoutLine
   stderrLine
   diagnostic
+  finalizing (상위 안전 파이프라인 전용)
   cancelled
   failed
   succeeded
@@ -186,8 +189,9 @@ flowchart LR
     Compile --> CheckExit{"exit code 0?"}
     CheckExit -- no --> Fail["오류 + 원시 로그"]
     CheckExit -- yes --> ValidateMap["출력 맵 재열기/검증"]
-    ValidateMap --> Original["원본 fingerprint 재확인"]
-    Original --> Promote["최종 출력으로 승격"]
+    ValidateMap --> Original["원본·소스 fingerprint 재확인"]
+    Original --> Destination["최종 출력 경합 재확인"]
+    Destination --> Promote["최종 출력으로 승격"]
 ```
 
 ### 성공 조건
@@ -197,9 +201,42 @@ flowchart LR
 - 출력 아카이브에서 CHK를 읽을 수 있음
 - 최소 구조 검증 통과
 - 입력 맵 fingerprint가 변경되지 않음
+- 진입 epScript fingerprint가 변경되지 않음
+- 기존 출력이 승인 뒤 변경·삭제되지 않았고 새 출력이 끼어들지 않음
 - 최종 경로 승격 완료
 
 어느 하나라도 실패하면 성공으로 표시하지 않는다.
+
+### 현재 구현
+
+`SafeEudBuildPipeline`은 `EudBuildPlan`을 받아 다음 순서를 한 스트림으로
+실행한다.
+
+1. 선택했던 euddraft executable을 `EudToolInspector`로 다시 검사한다.
+2. 기준 맵·소스 루트·진입 `.eps`·출력 폴더가 symbolic link가 아닌 일반
+   파일/디렉터리인지 확인하고 canonical 포함 관계를 재검사한다.
+3. 기준 맵, 진입 `.eps`, 확인된 기존 출력의 fingerprint를 기록한다.
+4. 최종 출력과 같은 디렉터리에
+   `.starcraft_map_editor_eud_<고유 토큰>` 작업 공간을 만든다.
+5. UTF-8 `build-settings.eds`에 공식 `[main] input/output`, 정렬된
+   compiler option, 절대 진입 `.eps` 플러그인 섹션을 쓰고 임시
+   `temporary-output.scx`를 대상으로 euddraft를 실행한다.
+6. 종료 코드 0 뒤 `finalizing` 이벤트를 게시하고, 임시 출력의 존재·크기,
+   MPQ의 `staredit\scenario.chk`, raw CHK 파싱과 `VER`/`DIM`/`ERA` 최소
+   구조를 검사한다.
+7. 입력·진입 소스·기존 출력 fingerprint와 출력 생성 경합을 다시 확인한 뒤
+   검증된 임시 파일만 rename한다.
+8. 모든 종료 경로에서 앱이 소유한 정확한 작업 공간만 정리하고, 그 뒤 최종
+   성공·실패·취소 이벤트를 게시한다.
+
+설정 형식은 공식 euddraft의
+[`readconfig.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/readconfig.py),
+[`applyeuddraft.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/applyeuddraft.py)와
+[`pluginLoader.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/pluginLoader.py)
+계약을 따른다. 기존 출력 교체는 `EudBuildPlan.replaceExistingOutput`이
+명시된 경우에만 허용한다. 교체 전 기존 파일을 최종 경로 옆의 고유
+`.backup-eud-<토큰>.bak`로 옮기며, 승격 실패 시 자동 복원한다. 자동 복원도
+실패하면 백업을 보존하고 복구 필요 진단에 정확한 경로를 남긴다.
 
 ## 8. 코드 편집기 MVP
 
@@ -218,16 +255,19 @@ flowchart LR
 `EudSourceController`는 같은 내용의 중복 변경을 방출하지 않으며 dirty
 문서의 암묵적 교체·닫기를 막는다.
 
-Build/Cancel 조각은 `EudBuildController`가 준비된 요청 하나를 소유하고
-게이트웨이의 시작·원시 출력·진단·종료 이벤트를 현재 실행 상태와 메모리
-로그로 조립한다. Build가 시작되면 도구 모음 버튼이 Cancel로 바뀌고 하단
-`Build Log` 탭이 자동으로 열리며 stdout과 stderr를 구분해 보여준다.
+Build/Cancel 조각은 `EudBuildController`가 준비된 `EudBuildPlan` 하나를
+소유하고 상위 안전 게이트웨이의 시작·원시 출력·진단·finalizing·종료
+이벤트를 현재 실행 상태와 메모리 로그로 조립한다. Build가 시작되면 도구
+모음 버튼이 Cancel로 바뀌고 하단 `Build Log` 탭이 자동으로 열리며 stdout과
+stderr를 구분해 보여준다. euddraft 종료 뒤 검증·승격 중에는 Cancel을
+비활성화하고 `finalizing` 상태를 표시한다.
 실패 진단은 `Problems`에도 합쳐지고 일반 앱 작업은 `Output` 탭에 남는다.
 `Ctrl+B`는 Build, `Ctrl+Shift+B`는 실행 중인 Build 취소다.
 
-아직 일회성 `.eds` 생성 파이프라인이 없으므로 앱 부트스트랩은 실제 프로세스
-게이트웨이와 명령을 연결하되 요청을 임의로 만들지 않는다. 검사된 도구와
-생성된 설정을 가진 파이프라인이 요청을 준비할 때까지 Build는 비활성이다.
+앱 부트스트랩은 실제 도구 검사, 프로세스, MPQ 재열기, fingerprint와 파일
+승격 포트를 `SafeEudBuildPipeline`에 연결한다. 다만 프로젝트 설정 UI가
+검사된 도구와 빌드 설정을 가진 `EudBuildPlan`을 준비하기 전에는 요청을
+임의로 만들지 않으므로 Build는 비활성이다.
 `EudBuildRecord`는 build ID, euddraft 버전, UTC 시작·종료 시각, 상태와 종료
 코드, 캡처 시각과 채널이 붙은 stdout/stderr, 진단을 불변 값으로 보존한다.
 성공은 종료 코드 0을 요구하고 실패·취소는 프로세스가 시작되지 않은 경우를
@@ -306,7 +346,10 @@ BuildManifest
 - 가짜 프로세스로 성공, 실패, 취소, timeout, 잘못된 인코딩 테스트
 - 공백과 한글이 포함된 경로 테스트
 - 입력과 출력 경로 충돌 차단 테스트
-- 실패한 임시 출력이 최종 파일이 되지 않는 테스트
+- 종료 코드 0이지만 출력 없음, 손상 CHK, 최소 구조 누락 테스트
+- 빌드 중 기준 맵·진입 소스·기존 출력 변경과 새 출력 경합 테스트
+- 기존 출력 백업, 승격 실패 복원과 복원 실패 백업 보존 테스트
+- 성공·실패 뒤 정확한 앱 소유 작업 공간 정리 테스트
 - 실제 euddraft 버전으로 자체 제작 맵 스모크 테스트
 - 출력 맵 재열기와 StarCraft 실행 수동 스모크 테스트
 
@@ -314,6 +357,6 @@ BuildManifest
 
 - euddraft 배포본을 앱에 포함할지
 - 새 euddraft 릴리스를 exact allowlist에 추가하는 승인·배포 주기
-- 설정 파일을 직접 생성할지 기존 프로젝트 형식을 사용할지
+- 장기 보존 프로젝트 형식과 일회성 `.eds`의 매핑 방식
 - Python 플러그인을 별도 신뢰 등급으로 표시할지
 - 향후 epScript 언어 서버 구현 또는 연동 방식

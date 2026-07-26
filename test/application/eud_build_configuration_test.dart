@@ -250,6 +250,8 @@ void main() {
         () => create(const {'valid-option': 'line1\nline2'}),
         throwsArgumentError,
       );
+      expect(() => create(const {'input': 'other.scx'}), throwsArgumentError);
+      expect(() => create(const {'output': 'other.scx'}), throwsArgumentError);
     });
 
     test('creates tool inspection and compiler process requests', () {

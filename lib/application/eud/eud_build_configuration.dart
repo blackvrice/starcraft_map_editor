@@ -254,6 +254,14 @@ Map<String, String> _copyCompilerOptions(Map<String, String> options) {
         'Compiler option values cannot contain NUL or line breaks.',
       );
     }
+    if (const {'input', 'output'}.contains(entry.key)) {
+      throw ArgumentError.value(
+        entry.key,
+        'compilerOptions',
+        'The input and output manifest keys are managed by the safe build '
+            'pipeline.',
+      );
+    }
   }
   return Map.unmodifiable(copied);
 }

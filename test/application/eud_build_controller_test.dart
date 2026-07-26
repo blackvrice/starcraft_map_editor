@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_record.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/ports/eud_build_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_parser.dart';
-import 'package:starcraft_map_editor/application/ports/eud_compiler_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
@@ -28,11 +30,12 @@ void main() {
           buildId: request.buildId,
           text: 'A recoverable warning',
         ),
+        EudBuildEvent.finalizing(buildId: request.buildId),
         EudBuildEvent.succeeded(buildId: request.buildId, exitCode: 0),
       ]);
     });
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
       clock: _SequenceClock([
@@ -57,6 +60,7 @@ void main() {
       EudBuildEventKind.started,
       EudBuildEventKind.stdoutLine,
       EudBuildEventKind.stderrLine,
+      EudBuildEventKind.finalizing,
       EudBuildEventKind.succeeded,
     ]);
     final record = controller.state.latestRecord!;
@@ -85,7 +89,7 @@ void main() {
       ]);
     });
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
@@ -122,7 +126,7 @@ void main() {
       ]);
     });
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const EuddraftDiagnosticParser(),
       operationProgressController: progressController,
       clock: _SequenceClock([
@@ -156,7 +160,7 @@ void main() {
     final progressController = OperationProgressController();
     final gateway = _CancellableEudCompilerGateway();
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
@@ -181,7 +185,7 @@ void main() {
     final progressController = OperationProgressController();
     final gateway = _ScriptedEudCompilerGateway((_) => const Stream.empty());
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
     );
@@ -206,7 +210,7 @@ void main() {
       );
     });
     final controller = EudBuildController(
-      compilerGateway: gateway,
+      buildGateway: gateway,
       diagnosticParser: const IgnoreEudCompilerDiagnostics(),
       operationProgressController: progressController,
       maximumBuildRecords: 2,
@@ -227,11 +231,16 @@ void main() {
   });
 }
 
-EudBuildRequest _request(String buildId) {
-  return EudBuildRequest(
+EudBuildPlan _request(String buildId) {
+  return EudBuildPlan(
     buildId: buildId,
+    configuration: EudBuildConfiguration(
+      baseMapPath: r'C:\Project\base\Base.scx',
+      sourceRootPath: r'C:\Project\src',
+      entrySourcePath: r'C:\Project\src\main.eps',
+      outputMapPath: r'C:\Project\build\Output.scx',
+    ),
     tool: _tool(),
-    settingsFilePath: r'C:\Project\.build\request.eds',
     timeout: const Duration(minutes: 2),
   );
 }
@@ -261,27 +270,27 @@ EditorDiagnostic _blockingDiagnostic({
   );
 }
 
-final class _ScriptedEudCompilerGateway implements EudCompilerGateway {
+final class _ScriptedEudCompilerGateway implements EudBuildGateway {
   _ScriptedEudCompilerGateway(this.script);
 
-  final Stream<EudBuildEvent> Function(EudBuildRequest request) script;
+  final Stream<EudBuildEvent> Function(EudBuildPlan request) script;
 
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) => script(request);
+  Stream<EudBuildEvent> build(EudBuildPlan request) => script(request);
 
   @override
   Future<bool> cancel(String buildId) async => false;
 }
 
-final class _CancellableEudCompilerGateway implements EudCompilerGateway {
+final class _CancellableEudCompilerGateway implements EudBuildGateway {
   final StreamController<EudBuildEvent> _events =
       StreamController<EudBuildEvent>();
 
-  EudBuildRequest? _request;
+  EudBuildPlan? _request;
   String? cancelledBuildId;
 
   @override
-  Stream<EudBuildEvent> build(EudBuildRequest request) {
+  Stream<EudBuildEvent> build(EudBuildPlan request) {
     _request = request;
     return _events.stream;
   }

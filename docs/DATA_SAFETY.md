@@ -172,6 +172,29 @@ StormLib 연동 helper는
 원본이나 기존 출력의 검증 실패는 임시 작업 공간만 정리한다. 백업은 앱 소유
 임시 작업 공간에 포함하지 않아 일반 cleanup이나 다음 실행이 삭제하지 않는다.
 
+### EUD 빌드 출력
+
+EUD 빌드도 최종 출력과 같은 디렉터리에 앱 소유 형제 작업 공간을 만들고
+euddraft의 `output`을 그 안의 `temporary-output.scx`로 제한한다. 빌드
+시작 전 기준 맵과 진입 `.eps`를 fingerprint하고, 종료 코드 0 뒤 임시 MPQ를
+다시 열어 CHK raw 파싱과 `VER`/`DIM`/`ERA` 최소 구조를 확인한다. 그 뒤 기준
+맵과 진입 소스 fingerprint를 다시 비교하므로 빌드 도중 변경된 입력으로 만든
+출력은 승격하지 않는다.
+
+기존 최종 출력은 `replaceExistingOutput`을 명시한 빌드 계획에서만 교체한다.
+승인 시점의 fingerprint를 승격 직전에 다시 확인하고, 삭제·변경되었거나
+처음 없던 경로에 다른 파일이 생기면 실패한다. 확인된 기존 출력은
+`<파일명>.backup-eud-<고유 작업 토큰>.bak`로 이동한 뒤 검증된 임시 출력을
+rename한다. 승격 실패 시 자동 복원하며 복원 실패 시 백업은 작업 공간 밖에
+보존하고 `EUD_BUILD_PROMOTION_RECOVERY_REQUIRED` 진단으로 안내한다.
+
+`LocalEudBuildFileGateway`는 기준 맵·진입 소스가 일반 파일, 소스 루트와
+출력 부모가 일반 디렉터리인지 `followLinks: false`로 확인한다. canonical
+진입 소스는 canonical 소스 루트 안에 있어야 하고 canonical 출력 부모는
+그 밖에 있어야 한다. `.eds`의 `input`/`output`은 파이프라인만 관리하며
+사용자 compiler option으로 재정의할 수 없다. 성공·실패·취소 뒤에는 현재
+앱 인스턴스가 소유 토큰으로 등록한 정확한 작업 공간만 정리한다.
+
 ## 6. 경로 안전
 
 - 입력, 임시, 출력 경로를 절대 경로로 정규화
