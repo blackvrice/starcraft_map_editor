@@ -170,7 +170,10 @@ DocumentSession
   lastBuild
 ```
 
-`sourceFingerprint`는 저장 전에 외부 변경을 감지하기 위해 크기, 수정 시각, 해시를 조합한다.
+`sourceFingerprint`는 외부 변경을 감지하기 위해 파일 크기, UTC 수정 시각,
+SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint가 같을
+때만 생성되고 Save As로 채택한 세션은 검증된 임시 출력의 fingerprint를
+이어받는다.
 
 ## 6. 명령과 Undo/Redo
 
@@ -214,6 +217,10 @@ abstract interface class SafeFileWriter {
 abstract interface class MapFilePicker {
   Future<String?> pickMapPath();
 }
+
+abstract interface class MapFileFingerprintGateway {
+  Future<MapFileFingerprint> fingerprint(String path);
+}
 ```
 
 테스트는 메모리 구현이나 가짜 프로세스 구현을 사용한다.
@@ -227,6 +234,11 @@ runner에 남고 Presentation은 Open Map/Save As 명령만 전달한다.
 같은 디렉터리에 앱 소유 임시 작업 공간 생성, 검증된 파일의 rename 승격,
 정확한 작업 공간 정리를 추상화한다. 현재 정책은 원본 또는 기존 출력 경로를
 교체하지 않으며, 같은 볼륨의 새 경로에만 승격한다.
+
+`MapFileFingerprintGateway`는 Application 계층에 경로 독립적인 파일
+fingerprint만 반환한다. Infrastructure의 로컬 구현은 해시 전후 `stat`이
+일치하는 일반 파일에 한해 SHA-256을 스트리밍 계산한다. 파일이 사라지거나
+계산 중 크기·수정 시각이 바뀌면 fingerprint를 반환하지 않는다.
 
 `MapArchiveGateway` 포트는 Application 계층의 계약만 표현한다. open 요청은
 operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK 바이트와
@@ -284,6 +296,10 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - timeout과 operation ID 취소는 helper 프로세스를 종료한다. 임시 쓰기는
   CHK 입력과 MPQ 출력이 같은 앱 소유 작업 디렉터리에 있는지, helper 응답의
   CHK/아카이브 크기와 실제 파일이 일치하는지 검증한다.
+- `OpenMapController`는 helper 호출 전후 원본 fingerprint를 비교하고,
+  `SaveMapController`는 저장 시작과 최종 승격 직전에 세션 원본 fingerprint를
+  비교한다. 불일치나 읽기 실패는 구조화 진단과 작업 실패가 되며 임시 출력은
+  승격되지 않는다.
 
 ## 8. 주요 데이터 흐름
 
@@ -294,18 +310,23 @@ sequenceDiagram
     actor User
     participant UI
     participant OpenMap
+    participant Fingerprint
     participant Archive
     participant Parser
     participant Validator
 
     User->>UI: Open map
     UI->>OpenMap: path
+    OpenMap->>Fingerprint: capture source
+    Fingerprint-->>OpenMap: size + mtime + SHA-256
     OpenMap->>Archive: extract scenario.chk
     Archive-->>OpenMap: bytes + archive metadata
     OpenMap->>Parser: parse losslessly
     Parser-->>OpenMap: raw document
     OpenMap->>Validator: validate structure
     Validator-->>OpenMap: diagnostics
+    OpenMap->>Fingerprint: recapture source
+    Fingerprint-->>OpenMap: unchanged
     OpenMap-->>UI: document session
 ```
 
@@ -314,7 +335,9 @@ sequenceDiagram
 사용하지만, 이후에는 동일하게 `MapArchiveGateway` → `RawChkParser` →
 `ChkMetadataViewDecoder`를 거친다. raw 구조를 파싱할 수 없으면 기존 세션을
 유지한 채 실패 진단을 반환한다. typed 메타데이터 오류는 원시 문서를 보존한
-제한 읽기 전용 세션으로 열며, 성공한 경로만 최근 파일에 기록한다.
+제한 읽기 전용 세션으로 열며, 성공한 경로만 최근 파일에 기록한다. 원본
+fingerprint가 열기 전후 다르거나 어느 시점에든 읽을 수 없으면 새 세션과 최근
+파일 기록을 만들지 않는다.
 
 ### 안전한 저장
 
@@ -323,12 +346,15 @@ sequenceDiagram
     actor User
     participant UI
     participant SaveAs
+    participant Fingerprint
     participant Encoder
     participant Archive
     participant Validator
 
     User->>UI: Save As
     UI->>SaveAs: output path
+    SaveAs->>Fingerprint: compare opened source
+    Fingerprint-->>SaveAs: unchanged
     SaveAs->>Encoder: apply dirty projections
     Encoder-->>SaveAs: scenario.chk bytes
     SaveAs->>Archive: write temporary archive
@@ -337,6 +363,8 @@ sequenceDiagram
     Archive-->>SaveAs: scenario.chk + metadata
     SaveAs->>Validator: compare bytes and parse CHK
     Validator-->>SaveAs: verified
+    SaveAs->>Fingerprint: fingerprint output and recapture source
+    Fingerprint-->>SaveAs: source unchanged
     SaveAs->>SaveAs: rename to new final path
     SaveAs-->>UI: finalized output
 ```
@@ -346,7 +374,9 @@ sequenceDiagram
 디렉터리에 만든 임시 작업 공간에서만 helper를 실행하고, 재열기 CHK가 인코딩
 바이트와 정확히 같으며 raw 파싱에 성공한 뒤에만 최종 경로로 rename한다.
 성공 시 검증된 출력을 현재 문서 세션과 최근 파일로 채택한다. 검증 실패 시
-임시 파일은 최종 출력으로 승격하지 않는다.
+임시 파일은 최종 출력으로 승격하지 않는다. 저장 시작 시 현재 파일이 세션의
+fingerprint와 다르거나, 작업 중 변경·삭제되어 승격 직전 fingerprint가
+달라지면 같은 실패 정책을 적용한다.
 
 ### EUD 빌드
 

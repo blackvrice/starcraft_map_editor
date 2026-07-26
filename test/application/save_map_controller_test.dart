@@ -7,6 +7,7 @@ import 'package:starcraft_map_editor/application/operations/operation_progress.d
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
+import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
@@ -16,6 +17,7 @@ void main() {
   group('SaveMapController', () {
     late _FakeMapArchiveGateway archiveGateway;
     late _FakeMapFilePicker filePicker;
+    late _FakeMapFileFingerprintGateway fingerprintGateway;
     late _FakeMapSaveFileGateway saveFileGateway;
     late OperationProgressController progressController;
     late RecentProjectsService recentProjectsService;
@@ -34,17 +36,25 @@ void main() {
         savePath: r'C:\Maps\Arena Copy.scx',
       );
       saveFileGateway = _FakeMapSaveFileGateway();
+      fingerprintGateway = _FakeMapFileFingerprintGateway(
+        defaultResponses: {
+          sourceMap.sourcePath: _originalFingerprint(),
+          saveFileGateway.workspace.temporaryOutputPath: _outputFingerprint(),
+        },
+      );
       progressController = OperationProgressController();
       recentProjectsService = RecentProjectsService(InMemorySettingsStore());
       openMapController = OpenMapController(
         archiveGateway: archiveGateway,
         filePicker: filePicker,
+        fingerprintGateway: fingerprintGateway,
         recentProjectsService: recentProjectsService,
         operationProgressController: progressController,
       );
       saveMapController = SaveMapController(
         archiveGateway: archiveGateway,
         filePicker: filePicker,
+        fingerprintGateway: fingerprintGateway,
         saveFileGateway: saveFileGateway,
         openMapController: openMapController,
         operationProgressController: progressController,
@@ -90,6 +100,17 @@ void main() {
           openMapController.state.session!.sourcePath,
           r'C:\Maps\Arena Copy.scx',
         );
+        expect(
+          openMapController.state.session!.sourceFingerprint,
+          _outputFingerprint(),
+        );
+        expect(fingerprintGateway.paths, [
+          sourceMap.sourcePath,
+          sourceMap.sourcePath,
+          sourceMap.sourcePath,
+          saveFileGateway.workspace.temporaryOutputPath,
+          sourceMap.sourcePath,
+        ]);
         expect(progressController.current!.phase, OperationPhase.succeeded);
         expect(
           (await recentProjectsService.load()).first.path,
@@ -202,6 +223,74 @@ void main() {
       expect(saveFileGateway.cleanupCount, 1);
       expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
     });
+
+    test('stops before writing when the opened source changed', () async {
+      fingerprintGateway.defaultResponses[sourceMap.sourcePath] =
+          _changedFingerprint();
+
+      final state = await saveMapController.saveAs(
+        destinationPath: r'C:\Maps\Changed Before Save.scx',
+      );
+
+      expect(state.status, SaveMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        SaveMapDiagnosticCodes.sourceChangedBeforeSave,
+      );
+      expect(saveFileGateway.createWorkspaceCount, 0);
+      expect(archiveGateway.writeRequests, isEmpty);
+      expect(saveFileGateway.promotedDestination, isNull);
+      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+    });
+
+    test('does not promote when the source changes during Save As', () async {
+      fingerprintGateway.script(sourceMap.sourcePath, [
+        _originalFingerprint(),
+        _changedFingerprint(),
+      ]);
+
+      final state = await saveMapController.saveAs(
+        destinationPath: r'C:\Maps\Changed During Save.scx',
+      );
+
+      expect(state.status, SaveMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        SaveMapDiagnosticCodes.sourceChangedDuringSave,
+      );
+      expect(archiveGateway.writeRequests, hasLength(1));
+      expect(saveFileGateway.promotedDestination, isNull);
+      expect(saveFileGateway.cleanupCount, 1);
+      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(progressController.current!.phase, OperationPhase.failed);
+    });
+
+    test(
+      'does not promote when the source disappears during Save As',
+      () async {
+        fingerprintGateway.script(sourceMap.sourcePath, [
+          _originalFingerprint(),
+          StateError('source file disappeared'),
+        ]);
+
+        final state = await saveMapController.saveAs(
+          destinationPath: r'C:\Maps\Deleted During Save.scx',
+        );
+
+        expect(state.status, SaveMapStatus.failed);
+        expect(
+          state.diagnostics.single.code,
+          SaveMapDiagnosticCodes.sourceFingerprintFailed,
+        );
+        expect(archiveGateway.writeRequests, hasLength(1));
+        expect(saveFileGateway.promotedDestination, isNull);
+        expect(saveFileGateway.cleanupCount, 1);
+        expect(
+          openMapController.state.session!.sourcePath,
+          sourceMap.sourcePath,
+        );
+      },
+    );
   });
 }
 
@@ -266,6 +355,36 @@ class _FakeMapFilePicker implements MapFilePicker {
   }
 }
 
+class _FakeMapFileFingerprintGateway implements MapFileFingerprintGateway {
+  _FakeMapFileFingerprintGateway({
+    required Map<String, MapFileFingerprint> defaultResponses,
+  }) : defaultResponses = {...defaultResponses};
+
+  final Map<String, MapFileFingerprint> defaultResponses;
+  final Map<String, List<Object>> _scriptedResponses = {};
+  final List<String> paths = [];
+
+  void script(String path, List<Object> responses) {
+    _scriptedResponses[path] = [...responses];
+  }
+
+  @override
+  Future<MapFileFingerprint> fingerprint(String path) async {
+    paths.add(path);
+    final scripted = _scriptedResponses[path];
+    final Object? response = scripted != null && scripted.isNotEmpty
+        ? scripted.removeAt(0)
+        : defaultResponses[path];
+    if (response is MapFileFingerprint) {
+      return response;
+    }
+    if (response != null) {
+      throw response;
+    }
+    throw StateError('No fingerprint configured for $path.');
+  }
+}
+
 class _FakeMapSaveFileGateway implements MapSaveFileGateway {
   final workspace = MapSaveWorkspace(
     directoryPath: r'C:\Maps\.starcraft_map_editor_save_test',
@@ -310,6 +429,33 @@ class _FakeMapSaveFileGateway implements MapSaveFileGateway {
     String normalize(String path) => path.replaceAll('/', r'\').toLowerCase();
     return normalize(leftPath) == normalize(rightPath);
   }
+}
+
+MapFileFingerprint _originalFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 4096,
+    modifiedAt: DateTime.utc(2026, 7, 26, 12),
+    sha256Digest:
+        '1111111111111111111111111111111111111111111111111111111111111111',
+  );
+}
+
+MapFileFingerprint _changedFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 4096,
+    modifiedAt: DateTime.utc(2026, 7, 26, 12),
+    sha256Digest:
+        '2222222222222222222222222222222222222222222222222222222222222222',
+  );
+}
+
+MapFileFingerprint _outputFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 4352,
+    modifiedAt: DateTime.utc(2026, 7, 26, 12, 1),
+    sha256Digest:
+        '3333333333333333333333333333333333333333333333333333333333333333',
+  );
 }
 
 ExtractedMap _createExtractedMap({

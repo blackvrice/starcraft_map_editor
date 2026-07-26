@@ -10,6 +10,7 @@ import 'package:starcraft_map_editor/application/operations/operation_progress.d
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
+import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -129,6 +130,7 @@ void main() {
         MapArchiveOpenResult.success(map: extractedMap),
       ),
       filePicker: _FakeMapFilePicker(extractedMap.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
       recentProjectsService: recentProjectsService,
       operationProgressController: progressController,
     );
@@ -179,11 +181,13 @@ Widget _createTestApp({
       operationProgressController ?? OperationProgressController();
   final resolvedRecentProjectsService =
       recentProjectsService ?? RecentProjectsService(resolvedSettingsStore);
+  final resolvedFingerprintGateway = _FakeMapFileFingerprintGateway();
   final resolvedOpenMapController =
       openMapController ??
       OpenMapController(
         archiveGateway: _UnusedMapArchiveGateway(),
         filePicker: _FakeMapFilePicker(null),
+        fingerprintGateway: resolvedFingerprintGateway,
         recentProjectsService: resolvedRecentProjectsService,
         operationProgressController: resolvedProgressController,
       );
@@ -192,6 +196,7 @@ Widget _createTestApp({
       SaveMapController(
         archiveGateway: _UnusedMapArchiveGateway(),
         filePicker: _FakeMapFilePicker(null),
+        fingerprintGateway: resolvedFingerprintGateway,
         saveFileGateway: _UnusedMapSaveFileGateway(),
         openMapController: resolvedOpenMapController,
         operationProgressController: resolvedProgressController,
@@ -290,6 +295,18 @@ class _UnusedMapSaveFileGateway implements MapSaveFileGateway {
   @override
   Future<bool> refersToSameLocation(String leftPath, String rightPath) async =>
       false;
+}
+
+class _FakeMapFileFingerprintGateway implements MapFileFingerprintGateway {
+  @override
+  Future<MapFileFingerprint> fingerprint(String path) async {
+    return MapFileFingerprint(
+      sizeBytes: 4096,
+      modifiedAt: DateTime.utc(2026, 7, 26, 12),
+      sha256Digest:
+          '1111111111111111111111111111111111111111111111111111111111111111',
+    );
+  }
 }
 
 ExtractedMap _createExtractedMap() {

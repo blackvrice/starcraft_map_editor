@@ -6,6 +6,7 @@ import 'package:starcraft_map_editor/application/operations/operation_progress.d
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
+import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -22,10 +23,12 @@ void main() {
         InMemorySettingsStore(),
       );
       final progressController = OperationProgressController();
+      final fingerprintGateway = _FakeMapFileFingerprintGateway();
       final openedAt = DateTime(2026, 7, 26, 14, 30);
       final controller = OpenMapController(
         archiveGateway: gateway,
         filePicker: picker,
+        fingerprintGateway: fingerprintGateway,
         recentProjectsService: recentProjectsService,
         operationProgressController: progressController,
         clock: () => openedAt,
@@ -45,6 +48,8 @@ void main() {
       expect(state.session!.metadataViews.dimensions.single.width, 64);
       expect(state.session!.metadataViews.dimensions.single.height, 96);
       expect(state.session!.archiveMetadata.entries, hasLength(2));
+      expect(state.session!.sourceFingerprint, _originalFingerprint());
+      expect(fingerprintGateway.paths, [map.sourcePath, map.sourcePath]);
       expect(state.diagnostics, isEmpty);
       expect(progressController.current!.phase, OperationPhase.succeeded);
       expect((await recentProjectsService.load()).single.path, map.sourcePath);
@@ -66,6 +71,7 @@ void main() {
         final controller = OpenMapController(
           archiveGateway: gateway,
           filePicker: picker,
+          fingerprintGateway: _FakeMapFileFingerprintGateway(),
           recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
           operationProgressController: progressController,
         );
@@ -95,6 +101,7 @@ void main() {
       final controller = OpenMapController(
         archiveGateway: gateway,
         filePicker: _FakeMapFilePicker(r'C:\Maps\Broken.scx'),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
         recentProjectsService: recentProjectsService,
         operationProgressController: progressController,
       );
@@ -118,6 +125,7 @@ void main() {
           result: MapArchiveOpenResult.success(map: map),
         ),
         filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
         recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
         operationProgressController: progressController,
       );
@@ -146,6 +154,7 @@ void main() {
           result: MapArchiveOpenResult.success(map: map),
         ),
         filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
         recentProjectsService: recentProjectsService,
         operationProgressController: progressController,
       );
@@ -171,6 +180,7 @@ void main() {
       final controller = OpenMapController(
         archiveGateway: gateway,
         filePicker: _FakeMapFilePicker(r'C:\Maps\Notes.txt'),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
         recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
         operationProgressController: progressController,
       );
@@ -198,6 +208,7 @@ void main() {
       final controller = OpenMapController(
         archiveGateway: gateway,
         filePicker: _FakeMapFilePicker(null),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
         recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
         operationProgressController: progressController,
       );
@@ -210,6 +221,67 @@ void main() {
       expect(state.diagnostics, isEmpty);
       expect(gateway.openRequests, isEmpty);
       expect(progressController.current, isNull);
+    });
+
+    test('rejects a map that changes while it is being opened', () async {
+      final map = _createExtractedMap(_validChkBytes());
+      final recentProjectsService = RecentProjectsService(
+        InMemorySettingsStore(),
+      );
+      final progressController = OperationProgressController();
+      final controller = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          result: MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(
+          responses: [_originalFingerprint(), _changedFingerprint()],
+        ),
+        recentProjectsService: recentProjectsService,
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.failed);
+      expect(state.session, isNull);
+      expect(
+        state.diagnostics.single.code,
+        OpenMapDiagnosticCodes.sourceChangedDuringOpen,
+      );
+      expect(progressController.current!.phase, OperationPhase.failed);
+      expect(await recentProjectsService.load(), isEmpty);
+    });
+
+    test('reports a stable diagnostic when fingerprinting fails', () async {
+      final map = _createExtractedMap(_validChkBytes());
+      final progressController = OperationProgressController();
+      final gateway = _FakeMapArchiveGateway(
+        result: MapArchiveOpenResult.success(map: map),
+      );
+      final controller = OpenMapController(
+        archiveGateway: gateway,
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(
+          responses: [StateError('file disappeared')],
+        ),
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.failed);
+      expect(
+        state.diagnostics.single.code,
+        OpenMapDiagnosticCodes.sourceFingerprintFailed,
+      );
+      expect(gateway.openRequests, isEmpty);
+      expect(progressController.current!.phase, OperationPhase.failed);
     });
   });
 }
@@ -251,6 +323,44 @@ class _FakeMapArchiveGateway implements MapArchiveGateway {
 
   @override
   Future<bool> cancel(String operationId) async => false;
+}
+
+class _FakeMapFileFingerprintGateway implements MapFileFingerprintGateway {
+  _FakeMapFileFingerprintGateway({List<Object>? responses})
+    : _responses = [...?responses];
+
+  final List<Object> _responses;
+  final List<String> paths = [];
+
+  @override
+  Future<MapFileFingerprint> fingerprint(String path) async {
+    paths.add(path);
+    final response = _responses.isEmpty
+        ? _originalFingerprint()
+        : _responses.removeAt(0);
+    if (response is MapFileFingerprint) {
+      return response;
+    }
+    throw response;
+  }
+}
+
+MapFileFingerprint _originalFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 4096,
+    modifiedAt: DateTime.utc(2026, 7, 26, 12),
+    sha256Digest:
+        '1111111111111111111111111111111111111111111111111111111111111111',
+  );
+}
+
+MapFileFingerprint _changedFingerprint() {
+  return MapFileFingerprint(
+    sizeBytes: 4096,
+    modifiedAt: DateTime.utc(2026, 7, 26, 12),
+    sha256Digest:
+        '2222222222222222222222222222222222222222222222222222222222222222',
+  );
 }
 
 ExtractedMap _createExtractedMap(Uint8List chkBytes) {

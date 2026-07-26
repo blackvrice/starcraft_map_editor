@@ -6,6 +6,7 @@ import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
 import '../ports/map_archive_gateway.dart';
 import '../ports/map_file_picker.dart';
+import '../ports/map_file_fingerprint_gateway.dart';
 import '../ports/map_save_file_gateway.dart';
 import 'open_map_controller.dart';
 import 'opened_map_session.dart';
@@ -18,10 +19,14 @@ abstract final class SaveMapDiagnosticCodes {
   static const sourceDestinationSame = 'SAVE_MAP_SOURCE_DESTINATION_SAME';
   static const destinationExists = 'SAVE_MAP_DESTINATION_EXISTS';
   static const operationBusy = 'SAVE_MAP_OPERATION_BUSY';
+  static const sourceFingerprintFailed = 'SAVE_MAP_SOURCE_FINGERPRINT_FAILED';
+  static const sourceChangedBeforeSave = 'SAVE_MAP_SOURCE_CHANGED_BEFORE_SAVE';
+  static const sourceChangedDuringSave = 'SAVE_MAP_SOURCE_CHANGED_DURING_SAVE';
   static const workspaceFailed = 'SAVE_MAP_WORKSPACE_FAILED';
   static const verificationBytesMismatch =
       'SAVE_MAP_VERIFICATION_BYTES_MISMATCH';
   static const verificationParseFailed = 'SAVE_MAP_VERIFICATION_PARSE_FAILED';
+  static const outputFingerprintFailed = 'SAVE_MAP_OUTPUT_FINGERPRINT_FAILED';
   static const promotionFailed = 'SAVE_MAP_PROMOTION_FAILED';
   static const unexpectedFailure = 'SAVE_MAP_UNEXPECTED_FAILURE';
 }
@@ -67,6 +72,7 @@ class SaveMapController {
   SaveMapController({
     required this.archiveGateway,
     required this.filePicker,
+    required this.fingerprintGateway,
     required this.saveFileGateway,
     required this.openMapController,
     required this.operationProgressController,
@@ -87,6 +93,7 @@ class SaveMapController {
 
   final MapArchiveGateway archiveGateway;
   final MapFilePicker filePicker;
+  final MapFileFingerprintGateway fingerprintGateway;
   final MapSaveFileGateway saveFileGateway;
   final OpenMapController openMapController;
   final OperationProgressController operationProgressController;
@@ -198,9 +205,49 @@ class SaveMapController {
       operationProgressController.start(
         operationId: operationId,
         label: 'Saving map as',
-        message: 'Creating temporary output',
+        message: 'Checking source map',
         canCancel: false,
       );
+
+      operationProgressController.update(
+        operationId: operationId,
+        phase: OperationPhase.validating,
+        message: 'Checking source map fingerprint',
+        fraction: 0.1,
+      );
+      late final MapFileFingerprint sourceFingerprintAtSaveStart;
+      try {
+        sourceFingerprintAtSaveStart = await fingerprintGateway.fingerprint(
+          sourceSession.sourcePath,
+        );
+      } on Object catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _sourceFingerprintFailureDiagnostic(
+            path: sourceSession.sourcePath,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+      if (sourceFingerprintAtSaveStart != sourceSession.sourceFingerprint) {
+        return _failOperation(
+          operationId,
+          _diagnostic(
+            code: SaveMapDiagnosticCodes.sourceChangedBeforeSave,
+            message:
+                'The source map changed after it was opened, so Save As was '
+                'stopped.',
+            filePath: sourceSession.sourcePath,
+            remediation:
+                'Reopen the source map to review the external changes before '
+                'saving.',
+            rawDetails:
+                'opened=${sourceSession.sourceFingerprint}; '
+                'current=$sourceFingerprintAtSaveStart',
+          ),
+        );
+      }
 
       try {
         workspace = await saveFileGateway.createWorkspace(normalizedPath);
@@ -300,6 +347,73 @@ class SaveMapController {
 
       operationProgressController.update(
         operationId: operationId,
+        phase: OperationPhase.verifying,
+        message: 'Fingerprinting verified output',
+        fraction: 0.8,
+      );
+      late final MapFileFingerprint verifiedOutputFingerprint;
+      try {
+        verifiedOutputFingerprint = await fingerprintGateway.fingerprint(
+          workspace.temporaryOutputPath,
+        );
+      } on Object catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _diagnostic(
+            code: SaveMapDiagnosticCodes.outputFingerprintFailed,
+            message:
+                'The verified temporary map fingerprint could not be '
+                'calculated.',
+            filePath: workspace.temporaryOutputPath,
+            remediation:
+                'Check destination folder permissions and free disk space.',
+            rawDetails: '$error\n$stackTrace',
+          ),
+        );
+      }
+
+      operationProgressController.update(
+        operationId: operationId,
+        phase: OperationPhase.verifying,
+        message: 'Rechecking source map fingerprint',
+        fraction: 0.88,
+      );
+      late final MapFileFingerprint sourceFingerprintBeforePromotion;
+      try {
+        sourceFingerprintBeforePromotion = await fingerprintGateway.fingerprint(
+          sourceSession.sourcePath,
+        );
+      } on Object catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _sourceFingerprintFailureDiagnostic(
+            path: sourceSession.sourcePath,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+      if (sourceFingerprintBeforePromotion != sourceFingerprintAtSaveStart) {
+        return _failOperation(
+          operationId,
+          _diagnostic(
+            code: SaveMapDiagnosticCodes.sourceChangedDuringSave,
+            message:
+                'The source map changed during Save As, so the verified '
+                'output was not promoted.',
+            filePath: sourceSession.sourcePath,
+            remediation:
+                'Reopen the source map to review the external changes and '
+                'retry with a new output name.',
+            rawDetails:
+                'start=$sourceFingerprintAtSaveStart; '
+                'beforePromotion=$sourceFingerprintBeforePromotion',
+          ),
+        );
+      }
+
+      operationProgressController.update(
+        operationId: operationId,
         phase: OperationPhase.writing,
         message: 'Promoting verified map to final destination',
         fraction: 0.9,
@@ -334,6 +448,7 @@ class SaveMapController {
           extractedMap: finalMap,
           rawDocument: verifiedDocument,
           metadataViews: metadataViews,
+          sourceFingerprint: verifiedOutputFingerprint,
           diagnostics: verifiedDiagnostics,
         ),
       );
@@ -411,6 +526,22 @@ class SaveMapController {
 
   SaveMapState _emitFailure(EditorDiagnostic diagnostic) =>
       _emit(SaveMapState.failed(diagnostics: [diagnostic]));
+
+  EditorDiagnostic _sourceFingerprintFailureDiagnostic({
+    required String path,
+    required Object error,
+    required StackTrace stackTrace,
+  }) {
+    return _diagnostic(
+      code: SaveMapDiagnosticCodes.sourceFingerprintFailed,
+      message: 'The source map fingerprint could not be verified.',
+      filePath: path,
+      remediation:
+          'Check that the source map still exists, is readable, and is not '
+          'being changed by another program.',
+      rawDetails: '$error\n$stackTrace',
+    );
+  }
 
   SaveMapState _emit(SaveMapState state) {
     _state = state;

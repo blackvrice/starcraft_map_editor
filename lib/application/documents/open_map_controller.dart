@@ -6,6 +6,7 @@ import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
 import '../ports/map_archive_gateway.dart';
 import '../ports/map_file_picker.dart';
+import '../ports/map_file_fingerprint_gateway.dart';
 import '../recent_projects/recent_projects_service.dart';
 import 'opened_map_session.dart';
 
@@ -13,6 +14,8 @@ abstract final class OpenMapDiagnosticCodes {
   static const fileSelectionFailed = 'OPEN_MAP_FILE_SELECTION_FAILED';
   static const unsupportedExtension = 'OPEN_MAP_UNSUPPORTED_EXTENSION';
   static const operationBusy = 'OPEN_MAP_OPERATION_BUSY';
+  static const sourceFingerprintFailed = 'OPEN_MAP_SOURCE_FINGERPRINT_FAILED';
+  static const sourceChangedDuringOpen = 'OPEN_MAP_SOURCE_CHANGED_DURING_OPEN';
   static const recentProjectUpdateFailed =
       'OPEN_MAP_RECENT_PROJECT_UPDATE_FAILED';
   static const unexpectedFailure = 'OPEN_MAP_UNEXPECTED_FAILURE';
@@ -57,6 +60,7 @@ class OpenMapController {
   OpenMapController({
     required this.archiveGateway,
     required this.filePicker,
+    required this.fingerprintGateway,
     required this.recentProjectsService,
     required this.operationProgressController,
     this.rawChkParser = const RawChkParser(),
@@ -75,6 +79,7 @@ class OpenMapController {
 
   final MapArchiveGateway archiveGateway;
   final MapFilePicker filePicker;
+  final MapFileFingerprintGateway fingerprintGateway;
   final RecentProjectsService recentProjectsService;
   final OperationProgressController operationProgressController;
   final RawChkParser rawChkParser;
@@ -149,6 +154,28 @@ class OpenMapController {
       operationProgressController.update(
         operationId: operationId,
         phase: OperationPhase.reading,
+        message: 'Fingerprinting source map',
+        fraction: 0.05,
+      );
+      late final MapFileFingerprint sourceFingerprintBeforeOpen;
+      try {
+        sourceFingerprintBeforeOpen = await fingerprintGateway.fingerprint(
+          normalizedPath,
+        );
+      } on Object catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _sourceFingerprintFailureDiagnostic(
+            path: normalizedPath,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+
+      operationProgressController.update(
+        operationId: operationId,
+        phase: OperationPhase.reading,
         message: 'Reading map archive',
         fraction: 0.15,
       );
@@ -209,10 +236,44 @@ class OpenMapController {
         ...archiveResult.diagnostics,
         ...metadataViews.diagnostics,
       ];
+      late final MapFileFingerprint sourceFingerprintAfterOpen;
+      try {
+        sourceFingerprintAfterOpen = await fingerprintGateway.fingerprint(
+          normalizedPath,
+        );
+      } on Object catch (error, stackTrace) {
+        return _failOperation(
+          operationId,
+          _sourceFingerprintFailureDiagnostic(
+            path: normalizedPath,
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        );
+      }
+      if (sourceFingerprintBeforeOpen != sourceFingerprintAfterOpen) {
+        return _failOperation(
+          operationId,
+          EditorDiagnostic(
+            code: OpenMapDiagnosticCodes.sourceChangedDuringOpen,
+            message: 'The source map changed while it was being opened.',
+            severity: DiagnosticSeverity.error,
+            stage: DiagnosticStage.application,
+            filePath: normalizedPath,
+            remediation:
+                'Close the other program that is editing the map and open it '
+                'again.',
+            rawDetails:
+                'before=$sourceFingerprintBeforeOpen; '
+                'after=$sourceFingerprintAfterOpen',
+          ),
+        );
+      }
       final session = OpenedMapSession(
         extractedMap: extractedMap,
         rawDocument: rawDocument,
         metadataViews: metadataViews,
+        sourceFingerprint: sourceFingerprintAfterOpen,
         diagnostics: documentDiagnostics,
       );
       final operationDiagnostics = [...documentDiagnostics];
@@ -305,6 +366,7 @@ class OpenMapController {
       extractedMap: session.extractedMap,
       rawDocument: session.rawDocument,
       metadataViews: session.metadataViews,
+      sourceFingerprint: session.sourceFingerprint,
       diagnostics: diagnostics,
     );
     return _emit(
@@ -339,6 +401,32 @@ class OpenMapController {
         diagnostics: [diagnostic],
         previousSession: _state.session,
       ),
+    );
+  }
+
+  OpenMapState _failOperation(String operationId, EditorDiagnostic diagnostic) {
+    operationProgressController.fail(
+      operationId: operationId,
+      message: diagnostic.message,
+    );
+    return _emitFailure(diagnostic);
+  }
+
+  EditorDiagnostic _sourceFingerprintFailureDiagnostic({
+    required String path,
+    required Object error,
+    required StackTrace stackTrace,
+  }) {
+    return EditorDiagnostic(
+      code: OpenMapDiagnosticCodes.sourceFingerprintFailed,
+      message: 'The source map fingerprint could not be verified.',
+      severity: DiagnosticSeverity.error,
+      stage: DiagnosticStage.application,
+      filePath: path,
+      remediation:
+          'Check that the map still exists, is readable, and is not being '
+          'changed by another program.',
+      rawDetails: '$error\n$stackTrace',
     );
   }
 
