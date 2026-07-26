@@ -18,9 +18,7 @@ void main() {
       fakeHelperScript = File(
         'test/fixtures/helpers/fake_map_archive_helper.ps1',
       ).absolute.path;
-      powershellExecutable =
-          '${Platform.environment['SystemRoot']}'
-          r'\System32\WindowsPowerShell\v1.0\powershell.exe';
+      powershellExecutable = await _findPowerShellExecutable();
     });
 
     tearDown(() async {
@@ -298,4 +296,23 @@ void main() {
       skip: !Platform.isWindows,
     );
   });
+}
+
+Future<String> _findPowerShellExecutable() async {
+  final programFiles = Platform.environment['ProgramFiles'];
+  final systemRoot = Platform.environment['SystemRoot'];
+  final candidates = [
+    if (programFiles != null)
+      '$programFiles${Platform.pathSeparator}'
+          r'PowerShell\7\pwsh.exe',
+    if (systemRoot != null)
+      '$systemRoot${Platform.pathSeparator}'
+          r'System32\WindowsPowerShell\v1.0\powershell.exe',
+  ];
+  for (final candidate in candidates) {
+    if (await File(candidate).exists()) {
+      return candidate;
+    }
+  }
+  throw StateError('No supported PowerShell executable was found.');
 }
