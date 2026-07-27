@@ -6,6 +6,7 @@ abstract final class ChkSectionNames {
   static const internalVersion = [0x49, 0x56, 0x45, 0x52];
   static const dimensions = [0x44, 0x49, 0x4d, 0x20];
   static const tileset = [0x45, 0x52, 0x41, 0x20];
+  static const terrainTiles = [0x4d, 0x54, 0x58, 0x4d];
   static const scenarioProperties = [0x53, 0x50, 0x52, 0x50];
   static const legacyStrings = [0x53, 0x54, 0x52, 0x20];
   static const extendedStrings = [0x53, 0x54, 0x52, 0x78];
@@ -21,6 +22,9 @@ abstract final class ChkSectionNames {
       section.hasNameBytes(dimensions);
 
   static bool isTileset(RawChkSection section) => section.hasNameBytes(tileset);
+
+  static bool isTerrainTiles(RawChkSection section) =>
+      section.hasNameBytes(terrainTiles);
 
   static bool isScenarioProperties(RawChkSection section) =>
       section.hasNameBytes(scenarioProperties);

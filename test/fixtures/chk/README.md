@@ -7,6 +7,8 @@ and exact contents remain reviewable in Git.
 - `duplicate_unknown.chk.hex`: duplicate `TEST` sections around an unknown,
   empty `UNKN` section.
 - `metadata.chk.hex`: valid `TYPE`, `VER `, `IVER`, `ERA `, and `DIM ` views.
+- `terrain.chk.hex`: a 3x2 `MTXM` grid with reviewable little-endian raw tile
+  values.
 - `invalid_metadata_sizes.chk.hex`: typed sections with invalid fixed sizes
   around a valid section.
 - `strings.chk.hex`: `SPRP` references and a legacy table with a shared offset

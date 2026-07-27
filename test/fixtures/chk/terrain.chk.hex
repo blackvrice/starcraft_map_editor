@@ -1,0 +1,6 @@
+# DIM , length 4, width 3, height 2
+44 49 4D 20 04 00 00 00 03 00 02 00
+# ERA , length 2, Jungle
+45 52 41 20 02 00 00 00 04 00
+# MTXM, length 12, six little-endian raw tile values
+4D 54 58 4D 0C 00 00 00 01 00 10 00 34 12 FF FF 00 00 AB 00

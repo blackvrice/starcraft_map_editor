@@ -188,7 +188,31 @@ little-endian 값으로 투영한다.
 - `MTXM`
 - `TILE`, `ISOM` 등 존재 가능한 관련 데이터
 
-지형 편집은 한 섹션만 수정했을 때 게임과 다른 에디터가 어떤 데이터를 우선하는지 확인한 뒤 활성화한다.
+#### 구현된 `MTXM` typed view
+
+`ChkTerrainViewDecoder`는 `MTXM` payload를 little-endian `u16` 원시 타일
+값 배열로 읽는다. 현재 단계에서는 타일 값을 타일셋 자산의 그룹·변형으로
+분해하지 않으며 원시 0~65535 값을 그대로 유지한다.
+
+- 각 `MTXM`은 원래 섹션 인덱스와 raw 섹션을 가진 별도
+  `ChkTerrainTileMapView`가 된다. 중복 섹션을 병합하거나 active 섹션을
+  임의로 선택하지 않는다.
+- payload는 2바이트 레코드 경계에 맞아야 한다. 홀수 길이는
+  `CHK_TERRAIN_TILE_RECORD_TRUNCATED` 오류로 진단하고 typed view를 만들지
+  않는다.
+- 정확히 하나의 4바이트 `DIM `이 있고 폭·높이가 0이 아니면 `MTXM` 타일
+  수가 `width × height`와 정확히 같아야 한다. 불일치는
+  `CHK_TERRAIN_TILE_COUNT_MISMATCH` 오류로 진단한다.
+- `DIM `이 없거나 유효한 섹션이 중복되거나 0 크기이면 임의의 크기를
+  선택하지 않는다. 이때 정렬된 `MTXM`은 선형 raw 값으로 읽을 수 있지만
+  좌표 API는 사용할 수 없다.
+- 단일 좌표/선형 인덱스와 전체 배열 변경은 기존 타일 수와 `u16` 범위를
+  강제하고 해당 raw 섹션만 dirty로 만든다.
+- `TILE`, 정상 `ISOM`, eudplib의 terminal `ISOM` 보호 마커는 이 뷰가
+  해석하거나 수정하지 않는다.
+
+지형 편집 UI는 `MTXM` 한 섹션만 수정했을 때 게임과 다른 에디터가
+`TILE`/정상 `ISOM`을 어떻게 취급하는지 확인한 뒤 활성화한다.
 
 ### 4단계: 객체
 
