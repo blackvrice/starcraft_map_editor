@@ -1,4 +1,6 @@
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
 
 $requestText = [Console]::In.ReadLine()
 $request = $requestText | ConvertFrom-Json
@@ -58,7 +60,16 @@ if ([string]$request.operation -eq 'replaceScenario') {
     exit 0
 }
 
-[byte[]]$scenarioBytes = 86, 69, 82, 32, 2, 0, 0, 0, 59, 0
+if ($mode -eq 'temporary-output') {
+    [byte[]]$scenarioBytes = @(
+        86, 69, 82, 32, 2, 0, 0, 0, 206, 0,
+        68, 73, 77, 32, 4, 0, 0, 0, 64, 0, 64, 0,
+        69, 82, 65, 32, 2, 0, 0, 0, 0, 0
+    )
+}
+else {
+    [byte[]]$scenarioBytes = 86, 69, 82, 32, 2, 0, 0, 0, 59, 0
+}
 [IO.File]::WriteAllBytes(
     [string]$request.scenarioOutputPath,
     $scenarioBytes

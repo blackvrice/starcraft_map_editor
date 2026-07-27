@@ -55,7 +55,11 @@
 - euddraft 가짜 프로세스 성공/실패/취소
 - 한글, 공백, 긴 경로
 
-외부 도구가 없는 CI에서는 가짜 어댑터를 사용하고, 별도 Windows job에서 실제 도구 스모크 테스트를 실행한다.
+외부 도구가 없는 Windows CI에서는 PowerShell 가짜 euddraft를 실제 자식
+프로세스로 실행한다. 통합 테스트는 생성된 `.eds`를 읽은 임시 출력 생성부터
+fingerprint, 가짜 아카이브 helper의 최소 유효 CHK, 최종 승격과 컨트롤러
+상태까지 연결하며 실패·취소 시 출력 부재와 작업 공간 정리를 확인한다. 별도
+Windows 릴리스 후보에서는 실제 도구 스모크 테스트를 실행한다.
 
 ### 위젯 테스트
 
@@ -311,6 +315,8 @@ flutter test test/application/eud_build_configuration_test.dart `
   test/application/safe_eud_build_pipeline_test.dart `
   test/infrastructure/local_eud_build_file_gateway_test.dart `
   test/infrastructure/process_eud_compiler_gateway_test.dart `
+  test/infrastructure/process_map_archive_gateway_test.dart `
+  test/integration/fake_eud_build_integration_test.dart `
   test/widget/editor_shell_test.dart
 ```
 

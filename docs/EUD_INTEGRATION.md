@@ -229,6 +229,15 @@ flowchart LR
 8. 모든 종료 경로에서 앱이 소유한 정확한 작업 공간만 정리하고, 그 뒤 최종
    성공·실패·취소 이벤트를 게시한다.
 
+Windows 가짜 euddraft 통합 테스트는 이 순서를 포트별 모형으로 대체하지 않고
+`EudBuildController`에서 실제 PowerShell 자식 프로세스, 생성된 UTF-8 `.eds`,
+로컬 파일·SHA-256 fingerprint, 아카이브 helper와 CHK 파서, 최종 출력
+rename까지 연결한다. 성공 fixture는 manifest의 절대 input/output/epScript
+경로를 확인하고 기준 맵을 임시 출력으로 복사한다. 실패 fixture는 종료 코드
+7과 stdout/stderr를 보존하며, 취소 fixture는 대기 중인 자식 프로세스를
+종료한다. 세 시나리오는 원본 불변, 실패·취소 시 최종 출력 부재, 모든 종료
+경로의 앱 소유 작업 공간 정리를 함께 검증한다.
+
 설정 형식은 공식 euddraft의
 [`readconfig.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/readconfig.py),
 [`applyeuddraft.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/applyeuddraft.py)와
