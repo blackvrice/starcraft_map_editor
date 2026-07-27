@@ -33,12 +33,15 @@
 5. 추출과 파싱 뒤 fingerprint를 다시 계산해 외부 변경이 없음을 확인한다.
 6. 아카이브와 CHK 진단을 분리해 반환한다.
 
-2026-07-26 기준 `ProcessMapArchiveGateway`와 번들
+2026-07-27 기준 `ProcessMapArchiveGateway`와 번들
 `map_archive_helper.exe`가 이 열기 흐름을 구현한다. helper는 StormLib로
 정확히 `staredit\scenario.chk`만 앱 소유 임시 디렉터리에 추출한다. 추출
 성공은 아카이브 크기와 전체 항목 수, CHK 압축/비압축 크기를 반환하며 Dart
 어댑터가 프로토콜과 실제 파일 크기를 다시 검증한 뒤 읽기 전용 바이트로
-노출한다.
+노출한다. helper `0.4.0`은 eudplib 출력처럼 기본 locale에 1,200바이트 이하
+placeholder가 있고 locale `0x0409`에 실제 CHK가 있는 경우 후자를 선택한다.
+응답의 선택 locale과 같은 경로·locale·크기의 목록 항목을 교차 검증하므로
+locale별 `scenario.chk`를 하나로 합치거나 버리지 않는다.
 
 저장소의 `test/fixtures/maps/generated/minimal-self-authored.scx`는
 `TYPE`, `VER`, `IVER`, `ERA`, `DIM`만 가진 프로젝트 작성 CHK와 네 개의
@@ -68,7 +71,7 @@ listfile 없이 복원한 이름, 대소문자를 무시한 중복 경로, MPQ v
 9. 모든 검증 성공 후에만 사용자가 지정한 출력 경로로 승격한다.
 10. 승격 실패 시 기존 출력 백업을 원래 경로로 복원한다.
 
-helper `0.3.0`의 `replaceScenario`는 원본 MPQ 전체를 새 임시 출력으로 복사한
+helper `0.4.0`의 `replaceScenario`는 원본 MPQ 전체를 새 임시 출력으로 복사한
 뒤 정확히 `staredit\scenario.chk`만 교체한다. 애플리케이션은 임시 출력을
 `extractScenario`로 다시 열어 인코딩한 CHK와 byte-exact 비교하고 raw 파싱에
 성공한 뒤 입력 fingerprint가 변하지 않은 경우에만 같은 디렉터리의 새 최종
@@ -97,6 +100,9 @@ helper `0.3.0`의 `replaceScenario`는 원본 MPQ 전체를 새 임시 출력으
 - 파일 끝까지 순차적으로 읽는다.
 - 헤더가 8바이트보다 짧으면 잘린 헤더 오류를 반환한다.
 - 선언된 길이가 남은 파일 범위를 넘으면 경계 오류를 반환한다.
+- eudplib가 쓰는 `ISOM` + 상위 비트 길이의 8바이트 보호 마커는 물리
+  페이로드가 없는 원시 섹션으로 보존하고 다음 헤더부터 계속 읽는다. 다른
+  이름의 음수 길이 마커는 허용하지 않는다.
 - 섹션 이름이 예상 목록에 없다는 이유만으로 오류 처리하지 않는다.
 - 중복 섹션을 자동 병합하거나 마지막 하나만 남기지 않는다.
 - 오류에는 최소 섹션 인덱스와 바이트 오프셋을 포함한다.
@@ -111,12 +117,12 @@ helper `0.3.0`의 `replaceScenario`는 원본 MPQ 전체를 새 임시 출력으
 
 ### 구현 기준선
 
-2026-07-26 기준 `lib/domain/chk/`에는 파일 시스템이나 Flutter에 의존하지
+2026-07-27 기준 `lib/domain/chk/`에는 파일 시스템이나 Flutter에 의존하지
 않는 다음 구현이 있다.
 
 - `RawChkParser`: 8바이트 헤더를 순차 파싱하고 정상 섹션의 원시 정보를 보존
 - `RawChkDocument`/`RawChkSection`: 순서, 중복, 이름 4바이트, 선언 길이,
-  페이로드, 소스 오프셋, 변경 상태 보관
+  페이로드, 소스 오프셋, 변경 상태와 eudplib `ISOM` 보호 마커 보관
 - `RawChkEncoder`: 현재 문서 순서대로 little-endian 헤더와 페이로드 직렬화
 - `RawChkParseResult`: 성공 문서 또는 저장을 차단하는 구조 진단 반환
 

@@ -114,6 +114,17 @@ bool AddArchiveFile(
   return added;
 }
 
+bool AddArchiveFileAtLocale(
+    const HANDLE archive,
+    const std::filesystem::path& source_path,
+    const char* const archive_path,
+    const LCID locale) {
+  const LCID previous_locale = SFileSetLocale(locale);
+  const bool added = AddArchiveFile(archive, source_path, archive_path);
+  SFileSetLocale(previous_locale);
+  return added;
+}
+
 bool CreateArchive(
     const std::filesystem::path& archive_path,
     const std::filesystem::path* const scenario_path,
@@ -341,6 +352,93 @@ bool TestReportsMissingScenarioWithoutOutput() {
              "does not leave an output file");
 }
 
+bool TestPrefersEuddraftLocalizedScenarioOverPlaceholder() {
+  const TemporaryDirectory temporary;
+  const auto archive_path = temporary.path() / L"localized-output.scx";
+  const auto placeholder_path = temporary.path() / L"placeholder.chk";
+  const auto localized_path = temporary.path() / L"localized.chk";
+  const auto output_path = temporary.path() / L"extracted.chk";
+  const std::vector<std::uint8_t> placeholder_bytes{0};
+  auto localized_bytes = ScenarioBytes();
+  localized_bytes.resize(1500, 0x5a);
+
+  if (!Check(
+          WriteBytes(placeholder_path, placeholder_bytes),
+          "write euddraft placeholder") ||
+      !Check(
+          WriteBytes(localized_path, localized_bytes),
+          "write localized scenario")) {
+    return false;
+  }
+
+  SFILE_CREATE_MPQ create_info{};
+  create_info.cbSize = sizeof(create_info);
+  create_info.dwMpqVersion = MPQ_FORMAT_VERSION_1;
+  create_info.dwStreamFlags =
+      STREAM_PROVIDER_FLAT | BASE_PROVIDER_FILE;
+  create_info.dwFileFlags1 = MPQ_FILE_DEFAULT_INTERNAL;
+  create_info.dwSectorSize = 0x1000;
+  create_info.dwMaxFileCount = 8;
+
+  HANDLE raw_archive = nullptr;
+  if (!Check(
+          SFileCreateArchive2(
+              archive_path.c_str(),
+              &create_info,
+              &raw_archive),
+          "create localized scenario archive")) {
+    return false;
+  }
+  {
+    const ArchiveHandle archive(raw_archive);
+    if (!Check(
+            AddArchiveFileAtLocale(
+                archive.get(),
+                placeholder_path,
+                kScenarioArchivePath,
+                0),
+            "add neutral placeholder") ||
+        !Check(
+            AddArchiveFileAtLocale(
+                archive.get(),
+                localized_path,
+                kScenarioArchivePath,
+                0x0409),
+            "add localized scenario")) {
+      return false;
+    }
+  }
+
+  const auto source_bytes_before = ReadBytes(archive_path);
+  const auto result = ExtractScenario(archive_path, output_path);
+
+  return Check(result.success, "localized scenario extract succeeds") &&
+         Check(
+             result.scenario.uncompressed_size_bytes ==
+                 localized_bytes.size(),
+             "reports localized scenario size") &&
+         Check(
+             result.scenario.locale == 0x0409,
+             "reports localized scenario locale") &&
+         Check(
+             std::any_of(
+                 result.archive.entries.begin(),
+                 result.archive.entries.end(),
+                 [&localized_bytes](const auto& entry) {
+                   return entry.path == kScenarioArchivePath &&
+                          entry.uncompressed_size_bytes ==
+                              localized_bytes.size() &&
+                          entry.locale == 0x0409;
+                 }),
+             "lists selected localized scenario metadata") &&
+         Check(
+             ReadBytes(output_path) == localized_bytes,
+             "extracts localized scenario instead of placeholder") &&
+         Check(
+             ReadBytes(archive_path) == source_bytes_before,
+             "localized extract preserves source archive");
+}
+
 bool TestRefusesExistingOutput() {
   const TemporaryDirectory temporary;
   const auto archive_path = temporary.path() / L"input.scx";
@@ -528,6 +626,7 @@ int wmain(const int argument_count, wchar_t* arguments[]) {
       TestExtractsScenarioWithoutChangingSource,
       TestReportsSyntheticNamesWithoutListFile,
       TestReportsMissingScenarioWithoutOutput,
+      TestPrefersEuddraftLocalizedScenarioOverPlaceholder,
       TestRefusesExistingOutput,
       TestReplacesScenarioInCopiedArchive,
       TestReplaceRefusesExistingOutput,

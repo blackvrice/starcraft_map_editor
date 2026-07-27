@@ -201,7 +201,7 @@ void main() {
       );
     });
 
-    test('requires exactly one matching scenario entry and byte size', () {
+    test('matches scenario by selected locale and byte size', () {
       final noScenarioMetadata = MapArchiveMetadata(
         archiveSizeBytes: 100,
         formatVersion: 1,
@@ -266,6 +266,40 @@ void main() {
         ).scenarioChkBytes,
         [1, 2, 3],
       );
+
+      final localizedMetadata = MapArchiveMetadata(
+        archiveSizeBytes: 100,
+        formatVersion: 1,
+        totalEntryCount: 2,
+        entries: [
+          MapArchiveEntryMetadata(
+            path: MapArchiveEntryPaths.scenarioChk,
+            uncompressedSizeBytes: 1,
+            compressedSizeBytes: 1,
+            flags: 0x80000000,
+            locale: 0,
+            nameIsSynthetic: false,
+          ),
+          MapArchiveEntryMetadata(
+            path: MapArchiveEntryPaths.scenarioChk,
+            uncompressedSizeBytes: 3,
+            compressedSizeBytes: 3,
+            flags: 0x80000000,
+            locale: 0x0409,
+            nameIsSynthetic: false,
+          ),
+        ],
+        listingComplete: true,
+      );
+      final localized = ExtractedMap(
+        sourcePath: r'C:\Maps\euddraft-output.scx',
+        scenarioChkBytes: const [1, 2, 3],
+        scenarioLocale: 0x0409,
+        metadata: localizedMetadata,
+      );
+
+      expect(localized.scenarioLocale, 0x0409);
+      expect(localized.scenarioChkBytes, [1, 2, 3]);
     });
 
     test('allows warnings on success and requires errors on failure', () {

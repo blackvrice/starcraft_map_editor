@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "eud-smoke-self-authored",
+  "file": "eud-smoke-self-authored.scx",
+  "purpose": "Official euddraft build smoke-test input",
+  "provenance": "Generated entirely from project-authored bytes",
+  "license": "MIT",
+  "generator": {
+    "source": "tool/generate_eud_smoke_fixture.dart",
+    "template": "test/fixtures/maps/generated/minimal-self-authored.scx",
+    "helperVersion": "0.4.0",
+    "stormLibCommit": "c91595a1a1b7b515567bd62a60af066914a29a6a"
+  },
+  "archive": {
+    "sha256": "147739a2c4f57c5d6381e4f6980417653d4679b51f5fd3209fefd94197690d95",
+    "sizeBytes": 1048,
+    "formatVersion": 1,
+    "totalEntryCount": 3,
+    "entries": [
+      "staredit\\scenario.chk",
+      "staredit\\units.dat",
+      "(listfile)"
+    ]
+  },
+  "scenario": {
+    "source": "tool/generate_eud_smoke_fixture.dart",
+    "sha256": "fed2297b0a2304e123aa21e336ca71effc2171ed80da17dff28f55638053867d",
+    "sizeBytes": 27017,
+    "width": 32,
+    "height": 32
+  }
+}

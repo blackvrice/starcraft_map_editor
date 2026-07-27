@@ -64,6 +64,12 @@ EudBuildConfiguration
 직렬화하며 euddraft 명령줄 인자로 직접 전달하지 않는다. 안전 파이프라인이
 관리하는 `input`과 `output` 키는 사용자 옵션으로 덮어쓸 수 없다.
 
+현재 MVP는 같은 설정에 `[freeze]`와 `freeze: 0`을 고정해 euddraft의 기본
+Freeze 보호를 끈다. Freeze가 적용된 CHK는 의도적으로 일반 섹션 경계를
+숨기므로 종료 코드 뒤의 raw CHK/메타데이터 재검증과 편집기 재열기 계약을
+만족하지 않는다. 보호된 최종 배포 출력은 별도 신뢰·검증 흐름을 설계하기
+전까지 지원하지 않는다.
+
 권장 사용자 폴더 예시:
 
 ```text
@@ -99,7 +105,7 @@ MyMap/
 - 필요한 companion 파일 존재
 - 지원 프로필과의 호환성
 
-2026-07-26 확인 기준 armoha/euddraft의 최신 공식 릴리스는
+2026-07-27 확인 기준 armoha/euddraft의 최신 공식 릴리스는
 [`0.10.2.5`](https://github.com/armoha/euddraft/releases/tag/v0.10.2.5)이며
 ZIP 배포 루트에는 `euddraft.exe`, `VERSION`,
 `libepScriptLib.dll`, Python 런타임과 `lib/`가 함께 있다. 현재
@@ -219,8 +225,9 @@ flowchart LR
 4. 최종 출력과 같은 디렉터리에
    `.starcraft_map_editor_eud_<고유 토큰>` 작업 공간을 만든다.
 5. UTF-8 `build-settings.eds`에 공식 `[main] input/output`, 정렬된
-   compiler option, 절대 진입 `.eps` 플러그인 섹션을 쓰고 임시
-   `temporary-output.scx`를 대상으로 euddraft를 실행한다.
+   compiler option, 검증 가능한 출력을 위한 `[freeze] freeze: 0`, 절대 진입
+   `.eps` 플러그인 섹션을 쓰고 임시 `temporary-output.scx`를 대상으로
+   euddraft를 실행한다.
 6. 종료 코드 0 뒤 `finalizing` 이벤트를 게시하고, 임시 출력의 존재·크기,
    MPQ의 `staredit\scenario.chk`, raw CHK 파싱과 `VER`/`DIM`/`ERA` 최소
    구조를 검사한다.
@@ -237,6 +244,14 @@ rename까지 연결한다. 성공 fixture는 manifest의 절대 input/output/epS
 7과 stdout/stderr를 보존하며, 취소 fixture는 대기 중인 자식 프로세스를
 종료한다. 세 시나리오는 원본 불변, 실패·취소 시 최종 출력 부재, 모든 종료
 경로의 앱 소유 작업 공간 정리를 함께 검증한다.
+
+`test/integration/real_euddraft_build_smoke_test.dart`는 Windows에서 두 환경
+변수가 있을 때만 실행되는 선택적 릴리스 게이트다. 프로젝트가 직접 생성한
+32x32 MPQ와 `minimal-smoke.eps`를 공백·한글 임시 경로에 복사하고, 공식
+euddraft `0.10.2.5`, 실제 프로세스/아카이브 helper/fingerprint/승격 포트를
+연결한다. 성공 조건은 종료 코드 0뿐 아니라 locale `0x0409` 실제 CHK 추출,
+eudplib `ISOM` 보호 마커를 포함한 raw 파싱, `VER`/`DIM`/`ERA` 검증, 원본과
+소스 byte-exact 불변, 최종 출력 승격·재열기, 작업 공간 정리까지 포함한다.
 
 설정 형식은 공식 euddraft의
 [`readconfig.py`](https://github.com/armoha/euddraft/blob/v0.10.2.5/readconfig.py),
@@ -361,6 +376,20 @@ BuildManifest
 - 성공·실패 뒤 정확한 앱 소유 작업 공간 정리 테스트
 - 실제 euddraft 버전으로 자체 제작 맵 스모크 테스트
 - 출력 맵 재열기와 StarCraft 실행 수동 스모크 테스트
+
+공식 배포본 실제 빌드 스모크:
+
+```powershell
+$env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft-0.10.2.5"
+$env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path `
+  "build/windows/x64/runner/Debug/map_archive_helper.exe").Path
+
+flutter test test/integration/real_euddraft_build_smoke_test.dart
+```
+
+환경 변수가 없으면 이 테스트만 skip된다. 공식 `euddraft0.10.2.5.zip`의 확인된
+SHA-256은
+`87113da1cf8ad48c7ed81ee26a9db47ae236274d74e8f0f24addf0e2ab8280b3`다.
 
 ## 13. 미결정 사항
 

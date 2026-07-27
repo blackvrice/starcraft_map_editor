@@ -84,6 +84,15 @@ $env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft"
 flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 ```
 
+실제 EUD 빌드 경계 변경 시 자체 제작 맵 전체 스모크:
+
+```powershell
+$env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft-0.10.2.5"
+$env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path `
+  "build/windows/x64/runner/Debug/map_archive_helper.exe").Path
+flutter test test/integration/real_euddraft_build_smoke_test.dart
+```
+
 EUD 문서·빌드 설정 또는 euddraft 프로세스 경계 변경 시:
 
 ```powershell

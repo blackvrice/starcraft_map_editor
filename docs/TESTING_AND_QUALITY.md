@@ -112,6 +112,7 @@ test/fixtures/
     unknown_sections/
   maps/
     generated/
+    eud_smoke/
   eud/
     success/
     compile_error/
@@ -131,6 +132,13 @@ test/fixtures/
 아카이브·CHK SHA-256, 크기와 예상 엔트리를 기록한다.
 `test/fixtures/generated_map_fixture_test.dart`는 helper 없이도 이 provenance와
 해시를 모든 플랫폼에서 검증한다.
+
+`test/fixtures/maps/eud_smoke/eud-smoke-self-authored.scx`는 실제 euddraft
+스모크용 32x32 MPQ다. `tool/generate_eud_smoke_fixture.dart`가 프로젝트 작성
+바이트만으로 27,017바이트 CHK를 만들고 기존 자체 제작 MPQ 복사본에 넣는다.
+인접 manifest는 generator/helper/StormLib revision, 아카이브와 CHK SHA-256,
+크기와 엔트리를 고정한다. `minimal-smoke.eps`도 저장소 MIT 라이선스의
+무동작 epScript이며 제3자 맵·게임 자산을 포함하지 않는다.
 
 문자열 픽스처는 공유/중복 offset, `STR `과 `STRx`의 서로 다른 offset 폭,
 UTF-8 및 제어 바이트, 미참조 꼬리 데이터, 잘린 표와 잘못된 offset을 포함한다.
@@ -164,13 +172,14 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 고정 PowerShell fixture 프로세스를 실행해 성공, 구조화 오류, 손상 응답,
 전체/불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ version, 암호화 항목,
 대량 stderr, timeout, 취소, 상대 경로 차단, 임시 CHK 교체 요청과 helper
-메타데이터/실제 출력 크기 교차 검증을 확인한다.
+메타데이터/실제 출력 크기와 선택된 scenario locale의 교차 검증을 확인한다.
 
 `map_archive_helper_native_test`는 StormLib로 테스트 중 MPQ를 직접 생성해 한글
 경로 추출, 원본 byte-exact 불변, 내부 listfile 기반 완전 목록, listfile 없는
 합성 이름, 누락 CHK, 기존 출력 보존, 복사본 CHK 교체, 비대상 엔트리 보존과
-원본 byte-exact 불변을 검증한다. Windows CI는 이 native CTest 뒤에 저장소의
-고정 3-entry 자체 제작 SCX를 패키지의 실제 helper와
+원본 byte-exact 불변, 기본 locale placeholder보다 locale `0x0409`의 실제
+euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CTest 뒤에
+저장소의 고정 3-entry 자체 제작 SCX를 패키지의 실제 helper와
 `ProcessMapArchiveGateway`로 열고, 새 CHK를 임시 MPQ에 쓴 뒤 재열어 목록과
 교체 바이트 및 원본 불변을 검증한다.
 
@@ -184,6 +193,8 @@ CHK byte-exact 비교, 파싱, 최종 승격과 세션 채택을 검증한다. �
 - 알 수 없는 4바이트 이름
 - 동일 이름 중복 섹션
 - 선언 길이가 남은 파일보다 큰 섹션
+- eudplib `ISOM` 음수 길이 보호 마커의 byte-exact 보존
+- 다른 이름의 음수 길이 마커 차단
 - 최대 허용 범위 근처 길이
 - 변경 없는 byte-exact 왕복
 - 한 섹션 변경 시 나머지 섹션 동일
@@ -305,6 +316,19 @@ flutter test test/infrastructure/local_eud_tool_inspector_test.dart
 
 환경 변수가 없으면 해당 한 케이스만 skip되며 합성 설치 레이아웃 회귀 테스트는
 항상 실행된다.
+
+공식 euddraft와 자체 제작 맵의 전체 빌드 스모크 테스트:
+
+```powershell
+$env:EUDDRAFT_TEST_INSTALLATION = "C:\Tools\euddraft-0.10.2.5"
+$env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path `
+  "build/windows/x64/runner/Debug/map_archive_helper.exe").Path
+
+flutter test test/integration/real_euddraft_build_smoke_test.dart
+```
+
+환경 변수가 없으면 테스트는 skip된다. 이 게이트는 자동 다운로드를 하지
+않으며, 검토한 공식 배포본과 빌드된 helper 경로를 호출자가 명시해야 한다.
 
 가짜 euddraft 프로세스 경계 테스트:
 

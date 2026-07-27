@@ -74,7 +74,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
   }
 
   static const protocolVersion = 1;
-  static const helperVersion = '0.3.0';
+  static const helperVersion = '0.4.0';
   static const stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
   static const maximumListedArchiveEntries = 1024;
 
@@ -272,6 +272,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         map: ExtractedMap(
           sourcePath: request.sourcePath,
           scenarioChkBytes: scenarioBytes,
+          scenarioLocale: success.scenarioLocale,
           metadata: MapArchiveMetadata(
             archiveSizeBytes: success.archiveSizeBytes,
             formatVersion: success.formatVersion,
@@ -739,6 +740,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
     final rawEntries = archive['entries'];
     final uncompressedSizeBytes = scenario['uncompressedSizeBytes'];
     final compressedSizeBytes = scenario['compressedSizeBytes'];
+    final scenarioLocale = scenario['locale'];
     if (archiveSizeBytes is! int ||
         archiveSizeBytes < 0 ||
         formatVersion is! int ||
@@ -755,7 +757,9 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         !_isUint32(uncompressedSizeBytes) ||
         compressedSizeBytes is! int ||
         compressedSizeBytes < 0 ||
-        !_isUint32(compressedSizeBytes)) {
+        !_isUint32(compressedSizeBytes) ||
+        scenarioLocale is! int ||
+        !_isUint32(scenarioLocale)) {
       throw const FormatException('The helper metadata values are invalid.');
     }
     if ((listingComplete && listingNativeError != null) ||
@@ -814,9 +818,12 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
     final scenarioEntries = entries.where(
       (entry) => MapArchiveEntryPaths.isScenarioChk(entry.path),
     );
-    if (scenarioEntries.length != 1 ||
-        scenarioEntries.single.uncompressedSizeBytes != uncompressedSizeBytes ||
-        scenarioEntries.single.compressedSizeBytes != compressedSizeBytes) {
+    if (!scenarioEntries.any(
+      (entry) =>
+          entry.uncompressedSizeBytes == uncompressedSizeBytes &&
+          entry.compressedSizeBytes == compressedSizeBytes &&
+          entry.locale == scenarioLocale,
+    )) {
       throw const FormatException(
         'The scenario metadata does not match the archive listing.',
       );
@@ -832,6 +839,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         listingNativeError: listingNativeError as int?,
         uncompressedSizeBytes: uncompressedSizeBytes,
         compressedSizeBytes: compressedSizeBytes,
+        scenarioLocale: scenarioLocale,
       ),
     );
   }
@@ -1087,6 +1095,7 @@ class _ArchiveHelperSuccess {
     required this.listingNativeError,
     required this.uncompressedSizeBytes,
     required this.compressedSizeBytes,
+    required this.scenarioLocale,
   });
 
   final int archiveSizeBytes;
@@ -1097,6 +1106,7 @@ class _ArchiveHelperSuccess {
   final int? listingNativeError;
   final int uncompressedSizeBytes;
   final int compressedSizeBytes;
+  final int scenarioLocale;
 }
 
 class _ArchiveHelperWriteResponse {

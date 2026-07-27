@@ -75,6 +75,7 @@ void main() {
           lessThan(settings.indexOf('shufflePayload: true')),
         );
         expect(settings, contains('\r\ndebug\r\n'));
+        expect(settings, contains('\r\n[freeze]\r\nfreeze: 0\r\n\r\n'));
         expect(settings, contains('[${entrySource.path}]\r\n'));
 
         await gateway.cleanup(workspace);

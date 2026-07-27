@@ -279,6 +279,9 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
         else
           '${option.key}: ${option.value}',
       '',
+      '[freeze]',
+      'freeze: 0',
+      '',
       '[${configuration.entrySourcePath}]',
       '',
     ];

@@ -41,7 +41,17 @@ void main() {
       );
       final sourceBytesAfter = await sourceFile.readAsBytes();
 
-      expect(result.isSuccess, isTrue, reason: '${result.diagnostics}');
+      expect(
+        result.isSuccess,
+        isTrue,
+        reason: result.diagnostics
+            .map(
+              (diagnostic) =>
+                  '${diagnostic.code}:${diagnostic.message}:'
+                  '${diagnostic.rawDetails}',
+            )
+            .join('\n'),
+      );
       expect(result.extractedMap?.scenarioChkBytes, expectedScenarioChk);
       expect(result.extractedMap?.metadata.formatVersion, 1);
       expect(result.extractedMap?.metadata.totalEntryCount, 3);

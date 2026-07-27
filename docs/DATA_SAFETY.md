@@ -150,8 +150,8 @@ StormLib 연동 helper는
 - 원본 아카이브 read-only 추출, 원본을 복사한 뒤 복사본만 수정하는 교체,
   기존 임시 출력 덮어쓰기 거부
 - StormLib 전체/열거 항목 수와 목록 완전성, MPQ version, uint32 크기·flags·
-  locale, `scenario.chk` 목록/추출 메타데이터와 Dart에서 읽은 바이트 길이의
-  일치
+  locale, 선택한 locale의 `scenario.chk` 목록/추출 메타데이터와 Dart에서
+  읽은 바이트 길이의 일치
 - listfile 없는 합성 이름은 진단 표시로만 사용하고 원본 경로나 저장 대상
   이름으로 추측하지 않음
 
@@ -180,6 +180,12 @@ euddraft의 `output`을 그 안의 `temporary-output.scx`로 제한한다. 빌�
 다시 열어 CHK raw 파싱과 `VER`/`DIM`/`ERA` 최소 구조를 확인한다. 그 뒤 기준
 맵과 진입 소스 fingerprint를 다시 비교하므로 빌드 도중 변경된 입력으로 만든
 출력은 승격하지 않는다.
+
+생성 `.eds`에는 `[freeze] freeze: 0`을 고정한다. euddraft의 기본 Freeze
+보호는 일반 CHK 경계를 의도적으로 숨겨 위 재검증 계약과 충돌하므로 MVP에서
+허용하지 않는다. eudplib가 기본 locale에 작은 placeholder를 두고
+locale `0x0409`에 실제 CHK를 저장한 경우 helper가 선택 locale을 명시해
+추출하고 Dart가 같은 locale의 목록 메타데이터와 교차 검증한다.
 
 기존 최종 출력은 `replaceExistingOutput`을 명시한 빌드 계획에서만 교체한다.
 승인 시점의 fingerprint를 승격 직전에 다시 확인하고, 삭제·변경되었거나

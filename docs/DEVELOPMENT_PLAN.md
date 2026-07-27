@@ -133,11 +133,14 @@
   버전, 종료 코드, 메타데이터와 실제 파일 크기를 검증한다. stdout/stderr를
   동시에 소비하며 timeout, operation ID 취소와 정확한 임시 디렉터리 정리를
   제공한다.
-- helper `0.3.0`과 Dart 어댑터는 최대 1,024개의 아카이브 엔트리를 열거하고
+- helper `0.4.0`과 Dart 어댑터는 최대 1,024개의 아카이브 엔트리를 열거하고
   MPQ format version, 전체/열거 항목 수, 항목별 압축·비압축 크기, flags,
   locale과 합성 이름 여부를 반환한다. 불완전 목록, 합성 이름, 대소문자를
   무시한 중복 경로, 예상 밖 format version은 비차단 경고로, 암호화 항목은
   내부 MPQ 관리 파일을 제외하고 정보 진단으로 노출한다.
+- eudplib 출력의 기본 locale `scenario.chk`가 1,200바이트 이하 placeholder면
+  helper가 locale `0x0409`를 재시도한다. 선택한 locale과 목록 메타데이터를
+  Dart 어댑터가 교차 검증하며 locale별 같은 경로 항목은 보존한다.
 - native CTest는 자체 생성 MPQ의 한글 경로 추출, 원본 byte-exact 불변,
   완전한 내부 listfile과 listfile 없는 합성 이름, CHK 누락과 출력 충돌,
   복사본 CHK 교체와 비대상 엔트리 보존을 검증한다. Dart 프로세스 테스트와
@@ -200,7 +203,7 @@
 - [x] 가능한 오류의 파일/행/열 진단 변환
 - [x] 임시 출력과 성공 출력 승격 구현
 - [x] 가짜 컴파일러를 이용한 성공/실패/취소 통합 테스트
-- [ ] 실제 euddraft와 자체 제작 테스트 맵 빌드 스모크 테스트
+- [x] 실제 euddraft와 자체 제작 테스트 맵 빌드 스모크 테스트
 
 검증 메모:
 
@@ -273,6 +276,20 @@
   `VER`/`DIM`/`ERA` 검증과 최종 rename까지 통과하며, 비정상 종료와 사용자
   취소는 최종 출력 없이 실패·취소 상태와 원시 로그를 보존한다. 세 경로 모두
   원본 바이트 불변과 앱 소유 작업 공간 정리를 확인한다.
+- 실제 스모크는 `tool/generate_eud_smoke_fixture.dart`가 만든 32x32 자체 제작
+  MPQ, 저장소의 `minimal-smoke.eps`, 공식 euddraft `0.10.2.5`를 사용한다.
+  공백·한글 경로에서 컴파일, locale `0x0409` 실제 CHK 추출, eudplib terminal
+  `ISOM` 보호 마커 raw 보존, 최소 메타데이터 검증, 원본·소스 불변, 승격,
+  재열기와 작업 공간 정리까지 통과했다. 실제 테스트는
+  `EUDDRAFT_TEST_INSTALLATION`과 `MAP_ARCHIVE_HELPER_PATH`를 명시할 때만
+  실행되며 일반 CI에서는 자동 다운로드하지 않는다.
+- 공식 `euddraft0.10.2.5.zip`은 2026-07-27 재확인한 SHA-256
+  `87113da1cf8ad48c7ed81ee26a9db47ae236274d74e8f0f24addf0e2ab8280b3`을
+  사용했다. 자체 제작 MPQ/CHK provenance와 재생성 명령은
+  `test/fixtures/maps/eud_smoke/`의 README와 manifest에 고정했다.
+- 안전 파이프라인은 검증 가능한 출력을 유지하기 위해 생성 `.eds`에
+  `[freeze] freeze: 0`을 고정한다. Freeze 보호 출력은 일반 CHK 경계를
+  의도적으로 숨기므로 별도 신뢰·검증 설계 전까지 MVP 범위에서 제외한다.
 - `EudBuildRecord`는 build ID, euddraft 버전, UTC 시작·종료 시각, 실행
   상태, 선택적 종료 코드, 캡처 시각과 채널이 붙은 stdout/stderr, 진단을
   불변 스냅샷으로 보존한다. 성공 기록은 종료 코드 0을 강제한다.

@@ -157,17 +157,22 @@ class ExtractedMap {
     required this.sourcePath,
     required List<int> scenarioChkBytes,
     required this.metadata,
+    this.scenarioLocale = 0,
   }) : scenarioChkBytes = _copyBytes(scenarioChkBytes) {
     _requireNonBlank(sourcePath, 'sourcePath');
+    _requireUint32(scenarioLocale, 'scenarioLocale');
 
     final scenarioEntries = metadata.entries.where(
-      (entry) => MapArchiveEntryPaths.isScenarioChk(entry.path),
+      (entry) =>
+          MapArchiveEntryPaths.isScenarioChk(entry.path) &&
+          entry.locale == scenarioLocale,
     );
     if (scenarioEntries.length != 1) {
       throw ArgumentError.value(
         metadata.entries,
         'metadata',
-        'Metadata must contain exactly one scenario.chk entry.',
+        'Metadata must contain exactly one scenario.chk entry for the '
+            'selected locale.',
       );
     }
 
@@ -184,6 +189,7 @@ class ExtractedMap {
   final String sourcePath;
   final Uint8List scenarioChkBytes;
   final MapArchiveMetadata metadata;
+  final int scenarioLocale;
 }
 
 class MapArchiveOpenResult {

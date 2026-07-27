@@ -32,6 +32,7 @@ struct ArchiveMetadata {
 struct ScenarioMetadata {
   std::uint32_t uncompressed_size_bytes = 0;
   std::uint32_t compressed_size_bytes = 0;
+  std::uint32_t locale = 0;
 };
 
 struct ExtractResult {

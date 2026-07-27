@@ -51,11 +51,37 @@ class FileHandle final {
 
   FileHandle(const FileHandle&) = delete;
   FileHandle& operator=(const FileHandle&) = delete;
+  FileHandle(FileHandle&& other) noexcept
+      : handle_(std::exchange(other.handle_, nullptr)) {}
+  FileHandle& operator=(FileHandle&& other) noexcept {
+    if (this != &other) {
+      if (handle_ != nullptr) {
+        SFileCloseFile(handle_);
+      }
+      handle_ = std::exchange(other.handle_, nullptr);
+    }
+    return *this;
+  }
 
   HANDLE get() const { return handle_; }
 
  private:
   HANDLE handle_ = nullptr;
+};
+
+class LocaleScope final {
+ public:
+  explicit LocaleScope(const LCID locale)
+      : previous_locale_(SFileSetLocale(locale)) {}
+  ~LocaleScope() { SFileSetLocale(previous_locale_); }
+
+  LocaleScope(const LocaleScope&) = delete;
+  LocaleScope& operator=(const LocaleScope&) = delete;
+
+  void Set(const LCID locale) const { SFileSetLocale(locale); }
+
+ private:
+  LCID previous_locale_;
 };
 
 class SearchHandle final {
@@ -174,19 +200,32 @@ void EnsureScenarioEntry(
     const HANDLE scenario_handle,
     const std::uint32_t uncompressed_size_bytes,
     const std::uint32_t compressed_size_bytes,
+    const std::uint32_t locale,
     ArchiveMetadata* const archive) {
   for (const auto& entry : archive->entries) {
-    if (EqualsAsciiCaseInsensitive(entry.path, kScenarioArchivePath)) {
+    if (EqualsAsciiCaseInsensitive(entry.path, kScenarioArchivePath) &&
+        entry.uncompressed_size_bytes == uncompressed_size_bytes &&
+        entry.compressed_size_bytes == compressed_size_bytes &&
+        entry.locale == locale) {
       return;
     }
   }
 
   DWORD flags = 0;
-  DWORD locale = 0;
-  if ((!ReadInfo(scenario_handle, SFileInfoFlags, &flags) ||
-       !ReadInfo(scenario_handle, SFileInfoLocale, &locale)) &&
+  if (!ReadInfo(scenario_handle, SFileInfoFlags, &flags) &&
       archive->listing_native_error == 0) {
     archive->listing_native_error = GetLastError();
+  }
+  for (auto& entry : archive->entries) {
+    if (entry.name_is_synthetic &&
+        entry.uncompressed_size_bytes == uncompressed_size_bytes &&
+        entry.compressed_size_bytes == compressed_size_bytes &&
+        entry.locale == locale) {
+      entry.path = kScenarioArchivePath;
+      entry.flags = flags;
+      entry.name_is_synthetic = false;
+      return;
+    }
   }
   if (archive->entries.size() >= kMaximumListedArchiveEntries) {
     archive->entries.pop_back();
@@ -217,6 +256,7 @@ void ListArchiveEntries(
     const HANDLE scenario_handle,
     const std::uint32_t scenario_uncompressed_size_bytes,
     const std::uint32_t scenario_compressed_size_bytes,
+    const std::uint32_t scenario_locale,
     ArchiveMetadata* const archive) {
   SFILE_FIND_DATA find_data{};
   HANDLE raw_search = SFileFindFirstFile(
@@ -233,6 +273,7 @@ void ListArchiveEntries(
         scenario_handle,
         scenario_uncompressed_size_bytes,
         scenario_compressed_size_bytes,
+        scenario_locale,
         archive);
     FinalizeArchiveListing(archive);
     return;
@@ -263,6 +304,7 @@ void ListArchiveEntries(
       scenario_handle,
       scenario_uncompressed_size_bytes,
       scenario_compressed_size_bytes,
+      scenario_locale,
       archive);
   FinalizeArchiveListing(archive);
 }
@@ -310,6 +352,7 @@ ExtractResult ExtractScenario(
         GetLastError());
   }
   const ArchiveHandle archive(raw_archive);
+  const LocaleScope locale_scope(0);
 
   HANDLE raw_file = nullptr;
   if (!SFileOpenFileEx(
@@ -328,13 +371,78 @@ ExtractResult ExtractScenario(
         "extract",
         native_error);
   }
-  const FileHandle scenario_file(raw_file);
+  FileHandle scenario_file(raw_file);
+
+  DWORD uncompressed_size = 0;
+  DWORD compressed_size = 0;
+  DWORD scenario_locale = 0;
+  if (!ReadInfo(
+          scenario_file.get(),
+          SFileInfoFileSize,
+          &uncompressed_size) ||
+      !ReadInfo(
+          scenario_file.get(),
+          SFileInfoCompressedSize,
+          &compressed_size) ||
+      !ReadInfo(
+          scenario_file.get(),
+          SFileInfoLocale,
+          &scenario_locale)) {
+    return Failure(
+        "ARCHIVE_METADATA_READ_FAILED",
+        "Archive metadata could not be read.",
+        "inspect",
+        GetLastError());
+  }
+
+  constexpr DWORD kEuddraftPlaceholderMaximumBytes = 1200;
+  constexpr LCID kEuddraftScenarioLocale = 0x0409;
+  if (uncompressed_size <= kEuddraftPlaceholderMaximumBytes) {
+    locale_scope.Set(kEuddraftScenarioLocale);
+    HANDLE raw_localized_file = nullptr;
+    if (SFileOpenFileEx(
+            archive.get(),
+            kScenarioArchivePath,
+            SFILE_OPEN_FROM_MPQ,
+            &raw_localized_file)) {
+      FileHandle localized_file(raw_localized_file);
+      DWORD localized_locale = 0;
+      DWORD localized_uncompressed_size = 0;
+      DWORD localized_compressed_size = 0;
+      if (!ReadInfo(
+              localized_file.get(),
+              SFileInfoLocale,
+              &localized_locale) ||
+          !ReadInfo(
+              localized_file.get(),
+              SFileInfoFileSize,
+              &localized_uncompressed_size) ||
+          !ReadInfo(
+              localized_file.get(),
+              SFileInfoCompressedSize,
+              &localized_compressed_size)) {
+        return Failure(
+            "ARCHIVE_METADATA_READ_FAILED",
+            "Localized scenario.chk metadata could not be read.",
+            "inspect",
+            GetLastError());
+      }
+      if (localized_locale == kEuddraftScenarioLocale) {
+        scenario_file = std::move(localized_file);
+        uncompressed_size = localized_uncompressed_size;
+        compressed_size = localized_compressed_size;
+        scenario_locale = localized_locale;
+      } else {
+        locale_scope.Set(0);
+      }
+    } else {
+      locale_scope.Set(0);
+    }
+  }
 
   ULONGLONG archive_size = 0;
   TMPQHeader archive_header{};
   DWORD total_entry_count = 0;
-  DWORD uncompressed_size = 0;
-  DWORD compressed_size = 0;
   if (!ReadInfo(
           archive.get(),
           SFileMpqArchiveSize64,
@@ -346,15 +454,7 @@ ExtractResult ExtractScenario(
       !ReadInfo(
           archive.get(),
           SFileMpqNumberOfFiles,
-          &total_entry_count) ||
-      !ReadInfo(
-          scenario_file.get(),
-          SFileInfoFileSize,
-          &uncompressed_size) ||
-      !ReadInfo(
-          scenario_file.get(),
-          SFileInfoCompressedSize,
-          &compressed_size)) {
+          &total_entry_count)) {
     return Failure(
         "ARCHIVE_METADATA_READ_FAILED",
         "Archive metadata could not be read.",
@@ -401,11 +501,13 @@ ExtractResult ExtractScenario(
   result.archive.total_entry_count = total_entry_count;
   result.scenario.uncompressed_size_bytes = uncompressed_size;
   result.scenario.compressed_size_bytes = compressed_size;
+  result.scenario.locale = scenario_locale;
   ListArchiveEntries(
       archive.get(),
       scenario_file.get(),
       uncompressed_size,
       compressed_size,
+      scenario_locale,
       &result.archive);
   return result;
 }

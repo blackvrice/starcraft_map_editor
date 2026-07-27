@@ -39,6 +39,37 @@ class RawChkSection {
       payload: Uint8List.fromList(payload),
       sourceOffset: sourceOffset,
       isDirty: isDirty,
+      isEuddraftProtectionMarker: false,
+    );
+  }
+
+  factory RawChkSection.euddraftProtectionMarker({
+    required int declaredLength,
+    required int sourceOffset,
+  }) {
+    if (declaredLength < 0x80000000 || declaredLength > 0xffffffff) {
+      throw RangeError.range(
+        declaredLength,
+        0x80000000,
+        0xffffffff,
+        'declaredLength',
+      );
+    }
+    if (sourceOffset < 0) {
+      throw RangeError.value(
+        sourceOffset,
+        'sourceOffset',
+        'A source offset cannot be negative.',
+      );
+    }
+
+    return RawChkSection._(
+      nameBytes: Uint8List.fromList(const [0x49, 0x53, 0x4f, 0x4d]),
+      declaredLength: declaredLength,
+      payload: Uint8List(0),
+      sourceOffset: sourceOffset,
+      isDirty: false,
+      isEuddraftProtectionMarker: true,
     );
   }
 
@@ -48,6 +79,7 @@ class RawChkSection {
     required this._payload,
     required this.sourceOffset,
     required this.isDirty,
+    required this.isEuddraftProtectionMarker,
   });
 
   final Uint8List _nameBytes;
@@ -55,6 +87,7 @@ class RawChkSection {
   final Uint8List _payload;
   final int sourceOffset;
   final bool isDirty;
+  final bool isEuddraftProtectionMarker;
 
   Uint8List get nameBytes => Uint8List.fromList(_nameBytes);
 

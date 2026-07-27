@@ -372,7 +372,7 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - timeout, 취소, 네이티브 크래시는 작업 실패로 변환하고 앱이 만든 정확한
   임시 디렉터리만 정리한다.
 
-2026-07-26 구현 기준선:
+2026-07-27 구현 기준선:
 
 - `native/map_archive_helper`는 고정된 StormLib revision을 정적으로 링크하고
   `extractScenario`와 `replaceScenario` 프로토콜을 제공한다. 추출 원본은
@@ -381,14 +381,16 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - `ProcessMapArchiveGateway`는 요청별 임시 디렉터리를 만들고 helper와
   `protocolVersion=1` JSON으로 통신한다. 성공 응답의 request ID, 작업,
   helper/StormLib 버전, 메타데이터와 실제 추출 파일 크기를 모두 검증한다.
-- helper `0.3.0`은 StormLib 내부 listfile과 파일 테이블을 이용해 최대
+- helper `0.4.0`은 StormLib 내부 listfile과 파일 테이블을 이용해 최대
   1,024개 항목을 열거한다. 응답에는 MPQ format version, 전체 항목 수,
   목록 완전성, 항목별 경로·압축/비압축 크기·flags·locale·합성 이름 여부가
-  포함된다. 동일 block index의 locale hash 항목은 한 번만 노출한다.
-- Dart 어댑터는 전체 수와 목록 수, `scenario.chk` 항목과 추출 메타데이터를
-  교차 검증한다. 불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ 버전은
-  성공 결과의 비차단 경고이며, 내부 MPQ 관리 파일이 아닌 암호화 항목은
-  정보 진단이다.
+  포함된다. 동일 block index의 locale hash 항목은 한 번만 노출한다. 기본
+  locale의 `scenario.chk`가 1,200바이트 이하인 eudplib placeholder이면
+  locale `0x0409`의 실제 CHK를 재시도하고 선택한 locale을 응답에 기록한다.
+- Dart 어댑터는 전체 수와 목록 수, 선택된 locale의 `scenario.chk` 항목과
+  추출 메타데이터를 교차 검증한다. locale이 다른 같은 경로 항목은 보존한다.
+  불완전 목록, 합성 이름, 중복 경로, 예상 밖 MPQ 버전은 성공 결과의 비차단
+  경고이며, 내부 MPQ 관리 파일이 아닌 암호화 항목은 정보 진단이다.
 - helper stdin은 64 KiB, Dart가 보존하는 stdout/stderr는 스트림별 1 MiB,
   추출 CHK는 기본 64 MiB로 제한한다. 출력 스트림은 제한을 넘은 뒤에도
   버리면서 끝까지 소비해 파이프 교착을 막는다.

@@ -111,6 +111,47 @@ void main() {
       expect(diagnostic.rawDetails, contains('availablePayloadBytes=2'));
     });
 
+    test('preserves euddraft ISOM protection markers between sections', () {
+      final markerLength = ByteData(4)..setUint32(0, 0x87654321, Endian.little);
+      final source = Uint8List.fromList([
+        ..._encodeSection('VER ', [0xce, 0x00]),
+        ...'ISOM'.codeUnits,
+        ...markerLength.buffer.asUint8List(),
+        ..._encodeSection('CRGB', List<int>.filled(20, 0)),
+      ]);
+
+      final result = parser.parse(source);
+
+      expect(result.isSuccess, isTrue);
+      expect(result.document!.sections.map((section) => section.name), [
+        'VER ',
+        'ISOM',
+        'CRGB',
+      ]);
+      final marker = result.document!.sections[1];
+      expect(marker.isEuddraftProtectionMarker, isTrue);
+      expect(marker.declaredLength, 0x87654321);
+      expect(marker.payload, isEmpty);
+      expect(marker.sourceOffset, 10);
+      expect(encoder.encode(result.document!), source);
+    });
+
+    test('does not accept a negative-length marker with another name', () {
+      final markerLength = ByteData(4)..setUint32(0, 0x80000000, Endian.little);
+      final source = Uint8List.fromList([
+        ...'UNIT'.codeUnits,
+        ...markerLength.buffer.asUint8List(),
+      ]);
+
+      final result = parser.parse(source);
+
+      expect(result.isSuccess, isFalse);
+      expect(
+        result.diagnostics.single.code,
+        RawChkDiagnosticCodes.sectionOutOfBounds,
+      );
+    });
+
     test('reports trailing bytes as a truncated next header', () {
       final completeSection = _encodeSection('TEST', [0xaa]);
       final source = Uint8List.fromList([...completeSection, 0xff]);

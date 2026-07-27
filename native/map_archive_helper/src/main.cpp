@@ -17,7 +17,7 @@ using json = nlohmann::json;
 
 constexpr std::int32_t kProtocolVersion = 1;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
-constexpr char kHelperVersion[] = "0.3.0";
+constexpr char kHelperVersion[] = "0.4.0";
 constexpr char kStormLibRevision[] =
     "c91595a1a1b7b515567bd62a60af066914a29a6a";
 
@@ -250,6 +250,7 @@ int main() {
            result.scenario.uncompressed_size_bytes},
           {"compressedSizeBytes",
            result.scenario.compressed_size_bytes},
+          {"locale", result.scenario.locale},
       };
       std::cout << response.dump() << '\n';
       return 0;

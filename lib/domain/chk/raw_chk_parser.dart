@@ -56,6 +56,21 @@ class RawChkParser {
       final payloadOffset = offset + headerLength;
       final availablePayloadLength = source.length - payloadOffset;
 
+      // eudplib writes an eight-byte ISOM marker whose encoded length has the
+      // signed high bit set. It has no physical payload and can precede
+      // euddraft-added sections, so preserve the header and continue at the
+      // next byte instead of treating the unsigned value as a payload length.
+      if (_isEuddraftProtectionMarker(nameBytes, declaredLength)) {
+        sections.add(
+          RawChkSection.euddraftProtectionMarker(
+            declaredLength: declaredLength,
+            sourceOffset: offset,
+          ),
+        );
+        offset = payloadOffset;
+        continue;
+      }
+
       if (declaredLength > availablePayloadLength) {
         return RawChkParseResult.failure(
           EditorDiagnostic(
@@ -93,5 +108,13 @@ class RawChkParser {
     return RawChkParseResult.success(
       RawChkDocument(sections: sections, sourceLength: source.length),
     );
+  }
+
+  bool _isEuddraftProtectionMarker(List<int> nameBytes, int declaredLength) {
+    return declaredLength >= 0x80000000 &&
+        nameBytes[0] == 0x49 &&
+        nameBytes[1] == 0x53 &&
+        nameBytes[2] == 0x4f &&
+        nameBytes[3] == 0x4d;
   }
 }
