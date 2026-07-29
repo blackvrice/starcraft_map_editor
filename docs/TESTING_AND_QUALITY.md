@@ -211,6 +211,8 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 4×2 캔버스 경계·격자·가시 범위·원시 `MTXM` 모드 위젯 렌더링
 - 256×256 fit-to-view에서 맵 경계 내 배치와 16타일 격자 축약
 - `MTXM` 누락/길이 불일치 시 geometry-only 캔버스 대체 표시
+- CV5 그룹 경계 `0x3fff`/`0x4000`의 raw 대체 표시 분기, unsupported 발생
+  횟수와 선택 타일의 raw/group/member 상태 표시
 - 화면 컨트롤 확대/Fit 복귀와 포인터 중심 휠 확대의 좌표 고정
 - `Space`+좌클릭 및 중간 버튼 드래그 이동과 viewport 가장자리 제한
 - 포인터 hover의 0기준 타일 좌표·32픽셀 기준 맵 좌표 및 맵 밖 상태 표시

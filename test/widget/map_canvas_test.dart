@@ -34,7 +34,7 @@ void main() {
     );
     expect(find.text('Visible 0,0–4,2'), findsOneWidget);
     expect(find.text('Grid 1 tile'), findsOneWidget);
-    expect(find.text('Raw MTXM preview'), findsOneWidget);
+    expect(find.text('Raw fallback'), findsOneWidget);
     expect(find.text('Tile — · Pixel —'), findsOneWidget);
     expect(find.text('100%'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -49,6 +49,32 @@ void main() {
     expect(painter.layout.visibleTiles.top, 0);
     expect(painter.layout.visibleTiles.rightExclusive, 4);
     expect(painter.layout.visibleTiles.bottomExclusive, 2);
+  });
+
+  testWidgets('reports and paints raw values outside the CV5 group range', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 2,
+            mapHeight: 2,
+            rawTileValues: [0, 0x3fff, 0x4000, 0xffff],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Raw fallback · 2 unsupported'), findsOneWidget);
+    final customPaint = tester.widget<CustomPaint>(
+      find.byKey(const Key('map-canvas-paint')),
+    );
+    final painter = customPaint.painter! as MapCanvasPainter;
+    expect(painter.rawTileValues, [0, 0x3fff, 0x4000, 0xffff]);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('falls back to geometry when tile data is missing or invalid', (

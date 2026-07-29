@@ -18,6 +18,7 @@ import '../../application/recent_projects/recent_projects_service.dart';
 import '../../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../map_canvas/map_canvas.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
@@ -1453,9 +1454,16 @@ class _TerrainEditingToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasSelectedTile = state.hasSelectedTile;
     final selection = state.selectedTile;
-    final selectedLabel = state.selectedRawTileValue == null
+    final selectedRawTileValue = state.selectedRawTileValue;
+    final selectedDisplayValue = selectedRawTileValue == null
+        ? null
+        : TerrainTileDisplayValue.fromRawValue(selectedRawTileValue);
+    final selectedLabel = selectedDisplayValue == null
         ? 'Select a source tile'
-        : 'Raw tile ${state.selectedRawTileValue}'
+        : 'Raw tile ${selectedDisplayValue.rawValue} · '
+              'group ${selectedDisplayValue.groupIndex} · '
+              'member ${selectedDisplayValue.groupMember}'
+              '${selectedDisplayValue.isUnsupported ? ' · unsupported' : ''}'
               '${selection == null ? '' : ' from ${selection.x},${selection.y}'}';
 
     return Wrap(

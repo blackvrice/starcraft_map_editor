@@ -409,7 +409,7 @@ void main() {
     expect(find.byKey(const Key('map-canvas-visible-region')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas-coordinate')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas-zoom-level')), findsOneWidget);
-    expect(find.text('Raw MTXM preview'), findsOneWidget);
+    expect(find.text('Raw fallback · 1 unsupported'), findsOneWidget);
     expect(find.text('Tile — · Pixel —'), findsOneWidget);
     expect(find.text('Wheel zoom · Space/middle drag'), findsOneWidget);
     expect(find.text('Arena.scx'), findsWidgets);
@@ -475,9 +475,7 @@ void main() {
                 .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
                 .painter!
             as MapCanvasPainter;
-    final canvasTopLeft = tester.getTopLeft(
-      find.byKey(const Key('map-canvas')),
-    );
+    var canvasTopLeft = tester.getTopLeft(find.byKey(const Key('map-canvas')));
     await tester.tapAt(
       canvasTopLeft +
           canvasPainter.layout.mapRect.topLeft +
@@ -488,7 +486,12 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Raw tile 1 from 1,0'), findsOneWidget);
+    expect(
+      find.text(
+        'Raw tile 16384 · group 1024 · member 0 · unsupported from 1,0',
+      ),
+      findsOneWidget,
+    );
     expect(
       tester
           .widget<OutlinedButton>(
@@ -502,6 +505,7 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('terrain-tool-brush')));
     await tester.pump();
+    canvasTopLeft = tester.getTopLeft(find.byKey(const Key('map-canvas')));
     canvasPainter =
         tester
                 .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
@@ -520,8 +524,9 @@ void main() {
     expect(
       openMapController.state.session!.terrainViews.tileMaps.single
           .rawTileValueAt(x: 2, y: 0),
-      1,
+      0x4000,
     );
+    expect(find.text('Raw fallback · 2 unsupported'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isTrue);
     expect(find.text('Modified'), findsWidgets);
     expect(
@@ -546,6 +551,7 @@ void main() {
           .rawTileValueAt(x: 2, y: 0),
       2,
     );
+    expect(find.text('Raw fallback · 1 unsupported'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isFalse);
     expect(find.text('Editable'), findsOneWidget);
     expect(
@@ -568,8 +574,9 @@ void main() {
     expect(
       openMapController.state.session!.terrainViews.tileMaps.single
           .rawTileValueAt(x: 2, y: 0),
-      1,
+      0x4000,
     );
+    expect(find.text('Raw fallback · 2 unsupported'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isTrue);
     expect(find.text('Modified'), findsWidgets);
 
@@ -951,7 +958,11 @@ ExtractedMap _createExtractedMap() {
   final terrainPayload = Uint8List(mapWidth * mapHeight * 2);
   final terrainData = ByteData.sublistView(terrainPayload);
   for (var index = 0; index < mapWidth * mapHeight; index++) {
-    terrainData.setUint16(index * 2, index % 32, Endian.little);
+    terrainData.setUint16(
+      index * 2,
+      index == 1 ? 0x4000 : index % 32,
+      Endian.little,
+    );
   }
   final chkBytes = _chkBytes([
     _section('TYPE', [0x52, 0x41, 0x57, 0x53]),

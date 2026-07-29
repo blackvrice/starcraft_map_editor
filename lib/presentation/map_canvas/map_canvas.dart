@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/terrain/terrain_editing_controller.dart';
+import '../../domain/terrain/terrain_tile_display_value.dart';
 
 class MapCanvas extends StatefulWidget {
   const MapCanvas({
@@ -62,6 +63,8 @@ class _MapCanvasState extends State<MapCanvas> {
   TerrainTileCoordinate? _lastBrushTile;
   TerrainTileCoordinate? _rectangleStart;
   TerrainTileCoordinate? _rectangleEnd;
+  List<int>? _summarizedRawTileValues;
+  TerrainTileDisplaySummary? _terrainDisplaySummary;
 
   @override
   void didUpdateWidget(MapCanvas oldWidget) {
@@ -113,6 +116,7 @@ class _MapCanvasState extends State<MapCanvas> {
                   widget.rawTileValues!.length == expectedTileCount
               ? widget.rawTileValues
               : null;
+          final terrainDisplaySummary = _displaySummaryFor(terrainValues);
           final coordinate = _pointerPosition == null
               ? null
               : layout.coordinateAt(_pointerPosition!);
@@ -146,7 +150,9 @@ class _MapCanvasState extends State<MapCanvas> {
                   label:
                       'Map canvas, ${widget.mapWidth} by '
                       '${widget.mapHeight} tiles, '
-                      '${terrainValues == null ? 'geometry preview' : 'terrain preview'}, '
+                      '${terrainValues == null ? 'geometry preview' : 'raw terrain fallback'}, '
+                      '${terrainDisplaySummary?.unsupportedTileCount ?? 0} '
+                      'unsupported tiles, '
                       '${widget.editingTool.name} tool, '
                       '${(_zoom * 100).round()} percent zoom',
                   child: Stack(
@@ -196,10 +202,16 @@ class _MapCanvasState extends State<MapCanvas> {
                           key: const Key('map-canvas-render-mode'),
                           icon: terrainValues == null
                               ? Icons.border_all_rounded
+                              : terrainDisplaySummary!.hasUnsupportedTiles
+                              ? Icons.warning_amber_rounded
                               : Icons.texture_rounded,
                           label: terrainValues == null
                               ? 'Geometry only'
-                              : 'Raw MTXM preview',
+                              : terrainDisplaySummary!.hasUnsupportedTiles
+                              ? 'Raw fallback · '
+                                    '${terrainDisplaySummary.unsupportedTileCount} '
+                                    'unsupported'
+                              : 'Raw fallback',
                         ),
                       ),
                       Positioned(
@@ -266,6 +278,17 @@ class _MapCanvasState extends State<MapCanvas> {
       event.localPosition,
       layout,
     );
+  }
+
+  TerrainTileDisplaySummary? _displaySummaryFor(List<int>? rawTileValues) {
+    if (identical(rawTileValues, _summarizedRawTileValues)) {
+      return _terrainDisplaySummary;
+    }
+    _summarizedRawTileValues = rawTileValues;
+    _terrainDisplaySummary = rawTileValues == null
+        ? null
+        : TerrainTileDisplaySummary.fromRawValues(rawTileValues);
+    return _terrainDisplaySummary;
   }
 
   void _zoomAt(
@@ -731,6 +754,8 @@ class MapCanvasPainter extends CustomPainter {
   static const mapBoundary = Color(0xFF70A1FF);
   static const minorGrid = Color(0x263E536F);
   static const majorGrid = Color(0x665E789D);
+  static const unsupportedTileBackground = Color(0xFF42162F);
+  static const unsupportedTileMark = Color(0xFFFF6BAA);
 
   static const _tilePalette = <Color>[
     Color(0xFF27384A),
@@ -789,18 +814,33 @@ class MapCanvasPainter extends CustomPainter {
     for (var y = bounds.top; y < bounds.bottomExclusive; y++) {
       for (var x = bounds.left; x < bounds.rightExclusive; x++) {
         final rawValue = values[y * layout.mapWidth + x];
-        paint.color = _tilePalette[_paletteIndex(rawValue)];
-        canvas.drawRect(
-          Rect.fromLTWH(
-            layout.mapRect.left + x * layout.tileExtent,
-            layout.mapRect.top + y * layout.tileExtent,
-            layout.tileExtent,
-            layout.tileExtent,
-          ),
-          paint,
+        final tileRect = Rect.fromLTWH(
+          layout.mapRect.left + x * layout.tileExtent,
+          layout.mapRect.top + y * layout.tileExtent,
+          layout.tileExtent,
+          layout.tileExtent,
         );
+        if (TerrainTileDisplayValue.isStandardRawValue(rawValue)) {
+          paint.color = _tilePalette[_paletteIndex(rawValue)];
+          canvas.drawRect(tileRect, paint);
+        } else {
+          _paintUnsupportedTile(canvas, tileRect);
+        }
       }
     }
+  }
+
+  void _paintUnsupportedTile(Canvas canvas, Rect tileRect) {
+    canvas.drawRect(tileRect, Paint()..color = unsupportedTileBackground);
+    if (layout.tileExtent < 6) {
+      return;
+    }
+
+    final markPaint = Paint()
+      ..color = unsupportedTileMark
+      ..strokeWidth = math.min(2, math.max(1, layout.tileExtent / 12));
+    canvas.drawLine(tileRect.topLeft, tileRect.bottomRight, markPaint);
+    canvas.drawLine(tileRect.topRight, tileRect.bottomLeft, markPaint);
   }
 
   void _paintGrid(Canvas canvas) {
