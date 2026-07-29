@@ -299,7 +299,7 @@ void main() {
     expect(find.text('25%'), findsWidgets);
   });
 
-  testWidgets('opens a selected map and renders its CHK summary', (
+  testWidgets('opens a selected map and renders its map canvas', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -335,9 +335,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('opened-map-name')), findsOneWidget);
+    expect(find.byKey(const Key('map-canvas')), findsOneWidget);
+    expect(find.byKey(const Key('map-canvas-visible-region')), findsOneWidget);
+    expect(find.text('Raw MTXM preview'), findsOneWidget);
     expect(find.text('Arena.scx'), findsWidgets);
-    expect(find.text('64 × 96'), findsOneWidget);
-    expect(find.text('5'), findsWidgets);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('map-canvas-size')),
+        matching: find.text('64 × 96'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('6'), findsWidgets);
     expect(find.byKey(const Key('archive-entry-list')), findsOneWidget);
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
     expect(find.text('Read-only preview'), findsWidgets);
@@ -664,12 +673,20 @@ class _FakeMapFileFingerprintGateway implements MapFileFingerprintGateway {
 }
 
 ExtractedMap _createExtractedMap() {
+  const mapWidth = 64;
+  const mapHeight = 96;
+  final terrainPayload = Uint8List(mapWidth * mapHeight * 2);
+  final terrainData = ByteData.sublistView(terrainPayload);
+  for (var index = 0; index < mapWidth * mapHeight; index++) {
+    terrainData.setUint16(index * 2, index % 32, Endian.little);
+  }
   final chkBytes = _chkBytes([
     _section('TYPE', [0x52, 0x41, 0x57, 0x53]),
     _section('VER ', [206, 0]),
     _section('IVER', [10, 0]),
-    _section('DIM ', [64, 0, 96, 0]),
+    _section('DIM ', [mapWidth, 0, mapHeight, 0]),
     _section('ERA ', [4, 0]),
+    _section('MTXM', terrainPayload),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',

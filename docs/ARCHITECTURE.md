@@ -171,6 +171,7 @@ DocumentSession
   sourcePath
   sourceFingerprint
   document
+  terrainViews
   undoStack
   redoStack
   isDirty
@@ -181,7 +182,19 @@ DocumentSession
 `sourceFingerprint`는 외부 변경을 감지하기 위해 파일 크기, UTC 수정 시각,
 SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint가 같을
 때만 생성되고 Save As로 채택한 세션은 검증된 임시 출력의 fingerprint를
-이어받는다.
+이어받는다. Open/Save 재검증은 `ChkMetadataViews`와 `ChkTerrainViews`를
+동시에 생성하고 두 계층의 구조 진단을 세션에 포함한다.
+
+### MapCanvas
+
+`presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
+fit-to-view 변환, 화면상의 맵 경계, 가시 타일 범위와 격자 간격을 계산한다.
+`MapCanvasPainter`는 viewport를 clip하고 가시 `MTXM` 타일만 원시 값 기반
+대체 색상으로 그린 뒤 적응형 격자와 명확한 맵 외곽선을 겹친다.
+
+현재 카메라는 전체 맵을 맞추는 고정 상태다. 확대/이동 입력은 다음 단계에서
+레이아웃 입력으로 추가하며, StarCraft 실제 타일 이미지는 데이터 자산 경로와
+누락 진단이 구현될 때 대체 색상 렌더러를 교체한다.
 
 ## 6. 명령과 Undo/Redo
 

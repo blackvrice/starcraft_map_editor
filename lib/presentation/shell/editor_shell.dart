@@ -17,6 +17,7 @@ import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../eud_editor/eud_source_editor.dart';
+import '../map_canvas/map_canvas.dart';
 
 enum _WorkspaceView { map, eud }
 
@@ -1030,18 +1031,23 @@ class _OpenedMapWorkspace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metadataViews = session.metadataViews;
-    final dimensions = metadataViews.dimensions.isEmpty
-        ? null
-        : metadataViews.dimensions.first;
-    final version = metadataViews.versions.isEmpty
-        ? null
-        : metadataViews.versions.first;
-    final tileset = metadataViews.tilesets.isEmpty
-        ? null
-        : metadataViews.tilesets.first;
-    final scenarioType = metadataViews.types.isEmpty
-        ? null
-        : metadataViews.types.first;
+    final dimensions = metadataViews.dimensions.length == 1
+        ? metadataViews.dimensions.single
+        : null;
+    final tileset = metadataViews.tilesets.length == 1
+        ? metadataViews.tilesets.single
+        : null;
+    final terrain = session.terrainViews.tileMaps.length == 1
+        ? session.terrainViews.tileMaps.single
+        : null;
+    final rawTileValues =
+        dimensions != null &&
+            terrain != null &&
+            terrain.hasGridDimensions &&
+            terrain.width == dimensions.width &&
+            terrain.height == dimensions.height
+        ? terrain.rawTileValues
+        : null;
     final warningCount = diagnostics
         .where(
           (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
@@ -1054,150 +1060,150 @@ class _OpenedMapWorkspace extends StatelessWidget {
     return ColoredBox(
       key: const Key('map-workspace'),
       color: const Color(0xFF101319),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(28),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            color: const Color(0xFF171C24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1D2738),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.map_outlined,
-                        color: Color(0xFF70A1FF),
-                        size: 30,
-                      ),
+                    const Icon(
+                      Icons.map_outlined,
+                      color: Color(0xFF70A1FF),
+                      size: 22,
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 9),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _fileName(session.sourcePath),
-                            key: const Key('opened-map-name'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineSmall,
+                      child: Tooltip(
+                        message: session.sourcePath,
+                        child: Text(
+                          _fileName(session.sourcePath),
+                          key: const Key('opened-map-name'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            session.sourcePath,
-                            key: const Key('opened-map-path'),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF929DB0),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     _SessionStatusChip(
                       restricted: session.requiresRestrictedEditing,
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 9),
                 Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
+                  spacing: 7,
+                  runSpacing: 7,
                   children: [
-                    _MapSummaryMetric(
-                      label: 'CHK sections',
-                      value: '${session.rawDocument.sections.length}',
-                      icon: Icons.view_list_outlined,
-                    ),
-                    _MapSummaryMetric(
-                      label: 'Map size',
+                    _MapCanvasMetadata(
+                      key: const Key('map-canvas-size'),
+                      icon: Icons.aspect_ratio_rounded,
                       value: dimensions == null
-                          ? 'Unknown'
+                          ? 'Size unavailable'
                           : '${dimensions.width} × ${dimensions.height}',
-                      icon: Icons.aspect_ratio,
                     ),
-                    _MapSummaryMetric(
-                      label: 'Archive entries',
-                      value:
-                          '${session.archiveMetadata.entries.length} / '
-                          '${session.archiveMetadata.totalEntryCount}',
-                      icon: Icons.inventory_2_outlined,
-                    ),
-                    _MapSummaryMetric(
-                      label: 'CHK size',
-                      value: _formatBytes(session.scenarioChkSizeBytes),
-                      icon: Icons.data_object,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _SummaryCard(
-                  title: 'Scenario summary',
-                  rows: [
-                    (
-                      'Map version',
-                      version == null
-                          ? 'Not present'
-                          : version.knownVersion == null
-                          ? 'Unknown (${version.rawValue})'
-                          : '${_humanizeEnumName(version.knownVersion!.name)} '
-                                '(${version.rawValue})',
-                    ),
-                    (
-                      'Scenario type',
-                      scenarioType == null
-                          ? 'Not present'
-                          : scenarioType.fourCharacterCode,
-                    ),
-                    (
-                      'Tileset',
-                      tileset == null
-                          ? 'Not present'
+                    _MapCanvasMetadata(
+                      icon: Icons.landscape_outlined,
+                      value: tileset == null
+                          ? 'Tileset unavailable'
                           : tileset.knownTileset == null
-                          ? 'Unknown (${tileset.rawValue})'
+                          ? 'Tileset ${tileset.rawValue}'
                           : _humanizeEnumName(tileset.knownTileset!.name),
                     ),
-                    (
-                      'MPQ format',
-                      'Version ${session.archiveMetadata.formatVersion}',
+                    _MapCanvasMetadata(
+                      icon: rawTileValues == null
+                          ? Icons.border_all_rounded
+                          : Icons.texture_rounded,
+                      value: rawTileValues == null
+                          ? 'Geometry preview'
+                          : '${rawTileValues.length} MTXM tiles',
                     ),
-                    (
-                      'Archive listing',
-                      session.archiveMetadata.listingComplete
-                          ? 'Complete'
-                          : 'Partial',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _SummaryCard(
-                  title: 'Open diagnostics',
-                  rows: [
-                    ('Blocking', '$blockingCount'),
-                    ('Warnings', '$warningCount'),
-                    (
-                      'Mode',
-                      session.requiresRestrictedEditing
-                          ? 'Restricted read-only'
-                          : 'Read-only preview',
-                    ),
+                    if (blockingCount > 0 || warningCount > 0)
+                      _MapCanvasMetadata(
+                        icon: Icons.report_problem_outlined,
+                        value:
+                            '$blockingCount blocking · $warningCount warning',
+                      ),
                   ],
                 ),
               ],
             ),
           ),
+          const Divider(height: 1),
+          Expanded(
+            child:
+                dimensions == null ||
+                    dimensions.width == 0 ||
+                    dimensions.height == 0
+                ? const _MapCanvasUnavailable()
+                : MapCanvas(
+                    mapWidth: dimensions.width,
+                    mapHeight: dimensions.height,
+                    rawTileValues: rawTileValues,
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapCanvasMetadata extends StatelessWidget {
+  const _MapCanvasMetadata({
+    required this.icon,
+    required this.value,
+    super.key,
+  });
+
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF202733),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: const Color(0xFF313C4F)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: const Color(0xFF91ACD8)),
+            const SizedBox(width: 5),
+            Text(
+              value,
+              style: const TextStyle(color: Color(0xFFC2CAD8), fontSize: 10),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MapCanvasUnavailable extends StatelessWidget {
+  const _MapCanvasUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      key: Key('map-canvas-unavailable'),
+      color: Color(0xFF0C1016),
+      child: Center(
+        child: _EmptyPaneMessage(
+          icon: Icons.grid_off_rounded,
+          message: 'A unique, non-zero DIM section is required for the canvas.',
         ),
       ),
     );
@@ -1229,109 +1235,6 @@ class _SessionStatusChip extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-class _MapSummaryMetric extends StatelessWidget {
-  const _MapSummaryMetric({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 172,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171C24),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF293242)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: const Color(0xFF70A1FF)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF8994A8),
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.title, required this.rows});
-
-  final String title;
-  final List<(String, String)> rows;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171C24),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF293242)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          for (var index = 0; index < rows.length; index++) ...[
-            if (index > 0) const Divider(height: 18),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    rows[index].$1,
-                    style: const TextStyle(
-                      color: Color(0xFF8994A8),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                Flexible(
-                  child: Text(
-                    rows[index].$2,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -1386,11 +1289,61 @@ class _MapInspector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final archive = session.archiveMetadata;
+    final metadata = session.metadataViews;
+    final dimensions = metadata.dimensions.length == 1
+        ? metadata.dimensions.single
+        : null;
+    final version = metadata.versions.length == 1
+        ? metadata.versions.single
+        : null;
+    final scenarioType = metadata.types.length == 1
+        ? metadata.types.single
+        : null;
+    final tileset = metadata.tilesets.length == 1
+        ? metadata.tilesets.single
+        : null;
+    final terrain = session.terrainViews.tileMaps.length == 1
+        ? session.terrainViews.tileMaps.single
+        : null;
     return ListView(
       key: const Key('map-inspector'),
       padding: const EdgeInsets.all(12),
       children: [
         _InspectorValue(label: 'File', value: _fileName(session.sourcePath)),
+        _InspectorValue(label: 'Source path', value: session.sourcePath),
+        _InspectorValue(
+          label: 'Map size',
+          value: dimensions == null
+              ? 'Unavailable'
+              : '${dimensions.width} × ${dimensions.height}',
+        ),
+        _InspectorValue(
+          label: 'Tileset',
+          value: tileset == null
+              ? 'Unavailable'
+              : tileset.knownTileset == null
+              ? 'Unknown (${tileset.rawValue})'
+              : _humanizeEnumName(tileset.knownTileset!.name),
+        ),
+        _InspectorValue(
+          label: 'Map version',
+          value: version == null
+              ? 'Unavailable'
+              : version.knownVersion == null
+              ? 'Unknown (${version.rawValue})'
+              : '${_humanizeEnumName(version.knownVersion!.name)} '
+                    '(${version.rawValue})',
+        ),
+        _InspectorValue(
+          label: 'Scenario type',
+          value: scenarioType?.fourCharacterCode ?? 'Unavailable',
+        ),
+        _InspectorValue(
+          label: 'Terrain',
+          value: terrain == null
+              ? '${session.terrainViews.tileMaps.length} MTXM views'
+              : '${terrain.tileCount} raw tiles',
+        ),
         _InspectorValue(
           label: 'Archive size',
           value: _formatBytes(archive.archiveSizeBytes),

@@ -104,6 +104,16 @@ void main() {
           openMapController.state.session!.sourceFingerprint,
           _outputFingerprint(),
         );
+        expect(
+          openMapController
+              .state
+              .session!
+              .terrainViews
+              .tileMaps
+              .single
+              .tileCount,
+          64 * 96,
+        );
         expect(fingerprintGateway.paths, [
           sourceMap.sourcePath,
           sourceMap.sourcePath,
@@ -626,6 +636,7 @@ Uint8List _validChkBytes() {
     _section('IVER', [10, 0]),
     _section('DIM ', [64, 0, 96, 0]),
     _section('ERA ', [4, 0]),
+    _section('MTXM', _terrainPayload(width: 64, height: 96)),
   ]);
 }
 
@@ -636,7 +647,16 @@ Uint8List _alternateValidChkBytes() {
     _section('IVER', [10, 0]),
     _section('DIM ', [64, 0, 96, 0]),
     _section('ERA ', [4, 0]),
+    _section('MTXM', _terrainPayload(width: 64, height: 96)),
   ]);
+}
+
+List<int> _terrainPayload({required int width, required int height}) {
+  return List<int>.generate(
+    width * height * 2,
+    (index) => index.isEven ? (index ~/ 2) % 32 : 0,
+    growable: false,
+  );
 }
 
 Uint8List _section(String name, List<int> payload) {

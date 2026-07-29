@@ -65,6 +65,7 @@ class OpenMapController {
     required this.operationProgressController,
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
+    this.terrainViewDecoder = const ChkTerrainViewDecoder(),
     this.archiveTimeout = const Duration(seconds: 30),
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
@@ -84,6 +85,7 @@ class OpenMapController {
   final OperationProgressController operationProgressController;
   final RawChkParser rawChkParser;
   final ChkMetadataViewDecoder metadataViewDecoder;
+  final ChkTerrainViewDecoder terrainViewDecoder;
   final Duration archiveTimeout;
   final DateTime Function() _clock;
   final StreamController<OpenMapState> _changes =
@@ -232,9 +234,11 @@ class OpenMapController {
       );
       final rawDocument = parseResult.document!;
       final metadataViews = metadataViewDecoder.decode(rawDocument);
+      final terrainViews = terrainViewDecoder.decode(rawDocument);
       final documentDiagnostics = [
         ...archiveResult.diagnostics,
         ...metadataViews.diagnostics,
+        ...terrainViews.diagnostics,
       ];
       late final MapFileFingerprint sourceFingerprintAfterOpen;
       try {
@@ -273,6 +277,7 @@ class OpenMapController {
         extractedMap: extractedMap,
         rawDocument: rawDocument,
         metadataViews: metadataViews,
+        terrainViews: terrainViews,
         sourceFingerprint: sourceFingerprintAfterOpen,
         diagnostics: documentDiagnostics,
       );
@@ -366,6 +371,7 @@ class OpenMapController {
       extractedMap: session.extractedMap,
       rawDocument: session.rawDocument,
       metadataViews: session.metadataViews,
+      terrainViews: session.terrainViews,
       sourceFingerprint: session.sourceFingerprint,
       diagnostics: diagnostics,
     );

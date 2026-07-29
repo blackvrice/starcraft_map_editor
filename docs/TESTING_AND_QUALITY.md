@@ -23,6 +23,7 @@
 - CHK 섹션 파서와 인코더
 - typed view와 값 검증
 - `MTXM` 타일 수·2바이트 정렬·좌표 경계와 `u16` 값 검증
+- 캔버스 fit-to-view 경계·적응형 격자·가시 타일 범위 계산
 - 편집 명령의 apply/revert
 - 문자열 표시와 원시 바이트 분리
 - EUD 빌드 설정 경로와 불변식
@@ -204,6 +205,10 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 홀수 `MTXM` 레코드와 `DIM ` 기준 타일 수 불일치 진단
 - `DIM ` 누락·중복 시 임의 크기 선택 없이 선형 타일 값만 제공
 - `TILE`/`ISOM`과 eudplib 보호 마커를 지형 typed view가 수정하지 않음
+- Open/Save 세션의 terrain view 보존과 손상 지형 제한 편집 진단
+- 4×2 캔버스 경계·격자·가시 범위·원시 `MTXM` 모드 위젯 렌더링
+- 256×256 fit-to-view에서 맵 경계 내 배치와 16타일 격자 축약
+- `MTXM` 누락/길이 불일치 시 geometry-only 캔버스 대체 표시
 
 ### 파일 저장
 

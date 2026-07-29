@@ -92,6 +92,7 @@ class SaveMapController {
     this.rawChkEncoder = const RawChkEncoder(),
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
+    this.terrainViewDecoder = const ChkTerrainViewDecoder(),
     this.archiveTimeout = const Duration(seconds: 30),
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
@@ -113,6 +114,7 @@ class SaveMapController {
   final RawChkEncoder rawChkEncoder;
   final RawChkParser rawChkParser;
   final ChkMetadataViewDecoder metadataViewDecoder;
+  final ChkTerrainViewDecoder terrainViewDecoder;
   final Duration archiveTimeout;
   final DateTime Function() _clock;
   final StreamController<SaveMapState> _changes =
@@ -382,10 +384,12 @@ class SaveMapController {
 
       final verifiedDocument = parseResult.document!;
       final metadataViews = metadataViewDecoder.decode(verifiedDocument);
+      final terrainViews = terrainViewDecoder.decode(verifiedDocument);
       final verifiedDiagnostics = [
         ...writeResult.diagnostics,
         ...reopenResult.diagnostics,
         ...metadataViews.diagnostics,
+        ...terrainViews.diagnostics,
       ];
 
       operationProgressController.update(
@@ -565,6 +569,7 @@ class SaveMapController {
           extractedMap: finalMap,
           rawDocument: verifiedDocument,
           metadataViews: metadataViews,
+          terrainViews: terrainViews,
           sourceFingerprint: verifiedOutputFingerprint,
           diagnostics: verifiedDiagnostics,
         ),

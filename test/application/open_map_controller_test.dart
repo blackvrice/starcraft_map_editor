@@ -170,6 +170,68 @@ void main() {
       expect(await recentProjectsService.load(), hasLength(1));
     });
 
+    test('decodes valid terrain into the opened document session', () async {
+      final map = _createExtractedMap(
+        _chkBytes([
+          _section('DIM ', [2, 0, 2, 0]),
+          _section('ERA ', [4, 0]),
+          _section('MTXM', [1, 0, 2, 0, 3, 0, 4, 0]),
+        ]),
+      );
+      final progressController = OperationProgressController();
+      final controller = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          result: MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.opened);
+      expect(state.diagnostics, isEmpty);
+      expect(state.session!.terrainViews.tileMaps, hasLength(1));
+      expect(state.session!.terrainViews.tileMaps.single.rawTileValues, [
+        1,
+        2,
+        3,
+        4,
+      ]);
+    });
+
+    test('opens malformed terrain in restricted read-only mode', () async {
+      final map = _createExtractedMap(
+        _chkBytes([
+          _section('DIM ', [2, 0, 2, 0]),
+          _section('MTXM', [1, 0, 2, 0, 3, 0]),
+        ]),
+      );
+      final progressController = OperationProgressController();
+      final controller = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          result: MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.opened);
+      expect(state.session!.requiresRestrictedEditing, isTrue);
+      expect(state.session!.terrainViews.tileMaps, isEmpty);
+      expect(state.diagnostics.single.code, 'CHK_TERRAIN_TILE_COUNT_MISMATCH');
+    });
+
     test('rejects unsupported extensions before archive access', () async {
       final gateway = _FakeMapArchiveGateway(
         result: MapArchiveOpenResult.success(
