@@ -10,6 +10,8 @@ import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
+import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
@@ -125,6 +127,54 @@ void main() {
         expect(
           (await recentProjectsService.load()).first.path,
           r'C:\Maps\Arena Copy.scx',
+        );
+      },
+    );
+
+    test(
+      'writes the edited MTXM bytes and adopts a clean saved session',
+      () async {
+        final terrainEditingController = TerrainEditingController(
+          openMapController: openMapController,
+        );
+        addTearDown(terrainEditingController.dispose);
+        terrainEditingController.synchronizeSession(
+          openMapController.state.session,
+        );
+        terrainEditingController.selectTileAt(
+          const TerrainTileCoordinate(x: 1, y: 0),
+        );
+
+        expect(
+          terrainEditingController.paintTiles(const [
+            TerrainTileCoordinate(x: 2, y: 0),
+          ]),
+          isTrue,
+        );
+        expect(openMapController.state.session!.isDirty, isTrue);
+
+        final state = await saveMapController.saveAs();
+
+        expect(state.status, SaveMapStatus.saved);
+        final writtenDocument = const RawChkParser()
+            .parse(archiveGateway.writeRequests.single.scenarioChkBytes)
+            .document!;
+        final writtenTerrain = const ChkTerrainViewDecoder()
+            .decode(writtenDocument)
+            .tileMaps
+            .single;
+        expect(writtenTerrain.rawTileValueAt(x: 1, y: 0), 1);
+        expect(writtenTerrain.rawTileValueAt(x: 2, y: 0), 1);
+        expect(
+          sourceMap.scenarioChkBytes,
+          _validChkBytes(),
+          reason: 'The input archive snapshot must remain byte-exact.',
+        );
+        expect(openMapController.state.session!.isDirty, isFalse);
+        expect(
+          openMapController.state.session!.terrainViews.tileMaps.single
+              .rawTileValueAt(x: 2, y: 0),
+          1,
         );
       },
     );

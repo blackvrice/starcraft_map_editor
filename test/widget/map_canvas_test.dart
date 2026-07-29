@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 
 void main() {
@@ -292,6 +293,159 @@ void main() {
     await gesture.removePointer();
   });
 
+  testWidgets('select tool reports the clicked terrain tile', (tester) async {
+    TerrainTileCoordinate? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 2,
+            rawTileValues: const [1, 2, 3, 4, 5, 6, 7, 8],
+            onTileSelected: (coordinate) => selected = coordinate,
+          ),
+        ),
+      ),
+    );
+
+    final pointer = _tileCenter(tester, x: 2, y: 1);
+    await tester.tapAt(pointer);
+    await tester.pump();
+
+    expect(selected, const TerrainTileCoordinate(x: 2, y: 1));
+  });
+
+  testWidgets('brush fills every crossed tile without gaps', (tester) async {
+    final painted = <TerrainTileCoordinate>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 2,
+            rawTileValues: const [1, 2, 3, 4, 5, 6, 7, 8],
+            editingTool: TerrainEditingTool.brush,
+            onBrushStroke: painted.addAll,
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      _tileCenter(tester, x: 0, y: 0),
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryMouseButton,
+    );
+    await gesture.moveTo(_tileCenter(tester, x: 3, y: 1));
+    await gesture.up();
+    await tester.pump();
+
+    expect(painted, const [
+      TerrainTileCoordinate(x: 0, y: 0),
+      TerrainTileCoordinate(x: 1, y: 0),
+      TerrainTileCoordinate(x: 2, y: 1),
+      TerrainTileCoordinate(x: 3, y: 1),
+    ]);
+  });
+
+  testWidgets('rectangle previews normalized bounds and commits on release', (
+    tester,
+  ) async {
+    TerrainTileRegion? filled;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 2,
+            rawTileValues: const [1, 2, 3, 4, 5, 6, 7, 8],
+            editingTool: TerrainEditingTool.rectangle,
+            selectedTile: const TerrainTileCoordinate(x: 1, y: 0),
+            onRectangleFilled: (region) => filled = region,
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      _tileCenter(tester, x: 3, y: 1),
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryMouseButton,
+    );
+    await gesture.moveTo(_tileCenter(tester, x: 1, y: 0));
+    await tester.pump();
+
+    var painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.selectedTile, const TerrainTileCoordinate(x: 1, y: 0));
+    expect(painter.rectanglePreview?.left, 1);
+    expect(painter.rectanglePreview?.top, 0);
+    expect(painter.rectanglePreview?.right, 3);
+    expect(painter.rectanglePreview?.bottom, 1);
+
+    await gesture.up();
+    await tester.pump();
+
+    expect(filled?.left, 1);
+    expect(filled?.top, 0);
+    expect(filled?.right, 3);
+    expect(filled?.bottom, 1);
+    painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.rectanglePreview, isNull);
+  });
+
+  testWidgets('escape cancels a rectangle without committing it', (
+    tester,
+  ) async {
+    TerrainTileRegion? filled;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 2,
+            editingTool: TerrainEditingTool.rectangle,
+            onRectangleFilled: (region) => filled = region,
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      _tileCenter(tester, x: 0, y: 0),
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryMouseButton,
+    );
+    await gesture.moveTo(_tileCenter(tester, x: 2, y: 1));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await gesture.up();
+    await tester.pump();
+
+    expect(filled, isNull);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.rectanglePreview, isNull);
+  });
+
   test('fit layout centers a small map and caps tile extent', () {
     final layout = MapCanvasLayout.fit(
       viewportSize: const Size(400, 300),
@@ -424,5 +578,23 @@ void main() {
     expect(unchanged.shouldRepaint(original), isFalse);
     expect(changedTerrain.shouldRepaint(original), isTrue);
     expect(changedGeometry.shouldRepaint(original), isTrue);
+    final changedSelection = MapCanvasPainter(
+      layout: layout,
+      rawTileValues: values,
+      selectedTile: const TerrainTileCoordinate(x: 0, y: 0),
+    );
+    expect(changedSelection.shouldRepaint(original), isTrue);
   });
+}
+
+Offset _tileCenter(WidgetTester tester, {required int x, required int y}) {
+  final paintFinder = find.byKey(const Key('map-canvas-paint'));
+  final painter =
+      tester.widget<CustomPaint>(paintFinder).painter! as MapCanvasPainter;
+  return tester.getTopLeft(find.byKey(const Key('map-canvas'))) +
+      painter.layout.mapRect.topLeft +
+      Offset(
+        (x + 0.5) * painter.layout.tileExtent,
+        (y + 0.5) * painter.layout.tileExtent,
+      );
 }

@@ -24,9 +24,11 @@ import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dar
 import 'package:starcraft_map_editor/application/ports/starcraft_data_asset_inspector.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 
 void main() {
   testWidgets('renders the desktop editor shell', (tester) async {
@@ -420,7 +422,20 @@ void main() {
     expect(find.text('6'), findsWidgets);
     expect(find.byKey(const Key('archive-entry-list')), findsOneWidget);
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
-    expect(find.text('Read-only preview'), findsWidgets);
+    expect(find.text('Editable'), findsOneWidget);
+    expect(find.byKey(const Key('terrain-editing-toolbar')), findsOneWidget);
+    expect(find.text('Select a source tile'), findsOneWidget);
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-tool-brush')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
     expect(
       tester
           .widget<TextButton>(find.byKey(const Key('toolbar-save-as')))
@@ -431,6 +446,61 @@ void main() {
       (await recentProjectsService.load()).single.path,
       r'C:\Maps\Arena.scx',
     );
+
+    var canvasPainter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final canvasTopLeft = tester.getTopLeft(
+      find.byKey(const Key('map-canvas')),
+    );
+    await tester.tapAt(
+      canvasTopLeft +
+          canvasPainter.layout.mapRect.topLeft +
+          Offset(
+            canvasPainter.layout.tileExtent * 1.5,
+            canvasPainter.layout.tileExtent * 0.5,
+          ),
+    );
+    await tester.pump();
+
+    expect(find.text('Raw tile 1 from 1,0'), findsOneWidget);
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-tool-brush')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    await tester.tap(find.byKey(const Key('terrain-tool-brush')));
+    await tester.pump();
+    canvasPainter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    await tester.tapAt(
+      canvasTopLeft +
+          canvasPainter.layout.mapRect.topLeft +
+          Offset(
+            canvasPainter.layout.tileExtent * 2.5,
+            canvasPainter.layout.tileExtent * 0.5,
+          ),
+    );
+    await tester.pump();
+
+    expect(
+      openMapController.state.session!.terrainViews.tileMaps.single
+          .rawTileValueAt(x: 2, y: 0),
+      1,
+    );
+    expect(openMapController.state.session!.isDirty, isTrue);
+    expect(find.text('Modified'), findsWidgets);
 
     await tester.tap(find.byKey(const Key('toolbar-new-eud-source')));
     await tester.pump();
@@ -464,6 +534,7 @@ Widget _createTestApp({
   RecentProjectsService? recentProjectsService,
   InMemorySettingsStore? settingsStore,
   StarCraftDataAssetSettingsController? starCraftDataAssetSettingsController,
+  TerrainEditingController? terrainEditingController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
   final resolvedProgressController =
@@ -489,6 +560,9 @@ Widget _createTestApp({
         recentProjectsService: resolvedRecentProjectsService,
         operationProgressController: resolvedProgressController,
       );
+  final resolvedTerrainEditingController =
+      terrainEditingController ??
+      TerrainEditingController(openMapController: resolvedOpenMapController);
   final resolvedSaveMapController =
       saveMapController ??
       SaveMapController(
@@ -539,6 +613,7 @@ Widget _createTestApp({
       settingsStore: resolvedSettingsStore,
       starCraftDataAssetSettingsController:
           resolvedStarCraftDataAssetSettingsController,
+      terrainEditingController: resolvedTerrainEditingController,
     ),
   );
 }

@@ -383,6 +383,24 @@ class OpenMapController {
     );
   }
 
+  OpenMapState adoptEditedSession(OpenedMapSession session) {
+    final currentSession = _state.session;
+    if (currentSession == null ||
+        !identical(currentSession.extractedMap, session.extractedMap) ||
+        currentSession.sourceFingerprint != session.sourceFingerprint) {
+      throw StateError(
+        'An edited session can replace only the currently open source snapshot.',
+      );
+    }
+
+    return _emit(
+      OpenMapState.opened(
+        openedSession: session,
+        diagnostics: session.diagnostics,
+      ),
+    );
+  }
+
   Future<String?> _selectMapPath() async {
     try {
       return await filePicker.pickMapPath();

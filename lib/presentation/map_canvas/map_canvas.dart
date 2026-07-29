@@ -4,11 +4,18 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../application/terrain/terrain_editing_controller.dart';
+
 class MapCanvas extends StatefulWidget {
   const MapCanvas({
     required this.mapWidth,
     required this.mapHeight,
     this.rawTileValues,
+    this.editingTool = TerrainEditingTool.select,
+    this.selectedTile,
+    this.onTileSelected,
+    this.onBrushStroke,
+    this.onRectangleFilled,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
     super.key,
@@ -20,6 +27,11 @@ class MapCanvas extends StatefulWidget {
   final int mapWidth;
   final int mapHeight;
   final List<int>? rawTileValues;
+  final TerrainEditingTool editingTool;
+  final TerrainTileCoordinate? selectedTile;
+  final ValueChanged<TerrainTileCoordinate>? onTileSelected;
+  final ValueChanged<List<TerrainTileCoordinate>>? onBrushStroke;
+  final ValueChanged<TerrainTileRegion>? onRectangleFilled;
   final double contentPadding;
   final double maximumTileExtent;
 
@@ -40,6 +52,10 @@ class _MapCanvasState extends State<MapCanvas> {
   int? _activePanPointer;
   Offset? _dragStartPosition;
   Offset? _dragStartPan;
+  int? _activeEditPointer;
+  TerrainTileCoordinate? _lastBrushTile;
+  TerrainTileCoordinate? _rectangleStart;
+  TerrainTileCoordinate? _rectangleEnd;
 
   @override
   void didUpdateWidget(MapCanvas oldWidget) {
@@ -47,6 +63,8 @@ class _MapCanvasState extends State<MapCanvas> {
     if (oldWidget.mapWidth != widget.mapWidth ||
         oldWidget.mapHeight != widget.mapHeight) {
       _resetCamera(notify: false);
+    } else if (oldWidget.editingTool != widget.editingTool) {
+      _cancelEditGesture(notify: false);
     }
   }
 
@@ -92,13 +110,16 @@ class _MapCanvasState extends State<MapCanvas> {
           final coordinate = _pointerPosition == null
               ? null
               : layout.coordinateAt(_pointerPosition!);
+          final rectanglePreview =
+              _rectangleStart == null || _rectangleEnd == null
+              ? null
+              : TerrainTileRegion.fromCorners(_rectangleStart!, _rectangleEnd!);
 
           return Focus(
             focusNode: _focusNode,
+            onKeyEvent: _handleKeyEvent,
             child: MouseRegion(
-              cursor: _activePanPointer == null
-                  ? SystemMouseCursors.precise
-                  : SystemMouseCursors.grabbing,
+              cursor: _cursor,
               onHover: (event) => _updatePointerPosition(event.localPosition),
               onExit: (_) {
                 if (_activePanPointer == null) {
@@ -108,16 +129,19 @@ class _MapCanvasState extends State<MapCanvas> {
               child: Listener(
                 key: const Key('map-canvas-input'),
                 behavior: HitTestBehavior.opaque,
-                onPointerDown: (event) => _startPan(event, layout),
-                onPointerMove: (event) => _updatePan(event),
-                onPointerUp: _stopPan,
-                onPointerCancel: _stopPan,
+                onPointerDown: (event) => _startInteraction(event, layout),
+                onPointerMove: (event) => _updateInteraction(event, layout),
+                onPointerUp: (event) =>
+                    _stopInteraction(event, cancelled: false),
+                onPointerCancel: (event) =>
+                    _stopInteraction(event, cancelled: true),
                 onPointerSignal: (event) => _handlePointerSignal(event, layout),
                 child: Semantics(
                   label:
                       'Map canvas, ${widget.mapWidth} by '
                       '${widget.mapHeight} tiles, '
                       '${terrainValues == null ? 'geometry preview' : 'terrain preview'}, '
+                      '${widget.editingTool.name} tool, '
                       '${(_zoom * 100).round()} percent zoom',
                   child: Stack(
                     clipBehavior: Clip.hardEdge,
@@ -130,6 +154,8 @@ class _MapCanvasState extends State<MapCanvas> {
                             painter: MapCanvasPainter(
                               layout: layout,
                               rawTileValues: terrainValues,
+                              selectedTile: widget.selectedTile,
+                              rectanglePreview: rectanglePreview,
                             ),
                           ),
                         ),
@@ -264,7 +290,18 @@ class _MapCanvasState extends State<MapCanvas> {
     });
   }
 
-  void _startPan(PointerDownEvent event, MapCanvasLayout layout) {
+  MouseCursor get _cursor {
+    if (_activePanPointer != null) {
+      return SystemMouseCursors.grabbing;
+    }
+    return switch (widget.editingTool) {
+      TerrainEditingTool.select => SystemMouseCursors.precise,
+      TerrainEditingTool.brush => SystemMouseCursors.click,
+      TerrainEditingTool.rectangle => SystemMouseCursors.precise,
+    };
+  }
+
+  void _startInteraction(PointerDownEvent event, MapCanvasLayout layout) {
     _focusNode.requestFocus();
     _updatePointerPosition(event.localPosition);
 
@@ -273,6 +310,9 @@ class _MapCanvasState extends State<MapCanvas> {
         event.buttons & kPrimaryMouseButton != 0 &&
         HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space);
     if (!isMiddleButton && !isSpacePrimary) {
+      if (event.buttons & kPrimaryMouseButton != 0) {
+        _startEditGesture(event, layout);
+      }
       return;
     }
 
@@ -283,31 +323,145 @@ class _MapCanvasState extends State<MapCanvas> {
     });
   }
 
-  void _updatePan(PointerMoveEvent event) {
-    if (_activePanPointer != event.pointer ||
-        _dragStartPosition == null ||
-        _dragStartPan == null) {
+  void _startEditGesture(PointerDownEvent event, MapCanvasLayout layout) {
+    final coordinate = layout.coordinateAt(event.localPosition);
+    if (coordinate == null) {
+      return;
+    }
+    final tile = TerrainTileCoordinate(
+      x: coordinate.tileX,
+      y: coordinate.tileY,
+    );
+
+    switch (widget.editingTool) {
+      case TerrainEditingTool.select:
+        widget.onTileSelected?.call(tile);
+      case TerrainEditingTool.brush:
+        final onBrushStroke = widget.onBrushStroke;
+        if (onBrushStroke == null) {
+          return;
+        }
+        setState(() {
+          _activeEditPointer = event.pointer;
+          _lastBrushTile = tile;
+        });
+        onBrushStroke([tile]);
+      case TerrainEditingTool.rectangle:
+        if (widget.onRectangleFilled == null) {
+          return;
+        }
+        setState(() {
+          _activeEditPointer = event.pointer;
+          _rectangleStart = tile;
+          _rectangleEnd = tile;
+        });
+    }
+  }
+
+  void _updateInteraction(PointerMoveEvent event, MapCanvasLayout layout) {
+    if (_activePanPointer == event.pointer &&
+        _dragStartPosition != null &&
+        _dragStartPan != null) {
+      setState(() {
+        _requestedPan =
+            _dragStartPan! + event.localPosition - _dragStartPosition!;
+        _pointerPosition = event.localPosition;
+      });
+      return;
+    }
+
+    if (_activeEditPointer != event.pointer) {
       _updatePointerPosition(event.localPosition);
       return;
     }
 
-    setState(() {
-      _requestedPan =
-          _dragStartPan! + event.localPosition - _dragStartPosition!;
-      _pointerPosition = event.localPosition;
-    });
-  }
-
-  void _stopPan(PointerEvent event) {
-    if (_activePanPointer != event.pointer) {
+    final coordinate = layout.coordinateAt(event.localPosition);
+    if (coordinate == null) {
+      _updatePointerPosition(event.localPosition);
       return;
     }
-    setState(() {
-      _activePanPointer = null;
-      _dragStartPosition = null;
-      _dragStartPan = null;
-      _pointerPosition = event.localPosition;
-    });
+    final tile = TerrainTileCoordinate(
+      x: coordinate.tileX,
+      y: coordinate.tileY,
+    );
+
+    switch (widget.editingTool) {
+      case TerrainEditingTool.select:
+        _updatePointerPosition(event.localPosition);
+      case TerrainEditingTool.brush:
+        final previous = _lastBrushTile;
+        if (previous == null || previous == tile) {
+          _updatePointerPosition(event.localPosition);
+          return;
+        }
+        setState(() {
+          _lastBrushTile = tile;
+          _pointerPosition = event.localPosition;
+        });
+        widget.onBrushStroke?.call(_tileLine(previous, tile).skip(1).toList());
+      case TerrainEditingTool.rectangle:
+        if (_rectangleEnd == tile) {
+          _updatePointerPosition(event.localPosition);
+          return;
+        }
+        setState(() {
+          _rectangleEnd = tile;
+          _pointerPosition = event.localPosition;
+        });
+    }
+  }
+
+  void _stopInteraction(PointerEvent event, {required bool cancelled}) {
+    if (_activePanPointer == event.pointer) {
+      setState(() {
+        _activePanPointer = null;
+        _dragStartPosition = null;
+        _dragStartPan = null;
+        _pointerPosition = event.localPosition;
+      });
+      return;
+    }
+
+    if (_activeEditPointer != event.pointer) {
+      return;
+    }
+    final start = _rectangleStart;
+    final end = _rectangleEnd;
+    if (!cancelled &&
+        widget.editingTool == TerrainEditingTool.rectangle &&
+        start != null &&
+        end != null) {
+      widget.onRectangleFilled?.call(TerrainTileRegion.fromCorners(start, end));
+    }
+    _cancelEditGesture(pointerPosition: event.localPosition);
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _activeEditPointer != null) {
+      _cancelEditGesture();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _cancelEditGesture({bool notify = true, Offset? pointerPosition}) {
+    void cancel() {
+      _activeEditPointer = null;
+      _lastBrushTile = null;
+      _rectangleStart = null;
+      _rectangleEnd = null;
+      if (pointerPosition != null) {
+        _pointerPosition = pointerPosition;
+      }
+    }
+
+    if (notify && mounted) {
+      setState(cancel);
+    } else {
+      cancel();
+    }
   }
 
   void _updatePointerPosition(Offset? position) {
@@ -327,6 +481,10 @@ class _MapCanvasState extends State<MapCanvas> {
       _activePanPointer = null;
       _dragStartPosition = null;
       _dragStartPan = null;
+      _activeEditPointer = null;
+      _lastBrushTile = null;
+      _rectangleStart = null;
+      _rectangleEnd = null;
     }
 
     if (notify) {
@@ -541,11 +699,15 @@ class MapCanvasVisibleTiles {
 }
 
 class MapCanvasPainter extends CustomPainter {
-  MapCanvasPainter({required this.layout, required this.rawTileValues})
-    : assert(
-        rawTileValues == null ||
-            rawTileValues.length == layout.mapWidth * layout.mapHeight,
-      );
+  MapCanvasPainter({
+    required this.layout,
+    required this.rawTileValues,
+    this.selectedTile,
+    this.rectanglePreview,
+  }) : assert(
+         rawTileValues == null ||
+             rawTileValues.length == layout.mapWidth * layout.mapHeight,
+       );
 
   static const viewportBackground = Color(0xFF0C1016);
   static const mapBackground = Color(0xFF17202A);
@@ -574,6 +736,8 @@ class MapCanvasPainter extends CustomPainter {
 
   final MapCanvasLayout layout;
   final List<int>? rawTileValues;
+  final TerrainTileCoordinate? selectedTile;
+  final TerrainTileRegion? rectanglePreview;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -585,6 +749,7 @@ class MapCanvasPainter extends CustomPainter {
     canvas.drawRect(mapRect, Paint()..color = mapBackground);
     _paintTerrain(canvas);
     _paintGrid(canvas);
+    _paintEditOverlay(canvas);
     canvas.drawRect(
       mapRect,
       Paint()
@@ -653,6 +818,48 @@ class MapCanvasPainter extends CustomPainter {
     }
   }
 
+  void _paintEditOverlay(Canvas canvas) {
+    final selected = selectedTile;
+    if (selected != null &&
+        selected.x >= 0 &&
+        selected.x < layout.mapWidth &&
+        selected.y >= 0 &&
+        selected.y < layout.mapHeight) {
+      canvas.drawRect(
+        _tileRect(selected.x, selected.y),
+        Paint()
+          ..color = const Color(0xFFF6C85F)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+
+    final region = rectanglePreview;
+    if (region != null) {
+      final rect = Rect.fromLTRB(
+        layout.mapRect.left + region.left * layout.tileExtent,
+        layout.mapRect.top + region.top * layout.tileExtent,
+        layout.mapRect.left + (region.right + 1) * layout.tileExtent,
+        layout.mapRect.top + (region.bottom + 1) * layout.tileExtent,
+      );
+      canvas.drawRect(rect, Paint()..color = const Color(0x3370A1FF));
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = const Color(0xFF9EBEFF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+    }
+  }
+
+  Rect _tileRect(int x, int y) => Rect.fromLTWH(
+    layout.mapRect.left + x * layout.tileExtent,
+    layout.mapRect.top + y * layout.tileExtent,
+    layout.tileExtent,
+    layout.tileExtent,
+  );
+
   @override
   bool shouldRepaint(covariant MapCanvasPainter oldDelegate) {
     return oldDelegate.layout.viewportSize != layout.viewportSize ||
@@ -661,7 +868,12 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.layout.mapRect != layout.mapRect ||
         oldDelegate.layout.tileExtent != layout.tileExtent ||
         oldDelegate.layout.gridStep != layout.gridStep ||
-        !identical(oldDelegate.rawTileValues, rawTileValues);
+        !identical(oldDelegate.rawTileValues, rawTileValues) ||
+        oldDelegate.selectedTile != selectedTile ||
+        oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
+        oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
+        oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||
+        oldDelegate.rectanglePreview?.bottom != rectanglePreview?.bottom;
   }
 }
 
@@ -898,4 +1110,33 @@ int _firstMultipleAtOrAfter(int value, int step) {
 int _paletteIndex(int rawValue) {
   return (rawValue ^ (rawValue >> 4) ^ (rawValue >> 8)) &
       (MapCanvasPainter._tilePalette.length - 1);
+}
+
+Iterable<TerrainTileCoordinate> _tileLine(
+  TerrainTileCoordinate start,
+  TerrainTileCoordinate end,
+) sync* {
+  var x = start.x;
+  var y = start.y;
+  final deltaX = (end.x - start.x).abs();
+  final stepX = start.x < end.x ? 1 : -1;
+  final deltaY = -(end.y - start.y).abs();
+  final stepY = start.y < end.y ? 1 : -1;
+  var error = deltaX + deltaY;
+
+  while (true) {
+    yield TerrainTileCoordinate(x: x, y: y);
+    if (x == end.x && y == end.y) {
+      return;
+    }
+    final doubledError = error * 2;
+    if (doubledError >= deltaY) {
+      error += deltaY;
+      x += stepX;
+    }
+    if (doubledError <= deltaX) {
+      error += deltaX;
+      y += stepY;
+    }
+  }
 }

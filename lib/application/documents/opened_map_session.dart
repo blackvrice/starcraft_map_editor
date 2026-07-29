@@ -26,6 +26,8 @@ class OpenedMapSession {
 
   int get scenarioChkSizeBytes => extractedMap.scenarioChkBytes.length;
 
+  bool get isDirty => rawDocument.isDirty;
+
   bool get requiresRestrictedEditing =>
       diagnostics.any((diagnostic) => diagnostic.blocksOperation);
 }

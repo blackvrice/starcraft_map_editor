@@ -16,6 +16,7 @@ import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../application/settings/starcraft_data_asset_settings_controller.dart';
+import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../map_canvas/map_canvas.dart';
@@ -33,6 +34,7 @@ class EditorShell extends StatefulWidget {
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
+    required this.terrainEditingController,
     super.key,
   });
 
@@ -45,6 +47,7 @@ class EditorShell extends StatefulWidget {
   final RecentProjectsService recentProjectsService;
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
+  final TerrainEditingController terrainEditingController;
 
   @override
   State<EditorShell> createState() => _EditorShellState();
@@ -58,6 +61,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<EudSourceState> _eudSourceSubscription;
   late StreamSubscription<StarCraftDataAssetSettingsState>
   _starCraftDataAssetSettingsSubscription;
+  late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
 
@@ -69,12 +73,18 @@ class _EditorShellState extends State<EditorShell> {
     _workspaceView = widget.eudSourceController.state.hasDocument
         ? _WorkspaceView.eud
         : _WorkspaceView.map;
+    widget.terrainEditingController.synchronizeSession(
+      widget.openMapController.state.session,
+    );
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
     _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
     _starCraftDataAssetSettingsSubscription = _listenForStarCraftDataAssets(
       widget.starCraftDataAssetSettingsController,
+    );
+    _terrainEditingSubscription = _listenForTerrainEditing(
+      widget.terrainEditingController,
     );
     unawaited(widget.starCraftDataAssetSettingsController.load());
   }
@@ -112,6 +122,15 @@ class _EditorShellState extends State<EditorShell> {
       );
       unawaited(widget.starCraftDataAssetSettingsController.load());
     }
+    if (oldWidget.terrainEditingController != widget.terrainEditingController) {
+      unawaited(_terrainEditingSubscription.cancel());
+      widget.terrainEditingController.synchronizeSession(
+        widget.openMapController.state.session,
+      );
+      _terrainEditingSubscription = _listenForTerrainEditing(
+        widget.terrainEditingController,
+      );
+    }
   }
 
   StreamSubscription<OpenMapState> _listenForOpenedMaps(
@@ -125,6 +144,7 @@ class _EditorShellState extends State<EditorShell> {
             _workspaceView = _WorkspaceView.map;
             _recentProjects = widget.recentProjectsService.load();
           }
+          widget.terrainEditingController.synchronizeSession(state.session);
         });
       }
     });
@@ -182,6 +202,16 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<TerrainEditingState> _listenForTerrainEditing(
+    TerrainEditingController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
@@ -189,6 +219,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_eudBuildSubscription.cancel());
     unawaited(_eudSourceSubscription.cancel());
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
+    unawaited(_terrainEditingSubscription.cancel());
     super.dispose();
   }
 
@@ -358,6 +389,8 @@ class _EditorShellState extends State<EditorShell> {
                                 : null,
                             onRemoveRecentProject: _removeRecentProject,
                             eudSourceController: widget.eudSourceController,
+                            terrainEditingController:
+                                widget.terrainEditingController,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
                             onShowEud: _showEudWorkspace,
@@ -682,6 +715,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onOpenRecentProject,
     required this.onRemoveRecentProject,
     required this.eudSourceController,
+    required this.terrainEditingController,
     required this.workspaceView,
     required this.onShowMap,
     required this.onShowEud,
@@ -695,6 +729,7 @@ class _EditorWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject>? onOpenRecentProject;
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
+  final TerrainEditingController terrainEditingController;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
@@ -748,6 +783,7 @@ class _EditorWorkspace extends StatelessWidget {
                   onOpenRecentProject: onOpenRecentProject,
                   onRemoveRecentProject: onRemoveRecentProject,
                   eudSourceController: eudSourceController,
+                  terrainEditingController: terrainEditingController,
                   workspaceView: workspaceView,
                 ),
               ),
@@ -803,6 +839,7 @@ class _DocumentTabs extends StatelessWidget {
               _DocumentTab(
                 key: const Key('map-document-tab'),
                 label: _fileName(session.sourcePath),
+                dirty: session.isDirty,
                 icon: Icons.map_outlined,
                 selected: workspaceView == _WorkspaceView.map,
                 onPressed: onShowMap,
@@ -810,7 +847,8 @@ class _DocumentTabs extends StatelessWidget {
             if (document != null)
               _DocumentTab(
                 key: const Key('eud-source-tab'),
-                label: '${document.fileName}${document.isDirty ? ' •' : ''}',
+                label: document.fileName,
+                dirty: document.isDirty,
                 icon: Icons.code_rounded,
                 selected: workspaceView == _WorkspaceView.eud,
                 onPressed: onShowEud,
@@ -828,6 +866,7 @@ class _DocumentTab extends StatelessWidget {
     required this.icon,
     required this.selected,
     required this.onPressed,
+    this.dirty = false,
     super.key,
   });
 
@@ -835,6 +874,7 @@ class _DocumentTab extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onPressed;
+  final bool dirty;
 
   @override
   Widget build(BuildContext context) {
@@ -866,7 +906,7 @@ class _DocumentTab extends StatelessWidget {
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  label,
+                  '$label${dirty ? ' •' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1017,6 +1057,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.onOpenRecentProject,
     required this.onRemoveRecentProject,
     required this.eudSourceController,
+    required this.terrainEditingController,
     required this.workspaceView,
   });
 
@@ -1028,6 +1069,7 @@ class _MapWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject>? onOpenRecentProject;
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
+  final TerrainEditingController terrainEditingController;
   final _WorkspaceView workspaceView;
 
   @override
@@ -1044,6 +1086,7 @@ class _MapWorkspace extends StatelessWidget {
       return _OpenedMapWorkspace(
         session: session,
         diagnostics: session.diagnostics,
+        terrainEditingController: terrainEditingController,
       );
     }
 
@@ -1130,10 +1173,15 @@ class _MapWorkspace extends StatelessWidget {
 }
 
 class _OpenedMapWorkspace extends StatelessWidget {
-  const _OpenedMapWorkspace({required this.session, required this.diagnostics});
+  const _OpenedMapWorkspace({
+    required this.session,
+    required this.diagnostics,
+    required this.terrainEditingController,
+  });
 
   final OpenedMapSession session;
   final List<EditorDiagnostic> diagnostics;
+  final TerrainEditingController terrainEditingController;
 
   @override
   Widget build(BuildContext context) {
@@ -1155,6 +1203,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
             terrain.height == dimensions.height
         ? terrain.rawTileValues
         : null;
+    final editingState = terrainEditingController.state;
+    final canSelectTiles = terrainEditingController.canSelectTiles;
+    final canEditTerrain = terrainEditingController.canEditTerrain;
     final warningCount = diagnostics
         .where(
           (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
@@ -1202,6 +1253,8 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     const SizedBox(width: 10),
                     _SessionStatusChip(
                       restricted: session.requiresRestrictedEditing,
+                      editable: canEditTerrain,
+                      dirty: session.isDirty,
                     ),
                   ],
                 ),
@@ -1246,6 +1299,13 @@ class _OpenedMapWorkspace extends StatelessWidget {
                       ),
                   ],
                 ),
+                const SizedBox(height: 9),
+                _TerrainEditingToolbar(
+                  state: editingState,
+                  canSelectTiles: canSelectTiles,
+                  canEditTerrain: canEditTerrain,
+                  onToolSelected: terrainEditingController.setTool,
+                ),
               ],
             ),
           ),
@@ -1261,6 +1321,19 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     mapWidth: dimensions.width,
                     mapHeight: dimensions.height,
                     rawTileValues: rawTileValues,
+                    editingTool: editingState.tool,
+                    selectedTile: editingState.selectedTile,
+                    onTileSelected: canSelectTiles
+                        ? terrainEditingController.selectTileAt
+                        : null,
+                    onBrushStroke:
+                        canEditTerrain && editingState.hasSelectedTile
+                        ? terrainEditingController.paintTiles
+                        : null,
+                    onRectangleFilled:
+                        canEditTerrain && editingState.hasSelectedTile
+                        ? terrainEditingController.fillRectangle
+                        : null,
                   ),
           ),
         ],
@@ -1305,6 +1378,116 @@ class _MapCanvasMetadata extends StatelessWidget {
   }
 }
 
+class _TerrainEditingToolbar extends StatelessWidget {
+  const _TerrainEditingToolbar({
+    required this.state,
+    required this.canSelectTiles,
+    required this.canEditTerrain,
+    required this.onToolSelected,
+  });
+
+  final TerrainEditingState state;
+  final bool canSelectTiles;
+  final bool canEditTerrain;
+  final ValueChanged<TerrainEditingTool> onToolSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSelectedTile = state.hasSelectedTile;
+    final selection = state.selectedTile;
+    final selectedLabel = state.selectedRawTileValue == null
+        ? 'Select a source tile'
+        : 'Raw tile ${state.selectedRawTileValue}'
+              '${selection == null ? '' : ' from ${selection.x},${selection.y}'}';
+
+    return Wrap(
+      key: const Key('terrain-editing-toolbar'),
+      spacing: 7,
+      runSpacing: 7,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _TerrainToolButton(
+          key: const Key('terrain-tool-select'),
+          label: 'Select tile',
+          icon: Icons.colorize_rounded,
+          selected: state.tool == TerrainEditingTool.select,
+          enabled: canSelectTiles,
+          onPressed: () => onToolSelected(TerrainEditingTool.select),
+        ),
+        _TerrainToolButton(
+          key: const Key('terrain-tool-brush'),
+          label: 'Brush',
+          icon: Icons.brush_rounded,
+          selected: state.tool == TerrainEditingTool.brush,
+          enabled: canEditTerrain && hasSelectedTile,
+          onPressed: () => onToolSelected(TerrainEditingTool.brush),
+        ),
+        _TerrainToolButton(
+          key: const Key('terrain-tool-rectangle'),
+          label: 'Rectangle',
+          icon: Icons.crop_square_rounded,
+          selected: state.tool == TerrainEditingTool.rectangle,
+          enabled: canEditTerrain && hasSelectedTile,
+          onPressed: () => onToolSelected(TerrainEditingTool.rectangle),
+        ),
+        _MapCanvasMetadata(
+          key: const Key('terrain-selected-tile'),
+          icon: hasSelectedTile
+              ? Icons.texture_rounded
+              : Icons.info_outline_rounded,
+          value: selectedLabel,
+        ),
+        const _MapCanvasMetadata(
+          key: Key('terrain-editing-scope'),
+          icon: Icons.shield_outlined,
+          value: 'MTXM only · TILE/ISOM preserved',
+        ),
+      ],
+    );
+  }
+}
+
+class _TerrainToolButton extends StatelessWidget {
+  const _TerrainToolButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.enabled,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 28,
+      child: OutlinedButton.icon(
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(icon, size: 14),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: selected
+              ? const Color(0xFFE8F0FF)
+              : const Color(0xFFB8C4D8),
+          backgroundColor: selected ? const Color(0xFF29466F) : null,
+          side: BorderSide(
+            color: selected ? const Color(0xFF70A1FF) : const Color(0xFF3A465A),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          textStyle: const TextStyle(fontSize: 10),
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
+    );
+  }
+}
+
 class _MapCanvasUnavailable extends StatelessWidget {
   const _MapCanvasUnavailable();
 
@@ -1324,15 +1507,25 @@ class _MapCanvasUnavailable extends StatelessWidget {
 }
 
 class _SessionStatusChip extends StatelessWidget {
-  const _SessionStatusChip({required this.restricted});
+  const _SessionStatusChip({
+    required this.restricted,
+    required this.editable,
+    required this.dirty,
+  });
 
   final bool restricted;
+  final bool editable;
+  final bool dirty;
 
   @override
   Widget build(BuildContext context) {
     final color = restricted
         ? const Color(0xFFFFB454)
-        : const Color(0xFF68D391);
+        : dirty
+        ? const Color(0xFFF6C85F)
+        : editable
+        ? const Color(0xFF68D391)
+        : const Color(0xFF91ACD8);
     return Container(
       key: const Key('opened-map-mode'),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1342,7 +1535,13 @@ class _SessionStatusChip extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
       child: Text(
-        restricted ? 'Restricted' : 'Read-only preview',
+        restricted
+            ? 'Restricted'
+            : dirty
+            ? 'Modified'
+            : editable
+            ? 'Editable'
+            : 'Read-only preview',
         style: TextStyle(
           color: color,
           fontSize: 12,
@@ -2102,7 +2301,8 @@ class _StatusBar extends StatelessWidget {
                           '${eudDocument.isDirty ? ' • Modified' : ' • Clean'}'
                     : session == null
                     ? 'No document'
-                    : _fileName(session.sourcePath),
+                    : '${_fileName(session.sourcePath)}'
+                          '${session.isDirty ? ' • Modified' : ' • Clean'}',
                 key: const Key('active-document-status'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

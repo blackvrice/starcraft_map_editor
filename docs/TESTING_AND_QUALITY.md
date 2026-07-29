@@ -214,6 +214,14 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 화면 컨트롤 확대/Fit 복귀와 포인터 중심 휠 확대의 좌표 고정
 - `Space`+좌클릭 및 중간 버튼 드래그 이동과 viewport 가장자리 제한
 - 포인터 hover의 0기준 타일 좌표·32픽셀 기준 맵 좌표 및 맵 밖 상태 표시
+- raw 타일 선택, 선택 전 Brush/Rectangle 비활성, 선택 좌표 강조
+- 빠른 Brush 드래그의 정수 선분 보간과 Rectangle 포함 영역 미리보기·적용
+- `Escape` Rectangle 취소와 카메라/선택 상태의 비-dirty 처리
+- 중복·비격자 `MTXM`, 차단 진단, euddraft 보호 마커의 편집 차단
+- Brush/Rectangle 변경 시 대상 `MTXM`만 dirty이고 `TILE`/`ISOM`/미지원
+  섹션의 payload와 순서가 동일함
+- 편집 세션을 Save As하면 변경 `MTXM` 바이트가 재열기 검증을 통과하고
+  검증된 출력 세션이 clean으로 채택되며 입력 아카이브 snapshot은 동일함
 
 ### StarCraft 데이터 자산
 

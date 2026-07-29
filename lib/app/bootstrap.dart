@@ -9,6 +9,7 @@ import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
+import '../application/terrain/terrain_editing_controller.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
 import '../infrastructure/assets/process_starcraft_data_asset_inspector.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
@@ -57,6 +58,9 @@ void bootstrap() {
     recentProjectsService: recentProjectsService,
     operationProgressController: operationProgressController,
   );
+  final terrainEditingController = TerrainEditingController(
+    openMapController: openMapController,
+  );
   final saveMapController = SaveMapController(
     archiveGateway: archiveGateway,
     filePicker: filePicker,
@@ -93,6 +97,7 @@ void bootstrap() {
     recentProjectsService: recentProjectsService,
     settingsStore: settingsStore,
     starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
+    terrainEditingController: terrainEditingController,
   );
 
   runApp(StarCraftMapEditorApp(dependencies: dependencies));

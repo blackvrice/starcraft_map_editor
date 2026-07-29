@@ -211,8 +211,12 @@ little-endian 값으로 투영한다.
 - `TILE`, 정상 `ISOM`, eudplib의 terminal `ISOM` 보호 마커는 이 뷰가
   해석하거나 수정하지 않는다.
 
-지형 편집 UI는 `MTXM` 한 섹션만 수정했을 때 게임과 다른 에디터가
-`TILE`/정상 `ISOM`을 어떻게 취급하는지 확인한 뒤 활성화한다.
+기본 지형 편집 UI는 정확히 하나의 유효한 격자형 `MTXM`을 게임 지형으로
+수정한다. Chkdraft의 MappingCore에서 Game scope가 `MTXM`, Editor scope가
+`TILE`을 별도 배열로 변경하는 동작을 확인했으므로, 현재 앱은 `TILE`과 정상
+`ISOM`을 동기화했다고 추측하지 않고 byte-exact 보존한다. UI에도
+`MTXM only · TILE/ISOM preserved`를 표시한다. 외부 에디터 표현까지 안전하게
+동기화하는 기능은 ISOM 재생성 규칙과 실제 상호 운용 왕복을 검증한 뒤 추가한다.
 
 ### 4단계: 객체
 

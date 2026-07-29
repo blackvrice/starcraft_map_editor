@@ -201,6 +201,20 @@ StarCraft 맵 픽셀 좌표로 역변환한다. StarCraft 실제 타일 이미�
 자산 검사 결과를 입력으로 받는 후속 로더가 준비될 때 대체 색상 렌더러를
 교체한다.
 
+`TerrainEditingController`는 Presentation과 raw CHK 사이의 Application
+경계다. 선택한 raw 타일 값과 Select/Brush/Rectangle 도구 상태를 관리하고,
+정확히 하나의 유효한 격자형 `MTXM`에만 편집을 적용한다. 차단 진단,
+중복·비격자 `MTXM`, euddraft 보호 마커가 있으면 쓰기 콜백을 제공하지 않는다.
+브러시는 드래그 사이의 타일 선분을 채우고 사각형은 정규화한 포함 영역을
+일괄 변경한다. 컨트롤러는 변경된 raw 섹션으로 terrain view를 다시 검증한 뒤
+현재 `OpenedMapSession`을 교체하므로 캔버스와 Save As가 같은 문서를 본다.
+
+현재 편집 명령은 `MTXM`만 변경하며 `TILE`과 `ISOM`은 raw byte 그대로
+유지한다. 이 두 표현은 외부 에디터용 지형 상태와 연관되므로, 검증되지 않은
+동기화나 재생성을 시도하지 않고 UI에 `MTXM only` 경계를 표시한다. 타일
+선택과 사각형 미리보기는 세션 dirty 상태에 포함하지 않는다. 편집 이벤트의
+명령 병합과 Undo/Redo는 다음 M5 작업에서 이 컨트롤러 뒤에 추가한다.
+
 ### StarCraft 데이터 자산 설정
 
 `StarCraftDataAssetManifest`는 Badlands, Space Platform, Installation,
