@@ -337,7 +337,11 @@ void main() {
     expect(find.byKey(const Key('opened-map-name')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas-visible-region')), findsOneWidget);
+    expect(find.byKey(const Key('map-canvas-coordinate')), findsOneWidget);
+    expect(find.byKey(const Key('map-canvas-zoom-level')), findsOneWidget);
     expect(find.text('Raw MTXM preview'), findsOneWidget);
+    expect(find.text('Tile — · Pixel —'), findsOneWidget);
+    expect(find.text('Wheel zoom · Space/middle drag'), findsOneWidget);
     expect(find.text('Arena.scx'), findsWidgets);
     expect(
       find.descendant(

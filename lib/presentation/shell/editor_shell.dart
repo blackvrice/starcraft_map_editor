@@ -1126,6 +1126,11 @@ class _OpenedMapWorkspace extends StatelessWidget {
                           ? 'Geometry preview'
                           : '${rawTileValues.length} MTXM tiles',
                     ),
+                    const _MapCanvasMetadata(
+                      key: Key('map-canvas-navigation-help'),
+                      icon: Icons.pan_tool_alt_rounded,
+                      value: 'Wheel zoom · Space/middle drag',
+                    ),
                     if (blockingCount > 0 || warningCount > 0)
                       _MapCanvasMetadata(
                         icon: Icons.report_problem_outlined,
@@ -1145,6 +1150,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     dimensions.height == 0
                 ? const _MapCanvasUnavailable()
                 : MapCanvas(
+                    key: ValueKey('map-canvas:${session.sourcePath}'),
                     mapWidth: dimensions.width,
                     mapHeight: dimensions.height,
                     rawTileValues: rawTileValues,

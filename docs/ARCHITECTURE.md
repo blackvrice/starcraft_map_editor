@@ -188,13 +188,17 @@ SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint�
 ### MapCanvas
 
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
-fit-to-view 변환, 화면상의 맵 경계, 가시 타일 범위와 격자 간격을 계산한다.
+fit-to-view 기준 타일 크기, 카메라 배율·이동, 화면상의 맵 경계, 가시 타일
+범위와 격자 간격을 계산한다.
 `MapCanvasPainter`는 viewport를 clip하고 가시 `MTXM` 타일만 원시 값 기반
 대체 색상으로 그린 뒤 적응형 격자와 명확한 맵 외곽선을 겹친다.
 
-현재 카메라는 전체 맵을 맞추는 고정 상태다. 확대/이동 입력은 다음 단계에서
-레이아웃 입력으로 추가하며, StarCraft 실제 타일 이미지는 데이터 자산 경로와
-누락 진단이 구현될 때 대체 색상 렌더러를 교체한다.
+`MapCanvas`의 카메라 상태는 Presentation에만 존재하며 맵 문서의 Undo/Redo나
+dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌표를 고정하고,
+`Space`+좌클릭과 중간 버튼 이동은 확대된 맵을 viewport 가장자리 안에서
+제한한다. 레이아웃은 포인터 화면 위치를 0기준 타일 좌표와 타일당 32픽셀인
+StarCraft 맵 픽셀 좌표로 역변환한다. StarCraft 실제 타일 이미지는 데이터
+자산 경로와 누락 진단이 구현될 때 대체 색상 렌더러를 교체한다.
 
 ## 6. 명령과 Undo/Redo
 

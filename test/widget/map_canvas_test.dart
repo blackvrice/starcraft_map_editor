@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 
@@ -32,6 +34,8 @@ void main() {
     expect(find.text('Visible 0,0–4,2'), findsOneWidget);
     expect(find.text('Grid 1 tile'), findsOneWidget);
     expect(find.text('Raw MTXM preview'), findsOneWidget);
+    expect(find.text('Tile — · Pixel —'), findsOneWidget);
+    expect(find.text('100%'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     final customPaint = tester.widget<CustomPaint>(
@@ -67,6 +71,227 @@ void main() {
     expect(painter.rawTileValues, isNull);
   });
 
+  testWidgets('zooms from controls and returns to fit', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 400,
+          height: 300,
+          child: MapCanvas(mapWidth: 256, mapHeight: 256),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+    await tester.pump();
+
+    expect(find.text('125%'), findsOneWidget);
+    var painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.layout.zoom, 1.25);
+    expect(painter.layout.visibleTiles.bottomExclusive, lessThan(256));
+
+    await tester.tap(find.byKey(const Key('map-canvas-fit')));
+    await tester.pump();
+
+    expect(find.text('100%'), findsOneWidget);
+    painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.layout.zoom, 1);
+    expect(painter.layout.panOffset, Offset.zero);
+    expect(painter.layout.visibleTiles.rightExclusive, 256);
+  });
+
+  testWidgets('wheel zoom keeps the map coordinate under the pointer', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(300, 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 300,
+          height: 300,
+          child: MapCanvas(mapWidth: 64, mapHeight: 64),
+        ),
+      ),
+    );
+
+    final canvasTopLeft = tester.getTopLeft(
+      find.byKey(const Key('map-canvas')),
+    );
+    final focalPoint = canvasTopLeft + const Offset(90, 100);
+    var painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final before = painter.layout.coordinateAt(focalPoint - canvasTopLeft)!;
+
+    await tester.sendEventToBinding(
+      PointerScrollEvent(
+        position: focalPoint,
+        scrollDelta: const Offset(0, -20),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('125%'), findsOneWidget);
+    painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final after = painter.layout.coordinateAt(focalPoint - canvasTopLeft)!;
+    expect(after.tileX, before.tileX);
+    expect(after.tileY, before.tileY);
+    expect(after.pixelX, before.pixelX);
+    expect(after.pixelY, before.pixelY);
+  });
+
+  testWidgets('space drag pans a zoomed map', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SizedBox(
+          width: 400,
+          height: 300,
+          child: MapCanvas(mapWidth: 256, mapHeight: 256),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+    await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+    await tester.pump();
+
+    var painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final before = painter.layout.mapRect;
+    final center = tester.getCenter(find.byKey(const Key('map-canvas')));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+    final gesture = await tester.startGesture(
+      center,
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryMouseButton,
+    );
+    await gesture.moveBy(const Offset(30, 20));
+    await gesture.up();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+
+    painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.layout.mapRect.left, greaterThan(before.left));
+    expect(painter.layout.mapRect.top, greaterThan(before.top));
+  });
+
+  testWidgets('middle-button drag pans without a keyboard modifier', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(400, 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(home: MapCanvas(mapWidth: 256, mapHeight: 256)),
+    );
+    await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+    await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+    await tester.pump();
+
+    var painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final before = painter.layout.mapRect;
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const Key('map-canvas'))),
+      kind: PointerDeviceKind.mouse,
+      buttons: kMiddleMouseButton,
+    );
+    await gesture.moveBy(const Offset(-25, -15));
+    await gesture.up();
+    await tester.pump();
+
+    painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.layout.mapRect.left, lessThan(before.left));
+    expect(painter.layout.mapRect.top, lessThan(before.top));
+  });
+
+  testWidgets('hover reports zero-based tile and StarCraft pixel coordinates', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(480, 320);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: MapCanvas(mapWidth: 4, mapHeight: 2)),
+      ),
+    );
+
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    final canvasTopLeft = tester.getTopLeft(
+      find.byKey(const Key('map-canvas')),
+    );
+    final pointer =
+        canvasTopLeft +
+        painter.layout.mapRect.topLeft +
+        Offset(
+          painter.layout.tileExtent * 1.5,
+          painter.layout.tileExtent * 0.5,
+        );
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: canvasTopLeft);
+    await gesture.moveTo(pointer);
+    await tester.pump();
+
+    expect(find.text('Tile 1,0 · Pixel 48,16'), findsOneWidget);
+
+    await gesture.moveTo(canvasTopLeft + const Offset(4, 4));
+    await tester.pump();
+    expect(find.text('Tile — · Pixel —'), findsOneWidget);
+    await gesture.removePointer();
+  });
+
   test('fit layout centers a small map and caps tile extent', () {
     final layout = MapCanvasLayout.fit(
       viewportSize: const Size(400, 300),
@@ -98,6 +323,36 @@ void main() {
     expect(layout.gridStep, 16);
   });
 
+  test('view layout constrains pan and computes map coordinates', () {
+    final fitted = MapCanvasLayout.view(
+      viewportSize: const Size(200, 200),
+      mapWidth: 10,
+      mapHeight: 10,
+      panOffset: const Offset(100, -100),
+    );
+    expect(fitted.panOffset, Offset.zero);
+
+    final zoomed = MapCanvasLayout.view(
+      viewportSize: const Size(200, 200),
+      mapWidth: 10,
+      mapHeight: 10,
+      zoom: 2,
+      panOffset: const Offset(1000, -1000),
+    );
+    expect(zoomed.panOffset, const Offset(228, -228));
+    expect(zoomed.mapRect.left, 176);
+    expect(zoomed.mapRect.bottom, 24);
+
+    final coordinate = zoomed.coordinateAt(
+      zoomed.mapRect.topLeft + Offset(zoomed.tileExtent * 2.5, 10),
+    )!;
+    expect(coordinate.tileX, 2);
+    expect(coordinate.tileY, 0);
+    expect(coordinate.pixelX, 80);
+    expect(coordinate.pixelY, 10);
+    expect(zoomed.coordinateAt(const Offset(10, 100)), isNull);
+  });
+
   test('fit layout rejects invalid dimensions and viewport values', () {
     expect(
       () => MapCanvasLayout.fit(
@@ -123,6 +378,24 @@ void main() {
         contentPadding: -1,
       ),
       throwsRangeError,
+    );
+    expect(
+      () => MapCanvasLayout.view(
+        viewportSize: const Size(100, 100),
+        mapWidth: 1,
+        mapHeight: 1,
+        zoom: 0,
+      ),
+      throwsRangeError,
+    );
+    expect(
+      () => MapCanvasLayout.view(
+        viewportSize: const Size(100, 100),
+        mapWidth: 1,
+        mapHeight: 1,
+        panOffset: const Offset(double.infinity, 0),
+      ),
+      throwsArgumentError,
     );
   });
 

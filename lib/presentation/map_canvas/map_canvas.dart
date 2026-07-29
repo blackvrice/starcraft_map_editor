@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-class MapCanvas extends StatelessWidget {
+class MapCanvas extends StatefulWidget {
   const MapCanvas({
     required this.mapWidth,
     required this.mapHeight,
@@ -22,6 +24,39 @@ class MapCanvas extends StatelessWidget {
   final double maximumTileExtent;
 
   @override
+  State<MapCanvas> createState() => _MapCanvasState();
+}
+
+class _MapCanvasState extends State<MapCanvas> {
+  static const _minimumZoom = 0.25;
+  static const _maximumZoom = 32.0;
+  static const _zoomStep = 1.25;
+
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Map canvas');
+
+  double _zoom = 1;
+  Offset _requestedPan = Offset.zero;
+  Offset? _pointerPosition;
+  int? _activePanPointer;
+  Offset? _dragStartPosition;
+  Offset? _dragStartPan;
+
+  @override
+  void didUpdateWidget(MapCanvas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mapWidth != widget.mapWidth ||
+        oldWidget.mapHeight != widget.mapHeight) {
+      _resetCamera(notify: false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ColoredBox(
       key: const Key('map-canvas'),
@@ -39,81 +74,266 @@ class MapCanvas extends StatelessWidget {
             constraints.maxWidth,
             constraints.maxHeight,
           );
-          final layout = MapCanvasLayout.fit(
+          final layout = MapCanvasLayout.view(
             viewportSize: viewportSize,
-            mapWidth: mapWidth,
-            mapHeight: mapHeight,
-            contentPadding: contentPadding,
-            maximumTileExtent: maximumTileExtent,
+            mapWidth: widget.mapWidth,
+            mapHeight: widget.mapHeight,
+            zoom: _zoom,
+            panOffset: _requestedPan,
+            contentPadding: widget.contentPadding,
+            maximumTileExtent: widget.maximumTileExtent,
           );
-          final expectedTileCount = mapWidth * mapHeight;
+          final expectedTileCount = widget.mapWidth * widget.mapHeight;
           final terrainValues =
-              rawTileValues != null &&
-                  rawTileValues!.length == expectedTileCount
-              ? rawTileValues
+              widget.rawTileValues != null &&
+                  widget.rawTileValues!.length == expectedTileCount
+              ? widget.rawTileValues
               : null;
+          final coordinate = _pointerPosition == null
+              ? null
+              : layout.coordinateAt(_pointerPosition!);
 
-          return Semantics(
-            label:
-                'Map canvas, $mapWidth by $mapHeight tiles, '
-                '${terrainValues == null ? 'geometry preview' : 'terrain preview'}',
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                Positioned.fill(
-                  child: RepaintBoundary(
-                    key: const Key('map-canvas-repaint-boundary'),
-                    child: CustomPaint(
-                      key: const Key('map-canvas-paint'),
-                      painter: MapCanvasPainter(
-                        layout: layout,
-                        rawTileValues: terrainValues,
+          return Focus(
+            focusNode: _focusNode,
+            child: MouseRegion(
+              cursor: _activePanPointer == null
+                  ? SystemMouseCursors.precise
+                  : SystemMouseCursors.grabbing,
+              onHover: (event) => _updatePointerPosition(event.localPosition),
+              onExit: (_) {
+                if (_activePanPointer == null) {
+                  _updatePointerPosition(null);
+                }
+              },
+              child: Listener(
+                key: const Key('map-canvas-input'),
+                behavior: HitTestBehavior.opaque,
+                onPointerDown: (event) => _startPan(event, layout),
+                onPointerMove: (event) => _updatePan(event),
+                onPointerUp: _stopPan,
+                onPointerCancel: _stopPan,
+                onPointerSignal: (event) => _handlePointerSignal(event, layout),
+                child: Semantics(
+                  label:
+                      'Map canvas, ${widget.mapWidth} by '
+                      '${widget.mapHeight} tiles, '
+                      '${terrainValues == null ? 'geometry preview' : 'terrain preview'}, '
+                      '${(_zoom * 100).round()} percent zoom',
+                  child: Stack(
+                    clipBehavior: Clip.hardEdge,
+                    children: [
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          key: const Key('map-canvas-repaint-boundary'),
+                          child: CustomPaint(
+                            key: const Key('map-canvas-paint'),
+                            painter: MapCanvasPainter(
+                              layout: layout,
+                              rawTileValues: terrainValues,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        left: 12,
+                        top: 12,
+                        child: _CanvasBadge(
+                          key: const Key('map-canvas-visible-region'),
+                          icon: Icons.crop_free_rounded,
+                          label:
+                              'Visible '
+                              '${layout.visibleTiles.left},'
+                              '${layout.visibleTiles.top}–'
+                              '${layout.visibleTiles.rightExclusive},'
+                              '${layout.visibleTiles.bottomExclusive}',
+                        ),
+                      ),
+                      Positioned(
+                        right: 12,
+                        top: 12,
+                        child: _CanvasBadge(
+                          key: const Key('map-canvas-grid-scale'),
+                          icon: Icons.grid_4x4_rounded,
+                          label: 'Grid ${layout.gridStep} tile',
+                        ),
+                      ),
+                      Positioned(
+                        left: 12,
+                        bottom: 12,
+                        child: _CanvasBadge(
+                          key: const Key('map-canvas-render-mode'),
+                          icon: terrainValues == null
+                              ? Icons.border_all_rounded
+                              : Icons.texture_rounded,
+                          label: terrainValues == null
+                              ? 'Geometry only'
+                              : 'Raw MTXM preview',
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        left: 0,
+                        right: 0,
+                        child: Align(
+                          child: _CanvasBadge(
+                            key: const Key('map-canvas-coordinate'),
+                            icon: Icons.my_location_rounded,
+                            label: coordinate == null
+                                ? 'Tile — · Pixel —'
+                                : 'Tile ${coordinate.tileX},${coordinate.tileY}'
+                                      ' · Pixel ${coordinate.pixelX},'
+                                      '${coordinate.pixelY}',
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 12,
+                        bottom: 12,
+                        child: _CanvasZoomControls(
+                          zoom: _zoom,
+                          canZoomOut: _zoom > _minimumZoom,
+                          canZoomIn: _zoom < _maximumZoom,
+                          onZoomOut: () => _zoomAt(
+                            _zoom / _zoomStep,
+                            layout.viewportSize.center(Offset.zero),
+                            layout,
+                          ),
+                          onFit: () => _resetCamera(),
+                          onZoomIn: () => _zoomAt(
+                            _zoom * _zoomStep,
+                            layout.viewportSize.center(Offset.zero),
+                            layout,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: _CanvasBadge(
-                    key: const Key('map-canvas-visible-region'),
-                    icon: Icons.crop_free_rounded,
-                    label:
-                        'Visible '
-                        '${layout.visibleTiles.left},'
-                        '${layout.visibleTiles.top}–'
-                        '${layout.visibleTiles.rightExclusive},'
-                        '${layout.visibleTiles.bottomExclusive}',
-                  ),
-                ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: _CanvasBadge(
-                    key: const Key('map-canvas-grid-scale'),
-                    icon: Icons.grid_4x4_rounded,
-                    label: 'Grid ${layout.gridStep} tile',
-                  ),
-                ),
-                Positioned(
-                  left: 12,
-                  bottom: 12,
-                  child: _CanvasBadge(
-                    key: const Key('map-canvas-render-mode'),
-                    icon: terrainValues == null
-                        ? Icons.border_all_rounded
-                        : Icons.texture_rounded,
-                    label: terrainValues == null
-                        ? 'Geometry only'
-                        : 'Raw MTXM preview',
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },
       ),
     );
+  }
+
+  void _handlePointerSignal(PointerSignalEvent event, MapCanvasLayout layout) {
+    if (event is! PointerScrollEvent) {
+      return;
+    }
+
+    final scrollAmount = event.scrollDelta.dy != 0
+        ? event.scrollDelta.dy
+        : event.scrollDelta.dx;
+    if (scrollAmount == 0) {
+      return;
+    }
+
+    _zoomAt(
+      scrollAmount < 0 ? _zoom * _zoomStep : _zoom / _zoomStep,
+      event.localPosition,
+      layout,
+    );
+  }
+
+  void _zoomAt(
+    double requestedZoom,
+    Offset focalPoint,
+    MapCanvasLayout layout,
+  ) {
+    final zoom = requestedZoom.clamp(_minimumZoom, _maximumZoom).toDouble();
+    if (zoom == _zoom) {
+      return;
+    }
+
+    final tileX = (focalPoint.dx - layout.mapRect.left) / layout.tileExtent;
+    final tileY = (focalPoint.dy - layout.mapRect.top) / layout.tileExtent;
+    final tileExtent = layout.baseTileExtent * zoom;
+    final centeredLeft =
+        (layout.viewportSize.width - widget.mapWidth * tileExtent) / 2;
+    final centeredTop =
+        (layout.viewportSize.height - widget.mapHeight * tileExtent) / 2;
+
+    setState(() {
+      _zoom = zoom;
+      _requestedPan = Offset(
+        focalPoint.dx - tileX * tileExtent - centeredLeft,
+        focalPoint.dy - tileY * tileExtent - centeredTop,
+      );
+      _pointerPosition = focalPoint;
+    });
+  }
+
+  void _startPan(PointerDownEvent event, MapCanvasLayout layout) {
+    _focusNode.requestFocus();
+    _updatePointerPosition(event.localPosition);
+
+    final isMiddleButton = event.buttons & kMiddleMouseButton != 0;
+    final isSpacePrimary =
+        event.buttons & kPrimaryMouseButton != 0 &&
+        HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.space);
+    if (!isMiddleButton && !isSpacePrimary) {
+      return;
+    }
+
+    setState(() {
+      _activePanPointer = event.pointer;
+      _dragStartPosition = event.localPosition;
+      _dragStartPan = layout.panOffset;
+    });
+  }
+
+  void _updatePan(PointerMoveEvent event) {
+    if (_activePanPointer != event.pointer ||
+        _dragStartPosition == null ||
+        _dragStartPan == null) {
+      _updatePointerPosition(event.localPosition);
+      return;
+    }
+
+    setState(() {
+      _requestedPan =
+          _dragStartPan! + event.localPosition - _dragStartPosition!;
+      _pointerPosition = event.localPosition;
+    });
+  }
+
+  void _stopPan(PointerEvent event) {
+    if (_activePanPointer != event.pointer) {
+      return;
+    }
+    setState(() {
+      _activePanPointer = null;
+      _dragStartPosition = null;
+      _dragStartPan = null;
+      _pointerPosition = event.localPosition;
+    });
+  }
+
+  void _updatePointerPosition(Offset? position) {
+    if (_pointerPosition == position) {
+      return;
+    }
+    setState(() {
+      _pointerPosition = position;
+    });
+  }
+
+  void _resetCamera({bool notify = true}) {
+    void reset() {
+      _zoom = 1;
+      _requestedPan = Offset.zero;
+      _pointerPosition = null;
+      _activePanPointer = null;
+      _dragStartPosition = null;
+      _dragStartPan = null;
+    }
+
+    if (notify) {
+      setState(reset);
+    } else {
+      reset();
+    }
   }
 }
 
@@ -123,7 +343,10 @@ class MapCanvasLayout {
     required this.mapWidth,
     required this.mapHeight,
     required this.mapRect,
+    required this.baseTileExtent,
     required this.tileExtent,
+    required this.zoom,
+    required this.panOffset,
     required this.visibleTiles,
     required this.gridStep,
   });
@@ -132,6 +355,24 @@ class MapCanvasLayout {
     required Size viewportSize,
     required int mapWidth,
     required int mapHeight,
+    double contentPadding = 24,
+    double maximumTileExtent = 32,
+  }) {
+    return MapCanvasLayout.view(
+      viewportSize: viewportSize,
+      mapWidth: mapWidth,
+      mapHeight: mapHeight,
+      contentPadding: contentPadding,
+      maximumTileExtent: maximumTileExtent,
+    );
+  }
+
+  factory MapCanvasLayout.view({
+    required Size viewportSize,
+    required int mapWidth,
+    required int mapHeight,
+    double zoom = 1,
+    Offset panOffset = Offset.zero,
     double contentPadding = 24,
     double maximumTileExtent = 32,
   }) {
@@ -170,6 +411,16 @@ class MapCanvasLayout {
         'Must be greater than zero.',
       );
     }
+    if (!zoom.isFinite || zoom <= 0) {
+      throw RangeError.value(zoom, 'zoom', 'Must be finite and positive.');
+    }
+    if (!panOffset.dx.isFinite || !panOffset.dy.isFinite) {
+      throw ArgumentError.value(
+        panOffset,
+        'panOffset',
+        'Both dimensions must be finite.',
+      );
+    }
 
     final availableWidth = math.max(
       1.0,
@@ -179,18 +430,26 @@ class MapCanvasLayout {
       1.0,
       viewportSize.height - contentPadding * 2,
     );
-    final tileExtent = math.min(
+    final baseTileExtent = math.min(
       maximumTileExtent,
       math.min(availableWidth / mapWidth, availableHeight / mapHeight),
     );
+    final tileExtent = baseTileExtent * zoom;
     final mapPixelWidth = mapWidth * tileExtent;
     final mapPixelHeight = mapHeight * tileExtent;
-    final mapRect = Rect.fromLTWH(
+    final centeredMapRect = Rect.fromLTWH(
       (viewportSize.width - mapPixelWidth) / 2,
       (viewportSize.height - mapPixelHeight) / 2,
       mapPixelWidth,
       mapPixelHeight,
     );
+    final constrainedPan = _constrainPanOffset(
+      requestedPan: panOffset,
+      centeredMapRect: centeredMapRect,
+      viewportSize: viewportSize,
+      contentPadding: contentPadding,
+    );
+    final mapRect = centeredMapRect.shift(constrainedPan);
     final viewportRect = Offset.zero & viewportSize;
     final visibleRect = mapRect.intersect(viewportRect);
     final visibleTiles = _visibleTileBounds(
@@ -206,7 +465,10 @@ class MapCanvasLayout {
       mapWidth: mapWidth,
       mapHeight: mapHeight,
       mapRect: mapRect,
+      baseTileExtent: baseTileExtent,
       tileExtent: tileExtent,
+      zoom: zoom,
+      panOffset: constrainedPan,
       visibleTiles: visibleTiles,
       gridStep: _gridStepFor(
         tileExtent: tileExtent,
@@ -219,9 +481,47 @@ class MapCanvasLayout {
   final int mapWidth;
   final int mapHeight;
   final Rect mapRect;
+  final double baseTileExtent;
   final double tileExtent;
+  final double zoom;
+  final Offset panOffset;
   final MapCanvasVisibleTiles visibleTiles;
   final int gridStep;
+
+  MapCanvasPointerCoordinate? coordinateAt(Offset viewportPosition) {
+    if (!mapRect.contains(viewportPosition)) {
+      return null;
+    }
+
+    final pixelX = ((viewportPosition.dx - mapRect.left) / tileExtent * 32)
+        .floor();
+    final pixelY = ((viewportPosition.dy - mapRect.top) / tileExtent * 32)
+        .floor();
+    final maximumPixelX = mapWidth * 32 - 1;
+    final maximumPixelY = mapHeight * 32 - 1;
+    final boundedPixelX = pixelX.clamp(0, maximumPixelX).toInt();
+    final boundedPixelY = pixelY.clamp(0, maximumPixelY).toInt();
+    return MapCanvasPointerCoordinate(
+      tileX: boundedPixelX ~/ 32,
+      tileY: boundedPixelY ~/ 32,
+      pixelX: boundedPixelX,
+      pixelY: boundedPixelY,
+    );
+  }
+}
+
+class MapCanvasPointerCoordinate {
+  const MapCanvasPointerCoordinate({
+    required this.tileX,
+    required this.tileY,
+    required this.pixelX,
+    required this.pixelY,
+  });
+
+  final int tileX;
+  final int tileY;
+  final int pixelX;
+  final int pixelY;
 }
 
 class MapCanvasVisibleTiles {
@@ -403,6 +703,103 @@ class _CanvasBadge extends StatelessWidget {
   }
 }
 
+class _CanvasZoomControls extends StatelessWidget {
+  const _CanvasZoomControls({
+    required this.zoom,
+    required this.canZoomOut,
+    required this.canZoomIn,
+    required this.onZoomOut,
+    required this.onFit,
+    required this.onZoomIn,
+  });
+
+  final double zoom;
+  final bool canZoomOut;
+  final bool canZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onFit;
+  final VoidCallback onZoomIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xE6171C24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6),
+        side: const BorderSide(color: Color(0xFF344056)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ZoomButton(
+            key: const Key('map-canvas-zoom-out'),
+            tooltip: 'Zoom out',
+            icon: Icons.remove_rounded,
+            onPressed: canZoomOut ? onZoomOut : null,
+          ),
+          Tooltip(
+            message: 'Fit map to view',
+            child: InkWell(
+              key: const Key('map-canvas-fit'),
+              onTap: onFit,
+              child: SizedBox(
+                width: 54,
+                height: 28,
+                child: Center(
+                  child: Text(
+                    '${(zoom * 100).round()}%',
+                    key: const Key('map-canvas-zoom-level'),
+                    style: const TextStyle(
+                      color: Color(0xFFD2D9E6),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          _ZoomButton(
+            key: const Key('map-canvas-zoom-in'),
+            tooltip: 'Zoom in',
+            icon: Icons.add_rounded,
+            onPressed: canZoomIn ? onZoomIn : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ZoomButton extends StatelessWidget {
+  const _ZoomButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      iconSize: 15,
+      color: const Color(0xFF9EBEFF),
+      disabledColor: const Color(0xFF536076),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 28, height: 28),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
 MapCanvasVisibleTiles _visibleTileBounds({
   required Rect visibleRect,
   required Rect mapRect,
@@ -441,6 +838,48 @@ MapCanvasVisibleTiles _visibleTileBounds({
     top: top,
     rightExclusive: right,
     bottomExclusive: bottom,
+  );
+}
+
+Offset _constrainPanOffset({
+  required Offset requestedPan,
+  required Rect centeredMapRect,
+  required Size viewportSize,
+  required double contentPadding,
+}) {
+  double constrainAxis({
+    required double requested,
+    required double mapStart,
+    required double mapEnd,
+    required double mapExtent,
+    required double viewportExtent,
+  }) {
+    final edgePadding = math.min(contentPadding, viewportExtent / 2);
+    final availableExtent = math.max(0, viewportExtent - edgePadding * 2);
+    if (mapExtent <= availableExtent) {
+      return 0;
+    }
+
+    final minimum = edgePadding - mapEnd;
+    final maximum = viewportExtent - edgePadding - mapStart;
+    return requested.clamp(minimum, maximum).toDouble();
+  }
+
+  return Offset(
+    constrainAxis(
+      requested: requestedPan.dx,
+      mapStart: centeredMapRect.left,
+      mapEnd: centeredMapRect.right,
+      mapExtent: centeredMapRect.width,
+      viewportExtent: viewportSize.width,
+    ),
+    constrainAxis(
+      requested: requestedPan.dy,
+      mapStart: centeredMapRect.top,
+      mapEnd: centeredMapRect.bottom,
+      mapExtent: centeredMapRect.height,
+      viewportExtent: viewportSize.height,
+    ),
   );
 }
 
