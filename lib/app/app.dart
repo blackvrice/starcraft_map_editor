@@ -8,6 +8,7 @@ import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
 import '../application/recent_projects/recent_projects_service.dart';
+import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../presentation/shell/editor_shell.dart';
 
 class EditorAppDependencies {
@@ -20,6 +21,7 @@ class EditorAppDependencies {
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.settingsStore,
+    required this.starCraftDataAssetSettingsController,
   });
 
   final EditorCommandDispatcher commandDispatcher;
@@ -30,6 +32,8 @@ class EditorAppDependencies {
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final SettingsStore settingsStore;
+  final StarCraftDataAssetSettingsController
+  starCraftDataAssetSettingsController;
 }
 
 class StarCraftMapEditorApp extends StatelessWidget {
@@ -61,6 +65,8 @@ class StarCraftMapEditorApp extends StatelessWidget {
         eudSourceController: dependencies.eudSourceController,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,
+        starCraftDataAssetSettingsController:
+            dependencies.starCraftDataAssetSettingsController,
       ),
     );
   }

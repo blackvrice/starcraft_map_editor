@@ -15,9 +15,11 @@ import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
+import '../../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../map_canvas/map_canvas.dart';
+import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud }
 
@@ -30,6 +32,7 @@ class EditorShell extends StatefulWidget {
     required this.eudSourceController,
     required this.operationProgressController,
     required this.recentProjectsService,
+    required this.starCraftDataAssetSettingsController,
     super.key,
   });
 
@@ -40,6 +43,8 @@ class EditorShell extends StatefulWidget {
   final EudSourceController eudSourceController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
+  final StarCraftDataAssetSettingsController
+  starCraftDataAssetSettingsController;
 
   @override
   State<EditorShell> createState() => _EditorShellState();
@@ -51,14 +56,16 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<SaveMapState> _saveMapSubscription;
   late StreamSubscription<EudBuildState> _eudBuildSubscription;
   late StreamSubscription<EudSourceState> _eudSourceSubscription;
-  late List<EditorDiagnostic> _visibleDiagnostics;
+  late StreamSubscription<StarCraftDataAssetSettingsState>
+  _starCraftDataAssetSettingsSubscription;
+  late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
 
   @override
   void initState() {
     super.initState();
     _recentProjects = widget.recentProjectsService.load();
-    _visibleDiagnostics = widget.openMapController.state.diagnostics;
+    _documentDiagnostics = widget.openMapController.state.diagnostics;
     _workspaceView = widget.eudSourceController.state.hasDocument
         ? _WorkspaceView.eud
         : _WorkspaceView.map;
@@ -66,6 +73,10 @@ class _EditorShellState extends State<EditorShell> {
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
     _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
+    _starCraftDataAssetSettingsSubscription = _listenForStarCraftDataAssets(
+      widget.starCraftDataAssetSettingsController,
+    );
+    unawaited(widget.starCraftDataAssetSettingsController.load());
   }
 
   @override
@@ -93,6 +104,14 @@ class _EditorShellState extends State<EditorShell> {
           ? _WorkspaceView.eud
           : _WorkspaceView.map;
     }
+    if (oldWidget.starCraftDataAssetSettingsController !=
+        widget.starCraftDataAssetSettingsController) {
+      unawaited(_starCraftDataAssetSettingsSubscription.cancel());
+      _starCraftDataAssetSettingsSubscription = _listenForStarCraftDataAssets(
+        widget.starCraftDataAssetSettingsController,
+      );
+      unawaited(widget.starCraftDataAssetSettingsController.load());
+    }
   }
 
   StreamSubscription<OpenMapState> _listenForOpenedMaps(
@@ -101,7 +120,7 @@ class _EditorShellState extends State<EditorShell> {
     return controller.changes.listen((state) {
       if (mounted) {
         setState(() {
-          _visibleDiagnostics = state.diagnostics;
+          _documentDiagnostics = state.diagnostics;
           if (state.status == OpenMapStatus.opened) {
             _workspaceView = _WorkspaceView.map;
             _recentProjects = widget.recentProjectsService.load();
@@ -117,7 +136,7 @@ class _EditorShellState extends State<EditorShell> {
     return controller.changes.listen((state) {
       if (mounted) {
         setState(() {
-          _visibleDiagnostics = state.diagnostics;
+          _documentDiagnostics = state.diagnostics;
           if (state.status == SaveMapStatus.saved) {
             _recentProjects = widget.recentProjectsService.load();
           }
@@ -152,12 +171,24 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<StarCraftDataAssetSettingsState>
+  _listenForStarCraftDataAssets(
+    StarCraftDataAssetSettingsController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
     unawaited(_saveMapSubscription.cancel());
     unawaited(_eudBuildSubscription.cancel());
     unawaited(_eudSourceSubscription.cancel());
+    unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     super.dispose();
   }
 
@@ -203,6 +234,15 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  void _showStarCraftDataAssetSettings() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => StarCraftAssetSettingsDialog(
+        controller: widget.starCraftDataAssetSettingsController,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final openMap = _callbackFor(EditorCommandId.openMap);
@@ -220,6 +260,12 @@ class _EditorShellState extends State<EditorShell> {
         widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
         ? _newEudSource
         : null;
+    final starCraftDataAssetState =
+        widget.starCraftDataAssetSettingsController.state;
+    final visibleDiagnostics = [
+      ..._documentDiagnostics,
+      ...starCraftDataAssetState.diagnostics,
+    ];
 
     final shortcuts = <ShortcutActivator, VoidCallback>{};
     if (openMap != null) {
@@ -270,6 +316,7 @@ class _EditorShellState extends State<EditorShell> {
                   newEudSource: newEudSource,
                   buildEud: buildEud,
                   cancelEudBuild: cancelEudBuild,
+                  openSettings: _showStarCraftDataAssetSettings,
                 ),
                 const Divider(height: 1),
                 _EditorToolbar(
@@ -279,6 +326,8 @@ class _EditorShellState extends State<EditorShell> {
                   buildEud: buildEud,
                   cancelEudBuild: cancelEudBuild,
                   eudBuildActive: eudBuildState.isActive,
+                  starCraftDataAssetState: starCraftDataAssetState,
+                  openSettings: _showStarCraftDataAssetSettings,
                 ),
                 const Divider(height: 1),
                 Expanded(
@@ -328,7 +377,7 @@ class _EditorShellState extends State<EditorShell> {
                       children: [
                         _OutputPanel(
                           progress: snapshot.data,
-                          diagnostics: _visibleDiagnostics,
+                          diagnostics: visibleDiagnostics,
                           eudBuildState: eudBuildState,
                         ),
                         const Divider(height: 1),
@@ -359,6 +408,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.newEudSource,
     required this.buildEud,
     required this.cancelEudBuild,
+    required this.openSettings,
   });
 
   final VoidCallback? openMap;
@@ -366,6 +416,7 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
   final VoidCallback? cancelEudBuild;
+  final VoidCallback openSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -381,9 +432,15 @@ class _EditorMenuBar extends StatelessWidget {
           child: const Text('File'),
         ),
         SubmenuButton(
-          menuChildren: const [
-            MenuItemButton(onPressed: null, child: Text('Undo')),
-            MenuItemButton(onPressed: null, child: Text('Redo')),
+          menuChildren: [
+            const MenuItemButton(onPressed: null, child: Text('Undo')),
+            const MenuItemButton(onPressed: null, child: Text('Redo')),
+            const Divider(),
+            MenuItemButton(
+              key: const Key('menu-settings'),
+              onPressed: openSettings,
+              child: const Text('Settings…'),
+            ),
           ],
           child: const Text('Edit'),
         ),
@@ -433,6 +490,8 @@ class _EditorToolbar extends StatelessWidget {
     required this.buildEud,
     required this.cancelEudBuild,
     required this.eudBuildActive,
+    required this.starCraftDataAssetState,
+    required this.openSettings,
   });
 
   final VoidCallback? openMap;
@@ -441,6 +500,8 @@ class _EditorToolbar extends StatelessWidget {
   final VoidCallback? buildEud;
   final VoidCallback? cancelEudBuild;
   final bool eudBuildActive;
+  final StarCraftDataAssetSettingsState starCraftDataAssetState;
+  final VoidCallback openSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -449,6 +510,8 @@ class _EditorToolbar extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 1350;
+          final compactEnvironmentBadge =
+              !compact && constraints.maxWidth < 1550;
           final showEnvironmentBadge = constraints.maxWidth >= 1000;
 
           return Padding(
@@ -463,7 +526,11 @@ class _EditorToolbar extends StatelessWidget {
                 ),
                 if (showEnvironmentBadge) ...[
                   const SizedBox(width: 12),
-                  const _EnvironmentBadge(),
+                  _EnvironmentBadge(
+                    assetState: starCraftDataAssetState,
+                    onPressed: openSettings,
+                    compact: compactEnvironmentBadge,
+                  ),
                 ],
                 const Spacer(),
                 if (compact) ...[
@@ -546,20 +613,60 @@ class _EditorToolbar extends StatelessWidget {
 }
 
 class _EnvironmentBadge extends StatelessWidget {
-  const _EnvironmentBadge();
+  const _EnvironmentBadge({
+    required this.assetState,
+    required this.onPressed,
+    required this.compact,
+  });
+
+  final StarCraftDataAssetSettingsState assetState;
+  final VoidCallback onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1D2738),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFF33445F)),
+    final (label, compactLabel, color) = switch (assetState.status) {
+      StarCraftDataAssetSettingsStatus.loading ||
+      StarCraftDataAssetSettingsStatus.inspecting => (
+        'Assets checking',
+        'Checking',
+        const Color(0xFFAAC8FF),
       ),
-      child: const Text(
-        'Windows • SC:R',
-        style: TextStyle(color: Color(0xFFAAC8FF), fontSize: 12),
+      StarCraftDataAssetSettingsStatus.ready => (
+        'Assets ready',
+        'Ready',
+        const Color(0xFF7ADAA5),
+      ),
+      StarCraftDataAssetSettingsStatus.unconfigured => (
+        'Assets not configured',
+        'Setup',
+        const Color(0xFFFFC56E),
+      ),
+      StarCraftDataAssetSettingsStatus.unavailable => (
+        'Assets unavailable',
+        'Missing',
+        const Color(0xFFFFB454),
+      ),
+    };
+
+    return Tooltip(
+      message: 'Open StarCraft data asset settings • $label',
+      child: InkWell(
+        key: const Key('starcraft-asset-environment-status'),
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1D2738),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFF33445F)),
+          ),
+          child: Text(
+            compact ? 'SC:R • $compactLabel' : 'Windows • SC:R • $label',
+            style: TextStyle(color: color, fontSize: 12),
+          ),
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/infrastructure/filesystem/method_channel_directory_picker.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/method_channel_map_file_picker.dart';
 
 void main() {
@@ -7,6 +8,7 @@ void main() {
 
   const channel = MethodChannel('test/map_file_picker');
   final picker = MethodChannelMapFilePicker(channel: channel);
+  final directoryPicker = MethodChannelDirectoryPicker(channel: channel);
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -49,4 +51,25 @@ void main() {
     expect(receivedCall!.arguments, {'suggestedName': 'Arena Copy.scx'});
     expect(path, r'C:\Maps\Arena Copy.scx');
   });
+
+  test(
+    'returns the StarCraft data directory selected by native dialog',
+    () async {
+      MethodCall? receivedCall;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            receivedCall = call;
+            return r'C:\StarCraftAssets';
+          });
+
+      final path = await directoryPicker.pickStarCraftDataDirectory();
+
+      expect(
+        receivedCall!.method,
+        MethodChannelDirectoryPicker.pickStarCraftDataDirectoryMethod,
+      );
+      expect(receivedCall!.arguments, isNull);
+      expect(path, r'C:\StarCraftAssets');
+    },
+  );
 }

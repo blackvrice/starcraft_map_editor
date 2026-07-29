@@ -17,10 +17,13 @@ import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_p
 import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
+import 'package:starcraft_map_editor/application/ports/directory_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_data_asset_inspector.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
+import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
@@ -40,9 +43,67 @@ void main() {
     expect(find.text('StarCraft Map Editor'), findsOneWidget);
     expect(find.text('Project / Layers'), findsOneWidget);
     expect(find.text('Inspector'), findsOneWidget);
-    expect(find.text('Problems'), findsOneWidget);
+    expect(find.byKey(const Key('output-tab-problems')), findsOneWidget);
     expect(find.text('Open a map to begin'), findsOneWidget);
-    expect(find.text('Windows • SC:R'), findsOneWidget);
+    expect(find.text('Windows • SC:R • Assets not configured'), findsOneWidget);
+  });
+
+  testWidgets('configures StarCraft assets and exposes missing diagnostics', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final settings = InMemorySettingsStore();
+    final assetController = StarCraftDataAssetSettingsController(
+      settingsStore: settings,
+      directoryPicker: const _FakeDirectoryPicker(r'C:\StarCraftAssets'),
+      inspector: const _FakeStarCraftDataAssetInspector(ready: false),
+    );
+    addTearDown(assetController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        settingsStore: settings,
+        starCraftDataAssetSettingsController: assetController,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const Key('starcraft-asset-environment-status')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('starcraft-asset-settings-dialog')),
+      findsOneWidget,
+    );
+    expect(find.text('Not configured'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('starcraft-assets-choose')));
+    await tester.pumpAndSettle();
+
+    expect(find.text(r'C:\StarCraftAssets'), findsOneWidget);
+    expect(find.text('39/40 required assets found'), findsOneWidget);
+    expect(find.text(r'tileset\badlands.cv5'), findsOneWidget);
+    expect(
+      await settings.readString(
+        StarCraftDataAssetSettingsController.settingsKey,
+      ),
+      r'C:\StarCraftAssets',
+    );
+
+    await tester.tap(find.byKey(const Key('starcraft-assets-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('SC:R • Missing'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('output-tab-problems')));
+    await tester.pump();
+    expect(
+      find.text(StarCraftDataAssetDiagnosticCodes.filesMissing),
+      findsOneWidget,
+    );
   });
 
   testWidgets('routes toolbar commands through the dispatcher', (tester) async {
@@ -396,6 +457,7 @@ Widget _createTestApp({
   OperationProgressController? operationProgressController,
   RecentProjectsService? recentProjectsService,
   InMemorySettingsStore? settingsStore,
+  StarCraftDataAssetSettingsController? starCraftDataAssetSettingsController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
   final resolvedProgressController =
@@ -452,6 +514,13 @@ Widget _createTestApp({
           await resolvedEudBuildController.cancel();
         },
       });
+  final resolvedStarCraftDataAssetSettingsController =
+      starCraftDataAssetSettingsController ??
+      StarCraftDataAssetSettingsController(
+        settingsStore: resolvedSettingsStore,
+        directoryPicker: const _FakeDirectoryPicker(),
+        inspector: const _FakeStarCraftDataAssetInspector(),
+      );
   return StarCraftMapEditorApp(
     dependencies: EditorAppDependencies(
       commandDispatcher: resolvedDispatcher,
@@ -462,6 +531,8 @@ Widget _createTestApp({
       operationProgressController: resolvedProgressController,
       recentProjectsService: resolvedRecentProjectsService,
       settingsStore: resolvedSettingsStore,
+      starCraftDataAssetSettingsController:
+          resolvedStarCraftDataAssetSettingsController,
     ),
   );
 }
@@ -485,6 +556,49 @@ EudBuildPlan _eudBuildRequest(String buildId) {
     ),
     timeout: const Duration(minutes: 2),
   );
+}
+
+final class _FakeDirectoryPicker implements DirectoryPicker {
+  const _FakeDirectoryPicker([this.path]);
+
+  final String? path;
+
+  @override
+  Future<String?> pickStarCraftDataDirectory() async => path;
+}
+
+final class _FakeStarCraftDataAssetInspector
+    implements StarCraftDataAssetInspector {
+  const _FakeStarCraftDataAssetInspector({this.ready = true});
+
+  final bool ready;
+
+  @override
+  Future<StarCraftDataAssetInspection> inspect(String rootPath) async {
+    if (!ready) {
+      return StarCraftDataAssetInspection(
+        rootPath: rootPath,
+        resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+        requiredAssetCount: 40,
+        foundAssetCount: 39,
+        missingRelativePaths: const [r'tileset\badlands.cv5'],
+        diagnostics: const [
+          EditorDiagnostic(
+            code: StarCraftDataAssetDiagnosticCodes.filesMissing,
+            message: 'One required StarCraft tileset asset file is missing.',
+            severity: DiagnosticSeverity.warning,
+            stage: DiagnosticStage.validate,
+          ),
+        ],
+      );
+    }
+    return StarCraftDataAssetInspection(
+      rootPath: rootPath,
+      resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+      requiredAssetCount: 0,
+      foundAssetCount: 0,
+    );
+  }
 }
 
 final class _UnusedEudCompilerGateway implements EudBuildGateway {

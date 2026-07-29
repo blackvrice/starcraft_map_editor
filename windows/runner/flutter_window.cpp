@@ -1,9 +1,12 @@
 #include "flutter_window.h"
 
 #include <commdlg.h>
+#include <objbase.h>
+#include <shobjidl.h>
 
 #include <optional>
 #include <string>
+#include <utility>
 
 #include "flutter/generated_plugin_registrant.h"
 #include "utils.h"
@@ -35,6 +38,116 @@ std::wstring Utf16FromUtf8String(const std::string& value) {
     return {};
   }
   return converted;
+}
+
+enum class DirectoryDialogStatus { accepted, cancelled, failed };
+
+struct DirectoryDialogSelection {
+  DirectoryDialogStatus status = DirectoryDialogStatus::failed;
+  std::string path;
+  HRESULT error = E_FAIL;
+};
+
+DirectoryDialogSelection FailedDirectorySelection(HRESULT error) {
+  DirectoryDialogSelection selection;
+  selection.error = error;
+  return selection;
+}
+
+DirectoryDialogSelection CancelledDirectorySelection(HRESULT error) {
+  DirectoryDialogSelection selection;
+  selection.status = DirectoryDialogStatus::cancelled;
+  selection.error = error;
+  return selection;
+}
+
+DirectoryDialogSelection AcceptedDirectorySelection(std::string path) {
+  DirectoryDialogSelection selection;
+  selection.status = DirectoryDialogStatus::accepted;
+  selection.path = std::move(path);
+  selection.error = S_OK;
+  return selection;
+}
+
+class ScopedComInitialization {
+ public:
+  ScopedComInitialization()
+      : result_(CoInitializeEx(
+            nullptr,
+            COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)),
+        should_uninitialize_(SUCCEEDED(result_)) {}
+
+  ~ScopedComInitialization() {
+    if (should_uninitialize_) {
+      CoUninitialize();
+    }
+  }
+
+  HRESULT result() const { return result_; }
+
+ private:
+  HRESULT result_;
+  bool should_uninitialize_;
+};
+
+DirectoryDialogSelection PickStarCraftDataDirectory(HWND owner) {
+  ScopedComInitialization com;
+  if (FAILED(com.result()) && com.result() != RPC_E_CHANGED_MODE) {
+    return FailedDirectorySelection(com.result());
+  }
+
+  IFileOpenDialog* dialog = nullptr;
+  HRESULT result = CoCreateInstance(
+      CLSID_FileOpenDialog,
+      nullptr,
+      CLSCTX_INPROC_SERVER,
+      IID_PPV_ARGS(&dialog));
+  if (FAILED(result)) {
+    return FailedDirectorySelection(result);
+  }
+
+  DWORD options = 0;
+  result = dialog->GetOptions(&options);
+  if (SUCCEEDED(result)) {
+    result = dialog->SetOptions(
+        options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM |
+        FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR);
+  }
+  if (SUCCEEDED(result)) {
+    result = dialog->SetTitle(L"Choose StarCraft Data Asset Directory");
+  }
+  if (SUCCEEDED(result)) {
+    result = dialog->Show(owner);
+  }
+  if (result == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+    dialog->Release();
+    return CancelledDirectorySelection(result);
+  }
+  if (FAILED(result)) {
+    dialog->Release();
+    return FailedDirectorySelection(result);
+  }
+
+  IShellItem* selected_item = nullptr;
+  result = dialog->GetResult(&selected_item);
+  dialog->Release();
+  if (FAILED(result)) {
+    return FailedDirectorySelection(result);
+  }
+
+  PWSTR selected_path = nullptr;
+  result = selected_item->GetDisplayName(SIGDN_FILESYSPATH, &selected_path);
+  selected_item->Release();
+  if (FAILED(result)) {
+    return FailedDirectorySelection(result);
+  }
+
+  const std::string path = Utf8FromUtf16(selected_path);
+  CoTaskMemFree(selected_path);
+  if (path.empty()) {
+    return FailedDirectorySelection(E_INVALIDARG);
+  }
+  return AcceptedDirectorySelection(path);
 }
 
 }  // namespace
@@ -71,8 +184,29 @@ bool FlutterWindow::OnCreate() {
                  result) {
         const bool is_open = call.method_name() == "openMap";
         const bool is_save = call.method_name() == "saveMap";
-        if (!is_open && !is_save) {
+        const bool is_data_directory =
+            call.method_name() == "pickStarCraftDataDirectory";
+        if (!is_open && !is_save && !is_data_directory) {
           result->NotImplemented();
+          return;
+        }
+
+        if (is_data_directory) {
+          const DirectoryDialogSelection selection =
+              PickStarCraftDataDirectory(GetHandle());
+          if (selection.status == DirectoryDialogStatus::accepted) {
+            result->Success(flutter::EncodableValue(selection.path));
+            return;
+          }
+          if (selection.status == DirectoryDialogStatus::cancelled) {
+            result->Success();
+            return;
+          }
+          result->Error(
+              "DIRECTORY_DIALOG_FAILED",
+              "The Windows directory dialog could not be opened.",
+              flutter::EncodableValue(
+                  static_cast<int64_t>(selection.error)));
           return;
         }
 

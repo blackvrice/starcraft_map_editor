@@ -198,7 +198,26 @@ dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌�
 `Space`+좌클릭과 중간 버튼 이동은 확대된 맵을 viewport 가장자리 안에서
 제한한다. 레이아웃은 포인터 화면 위치를 0기준 타일 좌표와 타일당 32픽셀인
 StarCraft 맵 픽셀 좌표로 역변환한다. StarCraft 실제 타일 이미지는 데이터
-자산 경로와 누락 진단이 구현될 때 대체 색상 렌더러를 교체한다.
+자산 검사 결과를 입력으로 받는 후속 로더가 준비될 때 대체 색상 렌더러를
+교체한다.
+
+### StarCraft 데이터 자산 설정
+
+`StarCraftDataAssetManifest`는 Badlands, Space Platform, Installation,
+Ashworld, Jungle, Desert, Ice, Twilight의 `CV5`·`VF4`·`VX4`·`VR4`·`WPE`
+총 40개 필수 loose file 경로를 도메인 상수로 정의한다. 게임 설치 파일이나
+저작권 자산을 저장소에 포함하거나 자동 추출하지 않는다.
+
+`StarCraftDataAssetInspector` 포트는 사용자가 선택한 절대 경로를 읽기 전용으로
+검사한다. `LocalStarCraftDataAssetInspector`는 선택 폴더가 `tileset`이면
+그 폴더를, 아니면 하위 `tileset` 폴더를 사용하며 누락 파일과 0바이트 파일을
+구분한다. 알 수 없는 파일은 변경하거나 정규화하지 않는다.
+
+`StarCraftDataAssetSettingsController`는 `SettingsStore`의
+`starcraftDataAssetRoot` 값, 폴더 선택 포트와 검사 결과를 하나의 상태로
+관리한다. Presentation은 상태와 구조화 진단만 구독하고 파일 시스템이나
+Windows method channel을 직접 호출하지 않는다. 검사 실패는 캔버스의 대체
+표시나 맵 저장을 막는 오류가 아니라 자산 기반 렌더링 기능에 대한 경고다.
 
 ## 6. 명령과 Undo/Redo
 
@@ -557,6 +576,8 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 - 로컬 설정에는 StarCraft, euddraft, 작업 폴더 경로가 포함될 수 있다.
 - Windows 사용자 설정과 최근 맵 목록은
   `%LOCALAPPDATA%\blackvrice\StarCraftMapEditor\settings.json`에 저장한다.
+- StarCraft 데이터 자산 루트는 사용자 로컬 설정에만 저장하며 선택한 파일을
+  앱 데이터나 프로젝트로 복사하지 않는다.
 - 설정은 소스 저장소나 프로젝트 파일에 자동으로 커밋하지 않는다.
 - 토큰이나 계정 자격 증명은 이 프로젝트의 초기 기능에 필요하지 않다.
 - 로그를 공유할 때 개인 경로를 가릴 수 있어야 한다.

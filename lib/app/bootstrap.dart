@@ -8,13 +8,16 @@ import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
+import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
+import '../infrastructure/assets/local_starcraft_data_asset_inspector.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import '../infrastructure/compiler/local_eud_tool_inspector.dart';
 import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
 import '../infrastructure/filesystem/local_eud_build_file_gateway.dart';
 import '../infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 import '../infrastructure/filesystem/local_map_save_file_gateway.dart';
+import '../infrastructure/filesystem/method_channel_directory_picker.dart';
 import '../infrastructure/filesystem/method_channel_map_file_picker.dart';
 import '../infrastructure/settings/json_file_settings_store.dart';
 import 'app.dart';
@@ -26,6 +29,12 @@ void bootstrap() {
   final commandDispatcher = EditorCommandDispatcher();
   final operationProgressController = OperationProgressController();
   final recentProjectsService = RecentProjectsService(settingsStore);
+  final starCraftDataAssetSettingsController =
+      StarCraftDataAssetSettingsController(
+        settingsStore: settingsStore,
+        directoryPicker: const MethodChannelDirectoryPicker(),
+        inspector: LocalStarCraftDataAssetInspector(),
+      );
   final archiveGateway = ProcessMapArchiveGateway.bundled();
   final fingerprintGateway = LocalMapFileFingerprintGateway();
   final eudBuildController = EudBuildController(
@@ -83,6 +92,7 @@ void bootstrap() {
     operationProgressController: operationProgressController,
     recentProjectsService: recentProjectsService,
     settingsStore: settingsStore,
+    starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
   );
 
   runApp(StarCraftMapEditorApp(dependencies: dependencies));
