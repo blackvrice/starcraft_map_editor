@@ -18,6 +18,16 @@ StarCraft 맵 파일 확장자. 내부 맵 데이터와 자원을 담는 아카�
 
 StarCraft 맵 컨테이너에 사용되는 아카이브 형식. 이 프로젝트에서는 구체 구현을 `MapArchiveGateway` 뒤에 둔다.
 
+**CASC (Content Addressable Storage Container)**
+
+StarCraft: Remastered 설치 데이터가 들어 있는 Blizzard 저장소 형식. 에디터는
+사용자가 선택한 로컬 설치를 읽기 전용으로 연다.
+
+**CascLib**
+
+로컬 CASC 저장소와 내부 자산을 읽는 MIT 라이선스 C/C++ 라이브러리. 이
+프로젝트에서는 고정 revision을 번들 helper에 정적으로 링크한다.
+
 **합성 엔트리 이름 (synthetic entry name)**
 
 MPQ 내부 listfile에 원래 경로가 없을 때 StormLib가 파일 block을 식별하기 위해

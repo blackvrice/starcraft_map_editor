@@ -1,3 +1,3 @@
 abstract interface class DirectoryPicker {
-  Future<String?> pickStarCraftDataDirectory();
+  Future<String?> pickStarCraftInstallationDirectory();
 }

@@ -70,11 +70,20 @@ flutter analyze
 flutter test
 ```
 
-Windows archive helper 변경 시:
+Windows native helper 변경 시:
 
 ```powershell
 flutter build windows --debug
-ctest --test-dir build/windows/x64 -C Debug --output-on-failure -R map_archive_helper_native
+ctest --test-dir build/windows/x64 -C Debug --output-on-failure
+```
+
+StarCraft CASC 경계 변경 시 실제 설치 선택적 스모크:
+
+```powershell
+$env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `
+  "build/windows/x64/runner/Debug/starcraft_data_helper.exe").Path
+$env:STARCRAFT_TEST_INSTALLATION = "C:\Program Files (x86)\StarCraft"
+flutter test test/infrastructure/bundled_starcraft_data_helper_test.dart
 ```
 
 공식 euddraft 설치 검사 변경 시 선택적 스모크:
@@ -104,9 +113,10 @@ flutter test test/application/eud_build_configuration_test.dart `
 ```
 
 helper 빌드는 CMake 3.25 이상, MSVC C++17 도구 체인과 Git이 필요하다. 첫
-configure에서는 full commit SHA로 고정된 StormLib와 JSON for Modern C++를
-공식 GitHub 저장소에서 가져오며, 이후 빌드는 `build/`의 FetchContent 캐시를
-재사용한다.
+configure에서는 full commit SHA로 고정된 StormLib, CascLib과 JSON for Modern
+C++를 공식 GitHub 저장소에서 가져오며, 이후 빌드는 `build/`의 FetchContent
+캐시를 재사용한다. `starcraft_data_helper.exe`와 CascLib/자체 helper의 MIT
+고지는 Windows 앱 번들에 함께 설치된다.
 
 변경 유형별 추가 검증:
 
@@ -114,6 +124,7 @@ configure에서는 full commit SHA로 고정된 StormLib와 JSON for Modern C++�
 | --- | --- |
 | CHK | byte-exact 왕복, 손상 픽스처 |
 | 아카이브 | 실제 자체 제작 맵 Open/Save As |
+| StarCraft 데이터 | 가짜 helper + 실제 로컬 CASC 선택 스모크 |
 | EUD | 가짜 프로세스 + 실제 euddraft 스모크 |
 | UI | 위젯 테스트 + Windows 실행 |
 | 저장 | 원본 해시, 임시 출력 실패 경로 |

@@ -217,16 +217,31 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 
 ### StarCraft 데이터 자산
 
-- 8개 타일셋 × `CV5`·`VF4`·`VX4`·`VR4`·`WPE`의 40개 경로와 중복 없음
-- 자산 루트와 직접 선택한 `tileset` 폴더의 동일한 검사 결과
-- 비어 있거나 상대인 경로, 존재하지 않는 경로와 일반 파일 경로 거부
-- `tileset` 폴더 누락, 필수 파일 누락과 0바이트 파일의 별도 진단
-- 예상하지 못한 파일 시스템 오류의 안전한 검사 실패 변환
+- 8개 타일셋 × `CV5`·`VF4`·`VX4EX`·`VR4`·`WPE`의 40개 CASC 경로와 중복 없음
+- 비어 있거나 상대인 설치 경로, 존재하지 않는 경로와 일반 파일 경로 거부
+- helper 누락·시작 실패·timeout·대량 출력·손상/중복 JSON 응답 진단
+- 프로토콜, request ID, helper/CascLib revision, 요청/응답 경로 불일치 거부
+- CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
+- found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
 - 설정 load/set/choose/refresh/clear와 선택 취소 시 기존 값 유지
 - 오래 걸린 이전 검사 결과가 최신 설정 상태를 덮어쓰지 않음
 - Windows method channel이 폴더 선택 메서드와 취소 결과를 전달
-- Settings 대화상자의 경로·found/required·누락 목록과 환경 배지 상태
+- Settings 대화상자의 설치 경로·CASC 메타데이터·누락 목록과 환경 배지 상태
 - 자산 경고가 Problems에 합쳐지지만 맵 캔버스와 Save As를 차단하지 않음
+
+`starcraft_data_helper_native_test`는 매니페스트의 40개 경로·중복·경로 범위와
+빈 폴더의 CASC 저장소 열기 실패를 실제 CascLib으로 검증한다.
+`process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
+성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
+실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든
+자산을 끝까지 읽는지 확인한다.
+
+```powershell
+$env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `
+  "build/windows/x64/runner/Debug/starcraft_data_helper.exe").Path
+$env:STARCRAFT_TEST_INSTALLATION = "C:\Program Files (x86)\StarCraft"
+flutter test test/infrastructure/bundled_starcraft_data_helper_test.dart
+```
 
 ### 파일 저장
 

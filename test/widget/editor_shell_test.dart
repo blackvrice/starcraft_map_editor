@@ -59,7 +59,9 @@ void main() {
     final settings = InMemorySettingsStore();
     final assetController = StarCraftDataAssetSettingsController(
       settingsStore: settings,
-      directoryPicker: const _FakeDirectoryPicker(r'C:\StarCraftAssets'),
+      directoryPicker: const _FakeDirectoryPicker(
+        r'C:\Program Files (x86)\StarCraft',
+      ),
       inspector: const _FakeStarCraftDataAssetInspector(ready: false),
     );
     addTearDown(assetController.dispose);
@@ -85,14 +87,18 @@ void main() {
     await tester.tap(find.byKey(const Key('starcraft-assets-choose')));
     await tester.pumpAndSettle();
 
-    expect(find.text(r'C:\StarCraftAssets'), findsOneWidget);
+    expect(find.text(r'C:\Program Files (x86)\StarCraft'), findsOneWidget);
     expect(find.text('39/40 required assets found'), findsOneWidget);
+    expect(
+      find.byKey(const Key('starcraft-assets-casc-metadata')),
+      findsOneWidget,
+    );
     expect(find.text(r'tileset\badlands.cv5'), findsOneWidget);
     expect(
       await settings.readString(
         StarCraftDataAssetSettingsController.settingsKey,
       ),
-      r'C:\StarCraftAssets',
+      r'C:\Program Files (x86)\StarCraft',
     );
 
     await tester.tap(find.byKey(const Key('starcraft-assets-close')));
@@ -564,7 +570,7 @@ final class _FakeDirectoryPicker implements DirectoryPicker {
   final String? path;
 
   @override
-  Future<String?> pickStarCraftDataDirectory() async => path;
+  Future<String?> pickStarCraftInstallationDirectory() async => path;
 }
 
 final class _FakeStarCraftDataAssetInspector
@@ -574,13 +580,17 @@ final class _FakeStarCraftDataAssetInspector
   final bool ready;
 
   @override
-  Future<StarCraftDataAssetInspection> inspect(String rootPath) async {
+  Future<StarCraftDataAssetInspection> inspect(String installationPath) async {
     if (!ready) {
       return StarCraftDataAssetInspection(
-        rootPath: rootPath,
-        resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+        installationPath: installationPath,
         requiredAssetCount: 40,
         foundAssetCount: 39,
+        storageProduct: 's1',
+        storageBuildNumber: 13515,
+        helperVersion: '0.1.0',
+        cascLibRevision: '4971d363e665551ac4142f541e5f2d71f1cda653',
+        totalAssetBytes: 1024,
         missingRelativePaths: const [r'tileset\badlands.cv5'],
         diagnostics: const [
           EditorDiagnostic(
@@ -593,8 +603,7 @@ final class _FakeStarCraftDataAssetInspector
       );
     }
     return StarCraftDataAssetInspection(
-      rootPath: rootPath,
-      resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+      installationPath: installationPath,
       requiredAssetCount: 0,
       foundAssetCount: 0,
     );

@@ -20,13 +20,13 @@ void main() {
     expect(state.configuredPath, isNull);
     expect(
       state.diagnostics.single.code,
-      StarCraftDataAssetDiagnosticCodes.rootNotConfigured,
+      StarCraftDataAssetDiagnosticCodes.installationNotConfigured,
     );
     expect(state.diagnostics.single.blocksOperation, isFalse);
   });
 
   test('chooses, persists, inspects, refreshes, and clears a path', () async {
-    const selectedPath = r'C:\StarCraftAssets';
+    const selectedPath = r'C:\Program Files (x86)\StarCraft';
     final settings = InMemorySettingsStore();
     final inspector = _FakeInspector(_readyInspection);
     final controller = StarCraftDataAssetSettingsController(
@@ -64,7 +64,7 @@ void main() {
   });
 
   test('loads and exposes diagnostics for an incomplete stored path', () async {
-    const storedPath = r'C:\IncompleteAssets';
+    const storedPath = r'C:\Games\IncompleteStarCraft';
     final settings = InMemorySettingsStore({
       StarCraftDataAssetSettingsController.settingsKey: storedPath,
     });
@@ -107,11 +107,11 @@ final class _FakeDirectoryPicker implements DirectoryPicker {
   final String? path;
 
   @override
-  Future<String?> pickStarCraftDataDirectory() async => path;
+  Future<String?> pickStarCraftInstallationDirectory() async => path;
 }
 
 typedef _InspectionFactory =
-    StarCraftDataAssetInspection Function(String rootPath);
+    StarCraftDataAssetInspection Function(String installationPath);
 
 final class _FakeInspector implements StarCraftDataAssetInspector {
   _FakeInspector(this.factory);
@@ -120,25 +120,28 @@ final class _FakeInspector implements StarCraftDataAssetInspector {
   final List<String> paths = [];
 
   @override
-  Future<StarCraftDataAssetInspection> inspect(String rootPath) async {
-    paths.add(rootPath);
-    return factory(rootPath);
+  Future<StarCraftDataAssetInspection> inspect(String installationPath) async {
+    paths.add(installationPath);
+    return factory(installationPath);
   }
 }
 
-StarCraftDataAssetInspection _readyInspection(String rootPath) {
+StarCraftDataAssetInspection _readyInspection(String installationPath) {
   return StarCraftDataAssetInspection(
-    rootPath: rootPath,
-    resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+    installationPath: installationPath,
     requiredAssetCount: 40,
     foundAssetCount: 40,
+    storageProduct: 's1',
+    storageBuildNumber: 13515,
+    helperVersion: '0.1.0',
+    cascLibRevision: '4971d363e665551ac4142f541e5f2d71f1cda653',
+    totalAssetBytes: 1024,
   );
 }
 
-StarCraftDataAssetInspection _incompleteInspection(String rootPath) {
+StarCraftDataAssetInspection _incompleteInspection(String installationPath) {
   return StarCraftDataAssetInspection(
-    rootPath: rootPath,
-    resolvedTilesetDirectoryPath: '$rootPath\\tileset',
+    installationPath: installationPath,
     requiredAssetCount: 40,
     foundAssetCount: 39,
     missingRelativePaths: const [r'tileset\badlands.cv5'],

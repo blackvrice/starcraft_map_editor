@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../application/ports/starcraft_data_asset_inspector.dart';
 import '../../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 
@@ -32,15 +33,21 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Choose a loose tileset data directory or its parent asset '
-                    'root. Copyrighted StarCraft data is never bundled or '
-                    'copied by the editor.',
+                    'Choose the installed StarCraft: Remastered directory. '
+                    'The editor reads its local CASC storage through the '
+                    'bundled CascLib helper without extracting or copying '
+                    'copyrighted game data.',
                     style: TextStyle(color: Color(0xFFB4BECE)),
                   ),
                   const SizedBox(height: 14),
                   _AssetPathCard(state: state),
                   const SizedBox(height: 12),
                   _AssetInspectionSummary(state: state),
+                  if (state.inspection case final inspection?)
+                    if (inspection.storageProduct != null) ...[
+                      const SizedBox(height: 8),
+                      _CascStorageMetadata(inspection: inspection),
+                    ],
                   if (state.diagnostics.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _AssetDiagnosticSummary(diagnostics: state.diagnostics),
@@ -80,7 +87,7 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
                   ? null
                   : () => controller.chooseDirectory(),
               icon: const Icon(Icons.folder_open_rounded),
-              label: const Text('Choose Folder…'),
+              label: const Text('Choose Installation…'),
             ),
             TextButton(
               key: const Key('starcraft-assets-close'),
@@ -90,6 +97,33 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _CascStorageMetadata extends StatelessWidget {
+  const _CascStorageMetadata({required this.inspection});
+
+  final StarCraftDataAssetInspection inspection;
+
+  @override
+  Widget build(BuildContext context) {
+    final revision = inspection.cascLibRevision;
+    final revisionLabel = revision == null
+        ? 'unknown'
+        : revision.substring(0, revision.length < 8 ? revision.length : 8);
+    final totalMiB = inspection.totalAssetBytes / (1024 * 1024);
+    return Text(
+      'CASC ${inspection.storageProduct} • '
+      'build ${inspection.storageBuildNumber ?? 0} • '
+      '${totalMiB.toStringAsFixed(1)} MiB checked • '
+      'CascLib $revisionLabel • helper ${inspection.helperVersion ?? 'unknown'}',
+      key: const Key('starcraft-assets-casc-metadata'),
+      style: const TextStyle(
+        color: Color(0xFF8994A8),
+        fontFamily: 'monospace',
+        fontSize: 11,
+      ),
     );
   }
 }
@@ -135,8 +169,8 @@ class _AssetPathCard extends StatelessWidget {
             ),
             const SizedBox(height: 7),
             const Text(
-              r'Expected: <root>\tileset\*.cv5/vf4/vx4/vr4/wpe, or select '
-              r'the tileset folder itself.',
+              r'Expected: the folder containing StarCraft.exe, .build.info, '
+              r'and Data\.',
               style: TextStyle(color: Color(0xFF7F8A9C), fontSize: 11),
             ),
           ],
@@ -174,13 +208,13 @@ class _AssetInspectionSummary extends StatelessWidget {
       StarCraftDataAssetSettingsStatus.unconfigured => (
         Icons.settings_outlined,
         const Color(0xFFFFC56E),
-        'Data assets are not configured',
+        'StarCraft installation is not configured',
       ),
       StarCraftDataAssetSettingsStatus.unavailable => (
         Icons.warning_amber_rounded,
         const Color(0xFFFFB454),
         inspection == null
-            ? 'Data assets are unavailable'
+            ? 'StarCraft CASC data is unavailable'
             : '${inspection.foundAssetCount}/'
                   '${inspection.requiredAssetCount} required assets found',
       ),
@@ -265,7 +299,7 @@ class _MissingAssetList extends StatelessWidget {
   Widget build(BuildContext context) {
     final entries = [
       for (final path in missingPaths) (path: path, label: 'Missing'),
-      for (final path in invalidPaths) (path: path, label: 'Empty'),
+      for (final path in invalidPaths) (path: path, label: 'Invalid'),
     ];
     const maximumVisibleEntries = 8;
     final visibleEntries = entries.take(maximumVisibleEntries).toList();

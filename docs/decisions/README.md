@@ -17,6 +17,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0002](0002-lossless-chk-model.md) | Accepted | raw-first 무손실 CHK 모델 |
 | [0003](0003-external-euddraft-adapter.md) | Accepted | euddraft 외부 프로세스 어댑터 |
 | [0004](0004-stormlib-helper-process.md) | Accepted | StormLib helper process 브리지 |
+| [0005](0005-casclib-helper-process.md) | Accepted | CascLib 기반 로컬 StarCraft 데이터 helper |
 
 ## 새 ADR 형식
 

@@ -78,6 +78,10 @@ add_subdirectory(
   "../native/map_archive_helper"
   "${CMAKE_CURRENT_BINARY_DIR}/map_archive_helper"
 )
+add_subdirectory(
+  "../native/starcraft_data_helper"
+  "${CMAKE_CURRENT_BINARY_DIR}/starcraft_data_helper"
+)
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)

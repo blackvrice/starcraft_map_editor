@@ -38,7 +38,7 @@ flowchart TB
     Application["Application\nuse cases, commands, document session"]
     Domain["Domain\nmap model, CHK model, validation"]
     Infrastructure["Infrastructure\nfile system, FFI, processes, settings"]
-    Native["Native / External\nmap archive helper, StormLib, euddraft"]
+    Native["Native / External\nmap/data helpers, StormLib, CascLib, euddraft"]
 
     Presentation --> Application
     Application --> Domain
@@ -204,17 +204,26 @@ StarCraft 맵 픽셀 좌표로 역변환한다. StarCraft 실제 타일 이미�
 ### StarCraft 데이터 자산 설정
 
 `StarCraftDataAssetManifest`는 Badlands, Space Platform, Installation,
-Ashworld, Jungle, Desert, Ice, Twilight의 `CV5`·`VF4`·`VX4`·`VR4`·`WPE`
-총 40개 필수 loose file 경로를 도메인 상수로 정의한다. 게임 설치 파일이나
-저작권 자산을 저장소에 포함하거나 자동 추출하지 않는다.
+Ashworld, Jungle, Desert, Ice, Twilight의 `CV5`·`VF4`·`VX4EX`·`VR4`·`WPE`
+총 40개 필수 CASC 내부 경로를 도메인 상수로 정의한다. 게임 설치 파일이나
+저작권 자산을 저장소에 포함하거나 별도 폴더로 자동 추출하지 않는다.
 
 `StarCraftDataAssetInspector` 포트는 사용자가 선택한 절대 경로를 읽기 전용으로
-검사한다. `LocalStarCraftDataAssetInspector`는 선택 폴더가 `tileset`이면
-그 폴더를, 아니면 하위 `tileset` 폴더를 사용하며 누락 파일과 0바이트 파일을
-구분한다. 알 수 없는 파일은 변경하거나 정규화하지 않는다.
+검사한다. `ProcessStarCraftDataAssetInspector`는
+[ADR-0005](decisions/0005-casclib-helper-process.md)에 따라 앱과 함께 배포된
+`starcraft_data_helper.exe`를 셸 없이 요청마다 실행한다. helper는 고정된
+CascLib revision을 정적으로 링크하고 사용자가 선택한 StarCraft 설치의 로컬
+CASC 저장소를 연 뒤 40개 자산을 끝까지 읽어 무결성, 개별·전체 크기 상한을
+확인한다. 원시 자산 바이트는 JSON이나 Dart 계층으로 전달하지 않는다.
+
+프로토콜 응답은 helper/CascLib revision, CASC 제품 코드와 빌드 번호,
+found/required, 전체 읽기 바이트, 누락 경로와 네이티브 오류를 포함한다.
+앱은 프로토콜·요청 ID·버전·경로·매니페스트 완전성을 교차 검증하고 timeout,
+대량 출력, 손상 응답과 비정상 종료를 구조화 진단으로 바꾼다. helper는 로컬
+저장소만 읽으며 인터넷 다운로드, 파일 복사, 추출 또는 저장소 수정을 하지 않는다.
 
 `StarCraftDataAssetSettingsController`는 `SettingsStore`의
-`starcraftDataAssetRoot` 값, 폴더 선택 포트와 검사 결과를 하나의 상태로
+`starcraftInstallationPath` 값, 폴더 선택 포트와 검사 결과를 하나의 상태로
 관리한다. Presentation은 상태와 구조화 진단만 구독하고 파일 시스템이나
 Windows method channel을 직접 호출하지 않는다. 검사 실패는 캔버스의 대체
 표시나 맵 저장을 막는 오류가 아니라 자산 기반 렌더링 기능에 대한 경고다.
@@ -576,7 +585,7 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 - 로컬 설정에는 StarCraft, euddraft, 작업 폴더 경로가 포함될 수 있다.
 - Windows 사용자 설정과 최근 맵 목록은
   `%LOCALAPPDATA%\blackvrice\StarCraftMapEditor\settings.json`에 저장한다.
-- StarCraft 데이터 자산 루트는 사용자 로컬 설정에만 저장하며 선택한 파일을
+- StarCraft 설치 경로는 사용자 로컬 설정에만 저장하며 CASC 자산을
   앱 데이터나 프로젝트로 복사하지 않는다.
 - 설정은 소스 저장소나 프로젝트 파일에 자동으로 커밋하지 않는다.
 - 토큰이나 계정 자격 증명은 이 프로젝트의 초기 기능에 필요하지 않다.
@@ -590,4 +599,5 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 | CHK 원시 섹션 무손실 보존 | 승인 | [ADR-0002](decisions/0002-lossless-chk-model.md) |
 | EUD 컴파일러를 외부 프로세스로 격리 | 승인 | [ADR-0003](decisions/0003-external-euddraft-adapter.md) |
 | MPQ 브리지 구현 방식 | 승인 | [ADR-0004](decisions/0004-stormlib-helper-process.md) |
+| StarCraft 데이터 읽기 방식 | 승인 | [ADR-0005](decisions/0005-casclib-helper-process.md) |
 | 프로젝트 파일 형식 | 검토 필요 | EUD 수직 기능 구현 전 결정 |

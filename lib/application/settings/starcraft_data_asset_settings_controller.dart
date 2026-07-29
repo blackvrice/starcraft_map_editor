@@ -46,7 +46,7 @@ final class StarCraftDataAssetSettingsController {
     required this.inspector,
   });
 
-  static const settingsKey = 'starcraftDataAssetRoot';
+  static const settingsKey = 'starcraftInstallationPath';
 
   final SettingsStore settingsStore;
   final DirectoryPicker directoryPicker;
@@ -97,7 +97,7 @@ final class StarCraftDataAssetSettingsController {
   Future<StarCraftDataAssetSettingsState> chooseDirectory() async {
     final String? selectedPath;
     try {
-      selectedPath = await directoryPicker.pickStarCraftDataDirectory();
+      selectedPath = await directoryPicker.pickStarCraftInstallationDirectory();
     } catch (error) {
       final nextState = StarCraftDataAssetSettingsState(
         status: _state.status,
@@ -107,7 +107,8 @@ final class StarCraftDataAssetSettingsController {
           ..._state.diagnostics,
           _diagnostic(
             code: StarCraftDataAssetDiagnosticCodes.directoryPickerFailed,
-            message: 'The StarCraft data folder picker could not be opened.',
+            message:
+                'The StarCraft installation folder picker could not be opened.',
             remediation: 'Retry or check Windows dialog permissions.',
             rawDetails: error.toString(),
           ),
@@ -143,7 +144,7 @@ final class StarCraftDataAssetSettingsController {
           diagnostics: [
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.settingsWriteFailed,
-              message: 'The StarCraft data asset path could not be saved.',
+              message: 'The StarCraft installation path could not be saved.',
               filePath: path,
               remediation:
                   'Check access to the application settings folder and retry.',
@@ -190,7 +191,7 @@ final class StarCraftDataAssetSettingsController {
           diagnostics: [
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.settingsWriteFailed,
-              message: 'The StarCraft data asset path could not be cleared.',
+              message: 'The StarCraft installation path could not be cleared.',
               remediation:
                   'Check access to the application settings folder and retry.',
               rawDetails: error.toString(),
@@ -226,7 +227,7 @@ final class StarCraftDataAssetSettingsController {
           diagnostics: [
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.inspectionFailed,
-              message: 'StarCraft data assets could not be inspected.',
+              message: 'The StarCraft CASC storage could not be inspected.',
               filePath: path,
               remediation: 'Check directory access and retry.',
               rawDetails: error.toString(),
@@ -274,10 +275,10 @@ StarCraftDataAssetSettingsState _unconfiguredState() {
     status: StarCraftDataAssetSettingsStatus.unconfigured,
     diagnostics: [
       _diagnostic(
-        code: StarCraftDataAssetDiagnosticCodes.rootNotConfigured,
-        message: 'StarCraft tileset data assets are not configured.',
+        code: StarCraftDataAssetDiagnosticCodes.installationNotConfigured,
+        message: 'The StarCraft installation is not configured.',
         remediation:
-            'Open Settings and choose an asset root or tileset directory.',
+            'Open Settings and choose the StarCraft installation directory.',
       ),
     ],
   );

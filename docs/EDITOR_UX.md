@@ -85,9 +85,11 @@ fit-to-view로 배치한 읽기 전용 캔버스를 열고 맵 경계, 화면 �
 드래그로 이동하며, 포인터의 0기준 타일·StarCraft 픽셀 좌표를 표시한다.
 실제 StarCraft 타일 이미지는 아직 로딩하지 않으며 원시 값 대체 색상을
 유지한다. 도구 모음의 환경 배지를 누르거나 Edit > Settings를 선택하면
-StarCraft Data Assets 대화상자가 열린다. 사용자는 자산 루트 또는
-`tileset` 폴더를 선택하고 40개 필수 파일의 검사 결과, 누락·0바이트 파일과
-해결 방법을 확인할 수 있다. 중간 창 너비에서는 배지를 `SC:R • Ready`,
+StarCraft Data Assets 대화상자가 열린다. 사용자는 Battle.net에서 설치한
+StarCraft: Remastered 폴더를 선택하고 CascLib이 로컬 CASC에서 확인한 40개
+필수 자산, 제품·빌드·읽은 크기와 누락·손상 자산의 해결 방법을 확인할 수
+있다. 앱은 자산 복사나 수동 추출을 요구하지 않는다. 중간 창 너비에서는
+배지를 `SC:R • Ready`,
 `SC:R • Missing`처럼 축약한다.
 
 좌측에는 아카이브 항목,
@@ -237,7 +239,7 @@ UTC 시작·종료 시각을 먼저 보여준다. 아래에는 순서가 유지�
 
 - 테마와 UI 배율
 - 기본 작업 폴더
-- StarCraft 타일셋 데이터 자산 경로와 40개 필수 파일 검사
+- StarCraft: Remastered 설치 경로와 40개 필수 CASC 자산 검사
 - euddraft 경로와 프로필
 - 자동 저장 간격과 보관 수
 - 캔버스 격자/레이어 기본값
@@ -245,10 +247,13 @@ UTC 시작·종료 시각을 먼저 보여준다. 아래에는 순서가 유지�
 
 프로젝트 설정과 사용자별 로컬 경로를 분리한다.
 
-StarCraft 데이터 자산 대화상자는 선택 경로, 현재 검사 상태와 found/required
-개수를 항상 보여준다. Choose Folder, Refresh, Clear는 장기 작업 중 중복
-실행되지 않으며, 취소는 기존 설정을 유지한다. 자산이 없거나 불완전한 경우
-환경 배지와 Problems에 경고를 남기되 현재 대체 캔버스와 Save As를 막지 않는다.
+StarCraft 데이터 자산 대화상자는 선택 설치 경로, 현재 검사 상태와
+found/required 개수를 항상 보여준다. 준비되면 CASC 제품·빌드, 읽은 MiB,
+CascLib revision과 helper 버전도 표시한다. Choose Installation, Refresh,
+Clear는 장기 작업 중 중복 실행되지 않으며 취소는 기존 설정을 유지한다.
+설치가 없거나 불완전하면 Battle.net의 Scan and Repair를 해결 방법으로
+안내하고 환경 배지와 Problems에 경고를 남기되 현재 대체 캔버스와 Save As를
+막지 않는다.
 
 ## 12. UX 완료 조건
 

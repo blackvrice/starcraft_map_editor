@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 
 void main() {
-  test('declares every required loose file for all eight tilesets', () {
+  test('declares every required CASC asset for all eight tilesets', () {
     final requirements = StarCraftDataAssetManifest.requiredTilesetAssets;
 
     expect(StarCraftTilesetAssetSet.values, hasLength(8));
@@ -17,7 +17,7 @@ void main() {
       containsAll([
         r'tileset\badlands.cv5',
         r'tileset\platform.vf4',
-        r'tileset\install.vx4',
+        r'tileset\install.vx4ex',
         r'tileset\ashworld.vr4',
         r'tileset\jungle.wpe',
         r'tileset\desert.cv5',

@@ -47,6 +47,7 @@ flutter run -d windows
 - [eudplib](https://github.com/armoha/eudplib): StarCraft UMS/EUD 맵 도구 라이브러리
 - [euddraft](https://github.com/armoha/euddraft): StarCraft: Remastered 중심의 EUD 빌드 도구
 - [StormLib](https://github.com/ladislav-zezula/StormLib): MPQ 아카이브 라이브러리
+- [CascLib](https://github.com/ladislav-zezula/CascLib): 로컬 StarCraft CASC 데이터 읽기 라이브러리
 - [Chkdraft](https://github.com/TheNitesWhoSay/Chkdraft): 오픈 소스 StarCraft 맵 에디터 참고 구현
 
 외부 프로젝트의 코드를 포함하거나 바이너리를 배포할 때는 각 라이선스와 고지 의무를 별도로 검토합니다.

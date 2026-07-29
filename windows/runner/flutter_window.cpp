@@ -90,7 +90,7 @@ class ScopedComInitialization {
   bool should_uninitialize_;
 };
 
-DirectoryDialogSelection PickStarCraftDataDirectory(HWND owner) {
+DirectoryDialogSelection PickStarCraftInstallationDirectory(HWND owner) {
   ScopedComInitialization com;
   if (FAILED(com.result()) && com.result() != RPC_E_CHANGED_MODE) {
     return FailedDirectorySelection(com.result());
@@ -114,7 +114,7 @@ DirectoryDialogSelection PickStarCraftDataDirectory(HWND owner) {
         FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR);
   }
   if (SUCCEEDED(result)) {
-    result = dialog->SetTitle(L"Choose StarCraft Data Asset Directory");
+    result = dialog->SetTitle(L"Choose StarCraft Installation Directory");
   }
   if (SUCCEEDED(result)) {
     result = dialog->Show(owner);
@@ -185,7 +185,7 @@ bool FlutterWindow::OnCreate() {
         const bool is_open = call.method_name() == "openMap";
         const bool is_save = call.method_name() == "saveMap";
         const bool is_data_directory =
-            call.method_name() == "pickStarCraftDataDirectory";
+            call.method_name() == "pickStarCraftInstallationDirectory";
         if (!is_open && !is_save && !is_data_directory) {
           result->NotImplemented();
           return;
@@ -193,7 +193,7 @@ bool FlutterWindow::OnCreate() {
 
         if (is_data_directory) {
           const DirectoryDialogSelection selection =
-              PickStarCraftDataDirectory(GetHandle());
+              PickStarCraftInstallationDirectory(GetHandle());
           if (selection.status == DirectoryDialogStatus::accepted) {
             result->Success(flutter::EncodableValue(selection.path));
             return;

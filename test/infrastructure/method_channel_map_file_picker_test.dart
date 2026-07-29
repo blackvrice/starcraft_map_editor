@@ -53,23 +53,23 @@ void main() {
   });
 
   test(
-    'returns the StarCraft data directory selected by native dialog',
+    'returns the StarCraft installation selected by native dialog',
     () async {
       MethodCall? receivedCall;
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
             receivedCall = call;
-            return r'C:\StarCraftAssets';
+            return r'C:\Program Files (x86)\StarCraft';
           });
 
-      final path = await directoryPicker.pickStarCraftDataDirectory();
+      final path = await directoryPicker.pickStarCraftInstallationDirectory();
 
       expect(
         receivedCall!.method,
-        MethodChannelDirectoryPicker.pickStarCraftDataDirectoryMethod,
+        MethodChannelDirectoryPicker.pickStarCraftInstallationDirectoryMethod,
       );
       expect(receivedCall!.arguments, isNull);
-      expect(path, r'C:\StarCraftAssets');
+      expect(path, r'C:\Program Files (x86)\StarCraft');
     },
   );
 }

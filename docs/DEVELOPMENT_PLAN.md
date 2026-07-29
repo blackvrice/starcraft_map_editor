@@ -357,12 +357,19 @@
 - `MTXM`이 없거나 active 섹션을 안전하게 하나로 고를 수 없으면 임의 데이터를
   사용하지 않고 경계·격자만 표시한다. 유일한 정상 `DIM `도 없으면 캔버스를
   비활성화하고 필요한 조건을 표시한다.
-- Settings에서 사용자가 StarCraft 타일셋 데이터 루트 또는 `tileset` 폴더를
-  선택할 수 있다. 선택 경로는 사용자 로컬 설정의
-  `starcraftDataAssetRoot`에 저장하며 프로젝트나 맵 파일에는 기록하지 않는다.
-- `StarCraftDataAssetManifest`는 8개 타일셋의 `CV5`·`VF4`·`VX4`·`VR4`·`WPE`
-  총 40개 필수 파일을 고정한다. 로컬 검사기는 절대 경로, 폴더 존재 여부,
-  파일 누락과 0바이트 파일을 구분해 구조화 진단으로 반환한다.
+- Settings에서 사용자가 `.build.info`, `Data`, `StarCraft.exe`가 있는
+  StarCraft: Remastered 설치 폴더를 선택할 수 있다. 선택 경로는 사용자 로컬
+  설정의 `starcraftInstallationPath`에만 저장한다.
+- `StarCraftDataAssetManifest`는 8개 타일셋의
+  `CV5`·`VF4`·`VX4EX`·`VR4`·`WPE` 총 40개 CASC 내부 경로를 고정한다.
+  리마스터 설치본은 고전 `.vx4` 대신 확장 메가타일 `.vx4ex`를 사용한다.
+- [ADR-0005](decisions/0005-casclib-helper-process.md)에 따라 pinned CascLib을
+  정적으로 링크한 번들 `starcraft_data_helper.exe`가 로컬 CASC를 읽는다.
+  Dart 어댑터는 절대 설치 경로와 프로토콜/버전/매니페스트를 검증하고 누락,
+  손상, timeout, 대량 출력과 비정상 응답을 구조화 진단으로 반환한다.
+- 실제 로컬 SC:R `s1` 빌드 `13515`에서 40개 자산 33,670,360바이트를 끝까지
+  읽는 스모크 테스트를 통과했다. 게임 데이터를 추출·복사·다운로드하거나
+  CASC 저장소를 수정하지 않는다.
 - 도구 모음의 환경 배지와 하단 Problems가 검사 상태와 해결 방법을 표시한다.
   데이터 자산이 없거나 불완전해도 현재 원시 색상 캔버스와 안전한 Save As는
   사용할 수 있으며, 실제 타일 이미지 로딩은 다음 지형 편집 단계에서 연결한다.

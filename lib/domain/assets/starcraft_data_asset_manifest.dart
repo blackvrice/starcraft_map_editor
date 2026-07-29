@@ -26,7 +26,7 @@ enum StarCraftTilesetAssetSet {
 enum StarCraftTilesetAssetKind {
   groups(extension: 'cv5', displayName: 'Groups'),
   flags(extension: 'vf4', displayName: 'Flags'),
-  megatiles(extension: 'vx4', displayName: 'Megatiles'),
+  megatiles(extension: 'vx4ex', displayName: 'Extended megatiles'),
   minitiles(extension: 'vr4', displayName: 'Minitiles'),
   palette(extension: 'wpe', displayName: 'Palette');
 

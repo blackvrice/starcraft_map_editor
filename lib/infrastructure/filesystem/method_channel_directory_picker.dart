@@ -8,12 +8,15 @@ final class MethodChannelDirectoryPicker implements DirectoryPicker {
     this.channel = const MethodChannel(MethodChannelMapFilePicker.channelName),
   });
 
-  static const pickStarCraftDataDirectoryMethod = 'pickStarCraftDataDirectory';
+  static const pickStarCraftInstallationDirectoryMethod =
+      'pickStarCraftInstallationDirectory';
 
   final MethodChannel channel;
 
   @override
-  Future<String?> pickStarCraftDataDirectory() {
-    return channel.invokeMethod<String>(pickStarCraftDataDirectoryMethod);
+  Future<String?> pickStarCraftInstallationDirectory() {
+    return channel.invokeMethod<String>(
+      pickStarCraftInstallationDirectoryMethod,
+    );
   }
 }

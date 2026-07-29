@@ -10,7 +10,7 @@ import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
-import '../infrastructure/assets/local_starcraft_data_asset_inspector.dart';
+import '../infrastructure/assets/process_starcraft_data_asset_inspector.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import '../infrastructure/compiler/local_eud_tool_inspector.dart';
 import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
@@ -33,7 +33,7 @@ void bootstrap() {
       StarCraftDataAssetSettingsController(
         settingsStore: settingsStore,
         directoryPicker: const MethodChannelDirectoryPicker(),
-        inspector: LocalStarCraftDataAssetInspector(),
+        inspector: ProcessStarCraftDataAssetInspector.bundled(),
       );
   final archiveGateway = ProcessMapArchiveGateway.bundled();
   final fingerprintGateway = LocalMapFileFingerprintGateway();
