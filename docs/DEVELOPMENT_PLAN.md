@@ -326,7 +326,7 @@
 - [x] 확대/축소, 이동, 좌표 상태 표시
 - [x] StarCraft 데이터 자산 위치 설정과 누락 진단
 - [x] 타일 선택, 브러시, 사각형 채우기
-- [ ] 편집 명령 병합과 Undo/Redo
+- [x] 편집 명령 병합과 Undo/Redo
 - [ ] 원시 값/미지원 타일의 대체 표시
 - [ ] 캔버스 성능 계측과 256×256 스모크 테스트
 
@@ -361,6 +361,16 @@
 - 편집은 선택한 `MTXM` payload의 길이를 바꾸지 않고 해당 raw 섹션만 dirty로
   교체한다. 갱신된 세션은 즉시 캔버스·Inspector·Save As에 공유되며, Save As
   재열기 뒤에는 검증된 clean 세션을 채택한다. 선택과 카메라는 dirty가 아니다.
+- 각 지형 명령은 적용 전·후의 정확한 `MTXM` raw 섹션을 기록한다. 연속 Brush
+  드래그의 여러 화면 갱신은 마우스를 놓을 때 하나의 명령으로 병합하고,
+  Rectangle은 한 명령으로 기록한다. `Escape` 또는 포인터 취소는 진행 중인
+  Brush의 최초 섹션을 복원해 기록을 남기지 않는다.
+- Undo/Redo는 현재 raw 섹션이 명령의 예상 snapshot과 같은지 확인하고 교체
+  뒤 terrain view를 다시 검증한다. 새 편집은 Redo 기록을 비우고 세션별 최근
+  100개 명령을 유지한다. 최초 clean 섹션까지 Undo하면 `Modified`도 해제된다.
+  새 맵 또는 검증된 Save As 세션을 채택하면 이전 source의 기록을 초기화한다.
+- Edit 메뉴와 지형 도구 모음에 Undo/Redo 상태를 연결하고, 맵 작업 화면에서만
+  `Ctrl+Z`/`Ctrl+Y`를 활성화해 epScript 텍스트 편집과 충돌하지 않게 한다.
 - 현재 도구는 CHK의 게임 지형인 `MTXM`만 수정한다. Chkdraft
   `7ad7c28c15ab404eb6b535433f518f65a7b6e0f8`의 `Scenario::setTile`도 Game
   scope의 `MTXM`과 Editor scope의 `TILE`을 별도 배열로 다루는 것을 확인했다.

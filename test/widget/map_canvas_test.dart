@@ -319,6 +319,9 @@ void main() {
 
   testWidgets('brush fills every crossed tile without gaps', (tester) async {
     final painted = <TerrainTileCoordinate>[];
+    var started = 0;
+    var ended = 0;
+    var cancelled = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: SizedBox(
@@ -329,7 +332,10 @@ void main() {
             mapHeight: 2,
             rawTileValues: const [1, 2, 3, 4, 5, 6, 7, 8],
             editingTool: TerrainEditingTool.brush,
+            onBrushStrokeStarted: () => started++,
             onBrushStroke: painted.addAll,
+            onBrushStrokeEnded: () => ended++,
+            onBrushStrokeCancelled: () => cancelled++,
           ),
         ),
       ),
@@ -350,6 +356,46 @@ void main() {
       TerrainTileCoordinate(x: 2, y: 1),
       TerrainTileCoordinate(x: 3, y: 1),
     ]);
+    expect(started, 1);
+    expect(ended, 1);
+    expect(cancelled, 0);
+  });
+
+  testWidgets('escape cancels one active brush gesture', (tester) async {
+    var started = 0;
+    var ended = 0;
+    var cancelled = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 2,
+            editingTool: TerrainEditingTool.brush,
+            onBrushStrokeStarted: () => started++,
+            onBrushStroke: (_) {},
+            onBrushStrokeEnded: () => ended++,
+            onBrushStrokeCancelled: () => cancelled++,
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      _tileCenter(tester, x: 0, y: 0),
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryMouseButton,
+    );
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await gesture.up();
+    await tester.pump();
+
+    expect(started, 1);
+    expect(ended, 0);
+    expect(cancelled, 1);
   });
 
   testWidgets('rectangle previews normalized bounds and commits on release', (

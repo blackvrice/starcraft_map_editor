@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
@@ -438,6 +439,28 @@ void main() {
     );
     expect(
       tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-undo')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-redo')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+    expect(
+      tester
           .widget<TextButton>(find.byKey(const Key('toolbar-save-as')))
           .onPressed,
       isNotNull,
@@ -492,6 +515,54 @@ void main() {
             canvasPainter.layout.tileExtent * 0.5,
           ),
     );
+    await tester.pump();
+
+    expect(
+      openMapController.state.session!.terrainViews.tileMaps.single
+          .rawTileValueAt(x: 2, y: 0),
+      1,
+    );
+    expect(openMapController.state.session!.isDirty, isTrue);
+    expect(find.text('Modified'), findsWidgets);
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-undo')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(
+      openMapController.state.session!.terrainViews.tileMaps.single
+          .rawTileValueAt(x: 2, y: 0),
+      2,
+    );
+    expect(openMapController.state.session!.isDirty, isFalse);
+    expect(find.text('Editable'), findsOneWidget);
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.descendant(
+              of: find.byKey(const Key('terrain-redo')),
+              matching: find.byType(OutlinedButton),
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyY);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
     await tester.pump();
 
     expect(

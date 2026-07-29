@@ -53,6 +53,147 @@ void main() {
     expect(identical(edited.extractedMap, original.extractedMap), isTrue);
     expect(controller.state.tool, TerrainEditingTool.brush);
     expect(controller.state.selectedRawTileValue, 2);
+    expect(controller.canUndo, isTrue);
+    expect(controller.canRedo, isFalse);
+    expect(controller.undoLabel, 'Brush stroke');
+  });
+
+  test('merges a continuous brush stroke into one undo command', () async {
+    final fixture = await _openFixture(_terrainChk());
+    addTearDown(fixture.dispose);
+    final controller = fixture.terrainEditingController;
+
+    controller.synchronizeSession(fixture.openMapController.state.session);
+    controller.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
+
+    expect(controller.beginBrushStroke(), isTrue);
+    expect(
+      controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]),
+      isTrue,
+    );
+    expect(
+      controller.paintTiles(const [TerrainTileCoordinate(x: 2, y: 1)]),
+      isTrue,
+    );
+    expect(controller.state.isBrushStrokeActive, isTrue);
+    expect(controller.canUndo, isFalse);
+    expect(controller.commitBrushStroke(), isTrue);
+    expect(controller.state.undoDepth, 1);
+    expect(controller.canUndo, isTrue);
+
+    expect(controller.undo(), isTrue);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .terrainViews
+          .tileMaps
+          .single
+          .rawTileValues,
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(fixture.openMapController.state.session!.isDirty, isFalse);
+    expect(controller.canUndo, isFalse);
+    expect(controller.canRedo, isTrue);
+    expect(controller.redoLabel, 'Brush stroke');
+
+    expect(controller.redo(), isTrue);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .terrainViews
+          .tileMaps
+          .single
+          .rawTileValues,
+      [2, 2, 3, 4, 5, 2],
+    );
+    expect(fixture.openMapController.state.session!.isDirty, isTrue);
+  });
+
+  test('cancels an active brush stroke without recording history', () async {
+    final fixture = await _openFixture(_terrainChk());
+    addTearDown(fixture.dispose);
+    final controller = fixture.terrainEditingController;
+
+    controller.synchronizeSession(fixture.openMapController.state.session);
+    controller.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
+    expect(controller.beginBrushStroke(), isTrue);
+    expect(
+      controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]),
+      isTrue,
+    );
+    expect(fixture.openMapController.state.session!.isDirty, isTrue);
+
+    expect(controller.cancelBrushStroke(), isTrue);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .terrainViews
+          .tileMaps
+          .single
+          .rawTileValues,
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(fixture.openMapController.state.session!.isDirty, isFalse);
+    expect(controller.state.isBrushStrokeActive, isFalse);
+    expect(controller.canUndo, isFalse);
+    expect(controller.canRedo, isFalse);
+  });
+
+  test('a new edit after undo discards redo history', () async {
+    final fixture = await _openFixture(_terrainChk());
+    addTearDown(fixture.dispose);
+    final controller = fixture.terrainEditingController;
+
+    controller.synchronizeSession(fixture.openMapController.state.session);
+    controller.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
+    expect(
+      controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]),
+      isTrue,
+    );
+    expect(controller.undo(), isTrue);
+    expect(controller.canRedo, isTrue);
+
+    expect(
+      controller.paintTiles(const [TerrainTileCoordinate(x: 2, y: 0)]),
+      isTrue,
+    );
+    expect(controller.canRedo, isFalse);
+    expect(controller.state.undoDepth, 1);
+  });
+
+  test('retains only the configured number of undo commands', () async {
+    final fixture = await _openFixture(_terrainChk(), historyLimit: 2);
+    addTearDown(fixture.dispose);
+    final controller = fixture.terrainEditingController;
+
+    controller.synchronizeSession(fixture.openMapController.state.session);
+    controller.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
+    controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
+    controller.paintTiles(const [TerrainTileCoordinate(x: 2, y: 0)]);
+    controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 1)]);
+
+    expect(controller.state.undoDepth, 2);
+    expect(controller.undo(), isTrue);
+    expect(controller.undo(), isTrue);
+    expect(controller.undo(), isFalse);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .terrainViews
+          .tileMaps
+          .single
+          .rawTileValues,
+      [2, 2, 3, 4, 5, 6],
+    );
+    expect(fixture.openMapController.state.session!.isDirty, isTrue);
   });
 
   test(
@@ -87,6 +228,20 @@ void main() {
         [1, 1, 1, 4, 1, 1],
       );
       expect(controller.fillRectangle(region), isFalse);
+      expect(controller.state.undoDepth, 1);
+      expect(controller.undoLabel, 'Rectangle fill');
+      expect(controller.undo(), isTrue);
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .terrainViews
+            .tileMaps
+            .single
+            .rawTileValues,
+        [1, 2, 3, 4, 5, 6],
+      );
     },
   );
 
@@ -154,11 +309,25 @@ void main() {
     controller.synchronizeSession(first.openMapController.state.session);
     controller.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
     controller.setTool(TerrainEditingTool.brush);
+    controller.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
+    expect(controller.canUndo, isTrue);
     controller.synchronizeSession(second.openMapController.state.session);
 
     expect(controller.state.tool, TerrainEditingTool.select);
     expect(controller.state.selectedRawTileValue, isNull);
     expect(controller.state.selectedTile, isNull);
+    expect(controller.canUndo, isFalse);
+    expect(controller.canRedo, isFalse);
+  });
+
+  test('rejects a non-positive history limit', () {
+    expect(
+      () => TerrainEditingController(
+        openMapController: _unusedOpenMapController(),
+        historyLimit: 0,
+      ),
+      throwsArgumentError,
+    );
   });
 }
 
@@ -180,7 +349,10 @@ final class _OpenedFixture {
   }
 }
 
-Future<_OpenedFixture> _openFixture(Uint8List chkBytes) async {
+Future<_OpenedFixture> _openFixture(
+  Uint8List chkBytes, {
+  int historyLimit = 100,
+}) async {
   final progressController = OperationProgressController();
   final map = ExtractedMap(
     sourcePath: r'C:\Maps\Terrain.scx',
@@ -211,6 +383,7 @@ Future<_OpenedFixture> _openFixture(Uint8List chkBytes) async {
   );
   final terrainEditingController = TerrainEditingController(
     openMapController: openMapController,
+    historyLimit: historyLimit,
   );
   final state = await openMapController.open(sourcePath: map.sourcePath);
   expect(state.status, OpenMapStatus.opened);
@@ -300,4 +473,35 @@ final class _FixtureFingerprintGateway implements MapFileFingerprintGateway {
         sha256Digest:
             'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       );
+}
+
+OpenMapController _unusedOpenMapController() {
+  final progressController = OperationProgressController();
+  addTearDown(progressController.dispose);
+  final controller = OpenMapController(
+    archiveGateway: const _UnusedArchiveGateway(),
+    filePicker: const _NoMapFilePicker(),
+    fingerprintGateway: const _FixtureFingerprintGateway(),
+    recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+    operationProgressController: progressController,
+  );
+  addTearDown(controller.dispose);
+  return controller;
+}
+
+final class _UnusedArchiveGateway implements MapArchiveGateway {
+  const _UnusedArchiveGateway();
+
+  @override
+  Future<MapArchiveOpenResult> open(MapArchiveOpenRequest request) {
+    throw StateError('Opening is not used by this test.');
+  }
+
+  @override
+  Future<MapArchiveWriteResult> writeTemporary(MapArchiveWriteRequest request) {
+    throw StateError('Writing is not used by this test.');
+  }
+
+  @override
+  Future<bool> cancel(String operationId) async => false;
 }

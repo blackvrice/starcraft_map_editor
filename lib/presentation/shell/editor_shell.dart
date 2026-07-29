@@ -291,6 +291,20 @@ class _EditorShellState extends State<EditorShell> {
         widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
         ? _newEudSource
         : null;
+    final undoTerrain =
+        _workspaceView == _WorkspaceView.map &&
+            widget.terrainEditingController.canUndo
+        ? () {
+            widget.terrainEditingController.undo();
+          }
+        : null;
+    final redoTerrain =
+        _workspaceView == _WorkspaceView.map &&
+            widget.terrainEditingController.canRedo
+        ? () {
+            widget.terrainEditingController.redo();
+          }
+        : null;
     final starCraftDataAssetState =
         widget.starCraftDataAssetSettingsController.state;
     final visibleDiagnostics = [
@@ -331,6 +345,14 @@ class _EditorShellState extends State<EditorShell> {
           )] =
           newEudSource;
     }
+    if (undoTerrain != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.keyZ, control: true)] =
+          undoTerrain;
+    }
+    if (redoTerrain != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.keyY, control: true)] =
+          redoTerrain;
+    }
 
     return CallbackShortcuts(
       bindings: shortcuts,
@@ -347,6 +369,8 @@ class _EditorShellState extends State<EditorShell> {
                   newEudSource: newEudSource,
                   buildEud: buildEud,
                   cancelEudBuild: cancelEudBuild,
+                  undo: undoTerrain,
+                  redo: redoTerrain,
                   openSettings: _showStarCraftDataAssetSettings,
                 ),
                 const Divider(height: 1),
@@ -441,6 +465,8 @@ class _EditorMenuBar extends StatelessWidget {
     required this.newEudSource,
     required this.buildEud,
     required this.cancelEudBuild,
+    required this.undo,
+    required this.redo,
     required this.openSettings,
   });
 
@@ -449,6 +475,8 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
   final VoidCallback? cancelEudBuild;
+  final VoidCallback? undo;
+  final VoidCallback? redo;
   final VoidCallback openSettings;
 
   @override
@@ -466,8 +494,16 @@ class _EditorMenuBar extends StatelessWidget {
         ),
         SubmenuButton(
           menuChildren: [
-            const MenuItemButton(onPressed: null, child: Text('Undo')),
-            const MenuItemButton(onPressed: null, child: Text('Redo')),
+            MenuItemButton(
+              key: const Key('menu-undo'),
+              onPressed: undo,
+              child: const Text('Undo'),
+            ),
+            MenuItemButton(
+              key: const Key('menu-redo'),
+              onPressed: redo,
+              child: const Text('Redo'),
+            ),
             const Divider(),
             MenuItemButton(
               key: const Key('menu-settings'),
@@ -1305,6 +1341,12 @@ class _OpenedMapWorkspace extends StatelessWidget {
                   canSelectTiles: canSelectTiles,
                   canEditTerrain: canEditTerrain,
                   onToolSelected: terrainEditingController.setTool,
+                  onUndo: editingState.canUndo
+                      ? terrainEditingController.undo
+                      : null,
+                  onRedo: editingState.canRedo
+                      ? terrainEditingController.redo
+                      : null,
                 ),
               ],
             ),
@@ -1329,6 +1371,18 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     onBrushStroke:
                         canEditTerrain && editingState.hasSelectedTile
                         ? terrainEditingController.paintTiles
+                        : null,
+                    onBrushStrokeStarted:
+                        canEditTerrain && editingState.hasSelectedTile
+                        ? terrainEditingController.beginBrushStroke
+                        : null,
+                    onBrushStrokeEnded:
+                        canEditTerrain && editingState.hasSelectedTile
+                        ? terrainEditingController.commitBrushStroke
+                        : null,
+                    onBrushStrokeCancelled:
+                        canEditTerrain && editingState.hasSelectedTile
+                        ? terrainEditingController.cancelBrushStroke
                         : null,
                     onRectangleFilled:
                         canEditTerrain && editingState.hasSelectedTile
@@ -1384,12 +1438,16 @@ class _TerrainEditingToolbar extends StatelessWidget {
     required this.canSelectTiles,
     required this.canEditTerrain,
     required this.onToolSelected,
+    required this.onUndo,
+    required this.onRedo,
   });
 
   final TerrainEditingState state;
   final bool canSelectTiles;
   final bool canEditTerrain;
   final ValueChanged<TerrainEditingTool> onToolSelected;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
 
   @override
   Widget build(BuildContext context) {
@@ -1430,6 +1488,22 @@ class _TerrainEditingToolbar extends StatelessWidget {
           enabled: canEditTerrain && hasSelectedTile,
           onPressed: () => onToolSelected(TerrainEditingTool.rectangle),
         ),
+        _TerrainToolButton(
+          key: const Key('terrain-undo'),
+          label: 'Undo',
+          icon: Icons.undo_rounded,
+          selected: false,
+          enabled: onUndo != null,
+          onPressed: onUndo,
+        ),
+        _TerrainToolButton(
+          key: const Key('terrain-redo'),
+          label: 'Redo',
+          icon: Icons.redo_rounded,
+          selected: false,
+          enabled: onRedo != null,
+          onPressed: onRedo,
+        ),
         _MapCanvasMetadata(
           key: const Key('terrain-selected-tile'),
           icon: hasSelectedTile
@@ -1461,7 +1535,7 @@ class _TerrainToolButton extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final bool enabled;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

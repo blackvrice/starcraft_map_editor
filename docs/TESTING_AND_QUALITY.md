@@ -216,7 +216,11 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 포인터 hover의 0기준 타일 좌표·32픽셀 기준 맵 좌표 및 맵 밖 상태 표시
 - raw 타일 선택, 선택 전 Brush/Rectangle 비활성, 선택 좌표 강조
 - 빠른 Brush 드래그의 정수 선분 보간과 Rectangle 포함 영역 미리보기·적용
-- `Escape` Rectangle 취소와 카메라/선택 상태의 비-dirty 처리
+- 연속 Brush 변경의 단일 명령 병합과 Rectangle의 단일 Undo 단계
+- Undo로 최초 raw 섹션까지 복원했을 때 clean 전환과 Redo 재적용
+- Undo 뒤 새 편집의 Redo 폐기와 다른 source snapshot의 기록 초기화
+- `Escape` Brush 전체 롤백·Rectangle 취소와 카메라/선택 상태의 비-dirty 처리
+- 도구 모음 Undo/Redo 활성 상태와 맵 화면 `Ctrl+Z`/`Ctrl+Y` 연결
 - 중복·비격자 `MTXM`, 차단 진단, euddraft 보호 마커의 편집 차단
 - Brush/Rectangle 변경 시 대상 `MTXM`만 dirty이고 `TILE`/`ISOM`/미지원
   섹션의 payload와 순서가 동일함

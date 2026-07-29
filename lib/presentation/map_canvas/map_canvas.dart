@@ -14,7 +14,10 @@ class MapCanvas extends StatefulWidget {
     this.editingTool = TerrainEditingTool.select,
     this.selectedTile,
     this.onTileSelected,
+    this.onBrushStrokeStarted,
     this.onBrushStroke,
+    this.onBrushStrokeEnded,
+    this.onBrushStrokeCancelled,
     this.onRectangleFilled,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
@@ -30,7 +33,10 @@ class MapCanvas extends StatefulWidget {
   final TerrainEditingTool editingTool;
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
+  final VoidCallback? onBrushStrokeStarted;
   final ValueChanged<List<TerrainTileCoordinate>>? onBrushStroke;
+  final VoidCallback? onBrushStrokeEnded;
+  final VoidCallback? onBrushStrokeCancelled;
   final ValueChanged<TerrainTileRegion>? onRectangleFilled;
   final double contentPadding;
   final double maximumTileExtent;
@@ -341,6 +347,7 @@ class _MapCanvasState extends State<MapCanvas> {
         if (onBrushStroke == null) {
           return;
         }
+        widget.onBrushStrokeStarted?.call();
         setState(() {
           _activeEditPointer = event.pointer;
           _lastBrushTile = tile;
@@ -425,6 +432,13 @@ class _MapCanvasState extends State<MapCanvas> {
     if (_activeEditPointer != event.pointer) {
       return;
     }
+    if (widget.editingTool == TerrainEditingTool.brush) {
+      if (cancelled) {
+        widget.onBrushStrokeCancelled?.call();
+      } else {
+        widget.onBrushStrokeEnded?.call();
+      }
+    }
     final start = _rectangleStart;
     final end = _rectangleEnd;
     if (!cancelled &&
@@ -440,6 +454,9 @@ class _MapCanvasState extends State<MapCanvas> {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
         _activeEditPointer != null) {
+      if (widget.editingTool == TerrainEditingTool.brush) {
+        widget.onBrushStrokeCancelled?.call();
+      }
       _cancelEditGesture();
       return KeyEventResult.handled;
     }
