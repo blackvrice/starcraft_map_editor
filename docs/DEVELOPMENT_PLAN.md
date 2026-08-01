@@ -332,7 +332,7 @@
 - [x] 고정 매니페스트 기반 타일 자산 읽기 포트와 helper 프로토콜
 - [x] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
 - [x] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
-- [ ] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
+- [x] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
 - [ ] 캔버스 성능 계측과 256×256 스모크 테스트
 
 구현 메모:
@@ -459,9 +459,21 @@
   비동기 로드 중 generation이 바뀌면 늦게 완성된 이미지도 즉시 폐기한다.
 - 4,097개 고유 raw 값의 `4,096 + 1` 배치, 다열 아틀라스 절단, 캐시 재사용과
   snapshot 무효화, LRU 퇴출, 이미지 변환 실패, helper unsupported, 오래된
-  generation dispose를 자동 테스트로 고정했다. 이 단계는 텍스처 준비 상태만
-  구현했으며 `MapCanvasPainter`가 실제 이미지를 우선 그리는 연결은 다음
-  체크 항목에서 진행한다.
+  generation dispose를 자동 테스트로 고정했다.
+- 앱 조립은 `ProcessStarCraftTileAtlasGateway`·`TerrainTileAtlasLoader`·
+  `TerrainTileTextureController`를 한 수명으로 연결한다. `EditorShell`은 열린
+  문서나 자산 검사 상태가 바뀔 때 generation을 동기화하며, 설정 해제·교체나
+  맵 세션 해제 시 캐시를 비우고 이전 이미지를 dispose한다. 렌더 진단은 기존
+  Problems 목록에 합쳐지며 저장 차단 진단으로 승격하지 않는다.
+- `MapCanvasPainter`는 가시 타일마다 준비된 32×32 `ui.Image`를
+  `FilterQuality.none`으로 먼저 그린다. 이미지가 아직 없거나 helper/이미지
+  변환이 실패한 표준 raw는 기존 결정적 색상으로, `0x4000` 이상은 이미지 맵에
+  잘못 포함되어도 자홍색 교차 패턴으로 그린다. 배지는 loading, 실제 타일,
+  혼합 fallback, 전체 raw fallback 상태를 구분한다.
+- 위젯 테스트는 실제 RGBA 이미지를 캔버스에 그린 결과 픽셀, 미지원 타일의
+  fallback 픽셀, 로딩 배지, painter 갱신 identity를 검증한다. 셸 통합 테스트는
+  준비된 설치에서 맵의 고유 raw만 요청해 실제 타일 모드로 전환하고 자산 설정을
+  지우면 모든 텍스처를 해제한 뒤 raw fallback으로 복귀하는 흐름을 고정한다.
 
 완료 조건:
 

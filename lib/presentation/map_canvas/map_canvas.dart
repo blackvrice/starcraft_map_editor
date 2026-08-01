@@ -6,12 +6,15 @@ import 'package:flutter/services.dart';
 
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
+import 'terrain_tile_texture.dart';
+import 'terrain_tile_texture_controller.dart';
 
 class MapCanvas extends StatefulWidget {
   const MapCanvas({
     required this.mapWidth,
     required this.mapHeight,
     this.rawTileValues,
+    this.terrainTextureState = const TerrainTileTextureState.idle(),
     this.editingTool = TerrainEditingTool.select,
     this.selectedTile,
     this.onTileSelected,
@@ -31,6 +34,7 @@ class MapCanvas extends StatefulWidget {
   final int mapWidth;
   final int mapHeight;
   final List<int>? rawTileValues;
+  final TerrainTileTextureState terrainTextureState;
   final TerrainEditingTool editingTool;
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
@@ -117,6 +121,10 @@ class _MapCanvasState extends State<MapCanvas> {
               ? widget.rawTileValues
               : null;
           final terrainDisplaySummary = _displaySummaryFor(terrainValues);
+          final renderMode = _renderModeFor(
+            terrainValues: terrainValues,
+            terrainDisplaySummary: terrainDisplaySummary,
+          );
           final coordinate = _pointerPosition == null
               ? null
               : layout.coordinateAt(_pointerPosition!);
@@ -150,7 +158,7 @@ class _MapCanvasState extends State<MapCanvas> {
                   label:
                       'Map canvas, ${widget.mapWidth} by '
                       '${widget.mapHeight} tiles, '
-                      '${terrainValues == null ? 'geometry preview' : 'raw terrain fallback'}, '
+                      '${renderMode.semanticLabel}, '
                       '${terrainDisplaySummary?.unsupportedTileCount ?? 0} '
                       'unsupported tiles, '
                       '${widget.editingTool.name} tool, '
@@ -166,6 +174,8 @@ class _MapCanvasState extends State<MapCanvas> {
                             painter: MapCanvasPainter(
                               layout: layout,
                               rawTileValues: terrainValues,
+                              terrainTextures:
+                                  widget.terrainTextureState.textures,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                             ),
@@ -200,18 +210,8 @@ class _MapCanvasState extends State<MapCanvas> {
                         bottom: 12,
                         child: _CanvasBadge(
                           key: const Key('map-canvas-render-mode'),
-                          icon: terrainValues == null
-                              ? Icons.border_all_rounded
-                              : terrainDisplaySummary!.hasUnsupportedTiles
-                              ? Icons.warning_amber_rounded
-                              : Icons.texture_rounded,
-                          label: terrainValues == null
-                              ? 'Geometry only'
-                              : terrainDisplaySummary!.hasUnsupportedTiles
-                              ? 'Raw fallback · '
-                                    '${terrainDisplaySummary.unsupportedTileCount} '
-                                    'unsupported'
-                              : 'Raw fallback',
+                          icon: renderMode.icon,
+                          label: renderMode.label,
                         ),
                       ),
                       Positioned(
@@ -289,6 +289,55 @@ class _MapCanvasState extends State<MapCanvas> {
         ? null
         : TerrainTileDisplaySummary.fromRawValues(rawTileValues);
     return _terrainDisplaySummary;
+  }
+
+  _MapCanvasRenderMode _renderModeFor({
+    required List<int>? terrainValues,
+    required TerrainTileDisplaySummary? terrainDisplaySummary,
+  }) {
+    if (terrainValues == null || terrainDisplaySummary == null) {
+      return const _MapCanvasRenderMode(
+        icon: Icons.border_all_rounded,
+        label: 'Geometry only',
+        semanticLabel: 'geometry preview',
+      );
+    }
+
+    final textureState = widget.terrainTextureState;
+    final readyCount = textureState.textures.length;
+    if (textureState.isLoading) {
+      return _MapCanvasRenderMode(
+        icon: Icons.hourglass_top_rounded,
+        label: readyCount == 0
+            ? 'Loading StarCraft tiles'
+            : 'Loading StarCraft tiles · $readyCount ready',
+        semanticLabel: 'StarCraft terrain loading',
+      );
+    }
+    if (readyCount > 0) {
+      final fallbackCount = textureState.fallbackRawValues.length;
+      return _MapCanvasRenderMode(
+        icon: fallbackCount == 0
+            ? Icons.landscape_rounded
+            : Icons.warning_amber_rounded,
+        label: fallbackCount == 0
+            ? 'StarCraft tiles'
+            : 'StarCraft tiles · $fallbackCount fallback',
+        semanticLabel: fallbackCount == 0
+            ? 'StarCraft terrain'
+            : 'StarCraft terrain with fallback tiles',
+      );
+    }
+    return _MapCanvasRenderMode(
+      icon: terrainDisplaySummary.hasUnsupportedTiles
+          ? Icons.warning_amber_rounded
+          : Icons.texture_rounded,
+      label: terrainDisplaySummary.hasUnsupportedTiles
+          ? 'Raw fallback · '
+                '${terrainDisplaySummary.unsupportedTileCount} unsupported'
+          : 'Raw fallback',
+      semanticLabel: 'raw terrain fallback',
+    );
   }
 
   void _zoomAt(
@@ -535,6 +584,18 @@ class _MapCanvasState extends State<MapCanvas> {
   }
 }
 
+final class _MapCanvasRenderMode {
+  const _MapCanvasRenderMode({
+    required this.icon,
+    required this.label,
+    required this.semanticLabel,
+  });
+
+  final IconData icon;
+  final String label;
+  final String semanticLabel;
+}
+
 class MapCanvasLayout {
   const MapCanvasLayout({
     required this.viewportSize,
@@ -742,6 +803,7 @@ class MapCanvasPainter extends CustomPainter {
   MapCanvasPainter({
     required this.layout,
     required this.rawTileValues,
+    this.terrainTextures = const {},
     this.selectedTile,
     this.rectanglePreview,
   }) : assert(
@@ -778,6 +840,7 @@ class MapCanvasPainter extends CustomPainter {
 
   final MapCanvasLayout layout;
   final List<int>? rawTileValues;
+  final Map<int, TerrainTileTexture> terrainTextures;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
 
@@ -810,7 +873,8 @@ class MapCanvasPainter extends CustomPainter {
       return;
     }
 
-    final paint = Paint();
+    final fallbackPaint = Paint();
+    final imagePaint = Paint()..filterQuality = FilterQuality.none;
     for (var y = bounds.top; y < bounds.bottomExclusive; y++) {
       for (var x = bounds.left; x < bounds.rightExclusive; x++) {
         final rawValue = values[y * layout.mapWidth + x];
@@ -820,9 +884,25 @@ class MapCanvasPainter extends CustomPainter {
           layout.tileExtent,
           layout.tileExtent,
         );
-        if (TerrainTileDisplayValue.isStandardRawValue(rawValue)) {
-          paint.color = _tilePalette[_paletteIndex(rawValue)];
-          canvas.drawRect(tileRect, paint);
+        final isStandardRawValue = TerrainTileDisplayValue.isStandardRawValue(
+          rawValue,
+        );
+        final texture = isStandardRawValue ? terrainTextures[rawValue] : null;
+        if (texture != null) {
+          canvas.drawImageRect(
+            texture.image,
+            Rect.fromLTWH(
+              0,
+              0,
+              texture.width.toDouble(),
+              texture.height.toDouble(),
+            ),
+            tileRect,
+            imagePaint,
+          );
+        } else if (isStandardRawValue) {
+          fallbackPaint.color = _tilePalette[_paletteIndex(rawValue)];
+          canvas.drawRect(tileRect, fallbackPaint);
         } else {
           _paintUnsupportedTile(canvas, tileRect);
         }
@@ -926,6 +1006,7 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.layout.tileExtent != layout.tileExtent ||
         oldDelegate.layout.gridStep != layout.gridStep ||
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
+        !identical(oldDelegate.terrainTextures, terrainTextures) ||
         oldDelegate.selectedTile != selectedTile ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||

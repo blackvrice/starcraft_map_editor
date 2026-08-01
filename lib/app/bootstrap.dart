@@ -10,8 +10,10 @@ import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../application/terrain/terrain_editing_controller.dart';
+import '../application/terrain/terrain_tile_atlas_loader.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
 import '../infrastructure/assets/process_starcraft_data_asset_inspector.dart';
+import '../infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import '../infrastructure/compiler/local_eud_tool_inspector.dart';
 import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
@@ -21,6 +23,7 @@ import '../infrastructure/filesystem/local_map_save_file_gateway.dart';
 import '../infrastructure/filesystem/method_channel_directory_picker.dart';
 import '../infrastructure/filesystem/method_channel_map_file_picker.dart';
 import '../infrastructure/settings/json_file_settings_store.dart';
+import '../presentation/map_canvas/terrain_tile_texture_controller.dart';
 import 'app.dart';
 
 void bootstrap() {
@@ -61,6 +64,11 @@ void bootstrap() {
   final terrainEditingController = TerrainEditingController(
     openMapController: openMapController,
   );
+  final terrainTileTextureController = TerrainTileTextureController(
+    loader: TerrainTileAtlasLoader(
+      gateway: ProcessStarCraftTileAtlasGateway.bundled(),
+    ),
+  );
   final saveMapController = SaveMapController(
     archiveGateway: archiveGateway,
     filePicker: filePicker,
@@ -98,6 +106,7 @@ void bootstrap() {
     settingsStore: settingsStore,
     starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
     terrainEditingController: terrainEditingController,
+    terrainTileTextureController: terrainTileTextureController,
   );
 
   runApp(StarCraftMapEditorApp(dependencies: dependencies));

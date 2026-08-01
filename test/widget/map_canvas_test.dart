@@ -1,9 +1,13 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
   testWidgets('renders map bounds, grid, visible range, and terrain mode', (
@@ -75,6 +79,111 @@ void main() {
     final painter = customPaint.painter! as MapCanvasPainter;
     expect(painter.rawTileValues, [0, 0x3fff, 0x4000, 0xffff]);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('paints ready StarCraft images before per-tile fallback', (
+    tester,
+  ) async {
+    final rgba = Uint8List(32 * 32 * 4);
+    for (var offset = 0; offset < rgba.length; offset += 4) {
+      rgba[offset] = 255;
+      rgba[offset + 3] = 255;
+    }
+    final texture = await tester.runAsync(
+      () => const UiTerrainTileTextureFactory().create(rgba),
+    );
+    expect(texture, isNotNull);
+    final resolvedTexture = texture!;
+    addTearDown(resolvedTexture.dispose);
+    final textureState = TerrainTileTextureState(
+      status: TerrainTileTextureStatus.partial,
+      requestedRawValueCount: 2,
+      textures: {1: resolvedTexture},
+      unsupportedRawValues: const [0x4000],
+      fallbackRawValues: const [0x4000],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 2,
+            mapHeight: 1,
+            rawTileValues: const [1, 0x4000],
+            terrainTextureState: textureState,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('StarCraft tiles · 1 fallback'), findsOneWidget);
+    final widgetPainter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(widgetPainter.terrainTextures[1], same(resolvedTexture));
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    final layout = MapCanvasLayout.fit(
+      viewportSize: const Size(64, 32),
+      mapWidth: 2,
+      mapHeight: 1,
+      contentPadding: 0,
+    );
+    MapCanvasPainter(
+      layout: layout,
+      rawTileValues: const [1, 0x4000],
+      terrainTextures: {1: resolvedTexture, 0x4000: resolvedTexture},
+    ).paint(canvas, const Size(64, 32));
+    final rendered = await tester.runAsync(
+      () => recorder.endRecording().toImage(64, 32),
+    );
+    expect(rendered, isNotNull);
+    final resolvedRendered = rendered!;
+    addTearDown(resolvedRendered.dispose);
+    final pixels = await tester.runAsync(
+      () => resolvedRendered.toByteData(format: ui.ImageByteFormat.rawRgba),
+    );
+    expect(pixels, isNotNull);
+
+    final imagePixel = (16 * 64 + 16) * 4;
+    expect(pixels!.getUint8(imagePixel), 255);
+    expect(pixels.getUint8(imagePixel + 1), 0);
+    expect(pixels.getUint8(imagePixel + 2), 0);
+    expect(pixels.getUint8(imagePixel + 3), 255);
+    final fallbackPixel = (8 * 64 + 48) * 4;
+    expect(pixels.getUint8(fallbackPixel), 0x42);
+    expect(pixels.getUint8(fallbackPixel + 1), 0x16);
+    expect(pixels.getUint8(fallbackPixel + 2), 0x2f);
+  });
+
+  testWidgets('shows loading mode before the first StarCraft tile is ready', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 1,
+            mapHeight: 1,
+            rawTileValues: const [1],
+            terrainTextureState: TerrainTileTextureState(
+              status: TerrainTileTextureStatus.loading,
+              requestedRawValueCount: 1,
+              fallbackRawValues: const [1],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Loading StarCraft tiles'), findsOneWidget);
   });
 
   testWidgets('falls back to geometry when tile data is missing or invalid', (
@@ -656,6 +765,12 @@ void main() {
       selectedTile: const TerrainTileCoordinate(x: 0, y: 0),
     );
     expect(changedSelection.shouldRepaint(original), isTrue);
+    final changedTextures = MapCanvasPainter(
+      layout: layout,
+      rawTileValues: values,
+      terrainTextures: Map<int, TerrainTileTexture>.unmodifiable(const {}),
+    );
+    expect(changedTextures.shouldRepaint(original), isTrue);
   });
 }
 

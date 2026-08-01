@@ -89,9 +89,7 @@ final class TerrainTileTextureController {
       assetState: assetState,
     );
     if (context == null) {
-      _activeIdentity = null;
-      cache.clear();
-      return _emit(const TerrainTileTextureState.idle());
+      return _clearState();
     }
 
     if (_activeIdentity != context.identity) {
@@ -219,6 +217,12 @@ final class TerrainTileTextureController {
     );
   }
 
+  TerrainTileTextureState clear() {
+    _ensureUsable();
+    _generation++;
+    return _clearState();
+  }
+
   void dispose() {
     if (_disposed) {
       return;
@@ -242,7 +246,7 @@ final class TerrainTileTextureController {
     final fallback = SplayTreeSet<int>.of(unsupported)..addAll(failed);
     var hasCacheMiss = false;
     for (final rawValue in context.renderableRawValues) {
-      final texture = cache.peek(_key(context.identity, rawValue));
+      final texture = cache.get(_key(context.identity, rawValue));
       if (texture == null) {
         fallback.add(rawValue);
         if (!unsupported.contains(rawValue) && !failed.contains(rawValue)) {
@@ -287,6 +291,12 @@ final class TerrainTileTextureController {
   }
 
   bool _isCurrent(int generation) => !_disposed && generation == _generation;
+
+  TerrainTileTextureState _clearState() {
+    _activeIdentity = null;
+    cache.clear();
+    return _emit(const TerrainTileTextureState.idle());
+  }
 
   void _ensureUsable() {
     if (_disposed) {

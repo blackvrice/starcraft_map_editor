@@ -21,6 +21,7 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../map_canvas/map_canvas.dart';
+import '../map_canvas/terrain_tile_texture_controller.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud }
@@ -36,6 +37,7 @@ class EditorShell extends StatefulWidget {
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
     required this.terrainEditingController,
+    required this.terrainTileTextureController,
     super.key,
   });
 
@@ -49,6 +51,7 @@ class EditorShell extends StatefulWidget {
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
   final TerrainEditingController terrainEditingController;
+  final TerrainTileTextureController terrainTileTextureController;
 
   @override
   State<EditorShell> createState() => _EditorShellState();
@@ -63,6 +66,8 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<StarCraftDataAssetSettingsState>
   _starCraftDataAssetSettingsSubscription;
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
+  late StreamSubscription<TerrainTileTextureState>
+  _terrainTileTextureSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
 
@@ -87,18 +92,24 @@ class _EditorShellState extends State<EditorShell> {
     _terrainEditingSubscription = _listenForTerrainEditing(
       widget.terrainEditingController,
     );
+    _terrainTileTextureSubscription = _listenForTerrainTileTextures(
+      widget.terrainTileTextureController,
+    );
+    _synchronizeTerrainTextures();
     unawaited(widget.starCraftDataAssetSettingsController.load());
   }
 
   @override
   void didUpdateWidget(EditorShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    var synchronizeTerrainTextures = false;
     if (oldWidget.recentProjectsService != widget.recentProjectsService) {
       _recentProjects = widget.recentProjectsService.load();
     }
     if (oldWidget.openMapController != widget.openMapController) {
       unawaited(_openMapSubscription.cancel());
       _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
+      synchronizeTerrainTextures = true;
     }
     if (oldWidget.saveMapController != widget.saveMapController) {
       unawaited(_saveMapSubscription.cancel());
@@ -122,6 +133,7 @@ class _EditorShellState extends State<EditorShell> {
         widget.starCraftDataAssetSettingsController,
       );
       unawaited(widget.starCraftDataAssetSettingsController.load());
+      synchronizeTerrainTextures = true;
     }
     if (oldWidget.terrainEditingController != widget.terrainEditingController) {
       unawaited(_terrainEditingSubscription.cancel());
@@ -131,6 +143,17 @@ class _EditorShellState extends State<EditorShell> {
       _terrainEditingSubscription = _listenForTerrainEditing(
         widget.terrainEditingController,
       );
+    }
+    if (oldWidget.terrainTileTextureController !=
+        widget.terrainTileTextureController) {
+      unawaited(_terrainTileTextureSubscription.cancel());
+      _terrainTileTextureSubscription = _listenForTerrainTileTextures(
+        widget.terrainTileTextureController,
+      );
+      synchronizeTerrainTextures = true;
+    }
+    if (synchronizeTerrainTextures) {
+      _synchronizeTerrainTextures();
     }
   }
 
@@ -147,6 +170,7 @@ class _EditorShellState extends State<EditorShell> {
           }
           widget.terrainEditingController.synchronizeSession(state.session);
         });
+        _synchronizeTerrainTextures();
       }
     });
   }
@@ -199,6 +223,7 @@ class _EditorShellState extends State<EditorShell> {
     return controller.changes.listen((_) {
       if (mounted) {
         setState(() {});
+        _synchronizeTerrainTextures();
       }
     });
   }
@@ -213,6 +238,31 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<TerrainTileTextureState> _listenForTerrainTileTextures(
+    TerrainTileTextureController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _synchronizeTerrainTextures() {
+    final session = widget.openMapController.state.session;
+    if (session == null) {
+      widget.terrainTileTextureController.clear();
+      return;
+    }
+    unawaited(
+      widget.terrainTileTextureController.synchronize(
+        metadataViews: session.metadataViews,
+        terrainViews: session.terrainViews,
+        assetState: widget.starCraftDataAssetSettingsController.state,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     unawaited(_openMapSubscription.cancel());
@@ -221,6 +271,8 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_eudSourceSubscription.cancel());
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     unawaited(_terrainEditingSubscription.cancel());
+    unawaited(_terrainTileTextureSubscription.cancel());
+    widget.terrainTileTextureController.clear();
     super.dispose();
   }
 
@@ -308,9 +360,11 @@ class _EditorShellState extends State<EditorShell> {
         : null;
     final starCraftDataAssetState =
         widget.starCraftDataAssetSettingsController.state;
+    final terrainTileTextureState = widget.terrainTileTextureController.state;
     final visibleDiagnostics = [
       ..._documentDiagnostics,
       ...starCraftDataAssetState.diagnostics,
+      ...terrainTileTextureState.diagnostics,
     ];
 
     final shortcuts = <ShortcutActivator, VoidCallback>{};
@@ -416,6 +470,7 @@ class _EditorShellState extends State<EditorShell> {
                             eudSourceController: widget.eudSourceController,
                             terrainEditingController:
                                 widget.terrainEditingController,
+                            terrainTileTextureState: terrainTileTextureState,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
                             onShowEud: _showEudWorkspace,
@@ -753,6 +808,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onRemoveRecentProject,
     required this.eudSourceController,
     required this.terrainEditingController,
+    required this.terrainTileTextureState,
     required this.workspaceView,
     required this.onShowMap,
     required this.onShowEud,
@@ -767,6 +823,7 @@ class _EditorWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
+  final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
@@ -821,6 +878,7 @@ class _EditorWorkspace extends StatelessWidget {
                   onRemoveRecentProject: onRemoveRecentProject,
                   eudSourceController: eudSourceController,
                   terrainEditingController: terrainEditingController,
+                  terrainTileTextureState: terrainTileTextureState,
                   workspaceView: workspaceView,
                 ),
               ),
@@ -1095,6 +1153,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.onRemoveRecentProject,
     required this.eudSourceController,
     required this.terrainEditingController,
+    required this.terrainTileTextureState,
     required this.workspaceView,
   });
 
@@ -1107,6 +1166,7 @@ class _MapWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
+  final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
 
   @override
@@ -1122,8 +1182,12 @@ class _MapWorkspace extends StatelessWidget {
     if (session != null) {
       return _OpenedMapWorkspace(
         session: session,
-        diagnostics: session.diagnostics,
+        diagnostics: [
+          ...session.diagnostics,
+          ...terrainTileTextureState.diagnostics,
+        ],
         terrainEditingController: terrainEditingController,
+        terrainTileTextureState: terrainTileTextureState,
       );
     }
 
@@ -1214,11 +1278,13 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.session,
     required this.diagnostics,
     required this.terrainEditingController,
+    required this.terrainTileTextureState,
   });
 
   final OpenedMapSession session;
   final List<EditorDiagnostic> diagnostics;
   final TerrainEditingController terrainEditingController;
+  final TerrainTileTextureState terrainTileTextureState;
 
   @override
   Widget build(BuildContext context) {
@@ -1364,6 +1430,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     mapWidth: dimensions.width,
                     mapHeight: dimensions.height,
                     rawTileValues: rawTileValues,
+                    terrainTextureState: terrainTileTextureState,
                     editingTool: editingState.tool,
                     selectedTile: editingState.selectedTile,
                     onTileSelected: canSelectTiles

@@ -190,20 +190,21 @@ SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint�
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
 fit-to-view 기준 타일 크기, 카메라 배율·이동, 화면상의 맵 경계, 가시 타일
 범위와 격자 간격을 계산한다.
-`MapCanvasPainter`는 viewport를 clip하고 가시 `MTXM` 타일만 원시 값 기반
-대체 색상으로 그린 뒤 적응형 격자와 명확한 맵 외곽선을 겹친다. raw 값은
-16개 멤버를 가진 `CV5` 그룹 인덱스로 분해하며, 표준 최대 1,024개 그룹을
-벗어난 `0x4000`~`0xffff` 값은 수정하거나 정규화하지 않고 자홍색 교차 경고
-패턴으로 그린다. 캔버스 배지는 unsupported 타일 발생 횟수를 표시하고 선택
-상태는 정확한 raw 값, 그룹과 멤버를 노출한다.
+`MapCanvasPainter`는 viewport를 clip하고 가시 `MTXM` 타일만 순회한다. 각 raw에
+준비된 32×32 `ui.Image`가 있으면 nearest-neighbor 방식으로 먼저 그리고,
+없으면 원시 값 기반 결정적 색상을 사용한다. raw 값은 16개 멤버를 가진 `CV5`
+그룹 인덱스로 분해하며, 표준 최대 1,024개 그룹을 벗어난
+`0x4000`~`0xffff` 값은 이미지 맵에 포함되어도 사용하지 않고 자홍색 교차 경고
+패턴으로 그린다. 그 위에 적응형 격자, 선택/편집 overlay와 맵 외곽선을 겹친다.
+캔버스 배지는 geometry, loading, 실제 StarCraft 타일, 혼합 fallback과 전체
+raw fallback을 구분하고 선택 상태는 정확한 raw 값, 그룹과 멤버를 노출한다.
 
 `MapCanvas`의 카메라 상태는 Presentation에만 존재하며 맵 문서의 Undo/Redo나
 dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌표를 고정하고,
 `Space`+좌클릭과 중간 버튼 이동은 확대된 맵을 viewport 가장자리 안에서
 제한한다. 레이아웃은 포인터 화면 위치를 0기준 타일 좌표와 타일당 32픽셀인
-StarCraft 맵 픽셀 좌표로 역변환한다. StarCraft 실제 타일 이미지는 데이터
-자산 검사 결과를 입력으로 받는 후속 로더가 준비될 때 대체 색상 렌더러를
-교체한다.
+StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상태는 카메라나
+문서 dirty 상태에 포함하지 않는다.
 
 `TerrainEditingController`는 Presentation과 raw CHK 사이의 Application
 경계다. 선택한 raw 타일 값과 Select/Brush/Rectangle 도구 상태를 관리하고,
@@ -301,8 +302,10 @@ GPU 자원을 명시적으로 해제한다. 설정 또는 문서 generation이 �
 비동기 결과는 채택하지 않고, 이미지 생성이 이미 끝났다면 즉시 dispose한다.
 누락·손상·timeout·unsupported·이미지 변환 실패는 구조화된 비차단 진단과
 fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주지 않는다.
-현재 캔버스 painter가 준비된 이미지를 우선 사용하고 실패 raw만 기존 색상·
-교차 패턴으로 그리는 연결은 다음 M5 항목이다.
+`EditorShell`은 열린 세션과 자산 검사 상태가 바뀔 때 texture generation을
+동기화하고 controller 상태를 캔버스와 Problems에 전달한다. painter는 준비된
+이미지만 우선 사용하고 실패 raw에는 기존 색상·교차 패턴을 유지한다. 자산
+설정을 지우거나 바꾸면 이전 LRU가 즉시 dispose되고 raw fallback으로 돌아간다.
 
 ## 6. 명령과 Undo/Redo
 
