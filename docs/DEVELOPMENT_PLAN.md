@@ -331,7 +331,7 @@
 - [x] 실제 타일 렌더링용 CascLib 읽기 경계와 캐시 ADR
 - [x] 고정 매니페스트 기반 타일 자산 읽기 포트와 helper 프로토콜
 - [x] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
-- [ ] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
+- [x] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
 - [ ] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
 - [ ] 캔버스 성능 계측과 256×256 스모크 테스트
 
@@ -446,6 +446,22 @@
   실제 타일을 우선 사용하되 자산 누락, 디코딩 실패, 미지원 raw 값에는 현재
   색상·교차 경고 대체 표시를 유지한다. 렌더링 실패는 맵 저장을 차단하거나
   `MTXM` 값을 정규화하지 않는다.
+- `TerrainTileAtlasLoader`는 정확히 하나의 정상 `ERA `·`MTXM`과 준비된 자산
+  검사 snapshot이 있을 때만 context를 만든다. 맵에 실제로 등장하는 raw 값을
+  정렬·중복 제거하고 표준 범위 값만 최대 4,096개씩 요청한다. helper가 돌려준
+  다열 RGBA 아틀라스는 열·행 위치를 반영해 각 32×32 타일로 행 단위 절단하며,
+  응답의 설치 제품·빌드·helper/CascLib revision이 검사 snapshot과 다르면
+  채택하지 않는다.
+- `TerrainTileTextureController`는 절단된 RGBA를 즉시 `ui.Image`로 변환하고
+  CPU 버퍼를 보관하지 않는다. 설치 경로·제품·빌드·helper/CascLib revision·
+  tileset·검사 snapshot·raw 값 identity를 사용하는 기본 128 MiB LRU가 hit를
+  승격하고 교체·퇴출·맵 닫기·설정 갱신에서 반드시 `Image.dispose()`를 호출한다.
+  비동기 로드 중 generation이 바뀌면 늦게 완성된 이미지도 즉시 폐기한다.
+- 4,097개 고유 raw 값의 `4,096 + 1` 배치, 다열 아틀라스 절단, 캐시 재사용과
+  snapshot 무효화, LRU 퇴출, 이미지 변환 실패, helper unsupported, 오래된
+  generation dispose를 자동 테스트로 고정했다. 이 단계는 텍스처 준비 상태만
+  구현했으며 `MapCanvasPainter`가 실제 이미지를 우선 그리는 연결은 다음
+  체크 항목에서 진행한다.
 
 완료 조건:
 

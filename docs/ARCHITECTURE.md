@@ -286,13 +286,23 @@ helper 0.3.0의 네이티브 디코더는 각 파일의 고정 레코드 길이�
 미니타일로 분해하고 bit 0 수평 반전, `VR4`의 8×8 팔레트 인덱스와 `WPE`
 RGB를 적용해 alpha 255 RGBA를 만든다. 지원 raw는 최대 64열의 결정적 순서로
 배치하고 `0x4000` 이상 또는 실제 `CV5` 그룹 밖 값은 unsupported로 돌려준다.
-현재 캔버스에 이 결과를 연결하고 메모리 캐시를 소유하는 작업은 다음 단계다.
 
-Presentation은 설치/빌드/helper/CascLib/tileset/raw 배치 identity가 일치하는
-`ui.Image`만 기본 128 MiB LRU에 보관하고 퇴출과 dispose에서 GPU 자원을
-해제한다. 설정 또는 문서 generation이 바뀐 오래된 비동기 결과는 채택하지
-않는다. 누락·손상·timeout·unsupported 값은 구조화된 비차단 진단과 기존
-색상/교차 패턴 fallback으로 격리되며 맵 편집과 Save As에는 영향을 주지 않는다.
+Application의 `TerrainTileAtlasLoader`는 정확히 하나의 정상 tileset과 좌표
+접근 가능한 `MTXM`, 준비된 설치 검사 snapshot으로만 로드 context를 만든다.
+맵에 등장하는 raw 값을 정렬·중복 제거하고 표준 범위만 최대 4,096개 배치로
+요청한다. 결과의 설치 제품·빌드와 helper/CascLib revision을 snapshot과 다시
+대조한 뒤, 다열 아틀라스의 각 셀을 행 stride 기준 32×32 RGBA 버퍼로 절단한다.
+
+Presentation의 `TerrainTileTextureController`는 이 짧은 수명의 RGBA 버퍼를
+즉시 32×32 `ui.Image`로 변환한다. 설치 경로·제품·빌드·helper/CascLib·
+tileset·검사 snapshot·raw identity가 일치하는 이미지만 기본 128 MiB LRU에
+보관하고 hit를 승격한다. 교체·퇴출·맵 닫기·설정 갱신과 controller dispose는
+GPU 자원을 명시적으로 해제한다. 설정 또는 문서 generation이 바뀐 오래된
+비동기 결과는 채택하지 않고, 이미지 생성이 이미 끝났다면 즉시 dispose한다.
+누락·손상·timeout·unsupported·이미지 변환 실패는 구조화된 비차단 진단과
+fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주지 않는다.
+현재 캔버스 painter가 준비된 이미지를 우선 사용하고 실패 raw만 기존 색상·
+교차 패턴으로 그리는 연결은 다음 M5 항목이다.
 
 ## 6. 명령과 Undo/Redo
 
