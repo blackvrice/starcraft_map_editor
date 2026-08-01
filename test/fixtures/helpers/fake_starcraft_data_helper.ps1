@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 2
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.2.0"
+    helperVersion = "0.3.0"
     cascLibRevision = $revision
 }
 

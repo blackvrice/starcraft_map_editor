@@ -520,6 +520,7 @@ const _helperErrorCodes = {
   'SC_CASC_TILE_ATLAS_OUTPUT_CREATE_FAILED',
   'SC_CASC_TILE_ATLAS_OUTPUT_WRITE_FAILED',
   'SC_CASC_TILE_ATLAS_OUTPUT_PROMOTE_FAILED',
+  StarCraftTileAtlasDiagnosticCodes.atlasOutputInvalid,
 };
 
 final class _CapturedOutput {

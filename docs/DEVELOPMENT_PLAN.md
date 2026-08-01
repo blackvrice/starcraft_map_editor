@@ -330,7 +330,7 @@
 - [x] 원시 값/미지원 타일의 대체 표시
 - [x] 실제 타일 렌더링용 CascLib 읽기 경계와 캐시 ADR
 - [x] 고정 매니페스트 기반 타일 자산 읽기 포트와 helper 프로토콜
-- [ ] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
+- [x] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
 - [ ] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
 - [ ] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
 - [ ] 캔버스 성능 계측과 256×256 스모크 테스트
@@ -402,10 +402,13 @@
   데이터 자산이 없거나 불완전해도 현재 원시 색상 캔버스와 안전한 Save As는
   사용할 수 있다.
 - `MTXM` raw 값은 `group = value / 16`, `member = value % 16`으로 분해한다.
-  표준 `CV5`의 최대 1,024개 그룹으로 표현 가능한 `0x0000`~`0x3fff`는 raw
+  표준 지형 그룹 1,024개로 표현 가능한 `0x0000`~`0x3fff`는 raw
   대체 색상으로 표시하고, 그보다 큰 `u16` 값은 손실 없이 유지하되 자홍색
   교차 경고 패턴과 unsupported 개수로 구분한다. 선택한 타일에는 raw 값,
-  그룹, 멤버와 지원 상태를 함께 표시한다.
+  그룹, 멤버와 지원 상태를 함께 표시한다. 실제 SC:R `CV5`는 doodad 등을
+  포함해 1,024개보다 많은 52바이트 엔트리를 가질 수 있으므로 helper는 파일
+  구조상 최대 4,096개를 허용하되 현재 렌더 계약은 `0x4000` 이상을 사용하지
+  않는다.
 - [ADR-0006](decisions/0006-request-scoped-tile-atlas-cache.md)에 따라 원시
   타일셋 자산과 디코더는 helper 경계 안에 유지한다. 새 `renderTileAtlas`
   작업은 고정 매니페스트에서 선택한 tileset의 `CV5`·`VX4EX`·`VR4`·`WPE`만
@@ -413,23 +416,30 @@
   JSON이 아닌 앱 소유 임시 binary envelope로 교환하고 채택 직후 삭제한다.
 - `StarCraftTileAtlasGateway`의 요청은 절대 설치 경로, 8개 tileset enum과
   정렬·중복 제거된 1~4,096개 `u16` raw 값만 허용한다. 공용 helper protocol
-  2와 helper 0.2.0은 기존 설치 검사와 `renderTileAtlas` 작업을 operation으로
-  분리한다. helper는 요청 tileset의 고정 `CV5`·`VX4EX`·`VR4`·`WPE` 네
+  2는 기존 설치 검사와 `renderTileAtlas` 작업을 operation으로 분리한다.
+  렌더 경계는 helper 0.2.0에서 도입했고 디코더가 포함된 현재 버전은
+  0.3.0이다. helper는 요청 tileset의 고정 `CV5`·`VX4EX`·`VR4`·`WPE` 네
   경로만 strict-read하며 임의 CASC 경로나 출력 경로를 받지 않는다.
 - 아틀라스 교환 파일은 `SCTRGBA\0` magic, format 1, 32px tile, 열·행·타일
   수, raw 엔트리·픽셀 바이트 길이를 가진 32바이트 little-endian header 뒤에
   4바이트 raw 엔트리와 premultiplied RGBA8888을 둔다. Dart 어댑터는 JSON,
   실제 파일 종류·크기, header, raw/unsupported의 요청 전체 포함 관계를
   교차 검증하고 요청별 임시 디렉터리를 항상 정리한다.
-- 현재 protocol 단계의 네이티브 helper는 네 자산을 읽은 뒤 32바이트 빈
-  아틀라스를 만들고 요청 raw 전부를 unsupported로 반환한다. 이는 디코더가
-  없는 값을 실제 이미지처럼 표시하지 않기 위한 의도적 경계이며, 다음
-  `CV5`·`VX4EX`·`VR4`·`WPE` 디코더 항목에서 지원 엔트리와 RGBA를 채운다.
+- helper 0.3.0은 네 자산을 strict-read한 뒤 `CV5` 52바이트 그룹,
+  `VX4EX` 64바이트 메가타일, `VR4` 64바이트 미니타일과 1,024바이트 `WPE`를
+  little-endian으로 해석한다. 요청 중 정상인 raw만 최대 64열 아틀라스의
+  엔트리와 RGBA 영역에 기록하고 `0x4000` 이상 또는 실제 그룹 밖 값은
+  unsupported로 분리한다.
 - helper의 픽셀 합성은 `MTXM`의 group/member로 `CV5` mega-tile을 선택하고,
   `VX4EX`의 4×4 mini-tile 인덱스와 반전 플래그, `VR4`의 8×8 팔레트 인덱스,
   `WPE` 색상을 순서대로 해석해 32×32 RGBA 타일을 만든다. 모든 offset,
   index와 파일 길이는 사용 전에 검증하며 `VF4`는 향후 이동·배치 가능 영역
   오버레이를 위해 계속 검사하되 픽셀 합성 필수 입력으로 간주하지 않는다.
+- 잘린 파일, `CV5` 4,096그룹 초과, `CV5→VX4EX` 또는 `VX4EX→VR4` 범위 밖
+  참조는 `SC_CASC_TILE_ASSET_INVALID` 비차단 진단으로 전체 요청을 격리한다.
+  자체 생성 바이트의 group/member·수평 반전·RGB/alpha와 실제 로컬 SC:R
+  8개 타일셋의 raw `0/1` 합성을 검증했다. 원시 게임 자산은 저장소나 Dart로
+  복사하지 않는다.
 - 합성 결과는 StarCraft 설치 fingerprint·게임 빌드·타일셋·raw 값을 키로
   삼은 128 MiB 메모리 LRU에 `ui.Image`로만 캐시하고 설치 경로나 검사
   revision이 바뀌면 dispose한다. 캔버스는 준비된

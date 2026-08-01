@@ -3,10 +3,10 @@
 - Status: Accepted
 - Date: 2026-08-01
 
-구현 메모: protocol 2와 helper 0.2.0, `StarCraftTileAtlasGateway`, 고정 8×4
-렌더 매니페스트와 검증용 binary envelope가 2026-08-01 구현됐다. 픽셀
-디코더가 추가되기 전까지 네이티브 helper는 strict-read 성공 후 빈 아틀라스와
-전체 unsupported 목록을 반환한다.
+구현 메모: protocol 2와 helper 0.2.0에서 `StarCraftTileAtlasGateway`, 고정
+8×4 렌더 매니페스트와 binary envelope를 도입했다. helper 0.3.0은
+`CV5`·`VX4EX`·`VR4`·`WPE` 길이와 참조를 검증하고 지원 raw의 32×32 RGBA를
+envelope에 기록한다. 캔버스 연결과 메모리 캐시는 후속 단계다.
 
 ## Context
 

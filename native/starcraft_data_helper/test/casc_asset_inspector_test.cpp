@@ -1,6 +1,7 @@
 #include "casc_asset_inspector.h"
 #include "tile_atlas_protocol.h"
 #include "tileset_asset_reader.h"
+#include "tileset_tile_decoder.h"
 
 #include <Windows.h>
 
@@ -19,6 +20,65 @@ namespace {
 int Fail(const std::string& message) {
   std::cerr << message << '\n';
   return 1;
+}
+
+void PutUint16(
+    std::vector<std::byte>* const bytes,
+    const std::size_t offset,
+    const std::uint16_t value) {
+  (*bytes)[offset] = static_cast<std::byte>(value & 0xFFU);
+  (*bytes)[offset + 1] =
+      static_cast<std::byte>((value >> 8U) & 0xFFU);
+}
+
+void PutUint32(
+    std::vector<std::byte>* const bytes,
+    const std::size_t offset,
+    const std::uint32_t value) {
+  for (std::size_t index = 0; index < 4; ++index) {
+    (*bytes)[offset + index] =
+        static_cast<std::byte>((value >> (index * 8U)) & 0xFFU);
+  }
+}
+
+std::array<std::vector<std::byte>, 4> MakeTileAssets() {
+  std::array<std::vector<std::byte>, 4> assets = {
+      std::vector<std::byte>(52),
+      std::vector<std::byte>(2 * 64),
+      std::vector<std::byte>(2 * 64),
+      std::vector<std::byte>(256 * 4),
+  };
+  PutUint16(&assets[0], 20, 0);
+  PutUint16(&assets[0], 22, 1);
+  for (std::size_t mini_tile = 0; mini_tile < 16; ++mini_tile) {
+    PutUint32(&assets[1], mini_tile * 4, 0);
+    PutUint32(&assets[1], 64 + mini_tile * 4, 3);
+  }
+  for (std::size_t y = 0; y < 8; ++y) {
+    for (std::size_t x = 0; x < 8; ++x) {
+      assets[2][y * 8 + x] = static_cast<std::byte>(y * 8 + x);
+      assets[2][64 + y * 8 + x] = static_cast<std::byte>(100 + x);
+    }
+  }
+  for (std::size_t color = 0; color < 256; ++color) {
+    assets[3][color * 4] = static_cast<std::byte>(color);
+    assets[3][color * 4 + 1] = static_cast<std::byte>(255 - color);
+    assets[3][color * 4 + 2] = static_cast<std::byte>(color ^ 0x55U);
+    assets[3][color * 4 + 3] = static_cast<std::byte>(0x7FU);
+  }
+  return assets;
+}
+
+bool HasColor(
+    const std::vector<std::byte>& pixels,
+    const std::size_t pixel_offset,
+    const std::uint8_t red,
+    const std::uint8_t green,
+    const std::uint8_t blue) {
+  return std::to_integer<std::uint8_t>(pixels[pixel_offset]) == red &&
+         std::to_integer<std::uint8_t>(pixels[pixel_offset + 1]) == green &&
+         std::to_integer<std::uint8_t>(pixels[pixel_offset + 2]) == blue &&
+         std::to_integer<std::uint8_t>(pixels[pixel_offset + 3]) == 0xFFU;
 }
 
 }  // namespace
@@ -102,6 +162,54 @@ int main() {
     return Fail("An oversized raw-value batch was accepted.");
   }
 
+  const auto valid_tile_assets = MakeTileAssets();
+  const auto decoded =
+      starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          valid_tile_assets, {0, 1, 16, 0x4000, 0xFFFF});
+  if (!decoded.success ||
+      decoded.rendered_raw_values != std::vector<std::uint16_t>({0, 1}) ||
+      decoded.unsupported_raw_values !=
+          std::vector<std::uint32_t>({16, 0x4000, 0xFFFF}) ||
+      decoded.rgba_bytes.size() != 2 * 32 * 32 * 4) {
+    return Fail("Synthetic tiles were not decoded into the expected batch.");
+  }
+  if (!HasColor(decoded.rgba_bytes, 0, 0, 255, 0x55) ||
+      !HasColor(decoded.rgba_bytes, 7 * 4, 7, 248, 0x52) ||
+      !HasColor(decoded.rgba_bytes, 32 * 32 * 4, 107, 148, 0x3E) ||
+      !HasColor(decoded.rgba_bytes, 32 * 32 * 4 + 7 * 4, 100, 155, 0x31)) {
+    return Fail("Palette colors or VX4EX horizontal flipping are incorrect.");
+  }
+
+  for (std::size_t asset_index = 0; asset_index < 4; ++asset_index) {
+    auto truncated = valid_tile_assets;
+    truncated[asset_index].pop_back();
+    const auto invalid =
+        starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+            truncated, {0});
+    if (invalid.success ||
+        invalid.error_code != "SC_CASC_TILE_ASSET_INVALID") {
+      return Fail("A truncated tile asset was accepted by the decoder.");
+    }
+  }
+  auto oversized_cv5 = valid_tile_assets;
+  oversized_cv5[0].resize(4097 * 52);
+  if (starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          oversized_cv5, {0}).success) {
+    return Fail("A CV5 with more than 4,096 addressable groups was accepted.");
+  }
+  auto invalid_cv5_reference = valid_tile_assets;
+  PutUint16(&invalid_cv5_reference[0], 20, 2);
+  if (starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          invalid_cv5_reference, {0}).success) {
+    return Fail("An out-of-range CV5 mega-tile reference was accepted.");
+  }
+  auto invalid_vx4ex_reference = valid_tile_assets;
+  PutUint32(&invalid_vx4ex_reference[1], 0, 4);
+  if (starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          invalid_vx4ex_reference, {0}).success) {
+    return Fail("An out-of-range VX4EX mini-tile reference was accepted.");
+  }
+
   wchar_t temporary_root[MAX_PATH] = {};
   if (GetTempPathW(MAX_PATH, temporary_root) == 0) {
     return Fail("Windows temporary path is unavailable.");
@@ -161,6 +269,38 @@ int main() {
   if (duplicate_atlas.success ||
       duplicate_atlas.error_code != "SC_CASC_TILE_ATLAS_OUTPUT_EXISTS") {
     return Fail("An existing tile atlas output was overwritten.");
+  }
+
+  const auto filled_atlas_directory = empty_storage / "filled";
+  if (!std::filesystem::create_directory(filled_atlas_directory, error) ||
+      error) {
+    return Fail("Could not create the filled-atlas test directory.");
+  }
+  const auto filled_atlas =
+      starcraft_map_editor::starcraft_data::WriteTileAtlas(
+          filled_atlas_directory,
+          decoded.rendered_raw_values,
+          decoded.rgba_bytes);
+  if (!filled_atlas.success || filled_atlas.columns != 2 ||
+      filled_atlas.rows != 1 || filled_atlas.tile_count != 2 ||
+      filled_atlas.file_bytes != 32 + 2 * 4 + 2 * 32 * 32 * 4) {
+    return Fail("A decoded tile atlas envelope could not be written.");
+  }
+  std::ifstream filled_file(
+      filled_atlas_directory / "tile-atlas.rgba", std::ios::binary);
+  std::vector<unsigned char> filled_bytes(
+      static_cast<std::size_t>(filled_atlas.file_bytes));
+  filled_file.read(
+      reinterpret_cast<char*>(filled_bytes.data()),
+      static_cast<std::streamsize>(filled_bytes.size()));
+  if (filled_file.gcount() !=
+          static_cast<std::streamsize>(filled_bytes.size()) ||
+      filled_bytes[12] != 2 || filled_bytes[14] != 1 ||
+      filled_bytes[16] != 2 || filled_bytes[20] != 8 ||
+      filled_bytes[32] != 0 || filled_bytes[36] != 1 ||
+      filled_bytes[40] != 0 || filled_bytes[41] != 255 ||
+      filled_bytes[42] != 0x55 || filled_bytes[43] != 255) {
+    return Fail("The decoded tile atlas envelope fields are invalid.");
   }
 
   atlas_file.close();

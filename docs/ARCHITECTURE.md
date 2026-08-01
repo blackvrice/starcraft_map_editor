@@ -281,9 +281,12 @@ header(`SCTRGBA\0`, format 1, tile 32px, 열·행·타일 수, 엔트리·픽셀
 실제 파일, header와 요청 값의 전체 포함 관계가 모두 맞을 때만 바이트를
 채택한다.
 
-픽셀 디코더가 아직 없는 현재 네이티브 구현은 자산 읽기 성공 뒤 빈 envelope와
-전체 unsupported 목록을 반환한다. 따라서 이 단계만으로 캔버스 표시를 바꾸지
-않으며, 다음 디코더 구현이 지원 raw 엔트리와 RGBA 영역을 채운다.
+helper 0.3.0의 네이티브 디코더는 각 파일의 고정 레코드 길이와 모든 참조를
+접근 전에 검사한다. `CV5` group/member가 고른 메가타일을 4×4 `VX4EX`
+미니타일로 분해하고 bit 0 수평 반전, `VR4`의 8×8 팔레트 인덱스와 `WPE`
+RGB를 적용해 alpha 255 RGBA를 만든다. 지원 raw는 최대 64열의 결정적 순서로
+배치하고 `0x4000` 이상 또는 실제 `CV5` 그룹 밖 값은 unsupported로 돌려준다.
+현재 캔버스에 이 결과를 연결하고 메모리 캐시를 소유하는 작업은 다음 단계다.
 
 Presentation은 설치/빌드/helper/CascLib/tileset/raw 배치 identity가 일치하는
 `ui.Image`만 기본 128 MiB LRU에 보관하고 퇴출과 dispose에서 GPU 자원을

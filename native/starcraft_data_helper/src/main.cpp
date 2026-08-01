@@ -1,6 +1,7 @@
 #include "casc_asset_inspector.h"
 #include "tile_atlas_protocol.h"
 #include "tileset_asset_reader.h"
+#include "tileset_tile_decoder.h"
 
 #include <Windows.h>
 
@@ -20,7 +21,7 @@ constexpr std::int32_t kProtocolVersion = 2;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
 constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
-constexpr char kHelperVersion[] = "0.2.0";
+constexpr char kHelperVersion[] = "0.3.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -201,9 +202,25 @@ int RenderTileAtlas(
         3);
   }
 
+  const auto decoded =
+      starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          assets.assets, raw_values);
+  if (!decoded.success) {
+    return WriteError(
+        request_id,
+        kRenderOperation,
+        decoded.error_code,
+        decoded.message,
+        decoded.stage,
+        decoded.native_error,
+        3);
+  }
+
   const auto atlas =
-      starcraft_map_editor::starcraft_data::WriteEmptyTileAtlas(
-          std::filesystem::current_path());
+      starcraft_map_editor::starcraft_data::WriteTileAtlas(
+          std::filesystem::current_path(),
+          decoded.rendered_raw_values,
+          decoded.rgba_bytes);
   if (!atlas.success) {
     return WriteError(
         request_id,
@@ -235,13 +252,11 @@ int RenderTileAtlas(
       {"formatVersion",
        starcraft_map_editor::starcraft_data::kTileAtlasFormatVersion},
       {"tileSize", starcraft_map_editor::starcraft_data::kTileSize},
-      {"columns", 0},
-      {"rows", 0},
-      {"tileCount", 0},
+      {"columns", atlas.columns},
+      {"rows", atlas.rows},
+      {"tileCount", atlas.tile_count},
   };
-  // The next development-plan item adds CV5/VX4EX/VR4/WPE decoding.
-  // Until then every requested value remains an explicit safe fallback.
-  response["unsupportedRawValues"] = raw_values;
+  response["unsupportedRawValues"] = decoded.unsupported_raw_values;
   std::cout << response.dump() << '\n';
   return 0;
 }

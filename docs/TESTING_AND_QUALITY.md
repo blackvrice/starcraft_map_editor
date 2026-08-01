@@ -238,7 +238,7 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 프로토콜, request ID, helper/CascLib revision, 요청/응답 경로 불일치 거부
 - CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
 - found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
-- protocol 2의 설치 검사/타일 렌더 operation 분리와 helper 0.2.0 검증
+- protocol 2의 설치 검사/타일 렌더 operation 분리와 helper 0.3.0 검증
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
@@ -249,15 +249,18 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 자산 경고가 Problems에 합쳐지지만 맵 캔버스와 Save As를 차단하지 않음
 
 `starcraft_data_helper_native_test`는 매니페스트의 40개 경로·중복·경로 범위와
-렌더용 8×4 부분집합, raw 배치 상한, 빈 RGBA envelope와 기존 출력 보존,
-빈 폴더의 CASC 저장소 열기 실패를 실제 CascLib으로 검증한다.
+렌더용 8×4 부분집합, raw 배치 상한, 기존 출력 보존과 빈 폴더의 CASC 저장소
+열기 실패를 실제 CascLib으로 검증한다. 자체 생성한 네 자산으로 group/member,
+`VX4EX` 수평 반전, `VR4` 팔레트와 RGBA를 확인하고 네 파일의 길이 절단,
+4,096그룹 초과 `CV5`, 범위 밖 메가/미니타일 참조를 거부한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든
-자산과 8개 렌더용 4파일 집합을 끝까지 읽는지 확인한다.
+자산을 읽고 8개 타일셋 각각의 raw `0/1`을 RGBA로 합성하며 `0x4000`을
+unsupported로 분리하는지 확인한다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

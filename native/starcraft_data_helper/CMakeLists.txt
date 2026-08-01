@@ -42,6 +42,8 @@ add_library(starcraft_data_core STATIC
   src/tile_atlas_protocol.h
   src/tileset_asset_reader.cpp
   src/tileset_asset_reader.h
+  src/tileset_tile_decoder.cpp
+  src/tileset_tile_decoder.h
 )
 target_compile_features(starcraft_data_core PUBLIC cxx_std_17)
 target_compile_definitions(

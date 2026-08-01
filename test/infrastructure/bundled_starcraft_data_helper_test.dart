@@ -52,7 +52,7 @@ void main() {
   );
 
   test(
-    'bundled CascLib helper reads a fixed tileset render manifest',
+    'bundled CascLib helper renders fixed assets for every tileset',
     () async {
       final gateway = ProcessStarCraftTileAtlasGateway(
         helperExecutablePath: helperPath!,
@@ -81,9 +81,12 @@ void main() {
         expect(result.storageProduct, isNotEmpty);
         expect(result.storageBuildNumber, greaterThanOrEqualTo(0));
         expect(result.totalAssetBytes, greaterThan(0));
-        expect(result.rawValues, isEmpty);
-        expect(result.rgbaBytes, isEmpty);
-        expect(result.unsupportedRawValues, request.rawValues);
+        expect(result.rawValues, const [0, 1]);
+        expect(result.columns, 2);
+        expect(result.rows, 1);
+        expect(result.rgbaBytes, hasLength(2 * 32 * 32 * 4));
+        expect(result.rgbaBytes[3], 0xFF);
+        expect(result.unsupportedRawValues, const [0x4000]);
       }
     },
     skip: canRun

@@ -18,6 +18,9 @@ inline constexpr std::string_view kTileAtlasFileName = "tile-atlas.rgba";
 struct AtlasWriteResult {
   bool success = false;
   std::uint64_t file_bytes = 0;
+  std::uint16_t columns = 0;
+  std::uint16_t rows = 0;
+  std::uint32_t tile_count = 0;
   std::string error_code;
   std::string message;
   std::string stage;
@@ -28,5 +31,10 @@ bool ValidateRawValues(const std::vector<std::uint32_t>& raw_values);
 
 AtlasWriteResult WriteEmptyTileAtlas(
     const std::filesystem::path& working_directory);
+
+AtlasWriteResult WriteTileAtlas(
+    const std::filesystem::path& working_directory,
+    const std::vector<std::uint16_t>& raw_values,
+    const std::vector<std::byte>& rgba_bytes);
 
 }  // namespace starcraft_map_editor::starcraft_data
