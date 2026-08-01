@@ -54,10 +54,26 @@ final class StarCraftDataAssetRequirement {
 }
 
 abstract final class StarCraftDataAssetManifest {
+  static const List<StarCraftTilesetAssetKind> renderAssetKinds = [
+    StarCraftTilesetAssetKind.groups,
+    StarCraftTilesetAssetKind.megatiles,
+    StarCraftTilesetAssetKind.minitiles,
+    StarCraftTilesetAssetKind.palette,
+  ];
+
   static final List<StarCraftDataAssetRequirement> requiredTilesetAssets =
       List.unmodifiable([
         for (final tileset in StarCraftTilesetAssetSet.values)
           for (final kind in StarCraftTilesetAssetKind.values)
             StarCraftDataAssetRequirement(tileset: tileset, kind: kind),
       ]);
+
+  static List<StarCraftDataAssetRequirement> renderAssetsFor(
+    StarCraftTilesetAssetSet tileset,
+  ) {
+    return List.unmodifiable([
+      for (final kind in renderAssetKinds)
+        StarCraftDataAssetRequirement(tileset: tileset, kind: kind),
+    ]);
+  }
 }

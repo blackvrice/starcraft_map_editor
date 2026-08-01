@@ -5,6 +5,7 @@ import 'dart:io';
 import '../../application/ports/starcraft_data_asset_inspector.dart';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import 'starcraft_data_helper_protocol.dart';
 
 final class ProcessStarCraftDataAssetInspector
     implements StarCraftDataAssetInspector {
@@ -57,9 +58,9 @@ final class ProcessStarCraftDataAssetInspector
     );
   }
 
-  static const protocolVersion = 1;
-  static const helperVersion = '0.1.0';
-  static const cascLibRevision = '4971d363e665551ac4142f541e5f2d71f1cda653';
+  static const protocolVersion = StarCraftDataHelperProtocol.version;
+  static const helperVersion = StarCraftDataHelperProtocol.helperVersion;
+  static const cascLibRevision = StarCraftDataHelperProtocol.cascLibRevision;
   static const maximumTotalAssetBytes = 256 * 1024 * 1024;
 
   final String helperExecutablePath;

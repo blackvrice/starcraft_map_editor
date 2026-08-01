@@ -329,7 +329,7 @@
 - [x] 편집 명령 병합과 Undo/Redo
 - [x] 원시 값/미지원 타일의 대체 표시
 - [x] 실제 타일 렌더링용 CascLib 읽기 경계와 캐시 ADR
-- [ ] 고정 매니페스트 기반 타일 자산 읽기 포트와 helper 프로토콜
+- [x] 고정 매니페스트 기반 타일 자산 읽기 포트와 helper 프로토콜
 - [ ] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
 - [ ] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
 - [ ] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
@@ -411,6 +411,20 @@
   작업은 고정 매니페스트에서 선택한 tileset의 `CV5`·`VX4EX`·`VR4`·`WPE`만
   읽고 최대 4,096개 raw 값을 요청별 32×32 RGBA 아틀라스로 합성한다. RGBA는
   JSON이 아닌 앱 소유 임시 binary envelope로 교환하고 채택 직후 삭제한다.
+- `StarCraftTileAtlasGateway`의 요청은 절대 설치 경로, 8개 tileset enum과
+  정렬·중복 제거된 1~4,096개 `u16` raw 값만 허용한다. 공용 helper protocol
+  2와 helper 0.2.0은 기존 설치 검사와 `renderTileAtlas` 작업을 operation으로
+  분리한다. helper는 요청 tileset의 고정 `CV5`·`VX4EX`·`VR4`·`WPE` 네
+  경로만 strict-read하며 임의 CASC 경로나 출력 경로를 받지 않는다.
+- 아틀라스 교환 파일은 `SCTRGBA\0` magic, format 1, 32px tile, 열·행·타일
+  수, raw 엔트리·픽셀 바이트 길이를 가진 32바이트 little-endian header 뒤에
+  4바이트 raw 엔트리와 premultiplied RGBA8888을 둔다. Dart 어댑터는 JSON,
+  실제 파일 종류·크기, header, raw/unsupported의 요청 전체 포함 관계를
+  교차 검증하고 요청별 임시 디렉터리를 항상 정리한다.
+- 현재 protocol 단계의 네이티브 helper는 네 자산을 읽은 뒤 32바이트 빈
+  아틀라스를 만들고 요청 raw 전부를 unsupported로 반환한다. 이는 디코더가
+  없는 값을 실제 이미지처럼 표시하지 않기 위한 의도적 경계이며, 다음
+  `CV5`·`VX4EX`·`VR4`·`WPE` 디코더 항목에서 지원 엔트리와 RGBA를 채운다.
 - helper의 픽셀 합성은 `MTXM`의 group/member로 `CV5` mega-tile을 선택하고,
   `VX4EX`의 4×4 mini-tile 인덱스와 반전 플래그, `VR4`의 8×8 팔레트 인덱스,
   `WPE` 색상을 순서대로 해석해 32×32 RGBA 타일을 만든다. 모든 offset,

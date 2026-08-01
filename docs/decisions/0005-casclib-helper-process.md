@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-07-29
 
+구현 메모: [ADR-0006](0006-request-scoped-tile-atlas-cache.md)에 따라
+2026-08-01부터 같은 helper의 설치 검사와 타일 렌더 작업을 protocol 2,
+helper 0.2.0으로 함께 이관했다. 아래 protocol 1은 최초 검사 전용 결정의
+기록이며 현재 wire version은 아니다.
+
 ## Context
 
 지형 이미지를 표시하려면 StarCraft: Remastered 설치의 8개 타일셋에서

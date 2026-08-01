@@ -20,10 +20,10 @@ if ($request.installationPath -like "*invalid-response*") {
 }
 
 $base = [ordered]@{
-    protocolVersion = 1
+    protocolVersion = 2
     requestId = $request.requestId
-    operation = "inspectInstallation"
-    helperVersion = "0.1.0"
+    operation = $request.operation
+    helperVersion = "0.2.0"
     cascLibRevision = $revision
 }
 
@@ -40,39 +40,161 @@ if ($request.installationPath -like "*storage-error*") {
     exit 3
 }
 
-$missingPaths = @()
-$invalidAssets = @()
-$foundCount = 40
-if ($request.installationPath -like "*incomplete*") {
-    $missingPaths = @("tileset\badlands.cv5")
-    $foundCount = 39
+if ($request.operation -eq "inspectInstallation") {
+    $missingPaths = @()
+    $invalidAssets = @()
+    $foundCount = 40
+    if ($request.installationPath -like "*incomplete*") {
+        $missingPaths = @("tileset\badlands.cv5")
+        $foundCount = 39
+    }
+    if ($request.installationPath -like "*unreadable*") {
+        $invalidAssets = @(
+            [ordered]@{
+                path = "tileset\platform.vf4"
+                nativeError = 13
+            }
+        )
+        $foundCount = 39
+    }
+
+    $base.status = "success"
+    $base.installation = [ordered]@{
+        path = $request.installationPath
+        storageProduct = "s1"
+        storageBuildNumber = 13515
+    }
+    $base.assets = [ordered]@{
+        requiredCount = 40
+        foundCount = $foundCount
+        totalBytes = 1048576
+        missingPaths = $missingPaths
+        invalidAssets = $invalidAssets
+    }
+
+    if ($request.installationPath -like "*manifest-mismatch*") {
+        $base.assets.foundCount = 39
+        $base.assets.missingPaths = @("tileset\unknown.cv5")
+    }
+    if ($request.installationPath -like "*size-mismatch*") {
+        $base.assets.totalBytes = 268435457
+    }
 }
-if ($request.installationPath -like "*unreadable*") {
-    $invalidAssets = @(
-        [ordered]@{
-            path = "tileset\platform.vf4"
+elseif ($request.operation -eq "renderTileAtlas") {
+    if ($request.installationPath -like "*asset-error*") {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_TILE_ASSET_INVALID"
+            message = "A required tile rendering asset is unreadable."
+            stage = "read-assets"
             nativeError = 13
         }
-    )
-    $foundCount = 39
-}
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        [Console]::Error.WriteLine("SC_CASC_TILE_ASSET_INVALID")
+        exit 3
+    }
 
-$base.status = "success"
-$base.installation = [ordered]@{
-    path = $request.installationPath
-    storageProduct = "s1"
-    storageBuildNumber = 13515
+    $supported = @($request.rawValues | Where-Object { [int]$_ -lt 0x4000 })
+    $unsupported = @($request.rawValues | Where-Object { [int]$_ -ge 0x4000 })
+    $tileCount = $supported.Count
+    $columns = if ($tileCount -eq 0) { 0 } else { [Math]::Min($tileCount, 64) }
+    $rows = if ($tileCount -eq 0) { 0 } else { [int][Math]::Ceiling($tileCount / [double]$columns) }
+    $entryBytes = $tileCount * 4
+    $pixelBytes = $columns * $rows * 32 * 32 * 4
+
+    $stream = [IO.MemoryStream]::new()
+    $writer = [IO.BinaryWriter]::new($stream)
+    try {
+        $writer.Write([byte[]](0x53, 0x43, 0x54, 0x52, 0x47, 0x42, 0x41, 0x00))
+        $writer.Write([uint16]1)
+        $writer.Write([uint16]32)
+        $writer.Write([uint16]$columns)
+        $writer.Write([uint16]$rows)
+        $writer.Write([uint32]$tileCount)
+        $writer.Write([uint32]$entryBytes)
+        $writer.Write([uint32]$pixelBytes)
+        $writer.Write([uint32]0)
+        foreach ($rawValue in $supported) {
+            $writer.Write([uint16]$rawValue)
+            $writer.Write([uint16]0)
+        }
+        if ($pixelBytes -gt 0) {
+            $writer.Write([byte[]]::new($pixelBytes))
+        }
+        $writer.Flush()
+        $atlasBytes = $stream.ToArray()
+    }
+    finally {
+        $writer.Dispose()
+        $stream.Dispose()
+    }
+
+    if ($request.installationPath -like "*atlas-header-mismatch*") {
+        $atlasBytes[0] = 0
+    }
+    if (($request.installationPath -like "*atlas-entry-mismatch*") -and $tileCount -gt 0) {
+        $atlasBytes[32] = 0xFE
+        $atlasBytes[33] = 0x3F
+    }
+    if ($request.installationPath -notlike "*atlas-output-missing*") {
+        [IO.File]::WriteAllBytes(
+            (Join-Path (Get-Location) "tile-atlas.rgba"),
+            $atlasBytes
+        )
+    }
+
+    $base.status = "success"
+    $base.installation = [ordered]@{
+        path = $request.installationPath
+        storageProduct = "s1"
+        storageBuildNumber = 13515
+    }
+    $base.tileset = [int]$request.tileset
+    $base.assets = [ordered]@{
+        readCount = 4
+        totalBytes = 1048576
+    }
+    $base.atlas = [ordered]@{
+        fileName = "tile-atlas.rgba"
+        fileBytes = $atlasBytes.Length
+        formatVersion = 1
+        tileSize = 32
+        columns = $columns
+        rows = $rows
+        tileCount = $tileCount
+    }
+    $base.unsupportedRawValues = $unsupported
+
+    if ($request.installationPath -like "*tileset-mismatch*") {
+        $base.tileset = ([int]$request.tileset + 1) % 8
+    }
+    if ($request.installationPath -like "*atlas-size-mismatch*") {
+        $base.atlas.fileBytes++
+    }
+    if ($request.installationPath -like "*atlas-output-name-mismatch*") {
+        $base.atlas.fileName = "other.rgba"
+    }
+    if ($request.installationPath -like "*unsupported-mismatch*") {
+        $base.unsupportedRawValues = @()
+    }
+    if ($request.installationPath -like "*asset-size-mismatch*") {
+        $base.assets.totalBytes = 0
+    }
 }
-$base.assets = [ordered]@{
-    requiredCount = 40
-    foundCount = $foundCount
-    totalBytes = 1048576
-    missingPaths = $missingPaths
-    invalidAssets = $invalidAssets
+else {
+    $base.status = "error"
+    $base.error = [ordered]@{
+        code = "SC_CASC_PROTOCOL_OPERATION_UNSUPPORTED"
+        message = "Unsupported operation."
+        stage = "protocol"
+        nativeError = 50
+    }
+    [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+    exit 2
 }
 
 if ($request.installationPath -like "*protocol-mismatch*") {
-    $base.protocolVersion = 2
+    $base.protocolVersion = 1
 }
 if ($request.installationPath -like "*request-mismatch*") {
     $base.requestId = "another-request"
@@ -82,13 +204,6 @@ if ($request.installationPath -like "*revision-mismatch*") {
 }
 if ($request.installationPath -like "*path-mismatch*") {
     $base.installation.path = "C:\Different\StarCraft"
-}
-if ($request.installationPath -like "*manifest-mismatch*") {
-    $base.assets.foundCount = 39
-    $base.assets.missingPaths = @("tileset\unknown.cv5")
-}
-if ($request.installationPath -like "*size-mismatch*") {
-    $base.assets.totalBytes = 268435457
 }
 
 [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))

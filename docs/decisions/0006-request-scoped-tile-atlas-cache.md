@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-08-01
 
+구현 메모: protocol 2와 helper 0.2.0, `StarCraftTileAtlasGateway`, 고정 8×4
+렌더 매니페스트와 검증용 binary envelope가 2026-08-01 구현됐다. 픽셀
+디코더가 추가되기 전까지 네이티브 helper는 strict-read 성공 후 빈 아틀라스와
+전체 unsupported 목록을 반환한다.
+
 ## Context
 
 [ADR-0005](0005-casclib-helper-process.md)는 StarCraft: Remastered의 로컬

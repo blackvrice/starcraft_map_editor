@@ -38,6 +38,10 @@ FetchContent_MakeAvailable(nlohmann_json)
 add_library(starcraft_data_core STATIC
   src/casc_asset_inspector.cpp
   src/casc_asset_inspector.h
+  src/tile_atlas_protocol.cpp
+  src/tile_atlas_protocol.h
+  src/tileset_asset_reader.cpp
+  src/tileset_asset_reader.h
 )
 target_compile_features(starcraft_data_core PUBLIC cxx_std_17)
 target_compile_definitions(

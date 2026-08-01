@@ -1,7 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
+import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_data_asset_inspector.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 
 void main() {
   final helperPath = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
@@ -41,6 +44,47 @@ void main() {
         ProcessStarCraftDataAssetInspector.cascLibRevision,
       );
       expect(result.totalAssetBytes, greaterThan(0));
+    },
+    skip: canRun
+        ? false
+        : 'Set STARCRAFT_DATA_HELPER_PATH and '
+              'STARCRAFT_TEST_INSTALLATION after building the Windows app.',
+  );
+
+  test(
+    'bundled CascLib helper reads a fixed tileset render manifest',
+    () async {
+      final gateway = ProcessStarCraftTileAtlasGateway(
+        helperExecutablePath: helperPath!,
+        timeout: const Duration(seconds: 30),
+      );
+      for (final tileset in StarCraftTilesetAssetSet.values) {
+        final request = StarCraftTileAtlasRequest(
+          installationPath: installationPath!,
+          tileset: tileset,
+          rawValues: const [0, 1, 0x4000],
+        );
+
+        final result = await gateway.render(request);
+
+        expect(
+          result.isSuccess,
+          isTrue,
+          reason: result.diagnostics
+              .map(
+                (diagnostic) =>
+                    '${diagnostic.code}: ${diagnostic.message} '
+                    '${diagnostic.rawDetails ?? ''}',
+              )
+              .join('\n'),
+        );
+        expect(result.storageProduct, isNotEmpty);
+        expect(result.storageBuildNumber, greaterThanOrEqualTo(0));
+        expect(result.totalAssetBytes, greaterThan(0));
+        expect(result.rawValues, isEmpty);
+        expect(result.rgbaBytes, isEmpty);
+        expect(result.unsupportedRawValues, request.rawValues);
+      }
     },
     skip: canRun
         ? false

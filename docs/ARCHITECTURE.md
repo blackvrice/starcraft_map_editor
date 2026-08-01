@@ -272,6 +272,19 @@ helper는 tileset enum을 고정 매니페스트 경로로 바꾸고 `CV5` group
 17 MiB binary envelope로 임시 교환하고, Dart 어댑터가 응답·header·실제
 길이·raw 엔트리를 교차 검증한 뒤 이미지 생성 직후 삭제한다.
 
+현재 구현된 protocol 2에서 `StarCraftTileAtlasRequest`는 정렬·중복 제거된
+1~4,096개 `u16`만 허용한다. `renderTileAtlas` helper는 해당 tileset의
+`CV5`·`VX4EX`·`VR4`·`WPE` 네 경로만 strict-read하고 고정 이름
+`tile-atlas.rgba`를 새 파일로 만든다. envelope는 32바이트 little-endian
+header(`SCTRGBA\0`, format 1, tile 32px, 열·행·타일 수, 엔트리·픽셀 길이),
+4바이트 raw 엔트리와 RGBA8888 순서다. 어댑터는 symlink를 따르지 않고 JSON,
+실제 파일, header와 요청 값의 전체 포함 관계가 모두 맞을 때만 바이트를
+채택한다.
+
+픽셀 디코더가 아직 없는 현재 네이티브 구현은 자산 읽기 성공 뒤 빈 envelope와
+전체 unsupported 목록을 반환한다. 따라서 이 단계만으로 캔버스 표시를 바꾸지
+않으며, 다음 디코더 구현이 지원 raw 엔트리와 RGBA 영역을 채운다.
+
 Presentation은 설치/빌드/helper/CascLib/tileset/raw 배치 identity가 일치하는
 `ui.Image`만 기본 128 MiB LRU에 보관하고 퇴출과 dispose에서 GPU 자원을
 해제한다. 설정 또는 문서 generation이 바뀐 오래된 비동기 결과는 채택하지

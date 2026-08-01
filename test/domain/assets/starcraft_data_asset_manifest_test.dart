@@ -35,4 +35,30 @@ void main() {
     expect(StarCraftTilesetAssetSet.spacePlatform.fileStem, 'platform');
     expect(StarCraftTilesetAssetSet.installation.fileStem, 'install');
   });
+
+  test('limits pixel rendering to four fixed assets per tileset', () {
+    expect(
+      StarCraftDataAssetManifest.renderAssetKinds,
+      orderedEquals([
+        StarCraftTilesetAssetKind.groups,
+        StarCraftTilesetAssetKind.megatiles,
+        StarCraftTilesetAssetKind.minitiles,
+        StarCraftTilesetAssetKind.palette,
+      ]),
+    );
+    for (final tileset in StarCraftTilesetAssetSet.values) {
+      final renderAssets = StarCraftDataAssetManifest.renderAssetsFor(tileset);
+
+      expect(renderAssets, hasLength(4));
+      expect(
+        renderAssets.map((asset) => asset.relativePath),
+        orderedEquals([
+          'tileset\\${tileset.fileStem}.cv5',
+          'tileset\\${tileset.fileStem}.vx4ex',
+          'tileset\\${tileset.fileStem}.vr4',
+          'tileset\\${tileset.fileStem}.wpe',
+        ]),
+      );
+    }
+  });
 }
