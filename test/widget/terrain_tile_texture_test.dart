@@ -241,9 +241,9 @@ void main() {
       );
 
       expect(state.status, TerrainTileTextureStatus.partial);
-      expect(state.textures.keys, [0]);
-      expect(state.unsupportedRawValues, [1, 0x4000]);
-      expect(state.fallbackRawValues, [1, 2, 0x4000]);
+      expect(state.textures.keys, [0, 0x4000]);
+      expect(state.unsupportedRawValues, [1]);
+      expect(state.fallbackRawValues, [1, 2]);
       expect(state.diagnostics.map((diagnostic) => diagnostic.code), [
         TerrainTileTextureDiagnosticCodes.imageDecodeFailed,
       ]);

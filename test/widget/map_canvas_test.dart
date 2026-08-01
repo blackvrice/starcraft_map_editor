@@ -19,7 +19,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: Scaffold(
           body: MapCanvas(
             mapWidth: 4,
@@ -55,11 +55,11 @@ void main() {
     expect(painter.layout.visibleTiles.bottomExclusive, 2);
   });
 
-  testWidgets('reports and paints raw values outside the CV5 group range', (
+  testWidgets('reports helper-rejected raw values as unsupported', (
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: SizedBox(
           width: 320,
           height: 240,
@@ -67,6 +67,12 @@ void main() {
             mapWidth: 2,
             mapHeight: 2,
             rawTileValues: [0, 0x3fff, 0x4000, 0xffff],
+            terrainTextureState: TerrainTileTextureState(
+              status: TerrainTileTextureStatus.unavailable,
+              requestedRawValueCount: 4,
+              unsupportedRawValues: [0x4000, 0xffff],
+              fallbackRawValues: [0x4000, 0xffff],
+            ),
           ),
         ),
       ),
@@ -81,7 +87,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('paints ready StarCraft images before per-tile fallback', (
+  testWidgets('paints extended CV5 images before per-tile fallback', (
     tester,
   ) async {
     final rgba = Uint8List(32 * 32 * 4);
@@ -155,10 +161,11 @@ void main() {
     expect(pixels.getUint8(imagePixel + 1), 0);
     expect(pixels.getUint8(imagePixel + 2), 0);
     expect(pixels.getUint8(imagePixel + 3), 255);
-    final fallbackPixel = (8 * 64 + 48) * 4;
-    expect(pixels.getUint8(fallbackPixel), 0x42);
-    expect(pixels.getUint8(fallbackPixel + 1), 0x16);
-    expect(pixels.getUint8(fallbackPixel + 2), 0x2f);
+    final extendedImagePixel = (8 * 64 + 48) * 4;
+    expect(pixels.getUint8(extendedImagePixel), 255);
+    expect(pixels.getUint8(extendedImagePixel + 1), 0);
+    expect(pixels.getUint8(extendedImagePixel + 2), 0);
+    expect(pixels.getUint8(extendedImagePixel + 3), 255);
   });
 
   testWidgets('shows loading mode before the first StarCraft tile is ready', (

@@ -49,20 +49,21 @@ void main() {
     );
     sourceRawValues[0] = 7;
 
-    final sourcePixels = Uint8List(32 * 32 * 4);
+    final sourcePixels = Uint8List(2 * 32 * 32 * 4);
     final result = StarCraftTileAtlasResult(
       request: request,
       tileSize: 32,
-      columns: 1,
+      columns: 2,
       rows: 1,
-      rawValues: const [0],
+      rawValues: const [0, 0x4000],
       rgbaBytes: sourcePixels,
-      unsupportedRawValues: const [0x4000],
+      unsupportedRawValues: const [],
     );
     sourcePixels[0] = 255;
 
     expect(request.rawValues, [0, 0x4000]);
     expect(result.rgbaBytes[0], 0);
+    expect(result.rawValues, [0, 0x4000]);
     expect(() => result.rgbaBytes[0] = 1, throwsUnsupportedError);
     expect(result.isSuccess, isTrue);
   });
@@ -86,17 +87,20 @@ void main() {
       ),
       throwsArgumentError,
     );
-    expect(
-      () => StarCraftTileAtlasResult(
-        request: request,
-        tileSize: 32,
-        columns: 2,
-        rows: 1,
-        rawValues: const [1, 0x4000],
-        rgbaBytes: Uint8List(2 * 32 * 32 * 4),
-        unsupportedRawValues: const [],
-      ),
-      throwsArgumentError,
+    final extendedRequest = StarCraftTileAtlasRequest(
+      installationPath: r'C:\Games\StarCraft',
+      tileset: StarCraftTilesetAssetSet.ice,
+      rawValues: const [1, 0x4000],
     );
+    final extended = StarCraftTileAtlasResult(
+      request: extendedRequest,
+      tileSize: 32,
+      columns: 2,
+      rows: 1,
+      rawValues: const [1, 0x4000],
+      rgbaBytes: Uint8List(2 * 32 * 32 * 4),
+      unsupportedRawValues: const [],
+    );
+    expect(extended.rawValues, [1, 0x4000]);
   });
 }

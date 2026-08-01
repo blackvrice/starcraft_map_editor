@@ -65,7 +65,7 @@ bool AppendTile(
   const auto group = static_cast<std::size_t>(raw_value / 16U);
   const auto member = static_cast<std::size_t>(raw_value % 16U);
   const auto group_count = cv5.size() / kCv5GroupBytes;
-  if (raw_value >= 0x4000U || group >= group_count) {
+  if (group >= group_count) {
     return false;
   }
 

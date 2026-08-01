@@ -402,13 +402,12 @@
   데이터 자산이 없거나 불완전해도 현재 원시 색상 캔버스와 안전한 Save As는
   사용할 수 있다.
 - `MTXM` raw 값은 `group = value / 16`, `member = value % 16`으로 분해한다.
-  표준 지형 그룹 1,024개로 표현 가능한 `0x0000`~`0x3fff`는 raw
-  대체 색상으로 표시하고, 그보다 큰 `u16` 값은 손실 없이 유지하되 자홍색
-  교차 경고 패턴과 unsupported 개수로 구분한다. 선택한 타일에는 raw 값,
-  그룹, 멤버와 지원 상태를 함께 표시한다. 실제 SC:R `CV5`는 doodad 등을
-  포함해 1,024개보다 많은 52바이트 엔트리를 가질 수 있으므로 helper는 파일
-  구조상 최대 4,096개를 허용하되 현재 렌더 계약은 `0x4000` 이상을 사용하지
-  않는다.
+  전체 `u16`은 최대 4,096개 그룹을 주소화할 수 있다. 실제 SC:R `CV5`는
+  doodad 등을 포함해 1,024개보다 많은 52바이트 엔트리를 가지므로
+  `0x4000` 이상도 해당 파일의 실제 그룹 범위 안이면 렌더링한다. 실제 그룹
+  밖 값만 helper가 unsupported로 돌려주며, 앱은 값을 손실 없이 유지한 채
+  자홍색 교차 경고 패턴과 unsupported 개수로 구분한다. 선택한 타일에는 raw 값,
+  그룹, 멤버와 helper가 확인한 지원 상태를 함께 표시한다.
 - [ADR-0006](decisions/0006-request-scoped-tile-atlas-cache.md)에 따라 원시
   타일셋 자산과 디코더는 helper 경계 안에 유지한다. 새 `renderTileAtlas`
   작업은 고정 매니페스트에서 선택한 tileset의 `CV5`·`VX4EX`·`VR4`·`WPE`만
@@ -422,14 +421,16 @@
   경로만 strict-read하며 임의 CASC 경로나 출력 경로를 받지 않는다.
 - 아틀라스 교환 파일은 `SCTRGBA\0` magic, format 1, 32px tile, 열·행·타일
   수, raw 엔트리·픽셀 바이트 길이를 가진 32바이트 little-endian header 뒤에
-  4바이트 raw 엔트리와 premultiplied RGBA8888을 둔다. Dart 어댑터는 JSON,
+  4바이트 raw 엔트리와 타일별 연속 premultiplied RGBA8888을 둔다. 열·행은
+  최대 64열의 논리 배치와 마지막 padding 크기를 나타내며 픽셀 scanline
+  stride가 아니다. Dart 어댑터는 JSON,
   실제 파일 종류·크기, header, raw/unsupported의 요청 전체 포함 관계를
   교차 검증하고 요청별 임시 디렉터리를 항상 정리한다.
 - helper 0.3.0은 네 자산을 strict-read한 뒤 `CV5` 52바이트 그룹,
   `VX4EX` 64바이트 메가타일, `VR4` 64바이트 미니타일과 1,024바이트 `WPE`를
   little-endian으로 해석한다. 요청 중 정상인 raw만 최대 64열 아틀라스의
-  엔트리와 RGBA 영역에 기록하고 `0x4000` 이상 또는 실제 그룹 밖 값은
-  unsupported로 분리한다.
+  엔트리와 RGBA 영역에 기록하고 실제 `CV5` 그룹 밖 값만 unsupported로
+  분리한다.
 - helper의 픽셀 합성은 `MTXM`의 group/member로 `CV5` mega-tile을 선택하고,
   `VX4EX`의 4×4 mini-tile 인덱스와 반전 플래그, `VR4`의 8×8 팔레트 인덱스,
   `WPE` 색상을 순서대로 해석해 32×32 RGBA 타일을 만든다. 모든 offset,
@@ -448,8 +449,9 @@
   `MTXM` 값을 정규화하지 않는다.
 - `TerrainTileAtlasLoader`는 정확히 하나의 정상 `ERA `·`MTXM`과 준비된 자산
   검사 snapshot이 있을 때만 context를 만든다. 맵에 실제로 등장하는 raw 값을
-  정렬·중복 제거하고 표준 범위 값만 최대 4,096개씩 요청한다. helper가 돌려준
-  다열 RGBA 아틀라스는 열·행 위치를 반영해 각 32×32 타일로 행 단위 절단하며,
+  정렬·중복 제거하고 전체 `u16` 범위를 최대 4,096개씩 요청한다. helper가 돌려준
+  RGBA 영역은 raw 엔트리 순서의 연속 4,096바이트 타일로 절단하고 마지막 논리
+  셀 padding은 무시하며,
   응답의 설치 제품·빌드·helper/CascLib revision이 검사 snapshot과 다르면
   채택하지 않는다.
 - `TerrainTileTextureController`는 절단된 RGBA를 즉시 `ui.Image`로 변환하고
@@ -457,7 +459,8 @@
   tileset·검사 snapshot·raw 값 identity를 사용하는 기본 128 MiB LRU가 hit를
   승격하고 교체·퇴출·맵 닫기·설정 갱신에서 반드시 `Image.dispose()`를 호출한다.
   비동기 로드 중 generation이 바뀌면 늦게 완성된 이미지도 즉시 폐기한다.
-- 4,097개 고유 raw 값의 `4,096 + 1` 배치, 다열 아틀라스 절단, 캐시 재사용과
+- 4,097개 고유 raw 값의 `4,096 + 1` 배치, 연속 타일과 마지막 padding 절단,
+  확장 `CV5` 그룹 렌더링, 캐시 재사용과
   snapshot 무효화, LRU 퇴출, 이미지 변환 실패, helper unsupported, 오래된
   generation dispose를 자동 테스트로 고정했다.
 - 앱 조립은 `ProcessStarCraftTileAtlasGateway`·`TerrainTileAtlasLoader`·
@@ -466,9 +469,9 @@
   맵 세션 해제 시 캐시를 비우고 이전 이미지를 dispose한다. 렌더 진단은 기존
   Problems 목록에 합쳐지며 저장 차단 진단으로 승격하지 않는다.
 - `MapCanvasPainter`는 가시 타일마다 준비된 32×32 `ui.Image`를
-  `FilterQuality.none`으로 먼저 그린다. 이미지가 아직 없거나 helper/이미지
-  변환이 실패한 표준 raw는 기존 결정적 색상으로, `0x4000` 이상은 이미지 맵에
-  잘못 포함되어도 자홍색 교차 패턴으로 그린다. 배지는 loading, 실제 타일,
+  `FilterQuality.none`으로 먼저 그린다. 이미지가 아직 없거나 이미지 변환에
+  실패한 raw는 기존 결정적 색상으로, helper가 실제 그룹 밖이라고 반환한 raw는
+  자홍색 교차 패턴으로 그린다. 배지는 loading, 실제 타일,
   혼합 fallback, 전체 raw fallback 상태를 구분한다.
 - 위젯 테스트는 실제 RGBA 이미지를 캔버스에 그린 결과 픽셀, 미지원 타일의
   fallback 픽셀, 로딩 배지, painter 갱신 identity를 검증한다. 셸 통합 테스트는

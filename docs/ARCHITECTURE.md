@@ -193,8 +193,8 @@ fit-to-view 기준 타일 크기, 카메라 배율·이동, 화면상의 맵 경
 `MapCanvasPainter`는 viewport를 clip하고 가시 `MTXM` 타일만 순회한다. 각 raw에
 준비된 32×32 `ui.Image`가 있으면 nearest-neighbor 방식으로 먼저 그리고,
 없으면 원시 값 기반 결정적 색상을 사용한다. raw 값은 16개 멤버를 가진 `CV5`
-그룹 인덱스로 분해하며, 표준 최대 1,024개 그룹을 벗어난
-`0x4000`~`0xffff` 값은 이미지 맵에 포함되어도 사용하지 않고 자홍색 교차 경고
+그룹 인덱스로 분해한다. 전체 `u16` 범위에서 실제 `CV5` 그룹이 있는 값은
+이미지를 사용하고, helper가 실제 그룹 밖이라고 반환한 값만 자홍색 교차 경고
 패턴으로 그린다. 그 위에 적응형 격자, 선택/편집 overlay와 맵 외곽선을 겹친다.
 캔버스 배지는 geometry, loading, 실제 StarCraft 타일, 혼합 fallback과 전체
 raw fallback을 구분하고 선택 상태는 정확한 raw 값, 그룹과 멤버를 노출한다.
@@ -286,13 +286,14 @@ helper 0.3.0의 네이티브 디코더는 각 파일의 고정 레코드 길이�
 접근 전에 검사한다. `CV5` group/member가 고른 메가타일을 4×4 `VX4EX`
 미니타일로 분해하고 bit 0 수평 반전, `VR4`의 8×8 팔레트 인덱스와 `WPE`
 RGB를 적용해 alpha 255 RGBA를 만든다. 지원 raw는 최대 64열의 결정적 순서로
-배치하고 `0x4000` 이상 또는 실제 `CV5` 그룹 밖 값은 unsupported로 돌려준다.
+배치하고 실제 `CV5` 그룹 밖 값만 unsupported로 돌려준다. RGBA 영역은 raw
+엔트리 순서의 32×32 타일 블록을 연속 저장하고 마지막 논리 셀만 padding한다.
 
 Application의 `TerrainTileAtlasLoader`는 정확히 하나의 정상 tileset과 좌표
 접근 가능한 `MTXM`, 준비된 설치 검사 snapshot으로만 로드 context를 만든다.
-맵에 등장하는 raw 값을 정렬·중복 제거하고 표준 범위만 최대 4,096개 배치로
+맵에 등장하는 전체 `u16` raw 값을 정렬·중복 제거해 최대 4,096개 배치로
 요청한다. 결과의 설치 제품·빌드와 helper/CascLib revision을 snapshot과 다시
-대조한 뒤, 다열 아틀라스의 각 셀을 행 stride 기준 32×32 RGBA 버퍼로 절단한다.
+대조한 뒤, 픽셀 영역을 엔트리 순서의 연속 4,096바이트 RGBA 버퍼로 절단한다.
 
 Presentation의 `TerrainTileTextureController`는 이 짧은 수명의 RGBA 버퍼를
 즉시 32×32 `ui.Image`로 변환한다. 설치 경로·제품·빌드·helper/CascLib·

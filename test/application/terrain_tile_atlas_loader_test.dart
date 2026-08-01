@@ -9,45 +9,42 @@ import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 
 void main() {
-  test(
-    'creates a sorted unique MTXM context and separates unsupported values',
-    () {
-      final views = _decodeViews([0x4000, 2, 1, 2, 0xffff, 0]);
-      final inspection = _inspection();
-      final loader = TerrainTileAtlasLoader(gateway: _FakeGateway(_renderAll));
+  test('creates a sorted unique context for the full MTXM u16 range', () {
+    final views = _decodeViews([0x4000, 2, 1, 2, 0xffff, 0]);
+    final inspection = _inspection();
+    final loader = TerrainTileAtlasLoader(gateway: _FakeGateway(_renderAll));
 
-      final context = loader.createContext(
-        metadataViews: views.metadata,
-        terrainViews: views.terrain,
-        assetState: _readyState(inspection),
-      )!;
+    final context = loader.createContext(
+      metadataViews: views.metadata,
+      terrainViews: views.terrain,
+      assetState: _readyState(inspection),
+    )!;
 
-      expect(context.renderableRawValues, [0, 1, 2]);
-      expect(context.unsupportedRawValues, [0x4000, 0xffff]);
-      expect(context.identity.installationPath, r'C:\Games\StarCraft');
-      expect(context.identity.storageProduct, 's1');
-      expect(context.identity.storageBuildNumber, 13515);
-      expect(context.identity.helperVersion, '0.3.0');
-      expect(context.identity.cascLibRevision, 'pinned-casc');
-      expect(context.identity.tileset, StarCraftTilesetAssetSet.jungle);
+    expect(context.renderableRawValues, [0, 1, 2, 0x4000, 0xffff]);
+    expect(context.unsupportedRawValues, isEmpty);
+    expect(context.identity.installationPath, r'C:\Games\StarCraft');
+    expect(context.identity.storageProduct, 's1');
+    expect(context.identity.storageBuildNumber, 13515);
+    expect(context.identity.helperVersion, '0.3.0');
+    expect(context.identity.cascLibRevision, 'pinned-casc');
+    expect(context.identity.tileset, StarCraftTilesetAssetSet.jungle);
 
-      final sameSnapshot = loader.createContext(
-        metadataViews: views.metadata,
-        terrainViews: views.terrain,
-        assetState: _readyState(inspection),
-      )!;
-      final refreshedSnapshot = loader.createContext(
-        metadataViews: views.metadata,
-        terrainViews: views.terrain,
-        assetState: _readyState(_inspection()),
-      )!;
-      expect(sameSnapshot.identity, context.identity);
-      expect(refreshedSnapshot.identity, isNot(context.identity));
-    },
-  );
+    final sameSnapshot = loader.createContext(
+      metadataViews: views.metadata,
+      terrainViews: views.terrain,
+      assetState: _readyState(inspection),
+    )!;
+    final refreshedSnapshot = loader.createContext(
+      metadataViews: views.metadata,
+      terrainViews: views.terrain,
+      assetState: _readyState(_inspection()),
+    )!;
+    expect(sameSnapshot.identity, context.identity);
+    expect(refreshedSnapshot.identity, isNot(context.identity));
+  });
 
-  test('extracts each 32x32 tile from a multi-column RGBA atlas', () async {
-    final views = _decodeViews([0, 1, 2]);
+  test('extracts each packed 32x32 tile before padded atlas cells', () async {
+    final views = _decodeViews([0, 1, 0x4000]);
     final requests = <StarCraftTileAtlasRequest>[];
     final loader = TerrainTileAtlasLoader(
       gateway: _FakeGateway((request) async {
@@ -58,10 +55,10 @@ void main() {
           columns: 2,
           rows: 2,
           rawValues: request.rawValues,
-          rgbaBytes: _solidAtlas(
+          rgbaBytes: _packedTiles(
             columns: 2,
             rows: 2,
-            cellValues: const [11, 22, 33, 99],
+            tileValues: const [11, 22, 33],
           ),
           unsupportedRawValues: const [],
           storageProduct: 's1',
@@ -79,17 +76,17 @@ void main() {
 
     final result = await loader.loadBatch(
       context: context,
-      rawValues: const [0, 1, 2],
+      rawValues: const [0, 1, 0x4000],
     );
 
     expect(requests, hasLength(1));
-    expect(requests.single.rawValues, [0, 1, 2]);
+    expect(requests.single.rawValues, [0, 1, 0x4000]);
     expect(result.diagnostics, isEmpty);
     expect(result.unsupportedRawValues, isEmpty);
-    expect(result.rgbaTiles.keys, [0, 1, 2]);
+    expect(result.rgbaTiles.keys, [0, 1, 0x4000]);
     expect(result.rgbaTiles[0], everyElement(11));
     expect(result.rgbaTiles[1], everyElement(22));
-    expect(result.rgbaTiles[2], everyElement(33));
+    expect(result.rgbaTiles[0x4000], everyElement(33));
     expect(result.rgbaTiles[0], hasLength(32 * 32 * 4));
   });
 
@@ -103,7 +100,11 @@ void main() {
           columns: 2,
           rows: 1,
           rawValues: const [0, 2],
-          rgbaBytes: _solidAtlas(columns: 2, rows: 1, cellValues: const [7, 9]),
+          rgbaBytes: _packedTiles(
+            columns: 2,
+            rows: 1,
+            tileValues: const [7, 9],
+          ),
           unsupportedRawValues: const [1],
           storageProduct: 's1',
           storageBuildNumber: 13515,
@@ -294,22 +295,16 @@ StarCraftDataAssetInspection _inspection() {
   );
 }
 
-Uint8List _solidAtlas({
+Uint8List _packedTiles({
   required int columns,
   required int rows,
-  required List<int> cellValues,
+  required List<int> tileValues,
 }) {
   final pixels = Uint8List(columns * rows * 32 * 32 * 4);
-  final atlasWidth = columns * 32;
-  for (var cell = 0; cell < cellValues.length; cell++) {
-    final cellX = (cell % columns) * 32;
-    final cellY = (cell ~/ columns) * 32;
-    for (var y = 0; y < 32; y++) {
-      for (var x = 0; x < 32; x++) {
-        final pixelOffset = ((cellY + y) * atlasWidth + cellX + x) * 4;
-        pixels.fillRange(pixelOffset, pixelOffset + 4, cellValues[cell]);
-      }
-    }
+  const bytesPerTile = 32 * 32 * 4;
+  for (var tile = 0; tile < tileValues.length; tile++) {
+    final start = tile * bytesPerTile;
+    pixels.fillRange(start, start + bytesPerTile, tileValues[tile]);
   }
   return pixels;
 }

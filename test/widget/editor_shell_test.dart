@@ -207,14 +207,14 @@ void main() {
 
       expect(atlasGateway.requests, hasLength(1));
       expect(atlasGateway.requests.single.installationPath, installationPath);
-      expect(
-        atlasGateway.requests.single.rawValues,
-        List.generate(32, (i) => i),
-      );
-      expect(textureController.state.status, TerrainTileTextureStatus.partial);
-      expect(textureController.state.textures, hasLength(32));
-      expect(textureController.state.fallbackRawValues, [0x4000]);
-      expect(find.text('StarCraft tiles · 1 fallback'), findsOneWidget);
+      expect(atlasGateway.requests.single.rawValues, [
+        ...List.generate(32, (i) => i),
+        0x4000,
+      ]);
+      expect(textureController.state.status, TerrainTileTextureStatus.ready);
+      expect(textureController.state.textures, hasLength(33));
+      expect(textureController.state.fallbackRawValues, isEmpty);
+      expect(find.text('StarCraft tiles'), findsOneWidget);
       final painter =
           tester
                   .widget<CustomPaint>(
@@ -222,15 +222,15 @@ void main() {
                   )
                   .painter!
               as MapCanvasPainter;
-      expect(painter.terrainTextures, hasLength(32));
+      expect(painter.terrainTextures, hasLength(33));
 
       await assetController.clear();
       await tester.pumpAndSettle();
 
       expect(textureController.state.status, TerrainTileTextureStatus.idle);
       expect(textureController.state.textures, isEmpty);
-      expect(textureFactory.disposedTextures, 32);
-      expect(find.text('Raw fallback · 1 unsupported'), findsOneWidget);
+      expect(textureFactory.disposedTextures, 33);
+      expect(find.text('Raw fallback'), findsOneWidget);
     },
   );
 
@@ -513,7 +513,7 @@ void main() {
     expect(find.byKey(const Key('map-canvas-visible-region')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas-coordinate')), findsOneWidget);
     expect(find.byKey(const Key('map-canvas-zoom-level')), findsOneWidget);
-    expect(find.text('Raw fallback · 1 unsupported'), findsOneWidget);
+    expect(find.text('Raw fallback'), findsOneWidget);
     expect(find.text('Tile — · Pixel —'), findsOneWidget);
     expect(find.text('Wheel zoom · Space/middle drag'), findsOneWidget);
     expect(find.text('Arena.scx'), findsWidgets);
@@ -591,9 +591,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text(
-        'Raw tile 16384 · group 1024 · member 0 · unsupported from 1,0',
-      ),
+      find.text('Raw tile 16384 · group 1024 · member 0 from 1,0'),
       findsOneWidget,
     );
     expect(
@@ -630,7 +628,7 @@ void main() {
           .rawTileValueAt(x: 2, y: 0),
       0x4000,
     );
-    expect(find.text('Raw fallback · 2 unsupported'), findsOneWidget);
+    expect(find.text('Raw fallback'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isTrue);
     expect(find.text('Modified'), findsWidgets);
     expect(
@@ -655,7 +653,7 @@ void main() {
           .rawTileValueAt(x: 2, y: 0),
       2,
     );
-    expect(find.text('Raw fallback · 1 unsupported'), findsOneWidget);
+    expect(find.text('Raw fallback'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isFalse);
     expect(find.text('Editable'), findsOneWidget);
     expect(
@@ -680,7 +678,7 @@ void main() {
           .rawTileValueAt(x: 2, y: 0),
       0x4000,
     );
-    expect(find.text('Raw fallback · 2 unsupported'), findsOneWidget);
+    expect(find.text('Raw fallback'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isTrue);
     expect(find.text('Modified'), findsWidgets);
 

@@ -5,7 +5,6 @@ import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/chk/typed/chk_metadata_views.dart';
 import '../../domain/chk/typed/chk_terrain_views.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
-import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../ports/starcraft_tile_atlas_gateway.dart';
 import '../settings/starcraft_data_asset_settings_controller.dart';
 
@@ -136,15 +135,6 @@ final class TerrainTileAtlasLoader {
       (candidate) => candidate.rawValue == knownTileset.rawValue,
     );
     final uniqueValues = SplayTreeSet<int>.of(terrain.rawTileValues);
-    final renderable = <int>[];
-    final unsupported = <int>[];
-    for (final value in uniqueValues) {
-      if (TerrainTileDisplayValue.isStandardRawValue(value)) {
-        renderable.add(value);
-      } else {
-        unsupported.add(value);
-      }
-    }
 
     return TerrainTileAtlasContext(
       identity: TerrainTileAtlasIdentity(
@@ -156,8 +146,8 @@ final class TerrainTileAtlasLoader {
         tileset: tileset,
         inspectionSnapshot: inspection,
       ),
-      renderableRawValues: renderable,
-      unsupportedRawValues: unsupported,
+      renderableRawValues: uniqueValues.toList(growable: false),
+      unsupportedRawValues: const [],
     );
   }
 
@@ -255,29 +245,13 @@ bool _sameIdentityMetadata(
 }
 
 Uint8List _extractTile(StarCraftTileAtlasResult atlas, int tileIndex) {
-  final tile = Uint8List(TerrainTileAtlasLoader.rgbaBytesPerTile);
-  final tileColumn = tileIndex % atlas.columns;
-  final tileRow = tileIndex ~/ atlas.columns;
-  final atlasRowBytes =
-      atlas.columns *
-      TerrainTileAtlasLoader.tileSize *
-      TerrainTileAtlasLoader.bytesPerPixel;
-  final tileRowBytes =
-      TerrainTileAtlasLoader.tileSize * TerrainTileAtlasLoader.bytesPerPixel;
-
-  for (var row = 0; row < TerrainTileAtlasLoader.tileSize; row++) {
-    final sourceStart =
-        (tileRow * TerrainTileAtlasLoader.tileSize + row) * atlasRowBytes +
-        tileColumn * tileRowBytes;
-    final targetStart = row * tileRowBytes;
-    tile.setRange(
-      targetStart,
-      targetStart + tileRowBytes,
-      atlas.rgbaBytes,
-      sourceStart,
-    );
-  }
-  return tile;
+  final start = tileIndex * TerrainTileAtlasLoader.rgbaBytesPerTile;
+  return Uint8List.fromList(
+    atlas.rgbaBytes.sublist(
+      start,
+      start + TerrainTileAtlasLoader.rgbaBytesPerTile,
+    ),
+  );
 }
 
 EditorDiagnostic _diagnostic({

@@ -212,7 +212,7 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 4×2 캔버스 경계·격자·가시 범위·원시 `MTXM` 모드 위젯 렌더링
 - 256×256 fit-to-view에서 맵 경계 내 배치와 16타일 격자 축약
 - `MTXM` 누락/길이 불일치 시 geometry-only 캔버스 대체 표시
-- CV5 그룹 경계 `0x3fff`/`0x4000`의 raw 대체 표시 분기, unsupported 발생
+- 전체 `u16` group/member 분해와 helper가 반환한 실제 그룹 밖 raw의 경고 표시
   횟수와 선택 타일의 raw/group/member 상태 표시
 - 화면 컨트롤 확대/Fit 복귀와 포인터 중심 휠 확대의 좌표 고정
 - `Space`+좌클릭 및 중간 버튼 드래그 이동과 viewport 가장자리 제한
@@ -251,7 +251,8 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 `starcraft_data_helper_native_test`는 매니페스트의 40개 경로·중복·경로 범위와
 렌더용 8×4 부분집합, raw 배치 상한, 기존 출력 보존과 빈 폴더의 CASC 저장소
 열기 실패를 실제 CascLib으로 검증한다. 자체 생성한 네 자산으로 group/member,
-`VX4EX` 수평 반전, `VR4` 팔레트와 RGBA를 확인하고 네 파일의 길이 절단,
+1,024번 이상의 확장 `CV5` 그룹, `VX4EX` 수평 반전, `VR4` 팔레트와 RGBA를
+확인하고 네 파일의 길이 절단,
 4,096그룹 초과 `CV5`, 범위 밖 메가/미니타일 참조를 거부한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
@@ -259,8 +260,7 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든
-자산을 읽고 8개 타일셋 각각의 raw `0/1`을 RGBA로 합성하며 `0x4000`을
-unsupported로 분리하는지 확인한다.
+자산을 읽고 8개 타일셋 각각의 raw `0/1/0x4000`을 RGBA로 합성하는지 확인한다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

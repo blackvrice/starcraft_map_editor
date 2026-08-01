@@ -6,7 +6,9 @@
 구현 메모: protocol 2와 helper 0.2.0에서 `StarCraftTileAtlasGateway`, 고정
 8×4 렌더 매니페스트와 binary envelope를 도입했다. helper 0.3.0은
 `CV5`·`VX4EX`·`VR4`·`WPE` 길이와 참조를 검증하고 지원 raw의 32×32 RGBA를
-envelope에 기록한다. 캔버스 연결과 메모리 캐시는 후속 단계다.
+envelope에 기록한다. 2026-08-02 구현 수정으로 전체 `u16`을 요청하고 실제
+`CV5` 그룹 수로 지원 여부를 판정하며, 픽셀 영역은 엔트리 순서의 타일 블록을
+연속 저장한다. 캔버스 연결과 메모리 캐시는 후속 단계에서 완료했다.
 
 ## Context
 
@@ -51,15 +53,16 @@ Dart 계층으로 전달하지 않도록 결정했다. 이 경계는 설치 무�
 ### 배치와 출력 계약
 
 - 한 요청은 최대 4,096개 raw 값을 받는다. 더 많은 고유 값은 Application이
-  결정적인 정렬 순서로 여러 배치에 나눈다. `0x4000` 이상 값과 실제 `CV5`
-  그룹 범위를 벗어난 값은 합성하지 않고 unsupported 결과로 돌려준다.
+  결정적인 정렬 순서로 여러 배치에 나눈다. 전체 `u16` 중 실제 `CV5` 그룹
+  범위를 벗어난 값만 합성하지 않고 unsupported 결과로 돌려준다.
 - helper는 `group = raw / 16`, `member = raw % 16`으로 `CV5` mega-tile을
   고른 뒤 `VX4EX`의 4×4 mini-tile 인덱스·수평 반전, `VR4`의 8×8 팔레트
   인덱스와 `WPE` 색상을 순서대로 검증해 premultiplied RGBA8888로 합성한다.
 - 출력은 요청 임시 디렉터리의 새 `tile-atlas.rgba` 파일 하나다. 파일은 magic,
   포맷 버전, 타일 크기, 열·행·타일 수와 raw 값 엔트리 표, 연속 RGBA 픽셀을
-  가진 작은 고정 binary envelope를 사용한다. 부분 파일에 쓴 뒤 성공 시에만
-  최종 이름으로 바꾼다.
+  가진 작은 고정 binary envelope를 사용한다. RGBA는 엔트리 순서의 타일별
+  4,096바이트 블록이며 열·행은 마지막 padding을 포함한 논리 용량이다. 부분
+  파일에 쓴 뒤 성공 시에만 최종 이름으로 바꾼다.
 - JSON stdout에는 request ID, 작업, helper/CascLib revision, CASC 제품·빌드,
   tileset, 출력 파일명·크기·아틀라스 치수·타일 수와 unsupported 값만 넣는다.
   게임 자산이나 RGBA 바이트를 JSON과 로그에 포함하지 않는다.

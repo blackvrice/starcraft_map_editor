@@ -94,8 +94,8 @@ elseif ($request.operation -eq "renderTileAtlas") {
         exit 3
     }
 
-    $supported = @($request.rawValues | Where-Object { [int]$_ -lt 0x4000 })
-    $unsupported = @($request.rawValues | Where-Object { [int]$_ -ge 0x4000 })
+    $supported = @($request.rawValues | Where-Object { [int]$_ -lt 0x5000 })
+    $unsupported = @($request.rawValues | Where-Object { [int]$_ -ge 0x5000 })
     $tileCount = $supported.Count
     $columns = if ($tileCount -eq 0) { 0 } else { [Math]::Min($tileCount, 64) }
     $rows = if ($tileCount -eq 0) { 0 } else { [int][Math]::Ceiling($tileCount / [double]$columns) }

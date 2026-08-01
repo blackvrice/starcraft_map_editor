@@ -42,7 +42,7 @@ void main() {
 
     StarCraftTileAtlasRequest requestFor(
       String scenario, {
-      List<int> rawValues = const [0, 1, 0x4000],
+      List<int> rawValues = const [0, 1, 0x4000, 0x5000],
     }) {
       return StarCraftTileAtlasRequest(
         installationPath: 'C:\\Games\\$scenario',
@@ -61,12 +61,12 @@ void main() {
             .map((diagnostic) => '${diagnostic.code}: ${diagnostic.rawDetails}')
             .join('\n'),
       );
-      expect(result.rawValues, [0, 1]);
-      expect(result.unsupportedRawValues, [0x4000]);
+      expect(result.rawValues, [0, 1, 0x4000]);
+      expect(result.unsupportedRawValues, [0x5000]);
       expect(result.tileSize, 32);
-      expect(result.columns, 2);
+      expect(result.columns, 3);
       expect(result.rows, 1);
-      expect(result.rgbaBytes, hasLength(2 * 32 * 32 * 4));
+      expect(result.rgbaBytes, hasLength(3 * 32 * 32 * 4));
       expect(result.storageProduct, 's1');
       expect(result.storageBuildNumber, 13515);
       expect(result.helperVersion, '0.3.0');
@@ -81,7 +81,7 @@ void main() {
       'accepts an empty atlas when every raw value is unsupported',
       () async {
         final result = await createGateway().render(
-          requestFor('all-unsupported', rawValues: const [0x4000, 0xFFFF]),
+          requestFor('all-unsupported', rawValues: const [0x5000, 0xFFFF]),
         );
 
         expect(result.isSuccess, isTrue);
@@ -89,7 +89,7 @@ void main() {
         expect(result.rgbaBytes, isEmpty);
         expect(result.columns, 0);
         expect(result.rows, 0);
-        expect(result.unsupportedRawValues, [0x4000, 0xFFFF]);
+        expect(result.unsupportedRawValues, [0x5000, 0xFFFF]);
       },
       skip: !Platform.isWindows,
     );
@@ -107,7 +107,7 @@ void main() {
         asset.diagnostics.single.code,
         StarCraftTileAtlasDiagnosticCodes.assetInvalid,
       );
-      expect(asset.unsupportedRawValues, [0, 1, 0x4000]);
+      expect(asset.unsupportedRawValues, [0, 1, 0x4000, 0x5000]);
     }, skip: !Platform.isWindows);
 
     test('rejects malformed process output and atlas envelopes', () async {

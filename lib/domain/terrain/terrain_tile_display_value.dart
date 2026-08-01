@@ -1,5 +1,3 @@
-enum TerrainTileDisplaySupport { standard, unsupported }
-
 final class TerrainTileDisplayValue {
   TerrainTileDisplayValue.fromRawValue(this.rawValue) {
     if (rawValue < 0 || rawValue > maximumRawValue) {
@@ -14,9 +12,7 @@ final class TerrainTileDisplayValue {
   }
 
   static const int rawValuesPerGroup = 16;
-  static const int maximumTileGroupCount = 1024;
-  static const int maximumStandardRawValue =
-      rawValuesPerGroup * maximumTileGroupCount - 1;
+  static const int maximumTileGroupCount = 4096;
   static const int maximumRawValue = 0xffff;
 
   final int rawValue;
@@ -24,15 +20,6 @@ final class TerrainTileDisplayValue {
   int get groupIndex => rawValue ~/ rawValuesPerGroup;
 
   int get groupMember => rawValue % rawValuesPerGroup;
-
-  TerrainTileDisplaySupport get support => rawValue <= maximumStandardRawValue
-      ? TerrainTileDisplaySupport.standard
-      : TerrainTileDisplaySupport.unsupported;
-
-  bool get isUnsupported => support == TerrainTileDisplaySupport.unsupported;
-
-  static bool isStandardRawValue(int rawValue) =>
-      rawValue >= 0 && rawValue <= maximumStandardRawValue;
 }
 
 final class TerrainTileDisplaySummary {
@@ -41,13 +28,17 @@ final class TerrainTileDisplaySummary {
     required this.unsupportedTileCount,
   });
 
-  factory TerrainTileDisplaySummary.fromRawValues(Iterable<int> rawTileValues) {
+  factory TerrainTileDisplaySummary.fromRawValues(
+    Iterable<int> rawTileValues, {
+    Iterable<int> unsupportedRawValues = const [],
+  }) {
+    final unsupported = unsupportedRawValues.toSet();
     var tileCount = 0;
     var unsupportedTileCount = 0;
     for (final rawValue in rawTileValues) {
-      final displayValue = TerrainTileDisplayValue.fromRawValue(rawValue);
+      TerrainTileDisplayValue.fromRawValue(rawValue);
       tileCount++;
-      if (displayValue.isUnsupported) {
+      if (unsupported.contains(rawValue)) {
         unsupportedTileCount++;
       }
     }
@@ -60,7 +51,7 @@ final class TerrainTileDisplaySummary {
   final int tileCount;
   final int unsupportedTileCount;
 
-  int get standardTileCount => tileCount - unsupportedTileCount;
+  int get supportedTileCount => tileCount - unsupportedTileCount;
 
   bool get hasUnsupportedTiles => unsupportedTileCount > 0;
 }

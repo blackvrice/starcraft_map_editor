@@ -68,6 +68,7 @@ class _MapCanvasState extends State<MapCanvas> {
   TerrainTileCoordinate? _rectangleStart;
   TerrainTileCoordinate? _rectangleEnd;
   List<int>? _summarizedRawTileValues;
+  List<int>? _summarizedUnsupportedRawValues;
   TerrainTileDisplaySummary? _terrainDisplaySummary;
 
   @override
@@ -120,7 +121,10 @@ class _MapCanvasState extends State<MapCanvas> {
                   widget.rawTileValues!.length == expectedTileCount
               ? widget.rawTileValues
               : null;
-          final terrainDisplaySummary = _displaySummaryFor(terrainValues);
+          final terrainDisplaySummary = _displaySummaryFor(
+            terrainValues,
+            widget.terrainTextureState.unsupportedRawValues,
+          );
           final renderMode = _renderModeFor(
             terrainValues: terrainValues,
             terrainDisplaySummary: terrainDisplaySummary,
@@ -176,6 +180,9 @@ class _MapCanvasState extends State<MapCanvas> {
                               rawTileValues: terrainValues,
                               terrainTextures:
                                   widget.terrainTextureState.textures,
+                              unsupportedRawValues: widget
+                                  .terrainTextureState
+                                  .unsupportedRawValues,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                             ),
@@ -280,14 +287,22 @@ class _MapCanvasState extends State<MapCanvas> {
     );
   }
 
-  TerrainTileDisplaySummary? _displaySummaryFor(List<int>? rawTileValues) {
-    if (identical(rawTileValues, _summarizedRawTileValues)) {
+  TerrainTileDisplaySummary? _displaySummaryFor(
+    List<int>? rawTileValues,
+    List<int> unsupportedRawValues,
+  ) {
+    if (identical(rawTileValues, _summarizedRawTileValues) &&
+        identical(unsupportedRawValues, _summarizedUnsupportedRawValues)) {
       return _terrainDisplaySummary;
     }
     _summarizedRawTileValues = rawTileValues;
+    _summarizedUnsupportedRawValues = unsupportedRawValues;
     _terrainDisplaySummary = rawTileValues == null
         ? null
-        : TerrainTileDisplaySummary.fromRawValues(rawTileValues);
+        : TerrainTileDisplaySummary.fromRawValues(
+            rawTileValues,
+            unsupportedRawValues: unsupportedRawValues,
+          );
     return _terrainDisplaySummary;
   }
 
@@ -804,6 +819,7 @@ class MapCanvasPainter extends CustomPainter {
     required this.layout,
     required this.rawTileValues,
     this.terrainTextures = const {},
+    this.unsupportedRawValues = const [],
     this.selectedTile,
     this.rectanglePreview,
   }) : assert(
@@ -841,6 +857,7 @@ class MapCanvasPainter extends CustomPainter {
   final MapCanvasLayout layout;
   final List<int>? rawTileValues;
   final Map<int, TerrainTileTexture> terrainTextures;
+  final List<int> unsupportedRawValues;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
 
@@ -875,6 +892,7 @@ class MapCanvasPainter extends CustomPainter {
 
     final fallbackPaint = Paint();
     final imagePaint = Paint()..filterQuality = FilterQuality.none;
+    final unsupported = unsupportedRawValues.toSet();
     for (var y = bounds.top; y < bounds.bottomExclusive; y++) {
       for (var x = bounds.left; x < bounds.rightExclusive; x++) {
         final rawValue = values[y * layout.mapWidth + x];
@@ -884,10 +902,7 @@ class MapCanvasPainter extends CustomPainter {
           layout.tileExtent,
           layout.tileExtent,
         );
-        final isStandardRawValue = TerrainTileDisplayValue.isStandardRawValue(
-          rawValue,
-        );
-        final texture = isStandardRawValue ? terrainTextures[rawValue] : null;
+        final texture = terrainTextures[rawValue];
         if (texture != null) {
           canvas.drawImageRect(
             texture.image,
@@ -900,7 +915,7 @@ class MapCanvasPainter extends CustomPainter {
             tileRect,
             imagePaint,
           );
-        } else if (isStandardRawValue) {
+        } else if (!unsupported.contains(rawValue)) {
           fallbackPaint.color = _tilePalette[_paletteIndex(rawValue)];
           canvas.drawRect(tileRect, fallbackPaint);
         } else {
@@ -1007,6 +1022,7 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.layout.gridStep != layout.gridStep ||
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
         !identical(oldDelegate.terrainTextures, terrainTextures) ||
+        !identical(oldDelegate.unsupportedRawValues, unsupportedRawValues) ||
         oldDelegate.selectedTile != selectedTile ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||

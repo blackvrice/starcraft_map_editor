@@ -108,13 +108,6 @@ final class StarCraftTileAtlasResult {
       }
     }
     _expectStrictlyIncreasing(this.rawValues, 'rawValues');
-    if (this.rawValues.any((value) => value >= 0x4000)) {
-      throw ArgumentError.value(
-        this.rawValues,
-        'rawValues',
-        'Rendered values must stay inside the CV5 group range.',
-      );
-    }
     _expectStrictlyIncreasing(
       this.unsupportedRawValues,
       'unsupportedRawValues',

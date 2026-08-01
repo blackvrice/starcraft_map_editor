@@ -399,11 +399,6 @@ final class ProcessStarCraftTileAtlasGateway
       }
     }
     _expectStrictlyIncreasing(rawValues, 'atlas rawValues');
-    if (rawValues.any((value) => value >= 0x4000)) {
-      throw const FormatException(
-        'The atlas rendered a raw value outside the supported CV5 range.',
-      );
-    }
     final pixelOffset = atlasHeaderBytes + entryBytes;
     return _AtlasEnvelope(
       tileSize: tileSize,

@@ -180,6 +180,21 @@ int main() {
     return Fail("Palette colors or VX4EX horizontal flipping are incorrect.");
   }
 
+  auto extended_cv5 = valid_tile_assets;
+  extended_cv5[0].resize(1025 * 52);
+  PutUint16(&extended_cv5[0], 1024 * 52 + 20, 0);
+  const auto decoded_extended_group =
+      starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
+          extended_cv5, {0x4000, 0xFFFF});
+  if (!decoded_extended_group.success ||
+      decoded_extended_group.rendered_raw_values !=
+          std::vector<std::uint16_t>({0x4000}) ||
+      decoded_extended_group.unsupported_raw_values !=
+          std::vector<std::uint32_t>({0xFFFF}) ||
+      decoded_extended_group.rgba_bytes.size() != 32 * 32 * 4) {
+    return Fail("An addressable extended CV5 group was not decoded.");
+  }
+
   for (std::size_t asset_index = 0; asset_index < 4; ++asset_index) {
     auto truncated = valid_tile_assets;
     truncated[asset_index].pop_back();
@@ -301,6 +316,20 @@ int main() {
       filled_bytes[40] != 0 || filled_bytes[41] != 255 ||
       filled_bytes[42] != 0x55 || filled_bytes[43] != 255) {
     return Fail("The decoded tile atlas envelope fields are invalid.");
+  }
+
+  const auto extended_atlas_directory = empty_storage / "extended";
+  if (!std::filesystem::create_directory(extended_atlas_directory, error) ||
+      error) {
+    return Fail("Could not create the extended-atlas test directory.");
+  }
+  const auto extended_atlas =
+      starcraft_map_editor::starcraft_data::WriteTileAtlas(
+          extended_atlas_directory,
+          decoded_extended_group.rendered_raw_values,
+          decoded_extended_group.rgba_bytes);
+  if (!extended_atlas.success || extended_atlas.tile_count != 1) {
+    return Fail("An extended CV5 raw value was rejected by the atlas writer.");
   }
 
   atlas_file.close();

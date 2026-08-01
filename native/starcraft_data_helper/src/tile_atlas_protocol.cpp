@@ -97,7 +97,7 @@ bool ValidateRenderedValues(const std::vector<std::uint16_t>& raw_values) {
   std::uint16_t previous = 0;
   bool has_previous = false;
   for (const auto value : raw_values) {
-    if (value >= 0x4000U || (has_previous && value <= previous)) {
+    if (has_previous && value <= previous) {
       return false;
     }
     previous = value;

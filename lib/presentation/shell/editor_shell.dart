@@ -1405,6 +1405,8 @@ class _OpenedMapWorkspace extends StatelessWidget {
                 const SizedBox(height: 9),
                 _TerrainEditingToolbar(
                   state: editingState,
+                  unsupportedRawValues:
+                      terrainTileTextureState.unsupportedRawValues,
                   canSelectTiles: canSelectTiles,
                   canEditTerrain: canEditTerrain,
                   onToolSelected: terrainEditingController.setTool,
@@ -1503,6 +1505,7 @@ class _MapCanvasMetadata extends StatelessWidget {
 class _TerrainEditingToolbar extends StatelessWidget {
   const _TerrainEditingToolbar({
     required this.state,
+    required this.unsupportedRawValues,
     required this.canSelectTiles,
     required this.canEditTerrain,
     required this.onToolSelected,
@@ -1511,6 +1514,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
   });
 
   final TerrainEditingState state;
+  final List<int> unsupportedRawValues;
   final bool canSelectTiles;
   final bool canEditTerrain;
   final ValueChanged<TerrainEditingTool> onToolSelected;
@@ -1525,12 +1529,15 @@ class _TerrainEditingToolbar extends StatelessWidget {
     final selectedDisplayValue = selectedRawTileValue == null
         ? null
         : TerrainTileDisplayValue.fromRawValue(selectedRawTileValue);
+    final selectedIsUnsupported =
+        selectedRawTileValue != null &&
+        unsupportedRawValues.contains(selectedRawTileValue);
     final selectedLabel = selectedDisplayValue == null
         ? 'Select a source tile'
         : 'Raw tile ${selectedDisplayValue.rawValue} · '
               'group ${selectedDisplayValue.groupIndex} · '
               'member ${selectedDisplayValue.groupMember}'
-              '${selectedDisplayValue.isUnsupported ? ' · unsupported' : ''}'
+              '${selectedIsUnsupported ? ' · unsupported' : ''}'
               '${selection == null ? '' : ' from ${selection.x},${selection.y}'}';
 
     return Wrap(

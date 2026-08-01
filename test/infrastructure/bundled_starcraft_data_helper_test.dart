@@ -81,12 +81,12 @@ void main() {
         expect(result.storageProduct, isNotEmpty);
         expect(result.storageBuildNumber, greaterThanOrEqualTo(0));
         expect(result.totalAssetBytes, greaterThan(0));
-        expect(result.rawValues, const [0, 1]);
-        expect(result.columns, 2);
+        expect(result.rawValues, const [0, 1, 0x4000]);
+        expect(result.columns, 3);
         expect(result.rows, 1);
-        expect(result.rgbaBytes, hasLength(2 * 32 * 32 * 4));
+        expect(result.rgbaBytes, hasLength(3 * 32 * 32 * 4));
         expect(result.rgbaBytes[3], 0xFF);
-        expect(result.unsupportedRawValues, const [0x4000]);
+        expect(result.unsupportedRawValues, isEmpty);
       }
     },
     skip: canRun
