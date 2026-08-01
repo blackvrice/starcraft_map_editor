@@ -255,6 +255,29 @@ found/required, 전체 읽기 바이트, 누락 경로와 네이티브 오류를
 Windows method channel을 직접 호출하지 않는다. 검사 실패는 캔버스의 대체
 표시나 맵 저장을 막는 오류가 아니라 자산 기반 렌더링 기능에 대한 경고다.
 
+### StarCraft 타일 아틀라스 로딩
+
+[ADR-0006](decisions/0006-request-scoped-tile-atlas-cache.md)에 따라 실제 타일
+렌더링도 CascLib과 디코더를 Flutter 프로세스 밖에 둔다. Application의
+`StarCraftTileAtlasGateway` 포트는 설치 검사 snapshot, tileset과 최대
+4,096개의 정렬·중복 제거된 raw 값 배치를 받아 정규화된 아틀라스 결과를
+반환한다. Infrastructure 어댑터는 요청별 임시 디렉터리에서 번들 helper의
+`renderTileAtlas`를 실행한다. UI는 포트, 프로세스나 파일 시스템을 직접
+호출하지 않고 Application 이미지 상태만 구독한다.
+
+helper는 tileset enum을 고정 매니페스트 경로로 바꾸고 `CV5` group/member,
+`VX4EX` mini-tile·반전, `VR4` 팔레트 인덱스와 `WPE` 색상을 모두 범위 검사해
+32×32 premultiplied RGBA8888을 합성한다. 원시 게임 자산은 helper 밖으로
+나오지 않으며 JSON은 메타데이터만 전달한다. RGBA는 magic과 버전이 있는 최대
+17 MiB binary envelope로 임시 교환하고, Dart 어댑터가 응답·header·실제
+길이·raw 엔트리를 교차 검증한 뒤 이미지 생성 직후 삭제한다.
+
+Presentation은 설치/빌드/helper/CascLib/tileset/raw 배치 identity가 일치하는
+`ui.Image`만 기본 128 MiB LRU에 보관하고 퇴출과 dispose에서 GPU 자원을
+해제한다. 설정 또는 문서 generation이 바뀐 오래된 비동기 결과는 채택하지
+않는다. 누락·손상·timeout·unsupported 값은 구조화된 비차단 진단과 기존
+색상/교차 패턴 fallback으로 격리되며 맵 편집과 Save As에는 영향을 주지 않는다.
+
 ## 6. 명령과 Undo/Redo
 
 모든 사용자 편집은 명시적인 명령으로 표현한다.
