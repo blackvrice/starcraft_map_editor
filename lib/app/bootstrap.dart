@@ -6,6 +6,7 @@ import '../application/documents/save_map_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
+import '../application/layers/map_layer_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/recent_projects/recent_projects_service.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
@@ -64,6 +65,7 @@ void bootstrap() {
   final terrainEditingController = TerrainEditingController(
     openMapController: openMapController,
   );
+  final mapLayerController = MapLayerController();
   final terrainTileTextureController = TerrainTileTextureController(
     loader: TerrainTileAtlasLoader(
       gateway: ProcessStarCraftTileAtlasGateway.bundled(),
@@ -106,6 +108,7 @@ void bootstrap() {
     settingsStore: settingsStore,
     starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
     terrainEditingController: terrainEditingController,
+    mapLayerController: mapLayerController,
     terrainTileTextureController: terrainTileTextureController,
   );
 

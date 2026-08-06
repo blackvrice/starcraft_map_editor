@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../application/layers/map_layer_controller.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import 'terrain_tile_texture.dart';
@@ -48,6 +49,8 @@ class MapCanvas extends StatefulWidget {
     this.editingTool = TerrainEditingTool.select,
     this.selectedTile,
     this.onTileSelected,
+    this.onCanvasSelected,
+    this.layerScene,
     this.onBrushStrokeStarted,
     this.onBrushStroke,
     this.onBrushStrokeEnded,
@@ -69,6 +72,8 @@ class MapCanvas extends StatefulWidget {
   final TerrainEditingTool editingTool;
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
+  final ValueChanged<MapCanvasPointerCoordinate>? onCanvasSelected;
+  final MapLayerScene? layerScene;
   final VoidCallback? onBrushStrokeStarted;
   final ValueChanged<List<TerrainTileCoordinate>>? onBrushStroke;
   final VoidCallback? onBrushStrokeEnded;
@@ -218,6 +223,7 @@ class _MapCanvasState extends State<MapCanvas> {
                               onPaintMeasured: widget.onPaintMeasured,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
+                              layerScene: widget.layerScene,
                             ),
                           ),
                         ),
@@ -461,6 +467,7 @@ class _MapCanvasState extends State<MapCanvas> {
 
     switch (widget.editingTool) {
       case TerrainEditingTool.select:
+        widget.onCanvasSelected?.call(coordinate);
         widget.onTileSelected?.call(tile);
       case TerrainEditingTool.brush:
         final onBrushStroke = widget.onBrushStroke;
@@ -862,6 +869,7 @@ class MapCanvasPainter extends CustomPainter {
     this.onPaintMeasured,
     this.selectedTile,
     this.rectanglePreview,
+    this.layerScene,
   }) : assert(
          rawTileValues == null ||
              rawTileValues.length == layout.mapWidth * layout.mapHeight,
@@ -901,6 +909,7 @@ class MapCanvasPainter extends CustomPainter {
   final MapCanvasPaintObserver? onPaintMeasured;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
+  final MapLayerScene? layerScene;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -928,6 +937,7 @@ class MapCanvasPainter extends CustomPainter {
       canvas.drawRect(mapRect, Paint()..color = mapBackground);
       _paintTerrain(canvas, counters);
       _paintGrid(canvas);
+      _paintObjectLayers(canvas);
       _paintEditOverlay(canvas);
       canvas.drawRect(
         mapRect,
@@ -1049,6 +1059,128 @@ class MapCanvasPainter extends CustomPainter {
     }
   }
 
+  void _paintObjectLayers(Canvas canvas) {
+    final scene = layerScene;
+    if (scene == null) {
+      return;
+    }
+
+    for (final region in scene.regions) {
+      final rect = _mapPixelRegionRect(region);
+      if (!rect.overlaps(Offset.zero & layout.viewportSize)) {
+        continue;
+      }
+      final selected = scene.selection?.object == region.object;
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = selected
+              ? const Color(0x335FE3C0)
+              : const Color(0x1F5FE3C0),
+      );
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = selected ? const Color(0xFFF6C85F) : const Color(0xFF5FE3C0)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = selected ? 3 : 1.5,
+      );
+    }
+
+    for (final layer in const [
+      MapLayerType.doodads,
+      MapLayerType.sprites,
+      MapLayerType.units,
+    ]) {
+      for (final point in scene.points.where(
+        (candidate) => candidate.object.layer == layer,
+      )) {
+        final center = _mapPixelOffset(point.pixelX, point.pixelY);
+        if (!(Offset.zero & layout.viewportSize).inflate(12).contains(center)) {
+          continue;
+        }
+        _paintPointObject(
+          canvas,
+          point,
+          center,
+          selected: scene.selection?.object == point.object,
+        );
+      }
+    }
+  }
+
+  void _paintPointObject(
+    Canvas canvas,
+    MapLayerPointObject point,
+    Offset center, {
+    required bool selected,
+  }) {
+    final radius = (layout.tileExtent * 0.32).clamp(3.5, 9.0).toDouble();
+    final fill = Paint()
+      ..color = switch (point.object.layer) {
+        MapLayerType.units => const Color(0xFF70A1FF),
+        MapLayerType.sprites => const Color(0xFFFF8BCB),
+        MapLayerType.doodads => const Color(0xFFFFB454),
+        _ => const Color(0xFFD2D9E6),
+      };
+    final outline = Paint()
+      ..color = selected ? const Color(0xFFF6C85F) : const Color(0xFFE8EDF6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = selected ? 3 : 1.5;
+
+    switch (point.object.layer) {
+      case MapLayerType.units:
+        canvas.drawCircle(center, radius, fill);
+        canvas.drawCircle(center, radius, outline);
+        canvas.drawLine(
+          center - Offset(radius * 0.55, 0),
+          center + Offset(radius * 0.55, 0),
+          outline,
+        );
+        canvas.drawLine(
+          center - Offset(0, radius * 0.55),
+          center + Offset(0, radius * 0.55),
+          outline,
+        );
+      case MapLayerType.sprites:
+        final path = Path()
+          ..moveTo(center.dx, center.dy - radius)
+          ..lineTo(center.dx + radius, center.dy)
+          ..lineTo(center.dx, center.dy + radius)
+          ..lineTo(center.dx - radius, center.dy)
+          ..close();
+        canvas.drawPath(path, fill);
+        canvas.drawPath(path, outline);
+      case MapLayerType.doodads:
+        final rect = Rect.fromCenter(
+          center: center,
+          width: radius * 1.8,
+          height: radius * 1.8,
+        );
+        canvas.drawRect(rect, fill);
+        canvas.drawRect(rect, outline);
+      case MapLayerType.terrain:
+      case MapLayerType.locations:
+        break;
+    }
+  }
+
+  Offset _mapPixelOffset(int pixelX, int pixelY) => Offset(
+    layout.mapRect.left + pixelX / 32 * layout.tileExtent,
+    layout.mapRect.top + pixelY / 32 * layout.tileExtent,
+  );
+
+  Rect _mapPixelRegionRect(MapLayerRegionObject region) {
+    final first = _mapPixelOffset(region.left, region.top);
+    final second = _mapPixelOffset(region.right, region.bottom);
+    return Rect.fromLTRB(
+      math.min(first.dx, second.dx),
+      math.min(first.dy, second.dy),
+      math.max(first.dx, second.dx),
+      math.max(first.dy, second.dy),
+    );
+  }
+
   void _paintEditOverlay(Canvas canvas) {
     final selected = selectedTile;
     if (selected != null &&
@@ -1107,7 +1239,8 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
         oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||
-        oldDelegate.rectanglePreview?.bottom != rectanglePreview?.bottom;
+        oldDelegate.rectanglePreview?.bottom != rectanglePreview?.bottom ||
+        !identical(oldDelegate.layerScene, layerScene);
   }
 }
 

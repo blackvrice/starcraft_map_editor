@@ -11,6 +11,7 @@ import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_source_document.dart';
+import '../../application/layers/map_layer_controller.dart';
 import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
@@ -37,6 +38,7 @@ class EditorShell extends StatefulWidget {
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
     required this.terrainEditingController,
+    required this.mapLayerController,
     required this.terrainTileTextureController,
     super.key,
   });
@@ -51,6 +53,7 @@ class EditorShell extends StatefulWidget {
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
   final TerrainEditingController terrainEditingController;
+  final MapLayerController mapLayerController;
   final TerrainTileTextureController terrainTileTextureController;
 
   @override
@@ -66,6 +69,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<StarCraftDataAssetSettingsState>
   _starCraftDataAssetSettingsSubscription;
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
+  late StreamSubscription<MapLayerState> _mapLayerSubscription;
   late StreamSubscription<TerrainTileTextureState>
   _terrainTileTextureSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
@@ -82,6 +86,9 @@ class _EditorShellState extends State<EditorShell> {
     widget.terrainEditingController.synchronizeSession(
       widget.openMapController.state.session,
     );
+    widget.mapLayerController.synchronizeSession(
+      widget.openMapController.state.session,
+    );
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
@@ -92,6 +99,7 @@ class _EditorShellState extends State<EditorShell> {
     _terrainEditingSubscription = _listenForTerrainEditing(
       widget.terrainEditingController,
     );
+    _mapLayerSubscription = _listenForMapLayers(widget.mapLayerController);
     _terrainTileTextureSubscription = _listenForTerrainTileTextures(
       widget.terrainTileTextureController,
     );
@@ -144,6 +152,13 @@ class _EditorShellState extends State<EditorShell> {
         widget.terrainEditingController,
       );
     }
+    if (oldWidget.mapLayerController != widget.mapLayerController) {
+      unawaited(_mapLayerSubscription.cancel());
+      widget.mapLayerController.synchronizeSession(
+        widget.openMapController.state.session,
+      );
+      _mapLayerSubscription = _listenForMapLayers(widget.mapLayerController);
+    }
     if (oldWidget.terrainTileTextureController !=
         widget.terrainTileTextureController) {
       unawaited(_terrainTileTextureSubscription.cancel());
@@ -169,6 +184,7 @@ class _EditorShellState extends State<EditorShell> {
             _recentProjects = widget.recentProjectsService.load();
           }
           widget.terrainEditingController.synchronizeSession(state.session);
+          widget.mapLayerController.synchronizeSession(state.session);
         });
         _synchronizeTerrainTextures();
       }
@@ -238,6 +254,16 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<MapLayerState> _listenForMapLayers(
+    MapLayerController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   StreamSubscription<TerrainTileTextureState> _listenForTerrainTileTextures(
     TerrainTileTextureController controller,
   ) {
@@ -271,6 +297,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_eudSourceSubscription.cancel());
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     unawaited(_terrainEditingSubscription.cancel());
+    unawaited(_mapLayerSubscription.cancel());
     unawaited(_terrainTileTextureSubscription.cancel());
     widget.terrainTileTextureController.clear();
     super.dispose();
@@ -470,6 +497,7 @@ class _EditorShellState extends State<EditorShell> {
                             eudSourceController: widget.eudSourceController,
                             terrainEditingController:
                                 widget.terrainEditingController,
+                            mapLayerController: widget.mapLayerController,
                             terrainTileTextureState: terrainTileTextureState,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
@@ -808,6 +836,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onRemoveRecentProject,
     required this.eudSourceController,
     required this.terrainEditingController,
+    required this.mapLayerController,
     required this.terrainTileTextureState,
     required this.workspaceView,
     required this.onShowMap,
@@ -823,6 +852,7 @@ class _EditorWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
+  final MapLayerController mapLayerController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
@@ -844,7 +874,7 @@ class _EditorWorkspace extends StatelessWidget {
                 ? 'Project / Sources'
                 : session == null
                 ? 'Project / Layers'
-                : 'Archive Entries',
+                : 'Map Layers',
             child: showingEud
                 ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
                 : session == null
@@ -852,7 +882,18 @@ class _EditorWorkspace extends StatelessWidget {
                     icon: Icons.layers_outlined,
                     message: 'No map layers',
                   )
-                : _ArchiveEntryList(session: session),
+                : _MapLayerList(
+                    session: session,
+                    controller: mapLayerController,
+                    onLayerActivated: (layer) {
+                      mapLayerController.setActiveLayer(layer);
+                      if (layer != MapLayerType.terrain) {
+                        terrainEditingController.setTool(
+                          TerrainEditingTool.select,
+                        );
+                      }
+                    },
+                  ),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -878,6 +919,7 @@ class _EditorWorkspace extends StatelessWidget {
                   onRemoveRecentProject: onRemoveRecentProject,
                   eudSourceController: eudSourceController,
                   terrainEditingController: terrainEditingController,
+                  mapLayerController: mapLayerController,
                   terrainTileTextureState: terrainTileTextureState,
                   workspaceView: workspaceView,
                 ),
@@ -1153,6 +1195,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.onRemoveRecentProject,
     required this.eudSourceController,
     required this.terrainEditingController,
+    required this.mapLayerController,
     required this.terrainTileTextureState,
     required this.workspaceView,
   });
@@ -1166,6 +1209,7 @@ class _MapWorkspace extends StatelessWidget {
   final ValueChanged<RecentProject> onRemoveRecentProject;
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
+  final MapLayerController mapLayerController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
 
@@ -1187,6 +1231,7 @@ class _MapWorkspace extends StatelessWidget {
           ...terrainTileTextureState.diagnostics,
         ],
         terrainEditingController: terrainEditingController,
+        mapLayerController: mapLayerController,
         terrainTileTextureState: terrainTileTextureState,
       );
     }
@@ -1278,12 +1323,14 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.session,
     required this.diagnostics,
     required this.terrainEditingController,
+    required this.mapLayerController,
     required this.terrainTileTextureState,
   });
 
   final OpenedMapSession session;
   final List<EditorDiagnostic> diagnostics;
   final TerrainEditingController terrainEditingController;
+  final MapLayerController mapLayerController;
   final TerrainTileTextureState terrainTileTextureState;
 
   @override
@@ -1306,9 +1353,26 @@ class _OpenedMapWorkspace extends StatelessWidget {
             terrain.height == dimensions.height
         ? terrain.rawTileValues
         : null;
+    final layerState = mapLayerController.state;
+    final layerScene = mapLayerController.sceneFor(session);
+    final terrainLayer = layerState.statusOf(MapLayerType.terrain);
     final editingState = terrainEditingController.state;
-    final canSelectTiles = terrainEditingController.canSelectTiles;
-    final canEditTerrain = terrainEditingController.canEditTerrain;
+    final canSelectTiles =
+        terrainEditingController.canSelectTiles && terrainLayer.isSelectable;
+    final canEditTerrain =
+        terrainEditingController.canEditTerrain &&
+        terrainLayer.isSelectable &&
+        layerState.activeLayer == MapLayerType.terrain;
+    final selectedLayerObject = layerState.selection;
+    final selectedTerrainTile =
+        selectedLayerObject?.object.layer == MapLayerType.terrain
+        ? TerrainTileCoordinate(
+            x: selectedLayerObject!.pixelX ~/ 32,
+            y: selectedLayerObject.pixelY ~/ 32,
+          )
+        : layerState.activeLayer == MapLayerType.terrain
+        ? editingState.selectedTile
+        : null;
     final warningCount = diagnostics
         .where(
           (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
@@ -1394,6 +1458,12 @@ class _OpenedMapWorkspace extends StatelessWidget {
                       icon: Icons.pan_tool_alt_rounded,
                       value: 'Wheel zoom · Space/middle drag',
                     ),
+                    _MapCanvasMetadata(
+                      key: const Key('map-layer-selection-priority'),
+                      icon: Icons.layers_rounded,
+                      value:
+                          'Pick ${layerState.selectionPriority.map((layer) => layer.label).join(' → ')}',
+                    ),
                     if (blockingCount > 0 || warningCount > 0)
                       _MapCanvasMetadata(
                         icon: Icons.report_problem_outlined,
@@ -1431,12 +1501,32 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     key: ValueKey('map-canvas:${session.sourcePath}'),
                     mapWidth: dimensions.width,
                     mapHeight: dimensions.height,
-                    rawTileValues: rawTileValues,
+                    rawTileValues: terrainLayer.isVisible
+                        ? rawTileValues
+                        : null,
                     terrainTextureState: terrainTileTextureState,
                     editingTool: editingState.tool,
-                    selectedTile: editingState.selectedTile,
-                    onTileSelected: canSelectTiles
-                        ? terrainEditingController.selectTileAt
+                    selectedTile: selectedTerrainTile,
+                    layerScene: layerScene,
+                    onCanvasSelected:
+                        editingState.tool == TerrainEditingTool.select
+                        ? (coordinate) {
+                            final selection = mapLayerController.selectAt(
+                              session: session,
+                              pixelX: coordinate.pixelX,
+                              pixelY: coordinate.pixelY,
+                            );
+                            if (selection?.object.layer ==
+                                    MapLayerType.terrain &&
+                                canSelectTiles) {
+                              terrainEditingController.selectTileAt(
+                                TerrainTileCoordinate(
+                                  x: coordinate.tileX,
+                                  y: coordinate.tileY,
+                                ),
+                              );
+                            }
+                          }
                         : null,
                     onBrushStroke:
                         canEditTerrain && editingState.hasSelectedTile
@@ -1708,46 +1798,187 @@ class _SessionStatusChip extends StatelessWidget {
   }
 }
 
-class _ArchiveEntryList extends StatelessWidget {
-  const _ArchiveEntryList({required this.session});
+class _MapLayerList extends StatelessWidget {
+  const _MapLayerList({
+    required this.session,
+    required this.controller,
+    required this.onLayerActivated,
+  });
 
   final OpenedMapSession session;
+  final MapLayerController controller;
+  final ValueChanged<MapLayerType> onLayerActivated;
 
   @override
   Widget build(BuildContext context) {
-    final entries = session.archiveMetadata.entries;
-    return ListView.builder(
-      key: const Key('archive-entry-list'),
+    final state = controller.state;
+    final scene = controller.sceneFor(session);
+    final selection = state.selection;
+    return ListView(
+      key: const Key('map-layer-list'),
       padding: const EdgeInsets.symmetric(vertical: 6),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return ListTile(
-          dense: true,
-          leading: Icon(
-            entry.nameIsSynthetic
-                ? Icons.help_outline
-                : Icons.insert_drive_file_outlined,
-            size: 18,
-            color: entry.nameIsSynthetic
-                ? const Color(0xFFFFB454)
-                : const Color(0xFF7F8BA0),
+      children: [
+        for (final layer in MapLayerController.paintOrder.reversed)
+          _MapLayerRow(
+            layer: layer,
+            status: state.statusOf(layer),
+            objectCount: scene.objectCounts[layer] ?? 0,
+            isActive: state.activeLayer == layer,
+            onActivate: () => onLayerActivated(layer),
+            onVisibilityChanged: (visible) =>
+                controller.setVisible(layer, visible),
+            onLockChanged: (locked) => controller.setLocked(layer, locked),
           ),
-          title: Text(
-            entry.path,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11),
+        const Divider(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            selection == null
+                ? 'Click the canvas to inspect the first unlocked object.'
+                : '${selection.object.label} · '
+                      '${selection.pixelX},${selection.pixelY}px',
+            key: const Key('map-layer-selection-summary'),
+            style: const TextStyle(color: Color(0xFF8F9BB0), fontSize: 10),
           ),
-          subtitle: Text(
-            _formatBytes(entry.uncompressedSizeBytes),
-            style: const TextStyle(fontSize: 10),
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 }
+
+class _MapLayerRow extends StatelessWidget {
+  const _MapLayerRow({
+    required this.layer,
+    required this.status,
+    required this.objectCount,
+    required this.isActive,
+    required this.onActivate,
+    required this.onVisibilityChanged,
+    required this.onLockChanged,
+  });
+
+  final MapLayerType layer;
+  final MapLayerStatus status;
+  final int objectCount;
+  final bool isActive;
+  final VoidCallback onActivate;
+  final ValueChanged<bool> onVisibilityChanged;
+  final ValueChanged<bool> onLockChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isActive ? const Color(0xFF23304A) : Colors.transparent,
+      child: InkWell(
+        key: Key('map-layer-${layer.name}'),
+        onTap: onActivate,
+        child: SizedBox(
+          height: 46,
+          child: Row(
+            children: [
+              const SizedBox(width: 8),
+              Icon(
+                _iconForLayer(layer),
+                size: 17,
+                color: isActive
+                    ? const Color(0xFF8DB4FF)
+                    : const Color(0xFF8490A5),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      layer.label,
+                      style: TextStyle(
+                        color: status.isVisible
+                            ? const Color(0xFFD8DEE9)
+                            : const Color(0xFF707A8E),
+                        fontSize: 11,
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                    ),
+                    Text(
+                      '$objectCount items',
+                      style: const TextStyle(
+                        color: Color(0xFF707C91),
+                        fontSize: 9,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _MapLayerToggle(
+                key: Key('map-layer-${layer.name}-visible'),
+                tooltip: status.isVisible
+                    ? 'Hide ${layer.label}'
+                    : 'Show ${layer.label}',
+                icon: status.isVisible
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                isActive: status.isVisible,
+                onPressed: () => onVisibilityChanged(!status.isVisible),
+              ),
+              _MapLayerToggle(
+                key: Key('map-layer-${layer.name}-locked'),
+                tooltip: status.isLocked
+                    ? 'Unlock ${layer.label}'
+                    : 'Lock ${layer.label}',
+                icon: status.isLocked
+                    ? Icons.lock_outline_rounded
+                    : Icons.lock_open_rounded,
+                isActive: status.isLocked,
+                onPressed: () => onLockChanged(!status.isLocked),
+              ),
+              const SizedBox(width: 4),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapLayerToggle extends StatelessWidget {
+  const _MapLayerToggle({
+    required this.tooltip,
+    required this.icon,
+    required this.isActive,
+    required this.onPressed,
+    super.key,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final bool isActive;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon),
+      iconSize: 15,
+      color: isActive ? const Color(0xFFAFC7F5) : const Color(0xFF68758A),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 28, height: 32),
+      visualDensity: VisualDensity.compact,
+    );
+  }
+}
+
+IconData _iconForLayer(MapLayerType layer) => switch (layer) {
+  MapLayerType.terrain => Icons.grid_4x4_rounded,
+  MapLayerType.locations => Icons.crop_free_rounded,
+  MapLayerType.doodads => Icons.park_outlined,
+  MapLayerType.sprites => Icons.auto_awesome_outlined,
+  MapLayerType.units => Icons.adjust_rounded,
+};
 
 class _MapInspector extends StatelessWidget {
   const _MapInspector({required this.session});

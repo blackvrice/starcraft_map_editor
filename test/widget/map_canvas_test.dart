@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
@@ -459,6 +460,85 @@ void main() {
     expect(selected, const TerrainTileCoordinate(x: 2, y: 1));
   });
 
+  testWidgets('renders a layer scene and reports exact map pixel coordinates', (
+    tester,
+  ) async {
+    MapCanvasPointerCoordinate? selected;
+    const object = MapLayerObjectRef(
+      layer: MapLayerType.units,
+      sectionIndex: 3,
+      recordIndex: 7,
+    );
+    const selection = MapLayerSelection(object: object, pixelX: 64, pixelY: 64);
+    final scene = MapLayerScene(
+      points: const [
+        MapLayerPointObject(object: object, pixelX: 64, pixelY: 64),
+      ],
+      regions: const [
+        MapLayerRegionObject(
+          object: MapLayerObjectRef(
+            layer: MapLayerType.locations,
+            sectionIndex: 4,
+            recordIndex: 0,
+          ),
+          left: 32,
+          top: 32,
+          right: 96,
+          bottom: 96,
+        ),
+      ],
+      objectCounts: const {
+        MapLayerType.terrain: 16,
+        MapLayerType.locations: 1,
+        MapLayerType.doodads: 0,
+        MapLayerType.sprites: 0,
+        MapLayerType.units: 1,
+      },
+      selection: selection,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 4,
+            rawTileValues: List<int>.filled(16, 0),
+            layerScene: scene,
+            onCanvasSelected: (coordinate) => selected = coordinate,
+          ),
+        ),
+      ),
+    );
+
+    final paint = tester.widget<CustomPaint>(
+      find.byKey(const Key('map-canvas-paint')),
+    );
+    final painter = paint.painter! as MapCanvasPainter;
+    expect(painter.layerScene, same(scene));
+
+    final canvasTopLeft = tester.getTopLeft(
+      find.byKey(const Key('map-canvas')),
+    );
+    await tester.tapAt(
+      canvasTopLeft +
+          painter.layout.mapRect.topLeft +
+          Offset(
+            64.5 / 32 * painter.layout.tileExtent,
+            64.5 / 32 * painter.layout.tileExtent,
+          ),
+    );
+    await tester.pump();
+
+    expect(selected?.tileX, 2);
+    expect(selected?.tileY, 2);
+    expect(selected?.pixelX, 64);
+    expect(selected?.pixelY, 64);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('brush fills every crossed tile without gaps', (tester) async {
     final painted = <TerrainTileCoordinate>[];
     var started = 0;
@@ -784,6 +864,17 @@ void main() {
       onPaintMeasured: (_) {},
     );
     expect(changedObserver.shouldRepaint(original), isTrue);
+    final changedLayers = MapCanvasPainter(
+      layout: layout,
+      rawTileValues: values,
+      layerScene: MapLayerScene(
+        points: const [],
+        regions: const [],
+        objectCounts: const {},
+        selection: null,
+      ),
+    );
+    expect(changedLayers.shouldRepaint(original), isTrue);
   });
 }
 

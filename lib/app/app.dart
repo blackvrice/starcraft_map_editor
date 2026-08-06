@@ -5,6 +5,7 @@ import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
+import '../application/layers/map_layer_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
 import '../application/recent_projects/recent_projects_service.dart';
@@ -25,6 +26,7 @@ class EditorAppDependencies {
     required this.settingsStore,
     required this.starCraftDataAssetSettingsController,
     required this.terrainEditingController,
+    required this.mapLayerController,
     required this.terrainTileTextureController,
   });
 
@@ -39,6 +41,7 @@ class EditorAppDependencies {
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
   final TerrainEditingController terrainEditingController;
+  final MapLayerController mapLayerController;
   final TerrainTileTextureController terrainTileTextureController;
 }
 
@@ -74,6 +77,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
         starCraftDataAssetSettingsController:
             dependencies.starCraftDataAssetSettingsController,
         terrainEditingController: dependencies.terrainEditingController,
+        mapLayerController: dependencies.mapLayerController,
         terrainTileTextureController: dependencies.terrainTileTextureController,
       ),
     );

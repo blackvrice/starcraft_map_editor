@@ -89,6 +89,7 @@ lib/
     documents/
     editing/
     eud/
+    layers/
     operations/
     ports/
     recent_projects/
@@ -198,6 +199,22 @@ SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint�
 이어받는다. Open/Save 재검증은 `ChkMetadataViews`, `ChkTerrainViews`,
 `ChkObjectViews`를 동시에 생성하고 세 계층의 구조 진단을 세션에 포함한다.
 
+### MapLayerController
+
+`application/layers`의 `MapLayerController`는 Terrain, Locations, Doodads,
+Sprites, Units별 활성 상태, 표시 여부, 잠금 여부와 현재 검사 선택을 관리한다.
+이 상태는 맵 원시 데이터가 아니므로 `OpenedMapSession.isDirty`나 Undo/Redo에
+포함하지 않는다. 다른 원본 스냅샷으로 세션이 바뀌면 잘못된 객체 참조를 막기
+위해 선택만 해제하고 표시·잠금 설정은 유지한다.
+
+컨트롤러는 `OpenedMapSession.objectViews`를 Flutter 타입에 의존하지 않는
+`MapLayerScene`의 point/region으로 투영한다. 표시 순서는 Terrain → Locations →
+Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 해제 상태이면 먼저
+검사하고, 나머지는 Units → Sprites → Doodads → Locations → Terrain 순서로
+검사한다. 숨긴 레이어는 장면과 hit test에서 제외하고 잠근 레이어는 장면에는
+남기되 hit test에서 제외한다. 이 정책으로 UI는 CHK typed view나 바이너리
+레코드를 직접 탐색하지 않는다.
+
 ### MapCanvas
 
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
@@ -208,7 +225,8 @@ fit-to-view 기준 타일 크기, 카메라 배율·이동, 화면상의 맵 경
 없으면 원시 값 기반 결정적 색상을 사용한다. raw 값은 16개 멤버를 가진 `CV5`
 그룹 인덱스로 분해한다. 전체 `u16` 범위에서 실제 `CV5` 그룹이 있는 값은
 이미지를 사용하고, helper가 실제 그룹 밖이라고 반환한 값만 자홍색 교차 경고
-패턴으로 그린다. 그 위에 적응형 격자, 선택/편집 overlay와 맵 외곽선을 겹친다.
+패턴으로 그린다. 그 위에 적응형 격자, 객체·로케이션 장면, 선택/편집 overlay와
+맵 외곽선을 겹친다.
 캔버스 배지는 geometry, loading, 실제 StarCraft 타일, 혼합 fallback과 전체
 raw fallback을 구분하고 선택 상태는 정확한 raw 값, 그룹과 멤버를 노출한다.
 
@@ -218,6 +236,8 @@ dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌�
 제한한다. 레이아웃은 포인터 화면 위치를 0기준 타일 좌표와 타일당 32픽셀인
 StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상태는 카메라나
 문서 dirty 상태에 포함하지 않는다.
+객체 장면도 캔버스에서는 읽기 전용 렌더 입력이며, 클릭한 StarCraft 맵 픽셀
+좌표를 `MapLayerController`에 전달해 선택 정책을 적용한다.
 
 `MapCanvasPainter.paint`는 `dart:developer` Timeline에 맵 크기, zoom, grid
 step, 가시 타일 수와 texture 상태를 남긴다. 테스트·프로파일 harness가 선택적

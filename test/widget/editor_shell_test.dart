@@ -12,6 +12,7 @@ import 'package:starcraft_map_editor/application/documents/save_map_controller.d
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
+import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/eud_build_gateway.dart';
@@ -29,6 +30,7 @@ import 'package:starcraft_map_editor/application/recent_projects/recent_projects
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_tile_atlas_loader.dart';
+import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
@@ -524,8 +526,8 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('6'), findsWidgets);
-    expect(find.byKey(const Key('archive-entry-list')), findsOneWidget);
+    expect(find.text('10'), findsWidgets);
+    expect(find.byKey(const Key('map-layer-list')), findsOneWidget);
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
     expect(find.text('Editable'), findsOneWidget);
     expect(find.byKey(const Key('terrain-editing-toolbar')), findsOneWidget);
@@ -702,6 +704,126 @@ void main() {
     );
     expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
+
+  testWidgets('layer controls change selection priority and canvas objects', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final settingsStore = InMemorySettingsStore();
+    final recentProjectsService = RecentProjectsService(settingsStore);
+    final progressController = OperationProgressController();
+    final mapLayerController = MapLayerController();
+    final extractedMap = _createExtractedMap();
+    final openMapController = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: extractedMap),
+      ),
+      filePicker: _FakeMapFilePicker(extractedMap.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recentProjectsService,
+      operationProgressController: progressController,
+    );
+    addTearDown(openMapController.dispose);
+    addTearDown(progressController.dispose);
+    addTearDown(mapLayerController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: openMapController,
+        operationProgressController: progressController,
+        recentProjectsService: recentProjectsService,
+        settingsStore: settingsStore,
+        mapLayerController: mapLayerController,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+
+    final session = openMapController.state.session!;
+    var scene = mapLayerController.sceneFor(session);
+    expect(scene.objectCounts[MapLayerType.units], 1);
+    expect(scene.objectCounts[MapLayerType.sprites], 1);
+    expect(scene.objectCounts[MapLayerType.doodads], 1);
+    expect(scene.objectCounts[MapLayerType.locations], 1);
+
+    await tester.tap(find.byKey(const Key('map-layer-units')));
+    await tester.pump();
+    expect(mapLayerController.state.activeLayer, MapLayerType.units);
+    expect(
+      find.text('Pick Units → Sprites → Doodads → Locations → Terrain'),
+      findsOneWidget,
+    );
+
+    await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+    expect(
+      mapLayerController.state.selection?.object.layer,
+      MapLayerType.units,
+    );
+    expect(find.text('Units 1 · 64,64px'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('map-layer-units-locked')));
+    await tester.pump();
+    expect(mapLayerController.state.selection, isNull);
+    expect(
+      mapLayerController.state.selectionPriority,
+      isNot(contains(MapLayerType.units)),
+    );
+    await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+    expect(
+      mapLayerController.state.selection?.object.layer,
+      MapLayerType.sprites,
+    );
+
+    await tester.tap(find.byKey(const Key('map-layer-units-locked')));
+    await tester.pump();
+    await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+    expect(
+      mapLayerController.state.selection?.object.layer,
+      MapLayerType.units,
+    );
+
+    await tester.tap(find.byKey(const Key('map-layer-units-visible')));
+    await tester.pump();
+    expect(mapLayerController.state.selection, isNull);
+    scene = mapLayerController.sceneFor(session);
+    expect(
+      scene.points.where((point) => point.object.layer == MapLayerType.units),
+      isEmpty,
+    );
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+                .painter!
+            as MapCanvasPainter;
+    expect(painter.layerScene, same(scene));
+    expect(tester.takeException(), isNull);
+  });
+}
+
+Future<void> _tapMapPixel(
+  WidgetTester tester, {
+  required int pixelX,
+  required int pixelY,
+}) async {
+  final painter =
+      tester
+              .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+              .painter!
+          as MapCanvasPainter;
+  final canvasTopLeft = tester.getTopLeft(find.byKey(const Key('map-canvas')));
+  await tester.tapAt(
+    canvasTopLeft +
+        painter.layout.mapRect.topLeft +
+        Offset(
+          (pixelX + 0.5) / 32 * painter.layout.tileExtent,
+          (pixelY + 0.5) / 32 * painter.layout.tileExtent,
+        ),
+  );
+  await tester.pump();
 }
 
 Widget _createTestApp({
@@ -715,6 +837,7 @@ Widget _createTestApp({
   InMemorySettingsStore? settingsStore,
   StarCraftDataAssetSettingsController? starCraftDataAssetSettingsController,
   TerrainEditingController? terrainEditingController,
+  MapLayerController? mapLayerController,
   TerrainTileTextureController? terrainTileTextureController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
@@ -744,6 +867,7 @@ Widget _createTestApp({
   final resolvedTerrainEditingController =
       terrainEditingController ??
       TerrainEditingController(openMapController: resolvedOpenMapController);
+  final resolvedMapLayerController = mapLayerController ?? MapLayerController();
   final resolvedTerrainTileTextureController =
       terrainTileTextureController ??
       TerrainTileTextureController(
@@ -802,6 +926,7 @@ Widget _createTestApp({
       starCraftDataAssetSettingsController:
           resolvedStarCraftDataAssetSettingsController,
       terrainEditingController: resolvedTerrainEditingController,
+      mapLayerController: resolvedMapLayerController,
       terrainTileTextureController: resolvedTerrainTileTextureController,
     ),
   );
@@ -1165,6 +1290,16 @@ ExtractedMap _createExtractedMap() {
       Endian.little,
     );
   }
+  final locationPayload = Uint8List(
+    ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,
+  );
+  ByteData.sublistView(locationPayload)
+    ..setUint32(0, 32, Endian.little)
+    ..setUint32(4, 32, Endian.little)
+    ..setUint32(8, 96, Endian.little)
+    ..setUint32(12, 96, Endian.little)
+    ..setUint16(16, 1, Endian.little)
+    ..setUint16(18, 0x3f, Endian.little);
   final chkBytes = _chkBytes([
     _section('TYPE', [0x52, 0x41, 0x57, 0x53]),
     _section('VER ', [206, 0]),
@@ -1172,6 +1307,10 @@ ExtractedMap _createExtractedMap() {
     _section('DIM ', [mapWidth, 0, mapHeight, 0]),
     _section('ERA ', [4, 0]),
     _section('MTXM', terrainPayload),
+    _section('UNIT', _unitRecord(64, 64)),
+    _section('DD2 ', _doodadRecord(64, 64)),
+    _section('THG2', _spriteRecord(64, 64)),
+    _section('MRGN', locationPayload),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',
@@ -1193,6 +1332,33 @@ ExtractedMap _createExtractedMap() {
       ],
     ),
   );
+}
+
+Uint8List _unitRecord(int x, int y) {
+  final bytes = Uint8List(ChkUnitPlacement.recordLength);
+  ByteData.sublistView(bytes)
+    ..setUint16(4, x, Endian.little)
+    ..setUint16(6, y, Endian.little)
+    ..setUint16(8, 1, Endian.little);
+  return bytes;
+}
+
+Uint8List _doodadRecord(int x, int y) {
+  final bytes = Uint8List(ChkDoodadPlacement.recordLength);
+  ByteData.sublistView(bytes)
+    ..setUint16(0, 1, Endian.little)
+    ..setUint16(2, x, Endian.little)
+    ..setUint16(4, y, Endian.little);
+  return bytes;
+}
+
+Uint8List _spriteRecord(int x, int y) {
+  final bytes = Uint8List(ChkSpritePlacement.recordLength);
+  ByteData.sublistView(bytes)
+    ..setUint16(0, 1, Endian.little)
+    ..setUint16(2, x, Endian.little)
+    ..setUint16(4, y, Endian.little);
+  return bytes;
 }
 
 Uint8List _section(String name, List<int> payload) {
