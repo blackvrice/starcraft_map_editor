@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.25)
 
 include(FetchContent)
 
+option(
+  STARCRAFT_DATA_ALLOW_CASCLIB_UPDATES
+  "Allow FetchContent to update the pinned CascLib checkout"
+  OFF
+)
+if(STARCRAFT_DATA_ALLOW_CASCLIB_UPDATES)
+  set(FETCHCONTENT_UPDATES_DISCONNECTED_CASCLIB OFF)
+else()
+  set(FETCHCONTENT_UPDATES_DISCONNECTED_CASCLIB ON)
+endif()
+
 set(CASC_BUILD_SHARED_LIB OFF CACHE BOOL "Do not build CascLib DLL" FORCE)
 set(CASC_BUILD_STATIC_LIB ON CACHE BOOL "Build static CascLib" FORCE)
 set(CASC_BUILD_TESTS OFF CACHE BOOL "Do not build upstream CascLib tests" FORCE)

@@ -115,8 +115,12 @@ flutter test test/application/eud_build_configuration_test.dart `
 helper 빌드는 CMake 3.25 이상, MSVC C++17 도구 체인과 Git이 필요하다. 첫
 configure에서는 full commit SHA로 고정된 StormLib, CascLib과 JSON for Modern
 C++를 공식 GitHub 저장소에서 가져오며, 이후 빌드는 `build/`의 FetchContent
-캐시를 재사용한다. `starcraft_data_helper.exe`와 CascLib/자체 helper의 MIT
-고지는 Windows 앱 번들에 함께 설치된다.
+캐시를 재사용한다. StarCraft 데이터 helper는 고정 revision을 받은 뒤 불필요한
+Git update와 네트워크 접속을 기본적으로 수행하지 않는다. 의존성 revision을
+변경하는 개발 작업에서만 CMake cache의
+`STARCRAFT_DATA_ALLOW_CASCLIB_UPDATES=ON`을 사용한다.
+`starcraft_data_helper.exe`와 CascLib/자체 helper의 MIT 고지는 Windows 앱
+번들에 함께 설치된다.
 
 변경 유형별 추가 검증:
 
