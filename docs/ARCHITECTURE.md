@@ -215,6 +215,21 @@ Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 �
 남기되 hit test에서 제외한다. 이 정책으로 UI는 CHK typed view나 바이너리
 레코드를 직접 탐색하지 않는다.
 
+### ObjectEditingController
+
+`application/editing`의 `ObjectEditingController`는 `MapLayerController`의
+비지형 선택을 입력으로 받아 이동·삭제와 별도 Undo/Redo 기록을 관리한다. 한
+동작이 여러 `UNIT`, `DD2 `, `THG2`, `MRGN` 섹션을 바꾸면 각 섹션의 전후
+`RawChkSection`을 한 명령에 보관한다. 적용 전 현재 섹션 identity가 명령과
+일치하는지 확인하고, 적용 뒤 `ChkObjectViewDecoder`로 모든 객체 섹션을 다시
+검증한 세션만 `OpenMapController.adoptEditedSession`에 전달한다.
+
+도메인의 `ChkObjectSectionEditor`는 좌표 필드만 little-endian으로 갱신한다.
+고정 길이 객체 삭제는 선택 레코드를 제거하되 남은 레코드 바이트와 순서를
+그대로 유지하고, 로케이션 삭제는 참조 ID 안정성을 위해 테이블 크기를 바꾸지
+않고 선택 슬롯만 비운다. 잠김·숨김·보호·제한 편집 상태와 맵 경계 밖 이동은
+변경 전에 거부한다.
+
 ### MapCanvas
 
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
@@ -236,8 +251,10 @@ dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌�
 제한한다. 레이아웃은 포인터 화면 위치를 0기준 타일 좌표와 타일당 32픽셀인
 StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상태는 카메라나
 문서 dirty 상태에 포함하지 않는다.
-객체 장면도 캔버스에서는 읽기 전용 렌더 입력이며, 클릭한 StarCraft 맵 픽셀
-좌표를 `MapLayerController`에 전달해 선택 정책을 적용한다.
+객체 장면은 캔버스의 렌더 입력이며, 클릭·박스 영역을 StarCraft 맵 픽셀로
+`MapLayerController`에 전달해 단일·추가 선택 정책을 적용한다. 선택 객체에서
+시작한 드래그는 이동 delta와 미리보기만 계산하고 실제 CHK 변경은
+`ObjectEditingController`에 위임한다.
 
 `MapCanvasPainter.paint`는 `dart:developer` Timeline에 맵 크기, zoom, grid
 step, 가시 타일 수와 texture 상태를 남긴다. 테스트·프로파일 harness가 선택적

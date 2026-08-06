@@ -9,6 +9,7 @@ import 'package:starcraft_map_editor/app/app.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
@@ -727,9 +728,14 @@ void main() {
       recentProjectsService: recentProjectsService,
       operationProgressController: progressController,
     );
+    final objectEditingController = ObjectEditingController(
+      openMapController: openMapController,
+      mapLayerController: mapLayerController,
+    );
     addTearDown(openMapController.dispose);
     addTearDown(progressController.dispose);
     addTearDown(mapLayerController.dispose);
+    addTearDown(objectEditingController.dispose);
 
     await tester.pumpWidget(
       _createTestApp(
@@ -738,6 +744,7 @@ void main() {
         recentProjectsService: recentProjectsService,
         settingsStore: settingsStore,
         mapLayerController: mapLayerController,
+        objectEditingController: objectEditingController,
       ),
     );
     await tester.tap(find.byKey(const Key('open-map-button')));
@@ -800,6 +807,59 @@ void main() {
                 .painter!
             as MapCanvasPainter;
     expect(painter.layerScene, same(scene));
+
+    await tester.tap(find.byKey(const Key('map-layer-units-visible')));
+    await tester.pump();
+    await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+    expect(find.byKey(const Key('object-editing-toolbar')), findsOneWidget);
+    expect(find.text('1 selected · drag selection to move'), findsOneWidget);
+    expect(
+      tester.widget<MapCanvas>(find.byType(MapCanvas)).onSelectedObjectsMoved,
+      isNotNull,
+    );
+
+    final drag = await tester.startGesture(
+      _mapPixelOffset(tester, pixelX: 64, pixelY: 64),
+    );
+    await drag.moveTo(_mapPixelOffset(tester, pixelX: 96, pixelY: 96));
+    await drag.up();
+    await tester.pump();
+    expect(
+      openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units
+          .single
+          .x,
+      96,
+    );
+    expect(openMapController.state.session!.isDirty, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+    await tester.pump();
+    expect(
+      openMapController.state.session!.objectViews.unitSections.single.units,
+      isEmpty,
+    );
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+    expect(
+      openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units
+          .single
+          .x,
+      96,
+    );
     expect(tester.takeException(), isNull);
   });
 }
@@ -809,21 +869,27 @@ Future<void> _tapMapPixel(
   required int pixelX,
   required int pixelY,
 }) async {
+  await tester.tapAt(_mapPixelOffset(tester, pixelX: pixelX, pixelY: pixelY));
+  await tester.pump();
+}
+
+Offset _mapPixelOffset(
+  WidgetTester tester, {
+  required int pixelX,
+  required int pixelY,
+}) {
   final painter =
       tester
               .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
               .painter!
           as MapCanvasPainter;
   final canvasTopLeft = tester.getTopLeft(find.byKey(const Key('map-canvas')));
-  await tester.tapAt(
-    canvasTopLeft +
-        painter.layout.mapRect.topLeft +
-        Offset(
-          (pixelX + 0.5) / 32 * painter.layout.tileExtent,
-          (pixelY + 0.5) / 32 * painter.layout.tileExtent,
-        ),
-  );
-  await tester.pump();
+  return canvasTopLeft +
+      painter.layout.mapRect.topLeft +
+      Offset(
+        (pixelX + 0.5) / 32 * painter.layout.tileExtent,
+        (pixelY + 0.5) / 32 * painter.layout.tileExtent,
+      );
 }
 
 Widget _createTestApp({
@@ -838,6 +904,7 @@ Widget _createTestApp({
   StarCraftDataAssetSettingsController? starCraftDataAssetSettingsController,
   TerrainEditingController? terrainEditingController,
   MapLayerController? mapLayerController,
+  ObjectEditingController? objectEditingController,
   TerrainTileTextureController? terrainTileTextureController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
@@ -868,6 +935,12 @@ Widget _createTestApp({
       terrainEditingController ??
       TerrainEditingController(openMapController: resolvedOpenMapController);
   final resolvedMapLayerController = mapLayerController ?? MapLayerController();
+  final resolvedObjectEditingController =
+      objectEditingController ??
+      ObjectEditingController(
+        openMapController: resolvedOpenMapController,
+        mapLayerController: resolvedMapLayerController,
+      );
   final resolvedTerrainTileTextureController =
       terrainTileTextureController ??
       TerrainTileTextureController(
@@ -927,6 +1000,7 @@ Widget _createTestApp({
           resolvedStarCraftDataAssetSettingsController,
       terrainEditingController: resolvedTerrainEditingController,
       mapLayerController: resolvedMapLayerController,
+      objectEditingController: resolvedObjectEditingController,
       terrainTileTextureController: resolvedTerrainTileTextureController,
     ),
   );

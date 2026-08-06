@@ -7,6 +7,7 @@ import '../../application/commands/editor_command_dispatcher.dart';
 import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
+import '../../application/editing/object_editing_controller.dart';
 import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
@@ -39,6 +40,7 @@ class EditorShell extends StatefulWidget {
     required this.starCraftDataAssetSettingsController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.objectEditingController,
     required this.terrainTileTextureController,
     super.key,
   });
@@ -54,6 +56,7 @@ class EditorShell extends StatefulWidget {
   starCraftDataAssetSettingsController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
   final TerrainTileTextureController terrainTileTextureController;
 
   @override
@@ -70,6 +73,7 @@ class _EditorShellState extends State<EditorShell> {
   _starCraftDataAssetSettingsSubscription;
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
   late StreamSubscription<MapLayerState> _mapLayerSubscription;
+  late StreamSubscription<ObjectEditingState> _objectEditingSubscription;
   late StreamSubscription<TerrainTileTextureState>
   _terrainTileTextureSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
@@ -89,6 +93,9 @@ class _EditorShellState extends State<EditorShell> {
     widget.mapLayerController.synchronizeSession(
       widget.openMapController.state.session,
     );
+    widget.objectEditingController.synchronizeSession(
+      widget.openMapController.state.session,
+    );
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
@@ -100,6 +107,9 @@ class _EditorShellState extends State<EditorShell> {
       widget.terrainEditingController,
     );
     _mapLayerSubscription = _listenForMapLayers(widget.mapLayerController);
+    _objectEditingSubscription = _listenForObjectEditing(
+      widget.objectEditingController,
+    );
     _terrainTileTextureSubscription = _listenForTerrainTileTextures(
       widget.terrainTileTextureController,
     );
@@ -159,6 +169,15 @@ class _EditorShellState extends State<EditorShell> {
       );
       _mapLayerSubscription = _listenForMapLayers(widget.mapLayerController);
     }
+    if (oldWidget.objectEditingController != widget.objectEditingController) {
+      unawaited(_objectEditingSubscription.cancel());
+      widget.objectEditingController.synchronizeSession(
+        widget.openMapController.state.session,
+      );
+      _objectEditingSubscription = _listenForObjectEditing(
+        widget.objectEditingController,
+      );
+    }
     if (oldWidget.terrainTileTextureController !=
         widget.terrainTileTextureController) {
       unawaited(_terrainTileTextureSubscription.cancel());
@@ -185,6 +204,7 @@ class _EditorShellState extends State<EditorShell> {
           }
           widget.terrainEditingController.synchronizeSession(state.session);
           widget.mapLayerController.synchronizeSession(state.session);
+          widget.objectEditingController.synchronizeSession(state.session);
         });
         _synchronizeTerrainTextures();
       }
@@ -264,6 +284,16 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<ObjectEditingState> _listenForObjectEditing(
+    ObjectEditingController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   StreamSubscription<TerrainTileTextureState> _listenForTerrainTileTextures(
     TerrainTileTextureController controller,
   ) {
@@ -298,6 +328,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     unawaited(_terrainEditingSubscription.cancel());
     unawaited(_mapLayerSubscription.cancel());
+    unawaited(_objectEditingSubscription.cancel());
     unawaited(_terrainTileTextureSubscription.cancel());
     widget.terrainTileTextureController.clear();
     super.dispose();
@@ -371,19 +402,26 @@ class _EditorShellState extends State<EditorShell> {
         widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
         ? _newEudSource
         : null;
-    final undoTerrain =
-        _workspaceView == _WorkspaceView.map &&
-            widget.terrainEditingController.canUndo
-        ? () {
-            widget.terrainEditingController.undo();
-          }
+    final objectLayerActive =
+        widget.mapLayerController.state.activeLayer != MapLayerType.terrain;
+    final undoEdit = _workspaceView != _WorkspaceView.map
+        ? null
+        : objectLayerActive && widget.objectEditingController.canUndo
+        ? widget.objectEditingController.undo
+        : !objectLayerActive && widget.terrainEditingController.canUndo
+        ? widget.terrainEditingController.undo
         : null;
-    final redoTerrain =
+    final redoEdit = _workspaceView != _WorkspaceView.map
+        ? null
+        : objectLayerActive && widget.objectEditingController.canRedo
+        ? widget.objectEditingController.redo
+        : !objectLayerActive && widget.terrainEditingController.canRedo
+        ? widget.terrainEditingController.redo
+        : null;
+    final deleteObjects =
         _workspaceView == _WorkspaceView.map &&
-            widget.terrainEditingController.canRedo
-        ? () {
-            widget.terrainEditingController.redo();
-          }
+            widget.objectEditingController.canEditSelection
+        ? widget.objectEditingController.deleteSelection
         : null;
     final starCraftDataAssetState =
         widget.starCraftDataAssetSettingsController.state;
@@ -427,13 +465,17 @@ class _EditorShellState extends State<EditorShell> {
           )] =
           newEudSource;
     }
-    if (undoTerrain != null) {
+    if (undoEdit != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyZ, control: true)] =
-          undoTerrain;
+          undoEdit;
     }
-    if (redoTerrain != null) {
+    if (redoEdit != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyY, control: true)] =
-          redoTerrain;
+          redoEdit;
+    }
+    if (deleteObjects != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.delete)] =
+          deleteObjects;
     }
 
     return CallbackShortcuts(
@@ -451,8 +493,8 @@ class _EditorShellState extends State<EditorShell> {
                   newEudSource: newEudSource,
                   buildEud: buildEud,
                   cancelEudBuild: cancelEudBuild,
-                  undo: undoTerrain,
-                  redo: redoTerrain,
+                  undo: undoEdit,
+                  redo: redoEdit,
                   openSettings: _showStarCraftDataAssetSettings,
                 ),
                 const Divider(height: 1),
@@ -498,6 +540,8 @@ class _EditorShellState extends State<EditorShell> {
                             terrainEditingController:
                                 widget.terrainEditingController,
                             mapLayerController: widget.mapLayerController,
+                            objectEditingController:
+                                widget.objectEditingController,
                             terrainTileTextureState: terrainTileTextureState,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
@@ -837,6 +881,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.eudSourceController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.objectEditingController,
     required this.terrainTileTextureState,
     required this.workspaceView,
     required this.onShowMap,
@@ -853,6 +898,7 @@ class _EditorWorkspace extends StatelessWidget {
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
@@ -920,6 +966,7 @@ class _EditorWorkspace extends StatelessWidget {
                   eudSourceController: eudSourceController,
                   terrainEditingController: terrainEditingController,
                   mapLayerController: mapLayerController,
+                  objectEditingController: objectEditingController,
                   terrainTileTextureState: terrainTileTextureState,
                   workspaceView: workspaceView,
                 ),
@@ -1196,6 +1243,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.eudSourceController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.objectEditingController,
     required this.terrainTileTextureState,
     required this.workspaceView,
   });
@@ -1210,6 +1258,7 @@ class _MapWorkspace extends StatelessWidget {
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
 
@@ -1232,6 +1281,7 @@ class _MapWorkspace extends StatelessWidget {
         ],
         terrainEditingController: terrainEditingController,
         mapLayerController: mapLayerController,
+        objectEditingController: objectEditingController,
         terrainTileTextureState: terrainTileTextureState,
       );
     }
@@ -1324,6 +1374,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.diagnostics,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.objectEditingController,
     required this.terrainTileTextureState,
   });
 
@@ -1331,6 +1382,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
   final List<EditorDiagnostic> diagnostics;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
   final TerrainTileTextureState terrainTileTextureState;
 
   @override
@@ -1473,20 +1525,42 @@ class _OpenedMapWorkspace extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 9),
-                _TerrainEditingToolbar(
-                  state: editingState,
-                  unsupportedRawValues:
-                      terrainTileTextureState.unsupportedRawValues,
-                  canSelectTiles: canSelectTiles,
-                  canEditTerrain: canEditTerrain,
-                  onToolSelected: terrainEditingController.setTool,
-                  onUndo: editingState.canUndo
-                      ? terrainEditingController.undo
-                      : null,
-                  onRedo: editingState.canRedo
-                      ? terrainEditingController.redo
-                      : null,
-                ),
+                if (layerState.activeLayer == MapLayerType.terrain)
+                  _TerrainEditingToolbar(
+                    state: editingState,
+                    unsupportedRawValues:
+                        terrainTileTextureState.unsupportedRawValues,
+                    canSelectTiles: canSelectTiles,
+                    canEditTerrain: canEditTerrain,
+                    onToolSelected: terrainEditingController.setTool,
+                    onUndo: editingState.canUndo
+                        ? terrainEditingController.undo
+                        : null,
+                    onRedo: editingState.canRedo
+                        ? terrainEditingController.redo
+                        : null,
+                  )
+                else
+                  _ObjectEditingToolbar(
+                    selectedCount: layerState.selections
+                        .where(
+                          (selection) =>
+                              selection.object.layer != MapLayerType.terrain,
+                        )
+                        .length,
+                    canEdit: objectEditingController.canEditSelection,
+                    undoLabel: objectEditingController.undoLabel,
+                    redoLabel: objectEditingController.redoLabel,
+                    onDelete: objectEditingController.canEditSelection
+                        ? objectEditingController.deleteSelection
+                        : null,
+                    onUndo: objectEditingController.canUndo
+                        ? objectEditingController.undo
+                        : null,
+                    onRedo: objectEditingController.canRedo
+                        ? objectEditingController.redo
+                        : null,
+                  ),
               ],
             ),
           ),
@@ -1508,25 +1582,42 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     editingTool: editingState.tool,
                     selectedTile: selectedTerrainTile,
                     layerScene: layerScene,
-                    onCanvasSelected:
+                    onSelectionRequested:
                         editingState.tool == TerrainEditingTool.select
-                        ? (coordinate) {
+                        ? (request) {
                             final selection = mapLayerController.selectAt(
                               session: session,
-                              pixelX: coordinate.pixelX,
-                              pixelY: coordinate.pixelY,
+                              pixelX: request.coordinate.pixelX,
+                              pixelY: request.coordinate.pixelY,
+                              additive: request.additive,
                             );
                             if (selection?.object.layer ==
                                     MapLayerType.terrain &&
                                 canSelectTiles) {
                               terrainEditingController.selectTileAt(
                                 TerrainTileCoordinate(
-                                  x: coordinate.tileX,
-                                  y: coordinate.tileY,
+                                  x: request.coordinate.tileX,
+                                  y: request.coordinate.tileY,
                                 ),
                               );
                             }
                           }
+                        : null,
+                    onSelectionRegionRequested:
+                        editingState.tool == TerrainEditingTool.select
+                        ? (request) => mapLayerController.selectRegion(
+                            session: session,
+                            region: request.region,
+                            additive: request.additive,
+                          )
+                        : null,
+                    onSelectedObjectsMoved:
+                        editingState.tool == TerrainEditingTool.select &&
+                            objectEditingController.canEditSelection
+                        ? (request) => objectEditingController.moveSelection(
+                            dx: request.dx,
+                            dy: request.dy,
+                          )
                         : null,
                     onBrushStroke:
                         canEditTerrain && editingState.hasSelectedTile
@@ -1588,6 +1679,81 @@ class _MapCanvasMetadata extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ObjectEditingToolbar extends StatelessWidget {
+  const _ObjectEditingToolbar({
+    required this.selectedCount,
+    required this.canEdit,
+    required this.undoLabel,
+    required this.redoLabel,
+    required this.onDelete,
+    required this.onUndo,
+    required this.onRedo,
+  });
+
+  final int selectedCount;
+  final bool canEdit;
+  final String? undoLabel;
+  final String? redoLabel;
+  final VoidCallback? onDelete;
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      key: const Key('object-editing-toolbar'),
+      spacing: 7,
+      runSpacing: 7,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _TerrainToolButton(
+          key: const Key('object-delete'),
+          label: 'Delete',
+          icon: Icons.delete_outline_rounded,
+          selected: false,
+          enabled: onDelete != null,
+          onPressed: onDelete,
+        ),
+        _TerrainToolButton(
+          key: const Key('object-undo'),
+          label: 'Undo',
+          icon: Icons.undo_rounded,
+          selected: false,
+          enabled: onUndo != null,
+          onPressed: onUndo,
+        ),
+        _TerrainToolButton(
+          key: const Key('object-redo'),
+          label: 'Redo',
+          icon: Icons.redo_rounded,
+          selected: false,
+          enabled: onRedo != null,
+          onPressed: onRedo,
+        ),
+        _MapCanvasMetadata(
+          key: const Key('object-selection-count'),
+          icon: selectedCount == 0
+              ? Icons.info_outline_rounded
+              : Icons.select_all_rounded,
+          value: selectedCount == 0
+              ? 'Click or drag to select objects'
+              : '$selectedCount selected · drag selection to move',
+        ),
+        _MapCanvasMetadata(
+          key: const Key('object-editing-history'),
+          icon: canEdit ? Icons.edit_outlined : Icons.lock_outline_rounded,
+          value: [
+            if (undoLabel != null) 'Undo $undoLabel',
+            if (redoLabel != null) 'Redo $redoLabel',
+            if (undoLabel == null && redoLabel == null)
+              'Ctrl/Shift click adds · Delete removes',
+          ].join(' · '),
+        ),
+      ],
     );
   }
 }
@@ -1813,7 +1979,7 @@ class _MapLayerList extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = controller.state;
     final scene = controller.sceneFor(session);
-    final selection = state.selection;
+    final selections = state.selections;
     return ListView(
       key: const Key('map-layer-list'),
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1833,10 +1999,12 @@ class _MapLayerList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
-            selection == null
+            selections.isEmpty
                 ? 'Click the canvas to inspect the first unlocked object.'
-                : '${selection.object.label} · '
-                      '${selection.pixelX},${selection.pixelY}px',
+                : selections.length == 1
+                ? '${selections.single.object.label} · '
+                      '${selections.single.pixelX},${selections.single.pixelY}px'
+                : '${selections.length} objects selected',
             key: const Key('map-layer-selection-summary'),
             style: const TextStyle(color: Color(0xFF8F9BB0), fontSize: 10),
           ),

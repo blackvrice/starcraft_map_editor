@@ -50,6 +50,9 @@ class MapCanvas extends StatefulWidget {
     this.selectedTile,
     this.onTileSelected,
     this.onCanvasSelected,
+    this.onSelectionRequested,
+    this.onSelectionRegionRequested,
+    this.onSelectedObjectsMoved,
     this.layerScene,
     this.onBrushStrokeStarted,
     this.onBrushStroke,
@@ -73,6 +76,10 @@ class MapCanvas extends StatefulWidget {
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
   final ValueChanged<MapCanvasPointerCoordinate>? onCanvasSelected;
+  final ValueChanged<MapCanvasSelectionRequest>? onSelectionRequested;
+  final ValueChanged<MapCanvasSelectionRegionRequest>?
+  onSelectionRegionRequested;
+  final ValueChanged<MapCanvasMoveRequest>? onSelectedObjectsMoved;
   final MapLayerScene? layerScene;
   final VoidCallback? onBrushStrokeStarted;
   final ValueChanged<List<TerrainTileCoordinate>>? onBrushStroke;
@@ -104,6 +111,12 @@ class _MapCanvasState extends State<MapCanvas> {
   TerrainTileCoordinate? _lastBrushTile;
   TerrainTileCoordinate? _rectangleStart;
   TerrainTileCoordinate? _rectangleEnd;
+  MapCanvasPointerCoordinate? _selectionStart;
+  MapCanvasPointerCoordinate? _selectionEnd;
+  Offset? _selectionStartPosition;
+  bool _selectionAdditive = false;
+  bool _selectionMovesObjects = false;
+  bool _selectionDragged = false;
   List<int>? _summarizedRawTileValues;
   List<int>? _summarizedUnsupportedRawValues;
   TerrainTileDisplaySummary? _terrainDisplaySummary;
@@ -173,6 +186,28 @@ class _MapCanvasState extends State<MapCanvas> {
               _rectangleStart == null || _rectangleEnd == null
               ? null
               : TerrainTileRegion.fromCorners(_rectangleStart!, _rectangleEnd!);
+          final selectionRegionPreview =
+              _selectionStart == null ||
+                  _selectionEnd == null ||
+                  _selectionMovesObjects ||
+                  !_selectionDragged
+              ? null
+              : MapLayerPixelRegion.fromCorners(
+                  firstX: _selectionStart!.pixelX,
+                  firstY: _selectionStart!.pixelY,
+                  secondX: _selectionEnd!.pixelX,
+                  secondY: _selectionEnd!.pixelY,
+                );
+          final selectionMovePreview =
+              _selectionStart == null ||
+                  _selectionEnd == null ||
+                  !_selectionMovesObjects ||
+                  !_selectionDragged
+              ? null
+              : MapCanvasMoveRequest(
+                  dx: _selectionEnd!.pixelX - _selectionStart!.pixelX,
+                  dy: _selectionEnd!.pixelY - _selectionStart!.pixelY,
+                );
 
           return Focus(
             focusNode: _focusNode,
@@ -224,6 +259,8 @@ class _MapCanvasState extends State<MapCanvas> {
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                               layerScene: widget.layerScene,
+                              selectionRegionPreview: selectionRegionPreview,
+                              selectionMovePreview: selectionMovePreview,
                             ),
                           ),
                         ),
@@ -467,8 +504,17 @@ class _MapCanvasState extends State<MapCanvas> {
 
     switch (widget.editingTool) {
       case TerrainEditingTool.select:
-        widget.onCanvasSelected?.call(coordinate);
-        widget.onTileSelected?.call(tile);
+        setState(() {
+          _activeEditPointer = event.pointer;
+          _selectionStart = coordinate;
+          _selectionEnd = coordinate;
+          _selectionStartPosition = event.localPosition;
+          _selectionAdditive =
+              HardwareKeyboard.instance.isControlPressed ||
+              HardwareKeyboard.instance.isShiftPressed;
+          _selectionMovesObjects = _isSelectedObjectAt(coordinate);
+          _selectionDragged = false;
+        });
       case TerrainEditingTool.brush:
         final onBrushStroke = widget.onBrushStroke;
         if (onBrushStroke == null) {
@@ -521,7 +567,15 @@ class _MapCanvasState extends State<MapCanvas> {
 
     switch (widget.editingTool) {
       case TerrainEditingTool.select:
-        _updatePointerPosition(event.localPosition);
+        final startPosition = _selectionStartPosition;
+        setState(() {
+          _selectionEnd = coordinate;
+          _pointerPosition = event.localPosition;
+          if (startPosition != null &&
+              (event.localPosition - startPosition).distance >= 3) {
+            _selectionDragged = true;
+          }
+        });
       case TerrainEditingTool.brush:
         final previous = _lastBrushTile;
         if (previous == null || previous == tile) {
@@ -557,6 +611,48 @@ class _MapCanvasState extends State<MapCanvas> {
     }
 
     if (_activeEditPointer != event.pointer) {
+      return;
+    }
+    if (widget.editingTool == TerrainEditingTool.select) {
+      if (!cancelled) {
+        final start = _selectionStart;
+        final end = _selectionEnd;
+        if (start != null && end != null) {
+          if (_selectionMovesObjects && _selectionDragged) {
+            final request = MapCanvasMoveRequest(
+              dx: end.pixelX - start.pixelX,
+              dy: end.pixelY - start.pixelY,
+            );
+            if (!request.isZero) {
+              widget.onSelectedObjectsMoved?.call(request);
+            }
+          } else if (_selectionDragged) {
+            widget.onSelectionRegionRequested?.call(
+              MapCanvasSelectionRegionRequest(
+                region: MapLayerPixelRegion.fromCorners(
+                  firstX: start.pixelX,
+                  firstY: start.pixelY,
+                  secondX: end.pixelX,
+                  secondY: end.pixelY,
+                ),
+                additive: _selectionAdditive,
+              ),
+            );
+          } else {
+            widget.onSelectionRequested?.call(
+              MapCanvasSelectionRequest(
+                coordinate: start,
+                additive: _selectionAdditive,
+              ),
+            );
+            widget.onCanvasSelected?.call(start);
+            widget.onTileSelected?.call(
+              TerrainTileCoordinate(x: start.tileX, y: start.tileY),
+            );
+          }
+        }
+      }
+      _cancelEditGesture(pointerPosition: event.localPosition);
       return;
     }
     if (widget.editingTool == TerrainEditingTool.brush) {
@@ -596,6 +692,12 @@ class _MapCanvasState extends State<MapCanvas> {
       _lastBrushTile = null;
       _rectangleStart = null;
       _rectangleEnd = null;
+      _selectionStart = null;
+      _selectionEnd = null;
+      _selectionStartPosition = null;
+      _selectionAdditive = false;
+      _selectionMovesObjects = false;
+      _selectionDragged = false;
       if (pointerPosition != null) {
         _pointerPosition = pointerPosition;
       }
@@ -606,6 +708,29 @@ class _MapCanvasState extends State<MapCanvas> {
     } else {
       cancel();
     }
+  }
+
+  bool _isSelectedObjectAt(MapCanvasPointerCoordinate coordinate) {
+    final scene = widget.layerScene;
+    if (scene == null || scene.selections.isEmpty) {
+      return false;
+    }
+    final selected = scene.selectedObjects;
+    for (final point in scene.points) {
+      if (!selected.contains(point.object)) {
+        continue;
+      }
+      final dx = point.pixelX - coordinate.pixelX;
+      final dy = point.pixelY - coordinate.pixelY;
+      if (dx * dx + dy * dy <= 16 * 16) {
+        return true;
+      }
+    }
+    return scene.regions.any(
+      (region) =>
+          selected.contains(region.object) &&
+          region.contains(coordinate.pixelX, coordinate.pixelY),
+    );
   }
 
   void _updatePointerPosition(Offset? position) {
@@ -838,6 +963,35 @@ class MapCanvasPointerCoordinate {
   final int pixelY;
 }
 
+final class MapCanvasSelectionRequest {
+  const MapCanvasSelectionRequest({
+    required this.coordinate,
+    required this.additive,
+  });
+
+  final MapCanvasPointerCoordinate coordinate;
+  final bool additive;
+}
+
+final class MapCanvasSelectionRegionRequest {
+  const MapCanvasSelectionRegionRequest({
+    required this.region,
+    required this.additive,
+  });
+
+  final MapLayerPixelRegion region;
+  final bool additive;
+}
+
+final class MapCanvasMoveRequest {
+  const MapCanvasMoveRequest({required this.dx, required this.dy});
+
+  final int dx;
+  final int dy;
+
+  bool get isZero => dx == 0 && dy == 0;
+}
+
 class MapCanvasVisibleTiles {
   const MapCanvasVisibleTiles({
     required this.left,
@@ -870,6 +1024,8 @@ class MapCanvasPainter extends CustomPainter {
     this.selectedTile,
     this.rectanglePreview,
     this.layerScene,
+    this.selectionRegionPreview,
+    this.selectionMovePreview,
   }) : assert(
          rawTileValues == null ||
              rawTileValues.length == layout.mapWidth * layout.mapHeight,
@@ -910,6 +1066,8 @@ class MapCanvasPainter extends CustomPainter {
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
   final MapLayerScene? layerScene;
+  final MapLayerPixelRegion? selectionRegionPreview;
+  final MapCanvasMoveRequest? selectionMovePreview;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1066,11 +1224,16 @@ class MapCanvasPainter extends CustomPainter {
     }
 
     for (final region in scene.regions) {
-      final rect = _mapPixelRegionRect(region);
+      final selected = scene.selectedObjects.contains(region.object);
+      final move = selected ? selectionMovePreview : null;
+      final rect = _mapPixelRegionRect(
+        region,
+        dx: move?.dx ?? 0,
+        dy: move?.dy ?? 0,
+      );
       if (!rect.overlaps(Offset.zero & layout.viewportSize)) {
         continue;
       }
-      final selected = scene.selection?.object == region.object;
       canvas.drawRect(
         rect,
         Paint()
@@ -1095,16 +1258,16 @@ class MapCanvasPainter extends CustomPainter {
       for (final point in scene.points.where(
         (candidate) => candidate.object.layer == layer,
       )) {
-        final center = _mapPixelOffset(point.pixelX, point.pixelY);
+        final selected = scene.selectedObjects.contains(point.object);
+        final move = selected ? selectionMovePreview : null;
+        final center = _mapPixelOffset(
+          point.pixelX + (move?.dx ?? 0),
+          point.pixelY + (move?.dy ?? 0),
+        );
         if (!(Offset.zero & layout.viewportSize).inflate(12).contains(center)) {
           continue;
         }
-        _paintPointObject(
-          canvas,
-          point,
-          center,
-          selected: scene.selection?.object == point.object,
-        );
+        _paintPointObject(canvas, point, center, selected: selected);
       }
     }
   }
@@ -1170,9 +1333,13 @@ class MapCanvasPainter extends CustomPainter {
     layout.mapRect.top + pixelY / 32 * layout.tileExtent,
   );
 
-  Rect _mapPixelRegionRect(MapLayerRegionObject region) {
-    final first = _mapPixelOffset(region.left, region.top);
-    final second = _mapPixelOffset(region.right, region.bottom);
+  Rect _mapPixelRegionRect(
+    MapLayerRegionObject region, {
+    int dx = 0,
+    int dy = 0,
+  }) {
+    final first = _mapPixelOffset(region.left + dx, region.top + dy);
+    final second = _mapPixelOffset(region.right + dx, region.bottom + dy);
     return Rect.fromLTRB(
       math.min(first.dx, second.dx),
       math.min(first.dy, second.dy),
@@ -1182,6 +1349,21 @@ class MapCanvasPainter extends CustomPainter {
   }
 
   void _paintEditOverlay(Canvas canvas) {
+    final selectionRegion = selectionRegionPreview;
+    if (selectionRegion != null) {
+      final rect = Rect.fromPoints(
+        _mapPixelOffset(selectionRegion.left, selectionRegion.top),
+        _mapPixelOffset(selectionRegion.right, selectionRegion.bottom),
+      );
+      canvas.drawRect(rect, Paint()..color = const Color(0x2670A1FF));
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..color = const Color(0xFF8DB4FF)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
     final selected = selectedTile;
     if (selected != null &&
         selected.x >= 0 &&
@@ -1240,7 +1422,9 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
         oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||
         oldDelegate.rectanglePreview?.bottom != rectanglePreview?.bottom ||
-        !identical(oldDelegate.layerScene, layerScene);
+        !identical(oldDelegate.layerScene, layerScene) ||
+        oldDelegate.selectionRegionPreview != selectionRegionPreview ||
+        oldDelegate.selectionMovePreview != selectionMovePreview;
   }
 }
 

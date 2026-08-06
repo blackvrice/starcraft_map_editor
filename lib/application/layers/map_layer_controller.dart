@@ -114,32 +114,93 @@ final class MapLayerRegionObject {
   }
 }
 
+final class MapLayerPixelRegion {
+  const MapLayerPixelRegion._({
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+  });
+
+  factory MapLayerPixelRegion.fromCorners({
+    required int firstX,
+    required int firstY,
+    required int secondX,
+    required int secondY,
+  }) => MapLayerPixelRegion._(
+    left: firstX < secondX ? firstX : secondX,
+    top: firstY < secondY ? firstY : secondY,
+    right: firstX > secondX ? firstX : secondX,
+    bottom: firstY > secondY ? firstY : secondY,
+  );
+
+  final int left;
+  final int top;
+  final int right;
+  final int bottom;
+
+  bool contains(int x, int y) =>
+      x >= left && x <= right && y >= top && y <= bottom;
+
+  bool intersects(MapLayerRegionObject region) {
+    final regionLeft = region.left < region.right ? region.left : region.right;
+    final regionRight = region.left > region.right ? region.left : region.right;
+    final regionTop = region.top < region.bottom ? region.top : region.bottom;
+    final regionBottom = region.top > region.bottom
+        ? region.top
+        : region.bottom;
+    return left <= regionRight &&
+        right >= regionLeft &&
+        top <= regionBottom &&
+        bottom >= regionTop;
+  }
+}
+
 final class MapLayerScene {
   MapLayerScene({
     required Iterable<MapLayerPointObject> points,
     required Iterable<MapLayerRegionObject> regions,
     required Map<MapLayerType, int> objectCounts,
-    required this.selection,
+    MapLayerSelection? selection,
+    Iterable<MapLayerSelection>? selections,
   }) : points = List.unmodifiable(points),
        regions = List.unmodifiable(regions),
-       objectCounts = Map.unmodifiable(objectCounts);
+       objectCounts = Map.unmodifiable(objectCounts),
+       selections = List.unmodifiable(
+         selections ?? (selection == null ? const [] : [selection]),
+       );
 
   final List<MapLayerPointObject> points;
   final List<MapLayerRegionObject> regions;
   final Map<MapLayerType, int> objectCounts;
-  final MapLayerSelection? selection;
+  final List<MapLayerSelection> selections;
+
+  MapLayerSelection? get selection => selections.lastOrNull;
+
+  Set<MapLayerObjectRef> get selectedObjects =>
+      selections.map((selection) => selection.object).toSet();
 }
 
 final class MapLayerState {
   MapLayerState({
     this.activeLayer = MapLayerType.terrain,
     Map<MapLayerType, MapLayerStatus>? layers,
-    this.selection,
-  }) : layers = Map.unmodifiable(layers ?? _defaultLayerStatuses);
+    MapLayerSelection? selection,
+    Iterable<MapLayerSelection>? selections,
+  }) : layers = Map.unmodifiable(layers ?? _defaultLayerStatuses),
+       selections = List.unmodifiable(
+         selections ?? (selection == null ? const [] : [selection]),
+       );
 
   final MapLayerType activeLayer;
   final Map<MapLayerType, MapLayerStatus> layers;
-  final MapLayerSelection? selection;
+  final List<MapLayerSelection> selections;
+
+  MapLayerSelection? get selection => selections.lastOrNull;
+
+  bool get hasObjectSelection => selections.any(
+    (selection) => selection.object.layer != MapLayerType.terrain,
+  );
 
   MapLayerStatus statusOf(MapLayerType layer) => layers[layer]!;
 
@@ -194,6 +255,7 @@ class MapLayerController {
       StreamController<MapLayerState>.broadcast(sync: true);
   MapLayerState _state = MapLayerState();
   Object? _trackedSourceSnapshot;
+  OpenedMapSession? _trackedSession;
   OpenedMapSession? _cachedSceneSession;
   MapLayerState? _cachedSceneState;
   MapLayerScene? _cachedScene;
@@ -204,12 +266,20 @@ class MapLayerController {
 
   void synchronizeSession(OpenedMapSession? session) {
     final sourceSnapshot = session?.extractedMap;
-    if (identical(sourceSnapshot, _trackedSourceSnapshot)) {
+    if (identical(session, _trackedSession)) {
       return;
     }
+    final sameSource = identical(sourceSnapshot, _trackedSourceSnapshot);
     _trackedSourceSnapshot = sourceSnapshot;
+    _trackedSession = session;
     _emit(
-      MapLayerState(activeLayer: _state.activeLayer, layers: _state.layers),
+      MapLayerState(
+        activeLayer: _state.activeLayer,
+        layers: _state.layers,
+        selections: sameSource && session != null
+            ? _resolveSelections(session, _state.selections)
+            : const [],
+      ),
     );
   }
 
@@ -221,7 +291,7 @@ class MapLayerController {
       MapLayerState(
         activeLayer: layer,
         layers: _state.layers,
-        selection: _state.selection,
+        selections: _state.selections,
       ),
     );
   }
@@ -233,14 +303,16 @@ class MapLayerController {
     }
     final updated = Map<MapLayerType, MapLayerStatus>.of(_state.layers);
     updated[layer] = current.copyWith(isVisible: isVisible);
-    final selection = _state.selection?.object.layer == layer && !isVisible
-        ? null
-        : _state.selection;
+    final selections = !isVisible
+        ? _state.selections
+              .where((selection) => selection.object.layer != layer)
+              .toList(growable: false)
+        : _state.selections;
     _emit(
       MapLayerState(
         activeLayer: _state.activeLayer,
         layers: updated,
-        selection: selection,
+        selections: selections,
       ),
     );
   }
@@ -252,14 +324,16 @@ class MapLayerController {
     }
     final updated = Map<MapLayerType, MapLayerStatus>.of(_state.layers);
     updated[layer] = current.copyWith(isLocked: isLocked);
-    final selection = _state.selection?.object.layer == layer && isLocked
-        ? null
-        : _state.selection;
+    final selections = isLocked
+        ? _state.selections
+              .where((selection) => selection.object.layer != layer)
+              .toList(growable: false)
+        : _state.selections;
     _emit(
       MapLayerState(
         activeLayer: _state.activeLayer,
         layers: updated,
-        selection: selection,
+        selections: selections,
       ),
     );
   }
@@ -372,7 +446,7 @@ class MapLayerController {
       points: points,
       regions: regions,
       objectCounts: counts,
-      selection: _state.selection,
+      selections: _state.selections,
     );
     _cachedSceneSession = session;
     _cachedSceneState = _state;
@@ -468,6 +542,7 @@ class MapLayerController {
     required OpenedMapSession session,
     required int pixelX,
     required int pixelY,
+    bool additive = false,
   }) {
     final hits = orderedHitsAt(
       session: session,
@@ -475,17 +550,65 @@ class MapLayerController {
       pixelY: pixelY,
     );
     final selection = hits.firstOrNull;
-    if (_state.selection == selection) {
+    final selections = _updatedSelections(selection, additive: additive);
+    if (_sameSelections(_state.selections, selections)) {
       return selection;
     }
     _emit(
       MapLayerState(
         activeLayer: _state.activeLayer,
         layers: _state.layers,
-        selection: selection,
+        selections: selections,
       ),
     );
     return selection;
+  }
+
+  List<MapLayerSelection> selectRegion({
+    required OpenedMapSession session,
+    required MapLayerPixelRegion region,
+    bool additive = false,
+  }) {
+    final scene = sceneFor(session);
+    final activeLayer = _state.activeLayer;
+    final restrictToActive =
+        activeLayer != MapLayerType.terrain &&
+        _state.statusOf(activeLayer).isSelectable;
+    bool accepts(MapLayerType layer) =>
+        layer != MapLayerType.terrain &&
+        _state.statusOf(layer).isSelectable &&
+        (!restrictToActive || layer == activeLayer);
+
+    final selected = <MapLayerSelection>[
+      for (final point in scene.points)
+        if (accepts(point.object.layer) &&
+            region.contains(point.pixelX, point.pixelY))
+          MapLayerSelection(
+            object: point.object,
+            pixelX: point.pixelX,
+            pixelY: point.pixelY,
+          ),
+      for (final location in scene.regions)
+        if (accepts(MapLayerType.locations) && region.intersects(location))
+          MapLayerSelection(
+            object: location.object,
+            pixelX: (location.left + location.right) ~/ 2,
+            pixelY: (location.top + location.bottom) ~/ 2,
+          ),
+    ];
+    final selections = additive
+        ? _mergeSelections(_state.selections, selected)
+        : selected;
+    if (!_sameSelections(_state.selections, selections)) {
+      _emit(
+        MapLayerState(
+          activeLayer: _state.activeLayer,
+          layers: _state.layers,
+          selections: selections,
+        ),
+      );
+    }
+    return List.unmodifiable(selected);
   }
 
   void clearSelection() {
@@ -495,6 +618,143 @@ class MapLayerController {
     _emit(
       MapLayerState(activeLayer: _state.activeLayer, layers: _state.layers),
     );
+  }
+
+  List<MapLayerSelection> _updatedSelections(
+    MapLayerSelection? selection, {
+    required bool additive,
+  }) {
+    if (!additive) {
+      return selection == null ? const [] : [selection];
+    }
+    if (selection == null) {
+      return _state.selections;
+    }
+    final existingIndex = _state.selections.indexWhere(
+      (candidate) => candidate.object == selection.object,
+    );
+    if (existingIndex >= 0) {
+      final updated = _state.selections.toList()..removeAt(existingIndex);
+      return updated;
+    }
+    return [..._state.selections, selection];
+  }
+
+  List<MapLayerSelection> _resolveSelections(
+    OpenedMapSession session,
+    Iterable<MapLayerSelection> selections,
+  ) {
+    return [
+      for (final selection in selections)
+        ?_resolveSelection(session, selection.object),
+    ];
+  }
+
+  MapLayerSelection? _resolveSelection(
+    OpenedMapSession session,
+    MapLayerObjectRef object,
+  ) {
+    switch (object.layer) {
+      case MapLayerType.units:
+        final section = session.objectViews.unitSections
+            .where((section) => section.sectionIndex == object.sectionIndex)
+            .firstOrNull;
+        if (section == null || object.recordIndex >= section.units.length) {
+          return null;
+        }
+        final unit = section.units[object.recordIndex];
+        return MapLayerSelection(
+          object: object,
+          pixelX: unit.x,
+          pixelY: unit.y,
+        );
+      case MapLayerType.doodads:
+        final section = session.objectViews.doodadSections
+            .where((section) => section.sectionIndex == object.sectionIndex)
+            .firstOrNull;
+        if (section == null || object.recordIndex >= section.doodads.length) {
+          return null;
+        }
+        final doodad = section.doodads[object.recordIndex];
+        return MapLayerSelection(
+          object: object,
+          pixelX: doodad.x,
+          pixelY: doodad.y,
+        );
+      case MapLayerType.sprites:
+        final section = session.objectViews.spriteSections
+            .where((section) => section.sectionIndex == object.sectionIndex)
+            .firstOrNull;
+        if (section == null || object.recordIndex >= section.sprites.length) {
+          return null;
+        }
+        final sprite = section.sprites[object.recordIndex];
+        return MapLayerSelection(
+          object: object,
+          pixelX: sprite.x,
+          pixelY: sprite.y,
+        );
+      case MapLayerType.locations:
+        final section = session.objectViews.locationSections
+            .where((section) => section.sectionIndex == object.sectionIndex)
+            .firstOrNull;
+        if (section == null || object.recordIndex >= section.locations.length) {
+          return null;
+        }
+        final location = section.locations[object.recordIndex];
+        if (location.isBlank) {
+          return null;
+        }
+        return MapLayerSelection(
+          object: object,
+          pixelX: (location.left + location.right) ~/ 2,
+          pixelY: (location.top + location.bottom) ~/ 2,
+        );
+      case MapLayerType.terrain:
+        final dimensions = session.metadataViews.dimensions.length == 1
+            ? session.metadataViews.dimensions.single
+            : null;
+        final terrain = session.terrainViews.tileMaps
+            .where((terrain) => terrain.sectionIndex == object.sectionIndex)
+            .firstOrNull;
+        if (dimensions == null ||
+            terrain == null ||
+            object.recordIndex < 0 ||
+            object.recordIndex >= terrain.tileCount) {
+          return null;
+        }
+        return MapLayerSelection(
+          object: object,
+          pixelX: (object.recordIndex % dimensions.width) * 32,
+          pixelY: (object.recordIndex ~/ dimensions.width) * 32,
+        );
+    }
+  }
+
+  List<MapLayerSelection> _mergeSelections(
+    Iterable<MapLayerSelection> first,
+    Iterable<MapLayerSelection> second,
+  ) {
+    final merged = <MapLayerObjectRef, MapLayerSelection>{};
+    for (final selection in [...first, ...second]) {
+      merged[selection.object] = selection;
+    }
+    return merged.values.toList(growable: false);
+  }
+
+  bool _sameSelections(
+    List<MapLayerSelection> first,
+    List<MapLayerSelection> second,
+  ) {
+    if (first.length != second.length) {
+      return false;
+    }
+    for (var index = 0; index < first.length; index++) {
+      if (first[index] != second[index]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> dispose() => _changes.close();

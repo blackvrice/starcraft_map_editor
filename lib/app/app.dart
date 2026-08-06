@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
+import '../application/editing/object_editing_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
 import '../application/layers/map_layer_controller.dart';
@@ -27,6 +28,7 @@ class EditorAppDependencies {
     required this.starCraftDataAssetSettingsController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.objectEditingController,
     required this.terrainTileTextureController,
   });
 
@@ -42,6 +44,7 @@ class EditorAppDependencies {
   starCraftDataAssetSettingsController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
   final TerrainTileTextureController terrainTileTextureController;
 }
 
@@ -78,6 +81,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
             dependencies.starCraftDataAssetSettingsController,
         terrainEditingController: dependencies.terrainEditingController,
         mapLayerController: dependencies.mapLayerController,
+        objectEditingController: dependencies.objectEditingController,
         terrainTileTextureController: dependencies.terrainTileTextureController,
       ),
     );

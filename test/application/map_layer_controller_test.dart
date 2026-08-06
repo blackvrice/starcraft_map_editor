@@ -145,6 +145,58 @@ void main() {
     );
     expect(scene.objectCounts[MapLayerType.locations], 2);
   });
+
+  test('supports additive click toggles and active-layer box selection', () {
+    final controller = MapLayerController();
+    final session = _session();
+    addTearDown(controller.dispose);
+
+    controller.setActiveLayer(MapLayerType.units);
+    controller.selectAt(session: session, pixelX: 64, pixelY: 64);
+    expect(controller.state.selections, hasLength(1));
+    controller.selectAt(
+      session: session,
+      pixelX: 64,
+      pixelY: 64,
+      additive: true,
+    );
+    expect(controller.state.selections, isEmpty);
+
+    final selected = controller.selectRegion(
+      session: session,
+      region: MapLayerPixelRegion.fromCorners(
+        firstX: 48,
+        firstY: 48,
+        secondX: 80,
+        secondY: 80,
+      ),
+    );
+    expect(selected, hasLength(2));
+    expect(selected.map((selection) => selection.object.layer).toSet(), {
+      MapLayerType.units,
+    });
+
+    controller.setActiveLayer(MapLayerType.terrain);
+    controller.selectRegion(
+      session: session,
+      region: MapLayerPixelRegion.fromCorners(
+        firstX: 48,
+        firstY: 48,
+        secondX: 80,
+        secondY: 80,
+      ),
+      additive: true,
+    );
+    expect(
+      controller.state.selections.map((selection) => selection.object.layer),
+      containsAll([
+        MapLayerType.units,
+        MapLayerType.doodads,
+        MapLayerType.sprites,
+        MapLayerType.locations,
+      ]),
+    );
+  });
 }
 
 OpenedMapSession _session({String sourcePath = r'C:\Maps\Layers.scx'}) {

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
+import '../application/editing/object_editing_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
@@ -66,6 +67,10 @@ void bootstrap() {
     openMapController: openMapController,
   );
   final mapLayerController = MapLayerController();
+  final objectEditingController = ObjectEditingController(
+    openMapController: openMapController,
+    mapLayerController: mapLayerController,
+  );
   final terrainTileTextureController = TerrainTileTextureController(
     loader: TerrainTileAtlasLoader(
       gateway: ProcessStarCraftTileAtlasGateway.bundled(),
@@ -109,6 +114,7 @@ void bootstrap() {
     starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
     terrainEditingController: terrainEditingController,
     mapLayerController: mapLayerController,
+    objectEditingController: objectEditingController,
     terrainTileTextureController: terrainTileTextureController,
   );
 

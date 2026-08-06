@@ -539,6 +539,66 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('reports box selection and selected-object drag gestures', (
+    tester,
+  ) async {
+    MapCanvasSelectionRegionRequest? regionRequest;
+    MapCanvasMoveRequest? moveRequest;
+    const object = MapLayerObjectRef(
+      layer: MapLayerType.units,
+      sectionIndex: 1,
+      recordIndex: 0,
+    );
+    final scene = MapLayerScene(
+      points: const [
+        MapLayerPointObject(object: object, pixelX: 64, pixelY: 64),
+      ],
+      regions: const [],
+      objectCounts: const {MapLayerType.units: 1},
+      selections: const [
+        MapLayerSelection(object: object, pixelX: 64, pixelY: 64),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 320,
+          height: 240,
+          child: MapCanvas(
+            mapWidth: 4,
+            mapHeight: 4,
+            rawTileValues: List<int>.filled(16, 0),
+            layerScene: scene,
+            onSelectionRegionRequested: (request) => regionRequest = request,
+            onSelectedObjectsMoved: (request) => moveRequest = request,
+          ),
+        ),
+      ),
+    );
+
+    var gesture = await tester.startGesture(
+      _mapPixel(tester, pixelX: 5, pixelY: 5),
+    );
+    await gesture.moveTo(_mapPixel(tester, pixelX: 40, pixelY: 45));
+    await gesture.up();
+    await tester.pump();
+    expect(regionRequest?.region.left, 5);
+    expect(regionRequest?.region.top, 5);
+    expect(regionRequest?.region.right, 40);
+    expect(regionRequest?.region.bottom, 45);
+    expect(moveRequest, isNull);
+
+    gesture = await tester.startGesture(
+      _mapPixel(tester, pixelX: 64, pixelY: 64),
+    );
+    await gesture.moveTo(_mapPixel(tester, pixelX: 80, pixelY: 75));
+    await gesture.up();
+    await tester.pump();
+    expect(moveRequest?.dx, 16);
+    expect(moveRequest?.dy, 11);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('brush fills every crossed tile without gaps', (tester) async {
     final painted = <TerrainTileCoordinate>[];
     var started = 0;
@@ -887,5 +947,23 @@ Offset _tileCenter(WidgetTester tester, {required int x, required int y}) {
       Offset(
         (x + 0.5) * painter.layout.tileExtent,
         (y + 0.5) * painter.layout.tileExtent,
+      );
+}
+
+Offset _mapPixel(
+  WidgetTester tester, {
+  required int pixelX,
+  required int pixelY,
+}) {
+  final painter =
+      tester
+              .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
+              .painter!
+          as MapCanvasPainter;
+  return tester.getTopLeft(find.byKey(const Key('map-canvas'))) +
+      painter.layout.mapRect.topLeft +
+      Offset(
+        (pixelX + 0.5) / 32 * painter.layout.tileExtent,
+        (pixelY + 0.5) / 32 * painter.layout.tileExtent,
       );
 }
