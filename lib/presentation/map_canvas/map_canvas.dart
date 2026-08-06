@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
@@ -8,6 +9,35 @@ import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import 'terrain_tile_texture.dart';
 import 'terrain_tile_texture_controller.dart';
+
+typedef MapCanvasPaintObserver = void Function(MapCanvasPaintMetrics metrics);
+
+final class MapCanvasPaintMetrics {
+  const MapCanvasPaintMetrics({
+    required this.paintDuration,
+    required this.mapWidth,
+    required this.mapHeight,
+    required this.zoom,
+    required this.gridStep,
+    required this.visibleTiles,
+    required this.textureTileCount,
+    required this.fallbackTileCount,
+    required this.unsupportedTileCount,
+  });
+
+  final Duration paintDuration;
+  final int mapWidth;
+  final int mapHeight;
+  final double zoom;
+  final int gridStep;
+  final MapCanvasVisibleTiles visibleTiles;
+  final int textureTileCount;
+  final int fallbackTileCount;
+  final int unsupportedTileCount;
+
+  int get paintedTerrainTileCount =>
+      textureTileCount + fallbackTileCount + unsupportedTileCount;
+}
 
 class MapCanvas extends StatefulWidget {
   const MapCanvas({
@@ -23,6 +53,7 @@ class MapCanvas extends StatefulWidget {
     this.onBrushStrokeEnded,
     this.onBrushStrokeCancelled,
     this.onRectangleFilled,
+    this.onPaintMeasured,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
     super.key,
@@ -43,6 +74,7 @@ class MapCanvas extends StatefulWidget {
   final VoidCallback? onBrushStrokeEnded;
   final VoidCallback? onBrushStrokeCancelled;
   final ValueChanged<TerrainTileRegion>? onRectangleFilled;
+  final MapCanvasPaintObserver? onPaintMeasured;
   final double contentPadding;
   final double maximumTileExtent;
 
@@ -183,6 +215,7 @@ class _MapCanvasState extends State<MapCanvas> {
                               unsupportedRawValues: widget
                                   .terrainTextureState
                                   .unsupportedRawValues,
+                              onPaintMeasured: widget.onPaintMeasured,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                             ),
@@ -811,6 +844,12 @@ class MapCanvasVisibleTiles {
   final int rightExclusive;
   final int bottomExclusive;
 
+  int get width => math.max(0, rightExclusive - left);
+
+  int get height => math.max(0, bottomExclusive - top);
+
+  int get tileCount => width * height;
+
   bool get isEmpty => left >= rightExclusive || top >= bottomExclusive;
 }
 
@@ -820,6 +859,7 @@ class MapCanvasPainter extends CustomPainter {
     required this.rawTileValues,
     this.terrainTextures = const {},
     this.unsupportedRawValues = const [],
+    this.onPaintMeasured,
     this.selectedTile,
     this.rectanglePreview,
   }) : assert(
@@ -858,32 +898,68 @@ class MapCanvasPainter extends CustomPainter {
   final List<int>? rawTileValues;
   final Map<int, TerrainTileTexture> terrainTextures;
   final List<int> unsupportedRawValues;
+  final MapCanvasPaintObserver? onPaintMeasured;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = viewportBackground);
-    canvas.save();
-    canvas.clipRect(Offset.zero & size);
-
-    final mapRect = layout.mapRect;
-    canvas.drawRect(mapRect, Paint()..color = mapBackground);
-    _paintTerrain(canvas);
-    _paintGrid(canvas);
-    _paintEditOverlay(canvas);
-    canvas.drawRect(
-      mapRect,
-      Paint()
-        ..color = mapBoundary
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+    final observer = onPaintMeasured;
+    final stopwatch = observer == null ? null : (Stopwatch()..start());
+    final counters = observer == null ? null : _MapCanvasPaintCounters();
+    developer.Timeline.startSync(
+      'MapCanvasPainter.paint',
+      arguments: {
+        'mapWidth': layout.mapWidth,
+        'mapHeight': layout.mapHeight,
+        'visibleTileCount': layout.visibleTiles.tileCount,
+        'zoom': layout.zoom,
+        'gridStep': layout.gridStep,
+        'hasTerrain': rawTileValues != null,
+        'textureCount': terrainTextures.length,
+      },
     );
+    try {
+      canvas.drawRect(Offset.zero & size, Paint()..color = viewportBackground);
+      canvas.save();
+      canvas.clipRect(Offset.zero & size);
 
-    canvas.restore();
+      final mapRect = layout.mapRect;
+      canvas.drawRect(mapRect, Paint()..color = mapBackground);
+      _paintTerrain(canvas, counters);
+      _paintGrid(canvas);
+      _paintEditOverlay(canvas);
+      canvas.drawRect(
+        mapRect,
+        Paint()
+          ..color = mapBoundary
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
+
+      canvas.restore();
+    } finally {
+      developer.Timeline.finishSync();
+      if (observer != null && stopwatch != null && counters != null) {
+        stopwatch.stop();
+        observer(
+          MapCanvasPaintMetrics(
+            paintDuration: stopwatch.elapsed,
+            mapWidth: layout.mapWidth,
+            mapHeight: layout.mapHeight,
+            zoom: layout.zoom,
+            gridStep: layout.gridStep,
+            visibleTiles: layout.visibleTiles,
+            textureTileCount: counters.textureTileCount,
+            fallbackTileCount: counters.fallbackTileCount,
+            unsupportedTileCount: counters.unsupportedTileCount,
+          ),
+        );
+      }
+    }
   }
 
-  void _paintTerrain(Canvas canvas) {
+  void _paintTerrain(Canvas canvas, _MapCanvasPaintCounters? counters) {
     final values = rawTileValues;
     final bounds = layout.visibleTiles;
     if (values == null || bounds.isEmpty) {
@@ -904,6 +980,7 @@ class MapCanvasPainter extends CustomPainter {
         );
         final texture = terrainTextures[rawValue];
         if (texture != null) {
+          counters?.textureTileCount++;
           canvas.drawImageRect(
             texture.image,
             Rect.fromLTWH(
@@ -916,9 +993,11 @@ class MapCanvasPainter extends CustomPainter {
             imagePaint,
           );
         } else if (!unsupported.contains(rawValue)) {
+          counters?.fallbackTileCount++;
           fallbackPaint.color = _tilePalette[_paletteIndex(rawValue)];
           canvas.drawRect(tileRect, fallbackPaint);
         } else {
+          counters?.unsupportedTileCount++;
           _paintUnsupportedTile(canvas, tileRect);
         }
       }
@@ -1023,12 +1102,19 @@ class MapCanvasPainter extends CustomPainter {
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
         !identical(oldDelegate.terrainTextures, terrainTextures) ||
         !identical(oldDelegate.unsupportedRawValues, unsupportedRawValues) ||
+        oldDelegate.onPaintMeasured != onPaintMeasured ||
         oldDelegate.selectedTile != selectedTile ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
         oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||
         oldDelegate.rectanglePreview?.bottom != rectanglePreview?.bottom;
   }
+}
+
+final class _MapCanvasPaintCounters {
+  int textureTileCount = 0;
+  int fallbackTileCount = 0;
+  int unsupportedTileCount = 0;
 }
 
 class _CanvasBadge extends StatelessWidget {

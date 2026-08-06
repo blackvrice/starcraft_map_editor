@@ -153,9 +153,10 @@ JSON 응답·출력 상한·가짜 helper 테스트 계약을 깨므로 채택�
   timeout, 대량 출력, 취소와 임시 디렉터리 정리를 검증한다.
 - Widget 테스트는 준비 중 표시, 실제 이미지 우선, 일부 배치 실패와
   unsupported fallback, 오래된 generation 무시와 LRU dispose를 검증한다.
-- 재배포하지 않는 로컬 SC:R 설치 스모크에서 8개 타일셋의 대표 raw 값을
-  Chkdraft 렌더링과 비교하고 256×256 맵의 초기 로드·pan·zoom frame timing과
-  메모리 예산을 기록한다.
+- 자동 위젯 스모크는 256×256 raw 지형의 fit·pan·zoom paint 시간과 가시 타일
+  수를 기록한다. 재배포하지 않는 로컬 SC:R 설치 스모크에서는 8개 타일셋의
+  대표 raw 값을 Chkdraft 렌더링과 비교하고 profile 빌드 frame timing과 메모리
+  예산을 별도로 기록한다.
 
 ## References
 

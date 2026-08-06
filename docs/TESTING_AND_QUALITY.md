@@ -210,7 +210,9 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - `TILE`/`ISOM`과 eudplib 보호 마커를 지형 typed view가 수정하지 않음
 - Open/Save 세션의 terrain view 보존과 손상 지형 제한 편집 진단
 - 4×2 캔버스 경계·격자·가시 범위·원시 `MTXM` 모드 위젯 렌더링
-- 256×256 fit-to-view에서 맵 경계 내 배치와 16타일 격자 축약
+- 256×256 fit-to-view에서 맵 경계 내 배치와 viewport별 적응형 격자 축약
+- 실제 raw 65,536개를 사용하는 256×256 fit/zoom/pan paint 시간·가시 타일 수
+  계측과 debug 1초 병적 회귀 상한
 - `MTXM` 누락/길이 불일치 시 geometry-only 캔버스 대체 표시
 - 전체 `u16` group/member 분해와 helper가 반환한 실제 그룹 밖 raw의 경고 표시
   횟수와 선택 타일의 raw/group/member 상태 표시
@@ -340,6 +342,14 @@ flutter test test/infrastructure/bundled_starcraft_data_helper_test.dart
 - 큰 파일 작업: 단계 표시와 취소 가능 지점 제공
 
 성능 테스트는 숫자만 기록하지 않고 맵 크기, 레이어 수, 확대 배율, 하드웨어와 빌드 모드를 함께 기록한다.
+
+자동 `test/performance/map_canvas_performance_test.dart`는 800×600 viewport와
+256×256 raw fallback 지형에서 fit·zoom·pan paint를 실행한다. 이 테스트의
+1초 상한은 테스트 엔진·debug 모드에서도 안정적으로 병적 동기 작업만 찾기 위한
+스모크 게이트이며 FPS 기준이 아니다. 실제 60 FPS 목표와 30 FPS 최소 기준은
+profile Windows 빌드를 DevTools에서 열고 `MapCanvasPainter.paint` Timeline
+범위와 Flutter frame timing을 함께 기록해 판정한다. 현재 환경과 측정값은
+[256×256 캔버스 성능 기준선](performance/MAP_CANVAS_256_SMOKE.md)에 남긴다.
 
 ## 6. 정적 검사와 포맷
 

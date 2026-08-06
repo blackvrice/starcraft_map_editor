@@ -778,6 +778,12 @@ void main() {
       terrainTextures: Map<int, TerrainTileTexture>.unmodifiable(const {}),
     );
     expect(changedTextures.shouldRepaint(original), isTrue);
+    final changedObserver = MapCanvasPainter(
+      layout: layout,
+      rawTileValues: values,
+      onPaintMeasured: (_) {},
+    );
+    expect(changedObserver.shouldRepaint(original), isTrue);
   });
 }
 

@@ -333,7 +333,7 @@
 - [x] `CV5`·`VX4EX`·`VR4`·`WPE` 디코더와 손상 입력 검증
 - [x] `MTXM` raw 값의 32×32 RGBA 타일 합성과 텍스처 캐시
 - [x] 실제 StarCraft 타일 렌더러와 안전한 대체 표시 전환
-- [ ] 캔버스 성능 계측과 256×256 스모크 테스트
+- [x] 캔버스 성능 계측과 256×256 스모크 테스트
 
 구현 메모:
 
@@ -477,6 +477,15 @@
   fallback 픽셀, 로딩 배지, painter 갱신 identity를 검증한다. 셸 통합 테스트는
   준비된 설치에서 맵의 고유 raw만 요청해 실제 타일 모드로 전환하고 자산 설정을
   지우면 모든 텍스처를 해제한 뒤 raw fallback으로 복귀하는 흐름을 고정한다.
+- `MapCanvasPainter.paint`는 DevTools에서 찾을 수 있는 Timeline 범위에 맵 크기,
+  가시 타일 수, zoom, grid step, terrain/texture 상태를 기록한다. 선택적
+  `onPaintMeasured` 콜백은 Stopwatch 시간과 texture/fallback/unsupported 타일
+  수를 불변 스냅샷으로 전달하며, 콜백이 없으면 타일별 계측 카운터를 만들지 않는다.
+- 256×256 성능 스모크는 800×600 viewport에서 실제 raw 65,536개를 그린 뒤
+  fit·zoom·pan의 시간과 가시 타일 수를 기록한다. debug 자동 테스트의 1초 상한은
+  병적인 동기 렌더링 회귀만 차단하며 30/60 FPS 판정은 profile 빌드의 DevTools
+  frame timing으로 별도 수행한다. 2026-08-06 기준선은
+  [성능 기록](performance/MAP_CANVAS_256_SMOKE.md)에 보존한다.
 
 완료 조건:
 

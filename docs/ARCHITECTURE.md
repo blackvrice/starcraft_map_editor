@@ -206,6 +206,12 @@ dirty 상태에 포함하지 않는다. 휠 확대는 포인터 아래 맵 좌�
 StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상태는 카메라나
 문서 dirty 상태에 포함하지 않는다.
 
+`MapCanvasPainter.paint`는 `dart:developer` Timeline에 맵 크기, zoom, grid
+step, 가시 타일 수와 texture 상태를 남긴다. 테스트·프로파일 harness가 선택적
+`MapCanvasPaintObserver`를 주입하면 paint 경로의 Stopwatch 시간과 실제
+texture/fallback/unsupported 타일 수를 받는다. 일반 앱 경로에서는 observer가
+없으므로 타일별 성능 카운터를 할당하거나 증가시키지 않는다.
+
 `TerrainEditingController`는 Presentation과 raw CHK 사이의 Application
 경계다. 선택한 raw 타일 값과 Select/Brush/Rectangle 도구 상태를 관리하고,
 정확히 하나의 유효한 격자형 `MTXM`에만 편집을 적용한다. 차단 진단,
