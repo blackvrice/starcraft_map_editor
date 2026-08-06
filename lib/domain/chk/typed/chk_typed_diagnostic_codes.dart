@@ -8,4 +8,9 @@ abstract final class ChkTypedDiagnosticCodes {
   static const stringUnterminated = 'CHK_STRING_UNTERMINATED';
   static const terrainTileRecordTruncated = 'CHK_TERRAIN_TILE_RECORD_TRUNCATED';
   static const terrainTileCountMismatch = 'CHK_TERRAIN_TILE_COUNT_MISMATCH';
+  static const unitRecordTruncated = 'CHK_UNIT_RECORD_TRUNCATED';
+  static const doodadRecordTruncated = 'CHK_DOODAD_RECORD_TRUNCATED';
+  static const spriteRecordTruncated = 'CHK_SPRITE_RECORD_TRUNCATED';
+  static const locationSectionSizeMismatch =
+      'CHK_LOCATION_SECTION_SIZE_MISMATCH';
 }

@@ -364,6 +364,7 @@ class TerrainEditingController {
         rawDocument: rawDocument,
         metadataViews: session.metadataViews,
         terrainViews: terrainViews,
+        objectViews: session.objectViews,
         sourceFingerprint: session.sourceFingerprint,
         diagnostics: session.diagnostics,
       ),

@@ -221,10 +221,37 @@ little-endian 값으로 투영한다.
 ### 4단계: 객체
 
 - `UNIT`
+- `DD2 `
 - `THG2`
 - `MRGN`
 
 객체 레코드는 알려지지 않은 비트와 예약 필드를 원본 값으로 유지한다.
+
+#### 구현된 객체 typed view
+
+`ChkObjectViewDecoder`는 다음 고정 레이아웃을 little-endian으로 읽는다.
+
+| 섹션 | 레코드 | 구조 |
+| --- | ---: | --- |
+| `UNIT` | 36바이트 | class ID, x/y, unit type, 관계·유효·상태 플래그, owner, 체력·실드·에너지 비율, 자원·격납량, 예약 값, 관계 class ID |
+| `DD2 ` | 8바이트 | doodad type, x/y, owner, enabled raw 값 |
+| `THG2` | 10바이트 | sprite type, x/y, owner, 예약 byte, flags |
+| `MRGN` | 20바이트 | left/top/right/bottom, string ID, elevation flags |
+
+- `UNIT`, `DD2 `, `THG2`는 0개 이상의 완전한 레코드를 허용한다. 끝에 남는
+  바이트가 있으면 각각 `CHK_UNIT_RECORD_TRUNCATED`,
+  `CHK_DOODAD_RECORD_TRUNCATED`, `CHK_SPRITE_RECORD_TRUNCATED` 오류를 만들고
+  해당 섹션의 typed view는 생성하지 않는다.
+- `MRGN`은 Original의 64개 레코드(1280바이트) 또는 Hybrid/Brood War의 255개
+  레코드(5100바이트)만 구조적으로 해석한다. 다른 크기는
+  `CHK_LOCATION_SECTION_SIZE_MISMATCH`로 진단한다.
+- 각 레코드는 0기준 원본 레코드 인덱스를 가지며 로케이션 ID만 CHK 참조 규칙에
+  맞춰 `recordIndex + 1`로 제공한다. 중복 섹션은 병합하지 않는다.
+- sprite와 doodad의 예약 값, 알려지지 않은 flag bit, unit의 모든 flag와
+  `unused` 필드는 typed 값과 원본 `RawChkSection`에 그대로 남는다. 현재 view는
+  읽기 전용이며 디코딩만으로 payload를 다시 인코딩하거나 정규화하지 않는다.
+- 좌표의 맵 경계, owner 범위, 문자열 ID 존재 여부는 구조 디코더가 추측하지
+  않는다. 이 의미 진단은 M6의 별도 검증 단계에서 추가한다.
 
 ### 5단계: 트리거
 

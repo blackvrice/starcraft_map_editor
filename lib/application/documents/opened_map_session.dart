@@ -9,6 +9,7 @@ class OpenedMapSession {
     required this.rawDocument,
     required this.metadataViews,
     required this.terrainViews,
+    required this.objectViews,
     required this.sourceFingerprint,
     required Iterable<EditorDiagnostic> diagnostics,
   }) : diagnostics = List.unmodifiable(diagnostics);
@@ -17,6 +18,7 @@ class OpenedMapSession {
   final RawChkDocument rawDocument;
   final ChkMetadataViews metadataViews;
   final ChkTerrainViews terrainViews;
+  final ChkObjectViews objectViews;
   final MapFileFingerprint sourceFingerprint;
   final List<EditorDiagnostic> diagnostics;
 

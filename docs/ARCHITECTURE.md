@@ -143,6 +143,18 @@ RawChkSection
 바꾸지 않고 대상 raw 섹션만 dirty 복제본으로 반환한다. `TILE`과 `ISOM`은
 우선순위와 재생성 규칙을 검증하기 전까지 raw-only다.
 
+### ChkObjectViews
+
+`ChkObjectViewDecoder`는 raw 문서의 `UNIT`, `DD2 `, `THG2`, `MRGN`을 각각
+유닛·두다드·스프라이트·로케이션의 읽기 전용 투영으로 만든다. 각 섹션 view는
+원래 섹션 인덱스와 `RawChkSection`을 보관하며, 중복 섹션도 원본 순서대로
+분리한다. 레코드는 예약 값과 raw flag를 포함한 모든 바이트 필드를 노출하므로
+후속 편집기가 미지원 값을 0으로 초기화하지 않아도 된다.
+
+고정 레코드 경계가 잘렸거나 `MRGN`이 Original 64개/확장 255개 크기가 아니면
+해당 typed view만 만들지 않고 차단 진단을 세션에 추가한다. 원시 섹션은 그대로
+남으며 현재 단계에서는 좌표·owner·문자열 참조의 의미 유효성을 판단하지 않는다.
+
 ### MapDocument
 
 편집 UI가 사용하는 의미 모델과 원시 문서를 묶는다.
@@ -172,6 +184,7 @@ DocumentSession
   sourceFingerprint
   document
   terrainViews
+  objectViews
   undoStack
   redoStack
   isDirty
@@ -182,8 +195,8 @@ DocumentSession
 `sourceFingerprint`는 외부 변경을 감지하기 위해 파일 크기, UTC 수정 시각,
 SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint가 같을
 때만 생성되고 Save As로 채택한 세션은 검증된 임시 출력의 fingerprint를
-이어받는다. Open/Save 재검증은 `ChkMetadataViews`와 `ChkTerrainViews`를
-동시에 생성하고 두 계층의 구조 진단을 세션에 포함한다.
+이어받는다. Open/Save 재검증은 `ChkMetadataViews`, `ChkTerrainViews`,
+`ChkObjectViews`를 동시에 생성하고 세 계층의 구조 진단을 세션에 포함한다.
 
 ### MapCanvas
 

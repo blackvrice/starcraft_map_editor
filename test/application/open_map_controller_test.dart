@@ -8,6 +8,7 @@ import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart'
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
+import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
@@ -202,6 +203,69 @@ void main() {
         3,
         4,
       ]);
+    });
+
+    test('decodes object sections into the opened document session', () async {
+      final map = _createExtractedMap(
+        _chkBytes([
+          _section(
+            'UNIT',
+            List<int>.generate(
+              ChkUnitPlacement.recordLength,
+              (index) => index + 1,
+            ),
+          ),
+          _section(
+            'DD2 ',
+            List<int>.filled(ChkDoodadPlacement.recordLength, 0),
+          ),
+          _section(
+            'THG2',
+            List<int>.filled(ChkSpritePlacement.recordLength, 0),
+          ),
+          _section(
+            'MRGN',
+            List<int>.filled(
+              ChkLocationSectionView.originalLocationCount *
+                  ChkLocation.recordLength,
+              0,
+            ),
+          ),
+        ]),
+      );
+      final progressController = OperationProgressController();
+      final controller = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          result: MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.opened);
+      expect(state.diagnostics, isEmpty);
+      expect(
+        state.session!.objectViews.unitSections.single.units,
+        hasLength(1),
+      );
+      expect(
+        state.session!.objectViews.doodadSections.single.doodads,
+        hasLength(1),
+      );
+      expect(
+        state.session!.objectViews.spriteSections.single.sprites,
+        hasLength(1),
+      );
+      expect(
+        state.session!.objectViews.locationSections.single.locations,
+        hasLength(64),
+      );
     });
 
     test('opens malformed terrain in restricted read-only mode', () async {
