@@ -196,6 +196,36 @@ void main() {
     }
   });
 
+  test('adds a copy-on-write string ID and preserves existing raw strings', () {
+    final source = _loadFixture('strings.chk.hex');
+    final document = parser.parse(source).document!;
+    final table = decoder.decode(document).legacyTables.single;
+    final originalPayload = table.rawSection.payload;
+
+    final result = table.withAddedRawString(rawBytes: utf8.encode('Location'));
+    final updatedDocument = document.replaceSection(
+      table.sectionIndex,
+      result.section,
+    );
+    final updatedTable = decoder.decode(updatedDocument).legacyTables.single;
+
+    expect(result.stringId, 4);
+    expect(updatedTable.declaredStringCount, 4);
+    expect(updatedTable.entries[0].rawBytes, utf8.encode('Map'));
+    expect(updatedTable.entries[1].rawBytes, utf8.encode('Line'));
+    expect(updatedTable.entries[2].rawBytes, utf8.encode('Map'));
+    expect(updatedTable.entries[3].rawBytes, utf8.encode('Location'));
+    expect(updatedTable.entries[0].rawOffset, table.entries[0].rawOffset + 2);
+    expect(updatedTable.entries[2].rawOffset, table.entries[2].rawOffset + 2);
+    expect(
+      result.section.payload.sublist(
+        table.stringDataOffset + 2,
+        originalPayload.length + 2,
+      ),
+      originalPayload.sublist(table.stringDataOffset),
+    );
+  });
+
   test(
     'reports truncated and unsafe string structures with exact locations',
     () {

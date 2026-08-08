@@ -239,6 +239,14 @@ Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 �
 offset만 기록하고 원시 flags·예약 필드는 그대로 둔 뒤 전체 객체 view를 다시
 디코딩한다. Presentation은 raw CHK나 파일 시스템에 접근하지 않는다.
 
+로케이션 생성은 컨트롤러가 유일한 유효 `MRGN`의 첫 빈 고정 슬롯을 선택하고,
+Presentation에서 받은 맵 픽셀 사각형을 검증한 뒤 해당 20바이트 레코드만
+갱신한다. 이름 변경은 `ChkStringTableView`의 append-only API로 새 `STR ` 또는
+`STRx` ID를 만든 뒤 선택한 `MRGN`의 string ID만 바꾸는 copy-on-write 동작이다.
+기존 문자열을 제자리 수정하지 않으며 `MRGN`과 문자열 섹션 변경은 하나의
+Undo/Redo 명령으로 적용된다. 문자열 표 선택이 모호하거나 구조적으로 안전하지
+않으면 컨트롤러는 이름 변경만 거부하고 경계 편집과 raw 데이터 열람은 유지한다.
+
 ### ObjectPaletteController
 
 `application/editing`의 `ObjectPaletteController`는 현재 세션의 `UNIT`, `DD2 `,
@@ -278,6 +286,9 @@ StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상�
 `MapLayerController`에 전달해 단일·추가 선택 정책을 적용한다. 선택 객체에서
 시작한 드래그는 이동 delta와 미리보기만 계산하고 실제 CHK 변경은
 `ObjectEditingController`에 위임한다.
+로케이션 생성 모드에서는 같은 영역 드래그를 박스 선택 대신 새 경계로 전달하고,
+단일 클릭과 객체 이동을 비활성화한다. 적용되면 새 슬롯을 선택하고 생성 모드를
+끝내며, `Escape` 또는 다른 레이어 선택은 문서 변경 없이 모드만 취소한다.
 팔레트 템플릿이 활성화된 동안 단일 클릭 좌표는
 `ObjectPaletteController.placeSelected`에 전달하고 박스 선택과 객체 이동은
 비활성화한다. `Escape`는 문서 변경 없이 배치 모드만 해제한다.

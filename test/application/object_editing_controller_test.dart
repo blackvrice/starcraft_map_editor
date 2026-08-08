@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -375,6 +376,125 @@ void main() {
     },
   );
 
+  test('creates a location in the first blank stable slot', () async {
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+
+    expect(fixture.objectEditingController.canCreateLocation, isTrue);
+    expect(fixture.objectEditingController.startLocationCreation(), isTrue);
+    expect(fixture.objectEditingController.state.isCreatingLocation, isTrue);
+    expect(
+      fixture.objectEditingController.createLocation(
+        MapLayerPixelRegion.fromCorners(
+          firstX: 32,
+          firstY: 64,
+          secondX: 96,
+          secondY: 128,
+        ),
+      ),
+      isTrue,
+    );
+
+    var locations = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .locationSections
+        .single
+        .locations;
+    expect(
+      (
+        locations[1].locationId,
+        locations[1].left,
+        locations[1].top,
+        locations[1].right,
+        locations[1].bottom,
+        locations[1].stringId,
+        locations[1].elevationFlags,
+      ),
+      (2, 32, 64, 96, 128, 0, ChkLocation.allElevations),
+    );
+    expect(fixture.objectEditingController.state.isCreatingLocation, isFalse);
+    expect(fixture.mapLayerController.state.selection?.object.recordIndex, 1);
+    expect(fixture.objectEditingController.undoLabel, 'Create Location 2');
+
+    expect(fixture.objectEditingController.undo(), isTrue);
+    locations = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .locationSections
+        .single
+        .locations;
+    expect(locations[1].isBlank, isTrue);
+  });
+
+  test('resizes and copy-on-write renames a location in one edit', () async {
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    final original = fixture.openMapController.state.session!;
+    final object = MapLayerObjectRef(
+      layer: MapLayerType.locations,
+      sectionIndex: original.objectViews.locationSections.single.sectionIndex,
+      recordIndex: 0,
+    );
+    fixture.mapLayerController
+      ..setActiveLayer(MapLayerType.locations)
+      ..selectObject(session: original, object: object);
+    final properties = fixture.objectEditingController.selectedProperties;
+    expect(properties, isA<LocationObjectProperties>());
+    expect((properties as LocationObjectProperties).name, 'Existing');
+    expect(properties.canRename, isTrue);
+
+    final result = fixture.objectEditingController.updateProperties(
+      LocationObjectPropertyUpdate(
+        object: object,
+        left: 40,
+        top: 48,
+        right: 144,
+        bottom: 152,
+        name: '새 위치',
+      ),
+    );
+    expect(result.didApply, isTrue);
+    final editedSession = fixture.openMapController.state.session!;
+    final location =
+        editedSession.objectViews.locationSections.single.locations.first;
+    expect(
+      (location.left, location.top, location.right, location.bottom),
+      (40, 48, 144, 152),
+    );
+    expect(location.stringId, 3);
+    final strings = const ChkStringViewDecoder()
+        .decode(editedSession.rawDocument)
+        .legacyTables
+        .single;
+    expect(strings.entries[0].rawBytes, utf8.encode('Existing'));
+    expect(strings.entries[1].rawBytes, utf8.encode('Other'));
+    expect(strings.entries[2].rawBytes, utf8.encode('새 위치'));
+    expect(
+      fixture.objectEditingController.undoLabel,
+      'Edit Location properties',
+    );
+
+    expect(fixture.objectEditingController.undo(), isTrue);
+    final restored = fixture.openMapController.state.session!;
+    expect(
+      restored.objectViews.locationSections.single.locations.first.stringId,
+      1,
+    );
+    expect(
+      const ChkStringViewDecoder()
+          .decode(restored.rawDocument)
+          .legacyTables
+          .single
+          .declaredStringCount,
+      2,
+    );
+  });
+
   test(
     'builds, searches, and repeatedly places map-local palette entries',
     () async {
@@ -528,10 +648,29 @@ Uint8List _chkBytes() {
     _section('DD2 ', _doodad(64, 64)),
     _section('THG2', _sprite(64, 64)),
     _section('MRGN', locations),
+    _section('STR ', _legacyStringTable(['Existing', 'Other'])),
   ]) {
     builder.add(section);
   }
   return builder.takeBytes();
+}
+
+Uint8List _legacyStringTable(List<String> strings) {
+  final encoded = strings.map(utf8.encode).toList(growable: false);
+  final headerLength = 2 + strings.length * 2;
+  final payloadLength =
+      headerLength +
+      encoded.fold<int>(0, (sum, bytes) => sum + bytes.length + 1);
+  final payload = Uint8List(payloadLength);
+  final data = ByteData.sublistView(payload)
+    ..setUint16(0, strings.length, Endian.little);
+  var offset = headerLength;
+  for (var index = 0; index < encoded.length; index++) {
+    data.setUint16(2 + index * 2, offset, Endian.little);
+    payload.setAll(offset, encoded[index]);
+    offset += encoded[index].length + 1;
+  }
+  return payload;
 }
 
 Uint8List _unit(int x, int y, int seed) {

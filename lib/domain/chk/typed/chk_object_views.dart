@@ -116,6 +116,7 @@ final class ChkLocation {
   });
 
   static const recordLength = 20;
+  static const allElevations = 0x003f;
 
   final int recordIndex;
   final int left;

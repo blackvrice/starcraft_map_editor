@@ -241,6 +241,41 @@ void main() {
     expect(deleted.payload.take(ChkLocation.recordLength), everyElement(0));
   });
 
+  test('creates a location in place without changing adjacent slots', () {
+    final payload = Uint8List(
+      ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,
+    );
+    payload.fillRange(ChkLocation.recordLength, payload.length, 0x7a);
+    final view = decoder
+        .decode(_document([_section('MRGN', payload)]))
+        .locationSections
+        .single;
+
+    final updated = editor.updateLocationProperties(
+      view,
+      recordIndex: 0,
+      left: 32,
+      top: 64,
+      right: 128,
+      bottom: 160,
+      stringId: 9,
+      elevationFlags: ChkLocation.allElevations,
+    );
+    final data = ByteData.sublistView(updated.payload);
+    expect(
+      [
+        data.getUint32(0, Endian.little),
+        data.getUint32(4, Endian.little),
+        data.getUint32(8, Endian.little),
+        data.getUint32(12, Endian.little),
+        data.getUint16(16, Endian.little),
+        data.getUint16(18, Endian.little),
+      ],
+      [32, 64, 128, 160, 9, ChkLocation.allElevations],
+    );
+    expect(updated.payload.skip(ChkLocation.recordLength), everyElement(0x7a));
+  });
+
   test('rejects record and unsigned-coordinate overflow', () {
     final bytes = Uint8List(ChkDoodadPlacement.recordLength);
     ByteData.sublistView(bytes)

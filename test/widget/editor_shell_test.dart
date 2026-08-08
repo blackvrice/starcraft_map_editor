@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -528,7 +529,13 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('10'), findsWidgets);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('map-inspector')),
+        matching: find.text('11'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('map-layer-list')), findsOneWidget);
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
     expect(find.text('Editable'), findsOneWidget);
@@ -987,6 +994,75 @@ void main() {
     expect(openMapController.state.session!.isDirty, isTrue);
     expect(objectEditingController.undoLabel, 'Edit Unit properties');
     expect(mapLayerController.state.selection?.object.recordIndex, 0);
+
+    await tester.tap(find.byKey(const Key('map-layer-locations')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('object-create-location')));
+    await tester.pump();
+    expect(objectEditingController.state.isCreatingLocation, isTrue);
+    expect(find.byKey(const Key('location-creation-active')), findsOneWidget);
+    final locationDrag = await tester.startGesture(
+      _mapPixelOffset(tester, pixelX: 160, pixelY: 160),
+    );
+    await locationDrag.moveTo(
+      _mapPixelOffset(tester, pixelX: 224, pixelY: 224),
+    );
+    await locationDrag.up();
+    await tester.pump();
+
+    var location = openMapController
+        .state
+        .session!
+        .objectViews
+        .locationSections
+        .single
+        .locations[1];
+    expect(
+      (location.left, location.top, location.right, location.bottom),
+      (160, 160, 224, 224),
+    );
+    expect(find.text('Location 2'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('location-inspector-name')))
+          .enabled,
+      isTrue,
+    );
+    await tester.enterText(
+      find.byKey(const Key('location-inspector-name')),
+      'Spawn Area',
+    );
+    await tester.enterText(
+      find.byKey(const Key('location-inspector-right')),
+      '240',
+    );
+    await tester.tap(find.byKey(const Key('location-inspector-apply')));
+    await tester.pump();
+
+    location = openMapController
+        .state
+        .session!
+        .objectViews
+        .locationSections
+        .single
+        .locations[1];
+    expect((location.right, location.stringId), (240, 2));
+    expect(
+      const ChkStringViewDecoder()
+          .decode(openMapController.state.session!.rawDocument)
+          .legacyTables
+          .single
+          .entries[1]
+          .rawBytes,
+      utf8.encode('Spawn Area'),
+    );
+
+    await tester.tap(find.byKey(const Key('object-create-location')));
+    await tester.pump();
+    expect(objectEditingController.state.isCreatingLocation, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(objectEditingController.state.isCreatingLocation, isFalse);
     expect(tester.takeException(), isNull);
   });
 }
@@ -1520,6 +1596,7 @@ ExtractedMap _createExtractedMap() {
     _section('DD2 ', _doodadRecord(64, 64)),
     _section('THG2', _spriteRecord(64, 64)),
     _section('MRGN', locationPayload),
+    _section('STR ', _legacyStringTable(['Existing'])),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',
@@ -1541,6 +1618,24 @@ ExtractedMap _createExtractedMap() {
       ],
     ),
   );
+}
+
+Uint8List _legacyStringTable(List<String> strings) {
+  final encoded = strings.map(utf8.encode).toList(growable: false);
+  final headerLength = 2 + strings.length * 2;
+  final payloadLength =
+      headerLength +
+      encoded.fold<int>(0, (sum, bytes) => sum + bytes.length + 1);
+  final payload = Uint8List(payloadLength);
+  final data = ByteData.sublistView(payload)
+    ..setUint16(0, strings.length, Endian.little);
+  var offset = headerLength;
+  for (var index = 0; index < encoded.length; index++) {
+    data.setUint16(2 + index * 2, offset, Endian.little);
+    payload.setAll(offset, encoded[index]);
+    offset += encoded[index].length + 1;
+  }
+  return payload;
 }
 
 Uint8List _unitRecord(int x, int y) {

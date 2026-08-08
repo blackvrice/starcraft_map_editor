@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
 import '../documents/open_map_controller.dart';
@@ -7,10 +8,15 @@ import '../layers/map_layer_controller.dart';
 import 'object_properties.dart';
 
 final class ObjectEditingState {
-  const ObjectEditingState({this.undoDepth = 0, this.redoDepth = 0});
+  const ObjectEditingState({
+    this.undoDepth = 0,
+    this.redoDepth = 0,
+    this.isCreatingLocation = false,
+  });
 
   final int undoDepth;
   final int redoDepth;
+  final bool isCreatingLocation;
 
   bool get canUndo => undoDepth > 0;
   bool get canRedo => redoDepth > 0;
@@ -21,6 +27,7 @@ class ObjectEditingController {
     required this.openMapController,
     required this.mapLayerController,
     this.objectViewDecoder = const ChkObjectViewDecoder(),
+    this.stringViewDecoder = const ChkStringViewDecoder(),
     this.sectionEditor = const ChkObjectSectionEditor(),
     this.historyLimit = 100,
   }) {
@@ -36,6 +43,7 @@ class ObjectEditingController {
   final OpenMapController openMapController;
   final MapLayerController mapLayerController;
   final ChkObjectViewDecoder objectViewDecoder;
+  final ChkStringViewDecoder stringViewDecoder;
   final ChkObjectSectionEditor sectionEditor;
   final int historyLimit;
   final StreamController<ObjectEditingState> _changes =
@@ -45,6 +53,7 @@ class ObjectEditingController {
 
   ObjectEditingState _state = const ObjectEditingState();
   Object? _trackedSourceSnapshot;
+  bool _isCreatingLocation = false;
 
   ObjectEditingState get state => _state;
   Stream<ObjectEditingState> get changes => _changes.stream;
@@ -79,9 +88,21 @@ class ObjectEditingController {
 
   bool get canEditProperties {
     final properties = selectedProperties;
-    return properties != null &&
-        properties is! LocationObjectProperties &&
-        canEditSelection;
+    return properties != null && canEditSelection;
+  }
+
+  bool get canCreateLocation {
+    final session = openMapController.state.session;
+    return session != null &&
+        session.objectViews.locationSections.length == 1 &&
+        session.objectViews.locationSections.single.locations.any(
+          (location) => location.isBlank,
+        ) &&
+        session.metadataViews.dimensions.length == 1 &&
+        mapLayerController.state
+            .statusOf(MapLayerType.locations)
+            .isSelectable &&
+        _isEditableSession(session);
   }
 
   bool canPlaceTemplate(MapLayerObjectRef template) {
@@ -100,9 +121,83 @@ class ObjectEditingController {
       return;
     }
     _trackedSourceSnapshot = sourceSnapshot;
+    _isCreatingLocation = false;
     _undoStack.clear();
     _redoStack.clear();
     _emit();
+  }
+
+  bool startLocationCreation() {
+    if (!canCreateLocation) {
+      return false;
+    }
+    mapLayerController
+      ..setActiveLayer(MapLayerType.locations)
+      ..clearSelection();
+    _isCreatingLocation = true;
+    _emit();
+    return true;
+  }
+
+  void cancelLocationCreation() {
+    if (!_isCreatingLocation) {
+      return;
+    }
+    _isCreatingLocation = false;
+    _emit();
+  }
+
+  bool createLocation(MapLayerPixelRegion region) {
+    final session = openMapController.state.session;
+    if (!_isCreatingLocation || session == null || !canCreateLocation) {
+      return false;
+    }
+    final boundsErrors = _validateLocationBounds(
+      session,
+      left: region.left,
+      top: region.top,
+      right: region.right,
+      bottom: region.bottom,
+    );
+    if (boundsErrors.isNotEmpty) {
+      return false;
+    }
+    final section = session.objectViews.locationSections.single;
+    final location = section.locations.firstWhere(
+      (location) => location.isBlank,
+    );
+    final replacement = sectionEditor.updateLocationProperties(
+      section,
+      recordIndex: location.recordIndex,
+      left: region.left,
+      top: region.top,
+      right: region.right,
+      bottom: region.bottom,
+      stringId: 0,
+      elevationFlags: ChkLocation.allElevations,
+    );
+    _isCreatingLocation = false;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Create Location ${location.locationId}',
+        beforeSections: {
+          section.sectionIndex:
+              session.rawDocument.sections[section.sectionIndex],
+        },
+        afterSections: {section.sectionIndex: replacement},
+      ),
+      clearSelection: true,
+    );
+    final editedSession = openMapController.state.session!;
+    final object = MapLayerObjectRef(
+      layer: MapLayerType.locations,
+      sectionIndex: section.sectionIndex,
+      recordIndex: location.recordIndex,
+    );
+    mapLayerController
+      ..setActiveLayer(MapLayerType.locations)
+      ..selectObject(session: editedSession, object: object);
+    return true;
   }
 
   bool moveSelection({required int dx, required int dy}) {
@@ -255,53 +350,85 @@ class ObjectEditingController {
     }
     final sectionIndex = update.object.sectionIndex;
     final recordIndex = update.object.recordIndex;
-    final replacement = switch (update) {
-      UnitObjectPropertyUpdate() => sectionEditor.updateUnitProperties(
-        _unitSection(session, sectionIndex),
-        recordIndex: recordIndex,
-        unitType: update.typeId,
-        x: update.x,
-        y: update.y,
-        owner: update.owner,
-        hitpointPercent: update.hitpointPercent,
-        shieldPercent: update.shieldPercent,
-        energyPercent: update.energyPercent,
-        resourceAmount: update.resourceAmount,
-        hangarAmount: update.hangarAmount,
-      ),
-      DoodadObjectPropertyUpdate() => sectionEditor.updateDoodadProperties(
-        _doodadSection(session, sectionIndex),
-        recordIndex: recordIndex,
-        doodadType: update.typeId,
-        x: update.x,
-        y: update.y,
-        owner: update.owner,
-        enabledValue: update.enabledValue,
-      ),
-      SpriteObjectPropertyUpdate() => sectionEditor.updateSpriteProperties(
-        _spriteSection(session, sectionIndex),
-        recordIndex: recordIndex,
-        spriteType: update.typeId,
-        x: update.x,
-        y: update.y,
-        owner: update.owner,
-      ),
-    };
-    final kindLabel = switch (update.object.layer) {
-      MapLayerType.units => 'Unit',
-      MapLayerType.doodads => 'Doodad',
-      MapLayerType.sprites => 'Sprite',
-      MapLayerType.terrain || MapLayerType.locations => throw StateError(
-        'This object does not expose editable point properties.',
-      ),
-    };
+    final beforeSections = <int, RawChkSection>{};
+    final afterSections = <int, RawChkSection>{};
+    late final String kindLabel;
+    switch (update) {
+      case UnitObjectPropertyUpdate():
+        kindLabel = 'Unit';
+        afterSections[sectionIndex] = sectionEditor.updateUnitProperties(
+          _unitSection(session, sectionIndex),
+          recordIndex: recordIndex,
+          unitType: update.typeId,
+          x: update.x,
+          y: update.y,
+          owner: update.owner,
+          hitpointPercent: update.hitpointPercent,
+          shieldPercent: update.shieldPercent,
+          energyPercent: update.energyPercent,
+          resourceAmount: update.resourceAmount,
+          hangarAmount: update.hangarAmount,
+        );
+      case DoodadObjectPropertyUpdate():
+        kindLabel = 'Doodad';
+        afterSections[sectionIndex] = sectionEditor.updateDoodadProperties(
+          _doodadSection(session, sectionIndex),
+          recordIndex: recordIndex,
+          doodadType: update.typeId,
+          x: update.x,
+          y: update.y,
+          owner: update.owner,
+          enabledValue: update.enabledValue,
+        );
+      case SpriteObjectPropertyUpdate():
+        kindLabel = 'Sprite';
+        afterSections[sectionIndex] = sectionEditor.updateSpriteProperties(
+          _spriteSection(session, sectionIndex),
+          recordIndex: recordIndex,
+          spriteType: update.typeId,
+          x: update.x,
+          y: update.y,
+          owner: update.owner,
+        );
+      case LocationObjectPropertyUpdate():
+        kindLabel = 'Location';
+        final location = current as LocationObjectProperties;
+        var stringId = location.stringId;
+        if (update.name != location.name) {
+          if (update.name.isEmpty) {
+            stringId = 0;
+          } else {
+            final table = _singleSafeStringTable(session)!;
+            final appended = table.withAddedRawString(
+              rawBytes: utf8.encode(update.name),
+            );
+            stringId = appended.stringId;
+            beforeSections[table.sectionIndex] =
+                session.rawDocument.sections[table.sectionIndex];
+            afterSections[table.sectionIndex] = appended.section;
+          }
+        }
+        afterSections[sectionIndex] = sectionEditor.updateLocationProperties(
+          _locationSection(session, sectionIndex),
+          recordIndex: recordIndex,
+          left: update.left,
+          top: update.top,
+          right: update.right,
+          bottom: update.bottom,
+          stringId: stringId,
+        );
+    }
+    for (final changedSectionIndex in afterSections.keys) {
+      beforeSections.putIfAbsent(
+        changedSectionIndex,
+        () => session.rawDocument.sections[changedSectionIndex],
+      );
+    }
     _applyAndRecord(
       _ObjectEditCommand(
         label: 'Edit $kindLabel properties',
-        beforeSections: {
-          sectionIndex: session.rawDocument.sections[sectionIndex],
-        },
-        afterSections: {sectionIndex: replacement},
+        beforeSections: beforeSections,
+        afterSections: afterSections,
       ),
       clearSelection: false,
     );
@@ -363,6 +490,7 @@ class ObjectEditingController {
     if (!canUndo) {
       return false;
     }
+    _isCreatingLocation = false;
     final command = _undoStack.removeLast();
     _applySections(
       expected: command.afterSections,
@@ -378,6 +506,7 @@ class ObjectEditingController {
     if (!canRedo) {
       return false;
     }
+    _isCreatingLocation = false;
     final command = _redoStack.removeLast();
     _applySections(
       expected: command.beforeSections,
@@ -546,6 +675,35 @@ class ObjectEditingController {
       session,
       object.sectionIndex,
     ).locations[object.recordIndex];
+    final stringViews = stringViewDecoder.decode(session.rawDocument);
+    final tables = [...stringViews.legacyTables, ...stringViews.extendedTables];
+    final table = tables.length == 1 ? tables.single : null;
+    final entry = location.stringId == 0
+        ? null
+        : table?.entryForId(location.stringId);
+    final canResolveName =
+        location.stringId == 0 || (entry != null && entry.isStructurallyValid);
+    final canRename =
+        table != null &&
+        table.canAppendSafely &&
+        table.declaredStringCount < 0xffff &&
+        canResolveName;
+    final name = location.stringId == 0
+        ? ''
+        : canResolveName
+        ? utf8.decode(entry!.rawBytes!, allowMalformed: true)
+        : '';
+    final renameUnavailableReason = canRename
+        ? null
+        : tables.isEmpty
+        ? 'This map has no STR/STRx string table.'
+        : tables.length != 1
+        ? 'Multiple STR/STRx tables are ambiguous.'
+        : !table!.canAppendSafely
+        ? 'The string table has blocking structural errors.'
+        : table.declaredStringCount >= 0xffff
+        ? 'No uint16 location string IDs remain.'
+        : 'The current location name reference cannot be resolved safely.';
     return LocationObjectProperties(
       object: object,
       locationId: location.locationId,
@@ -555,6 +713,9 @@ class ObjectEditingController {
       bottom: location.bottom,
       stringId: location.stringId,
       elevationFlags: location.elevationFlags,
+      name: name,
+      canRename: canRename,
+      renameUnavailableReason: renameUnavailableReason,
     );
   }
 
@@ -631,6 +792,32 @@ class ObjectEditingController {
         y = update.y;
         typeId = update.typeId;
         owner = update.owner;
+      case LocationObjectPropertyUpdate():
+        errors.addAll(
+          _validateLocationBounds(
+            session,
+            left: update.left,
+            top: update.top,
+            right: update.right,
+            bottom: update.bottom,
+          ),
+        );
+        final current = selectedProperties as LocationObjectProperties;
+        final nameBytes = utf8.encode(update.name);
+        if (update.name.contains('\u0000')) {
+          errors[ObjectPropertyFields.name] =
+              'Location names cannot contain a null byte.';
+        } else if (nameBytes.length > 255) {
+          errors[ObjectPropertyFields.name] =
+              'Use a UTF-8 name no longer than 255 bytes.';
+        } else if (update.name != current.name &&
+            update.name.isNotEmpty &&
+            !current.canRename) {
+          errors[ObjectPropertyFields.name] =
+              current.renameUnavailableReason ??
+              'Location naming is unavailable for this map.';
+        }
+        return errors;
     }
     _validateRange(
       errors,
@@ -673,6 +860,67 @@ class ObjectEditingController {
     return errors;
   }
 
+  Map<String, String> _validateLocationBounds(
+    OpenedMapSession session, {
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+  }) {
+    final errors = <String, String>{};
+    if (session.metadataViews.dimensions.length != 1) {
+      const message = 'Map dimensions are unavailable.';
+      return {
+        ObjectPropertyFields.left: message,
+        ObjectPropertyFields.top: message,
+        ObjectPropertyFields.right: message,
+        ObjectPropertyFields.bottom: message,
+      };
+    }
+    final dimensions = session.metadataViews.dimensions.single;
+    final maximumX = dimensions.width * 32;
+    final maximumY = dimensions.height * 32;
+    _validateRange(
+      errors,
+      ObjectPropertyFields.left,
+      left,
+      0,
+      maximumX,
+      'Left must stay inside the map.',
+    );
+    _validateRange(
+      errors,
+      ObjectPropertyFields.right,
+      right,
+      0,
+      maximumX,
+      'Right must stay inside the map.',
+    );
+    _validateRange(
+      errors,
+      ObjectPropertyFields.top,
+      top,
+      0,
+      maximumY,
+      'Top must stay inside the map.',
+    );
+    _validateRange(
+      errors,
+      ObjectPropertyFields.bottom,
+      bottom,
+      0,
+      maximumY,
+      'Bottom must stay inside the map.',
+    );
+    if (left >= right) {
+      errors[ObjectPropertyFields.right] = 'Right must be greater than left.';
+    }
+    if (top >= bottom) {
+      errors[ObjectPropertyFields.bottom] = 'Bottom must be greater than top.';
+    }
+    return errors;
+  }
+
   void _validateRange(
     Map<String, String> errors,
     String field,
@@ -711,8 +959,25 @@ class ObjectEditingController {
           current.x == update.x &&
           current.y == update.y &&
           current.owner == update.owner,
+    (LocationObjectProperties current, LocationObjectPropertyUpdate update) =>
+      current.left == update.left &&
+          current.top == update.top &&
+          current.right == update.right &&
+          current.bottom == update.bottom &&
+          current.name == update.name,
     _ => false,
   };
+
+  ChkStringTableView? _singleSafeStringTable(OpenedMapSession session) {
+    final views = stringViewDecoder.decode(session.rawDocument);
+    final tables = [...views.legacyTables, ...views.extendedTables];
+    if (tables.length != 1 ||
+        !tables.single.canAppendSafely ||
+        tables.single.declaredStringCount >= 0xffff) {
+      return null;
+    }
+    return tables.single;
+  }
 
   bool _templateExists(OpenedMapSession session, MapLayerObjectRef template) {
     return switch (template.layer) {
@@ -774,8 +1039,17 @@ class ObjectEditingController {
       document = document.replaceSection(entry.key, replacements[entry.key]!);
     }
     final objectViews = objectViewDecoder.decode(document);
-    if (objectViews.hasBlockingDiagnostics) {
-      throw StateError('The edited object sections failed validation.');
+    final stringViews = stringViewDecoder.decode(document);
+    final editsStringTable = replacements.values.any(
+      (section) =>
+          ChkSectionNames.isLegacyStrings(section) ||
+          ChkSectionNames.isExtendedStrings(section),
+    );
+    if (objectViews.hasBlockingDiagnostics ||
+        (editsStringTable && stringViews.hasBlockingDiagnostics)) {
+      throw StateError(
+        'The edited object or string sections failed validation.',
+      );
     }
     if (clearSelection) {
       mapLayerController.clearSelection();
@@ -826,6 +1100,7 @@ class ObjectEditingController {
     _state = ObjectEditingState(
       undoDepth: _undoStack.length,
       redoDepth: _redoStack.length,
+      isCreatingLocation: _isCreatingLocation,
     );
     _changes.add(_state);
   }

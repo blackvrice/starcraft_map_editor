@@ -11,6 +11,11 @@ abstract final class ObjectPropertyFields {
   static const resourceAmount = 'resourceAmount';
   static const hangarAmount = 'hangarAmount';
   static const enabledValue = 'enabledValue';
+  static const left = 'left';
+  static const top = 'top';
+  static const right = 'right';
+  static const bottom = 'bottom';
+  static const name = 'name';
 }
 
 sealed class ObjectProperties {
@@ -104,6 +109,9 @@ final class LocationObjectProperties extends ObjectProperties {
     required this.bottom,
     required this.stringId,
     required this.elevationFlags,
+    required this.name,
+    required this.canRename,
+    this.renameUnavailableReason,
   });
 
   final int locationId;
@@ -113,6 +121,9 @@ final class LocationObjectProperties extends ObjectProperties {
   final int bottom;
   final int stringId;
   final int elevationFlags;
+  final String name;
+  final bool canRename;
+  final String? renameUnavailableReason;
 }
 
 sealed class ObjectPropertyUpdate {
@@ -176,6 +187,23 @@ final class SpriteObjectPropertyUpdate extends ObjectPropertyUpdate {
   final int x;
   final int y;
   final int owner;
+}
+
+final class LocationObjectPropertyUpdate extends ObjectPropertyUpdate {
+  const LocationObjectPropertyUpdate({
+    required super.object,
+    required this.left,
+    required this.top,
+    required this.right,
+    required this.bottom,
+    required this.name,
+  });
+
+  final int left;
+  final int top;
+  final int right;
+  final int bottom;
+  final String name;
 }
 
 enum ObjectPropertyEditStatus { applied, noChanges, invalid, unavailable }

@@ -226,6 +226,39 @@ class ChkObjectSectionEditor {
     return view.rawSection.withPayload(payload);
   }
 
+  RawChkSection updateLocationProperties(
+    ChkLocationSectionView view, {
+    required int recordIndex,
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+    required int stringId,
+    int? elevationFlags,
+  }) {
+    _checkRecordIndex(recordIndex, view.locations.length);
+    _checkUnsigned(left, 0xffffffff, 'left');
+    _checkUnsigned(top, 0xffffffff, 'top');
+    _checkUnsigned(right, 0xffffffff, 'right');
+    _checkUnsigned(bottom, 0xffffffff, 'bottom');
+    _checkUnsigned(stringId, 0xffff, 'stringId');
+    if (elevationFlags != null) {
+      _checkUnsigned(elevationFlags, 0xffff, 'elevationFlags');
+    }
+    final payload = view.rawSection.payload;
+    final offset = recordIndex * ChkLocation.recordLength;
+    final data = ByteData.sublistView(payload)
+      ..setUint32(offset, left, Endian.little)
+      ..setUint32(offset + 4, top, Endian.little)
+      ..setUint32(offset + 8, right, Endian.little)
+      ..setUint32(offset + 12, bottom, Endian.little)
+      ..setUint16(offset + 16, stringId, Endian.little);
+    if (elevationFlags != null) {
+      data.setUint16(offset + 18, elevationFlags, Endian.little);
+    }
+    return view.rawSection.withPayload(payload);
+  }
+
   RawChkSection deleteUnits(
     ChkUnitSectionView view,
     Iterable<int> recordIndices,

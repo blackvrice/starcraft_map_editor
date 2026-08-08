@@ -240,8 +240,13 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
   바이트 보존, 한 Apply당 한 Undo 단계와 선택 identity 유지
 - 숫자 파싱, 맵 경계, unsigned 필드 폭, 0~100 비율, 두다드 enabled 0/1 오류의
   필드별 표시와 유효하지 않은 Apply의 세션 비변경
-- 단일 선택 편집, 다중 선택 요약, 잠금/제한 상태 비활성, 로케이션 읽기 전용
-  Inspector 위젯 연결
+- 단일 선택 편집, 다중 선택 요약, 잠금/제한 상태 비활성 Inspector 위젯 연결
+- 첫 빈 `MRGN` 슬롯 드래그 생성, 고정 ID·기본 elevation flags·인접 슬롯 보존,
+  생성 모드의 자동 종료·Escape 취소와 한 단계 Undo
+- 로케이션 경계 유효성 검사와 이름 copy-on-write append, 기존 문자열·공유
+  offset·미참조 꼬리 바이트 보존, `MRGN`+문자열 섹션의 단일 Undo/Redo
+- 중복·누락·손상 문자열 표에서는 이름만 비활성화되고 경계 편집은 유지되는지와
+  UTF-8 바이트 길이·null 바이트·`STR `/`STRx` count/offset 한계 거부
 
 ### StarCraft 데이터 자산
 

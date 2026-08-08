@@ -460,6 +460,11 @@ class _EditorShellState extends State<EditorShell> {
             widget.objectPaletteController.state.isPlacementActive
         ? widget.objectPaletteController.cancelPlacement
         : null;
+    final cancelLocationCreation =
+        _workspaceView == _WorkspaceView.map &&
+            widget.objectEditingController.state.isCreatingLocation
+        ? widget.objectEditingController.cancelLocationCreation
+        : null;
     final starCraftDataAssetState =
         widget.starCraftDataAssetSettingsController.state;
     final terrainTileTextureState = widget.terrainTileTextureController.state;
@@ -514,9 +519,11 @@ class _EditorShellState extends State<EditorShell> {
       shortcuts[const SingleActivator(LogicalKeyboardKey.delete)] =
           deleteObjects;
     }
-    if (cancelObjectPlacement != null) {
-      shortcuts[const SingleActivator(LogicalKeyboardKey.escape)] =
-          cancelObjectPlacement;
+    if (cancelObjectPlacement != null || cancelLocationCreation != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.escape)] = () {
+        cancelObjectPlacement?.call();
+        cancelLocationCreation?.call();
+      };
     }
 
     return CallbackShortcuts(
@@ -979,6 +986,7 @@ class _EditorWorkspace extends StatelessWidget {
                     paletteController: objectPaletteController,
                     onLayerActivated: (layer) {
                       objectPaletteController.cancelPlacement();
+                      objectEditingController.cancelLocationCreation();
                       mapLayerController.setActiveLayer(layer);
                       if (layer != MapLayerType.terrain) {
                         terrainEditingController.setTool(
@@ -1580,6 +1588,12 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         icon: Icons.add_location_alt_outlined,
                         value: 'Place ${entry.label} · Esc cancel',
                       ),
+                    if (objectEditingController.state.isCreatingLocation)
+                      const _MapCanvasMetadata(
+                        key: Key('location-creation-active'),
+                        icon: Icons.crop_free_rounded,
+                        value: 'Drag new location · Esc cancel',
+                      ),
                     if (blockingCount > 0 || warningCount > 0)
                       _MapCanvasMetadata(
                         icon: Icons.report_problem_outlined,
@@ -1624,6 +1638,20 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     onRedo: objectEditingController.canRedo
                         ? objectEditingController.redo
                         : null,
+                    showLocationCreation:
+                        layerState.activeLayer == MapLayerType.locations,
+                    locationCreationActive:
+                        objectEditingController.state.isCreatingLocation,
+                    canCreateLocation:
+                        objectEditingController.canCreateLocation,
+                    onToggleLocationCreation: () {
+                      if (objectEditingController.state.isCreatingLocation) {
+                        objectEditingController.cancelLocationCreation();
+                      } else {
+                        objectPaletteController.cancelPlacement();
+                        objectEditingController.startLocationCreation();
+                      }
+                    },
                   ),
               ],
             ),
@@ -1646,7 +1674,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     editingTool: editingState.tool,
                     selectedTile: selectedTerrainTile,
                     layerScene: layerScene,
-                    isObjectPlacementActive: paletteState.isPlacementActive,
+                    isObjectPlacementActive:
+                        paletteState.isPlacementActive ||
+                        objectEditingController.state.isCreatingLocation,
                     onSelectionRequested:
                         editingState.tool == TerrainEditingTool.select
                         ? (request) {
@@ -1655,6 +1685,11 @@ class _OpenedMapWorkspace extends StatelessWidget {
                                 pixelX: request.coordinate.pixelX,
                                 pixelY: request.coordinate.pixelY,
                               );
+                              return;
+                            }
+                            if (objectEditingController
+                                .state
+                                .isCreatingLocation) {
                               return;
                             }
                             final selection = mapLayerController.selectAt(
@@ -1678,15 +1713,26 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     onSelectionRegionRequested:
                         editingState.tool == TerrainEditingTool.select &&
                             !paletteState.isPlacementActive
-                        ? (request) => mapLayerController.selectRegion(
-                            session: session,
-                            region: request.region,
-                            additive: request.additive,
-                          )
+                        ? (request) {
+                            if (objectEditingController
+                                .state
+                                .isCreatingLocation) {
+                              objectEditingController.createLocation(
+                                request.region,
+                              );
+                            } else {
+                              mapLayerController.selectRegion(
+                                session: session,
+                                region: request.region,
+                                additive: request.additive,
+                              );
+                            }
+                          }
                         : null,
                     onSelectedObjectsMoved:
                         editingState.tool == TerrainEditingTool.select &&
                             !paletteState.isPlacementActive &&
+                            !objectEditingController.state.isCreatingLocation &&
                             objectEditingController.canEditSelection
                         ? (request) => objectEditingController.moveSelection(
                             dx: request.dx,
@@ -1766,6 +1812,10 @@ class _ObjectEditingToolbar extends StatelessWidget {
     required this.onDelete,
     required this.onUndo,
     required this.onRedo,
+    required this.showLocationCreation,
+    required this.locationCreationActive,
+    required this.canCreateLocation,
+    required this.onToggleLocationCreation,
   });
 
   final int selectedCount;
@@ -1775,6 +1825,10 @@ class _ObjectEditingToolbar extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onUndo;
   final VoidCallback? onRedo;
+  final bool showLocationCreation;
+  final bool locationCreationActive;
+  final bool canCreateLocation;
+  final VoidCallback onToggleLocationCreation;
 
   @override
   Widget build(BuildContext context) {
@@ -1784,6 +1838,17 @@ class _ObjectEditingToolbar extends StatelessWidget {
       runSpacing: 7,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        if (showLocationCreation)
+          _TerrainToolButton(
+            key: const Key('object-create-location'),
+            label: locationCreationActive ? 'Cancel location' : 'New location',
+            icon: locationCreationActive
+                ? Icons.close_rounded
+                : Icons.crop_free_rounded,
+            selected: locationCreationActive,
+            enabled: locationCreationActive || canCreateLocation,
+            onPressed: onToggleLocationCreation,
+          ),
         _TerrainToolButton(
           key: const Key('object-delete'),
           label: 'Delete',
@@ -2632,7 +2697,10 @@ class _ObjectPropertiesInspectorState
   Widget build(BuildContext context) {
     final properties = widget.properties;
     if (properties is LocationObjectProperties) {
-      return _LocationPropertiesInspector(properties: properties);
+      return _LocationPropertiesInspector(
+        properties: properties,
+        controller: widget.controller,
+      );
     }
     final canEdit = widget.controller.canEditProperties;
     return ListView(
@@ -2841,13 +2909,84 @@ class _ObjectPropertiesInspectorState
   }
 }
 
-class _LocationPropertiesInspector extends StatelessWidget {
-  const _LocationPropertiesInspector({required this.properties});
+class _LocationPropertiesInspector extends StatefulWidget {
+  const _LocationPropertiesInspector({
+    required this.properties,
+    required this.controller,
+  });
 
   final LocationObjectProperties properties;
+  final ObjectEditingController controller;
+
+  @override
+  State<_LocationPropertiesInspector> createState() =>
+      _LocationPropertiesInspectorState();
+}
+
+class _LocationPropertiesInspectorState
+    extends State<_LocationPropertiesInspector> {
+  late TextEditingController _nameController;
+  final Map<String, TextEditingController> _bounds = {};
+  Map<String, String> _errors = const {};
+  String? _message;
+  late String _signature;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(_LocationPropertiesInspector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_locationSignature(widget.properties) != _signature) {
+      _disposeControllers();
+      _load();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _load() {
+    final properties = widget.properties;
+    _nameController = TextEditingController(text: properties.name);
+    _bounds
+      ..clear()
+      ..addAll({
+        ObjectPropertyFields.left: TextEditingController(
+          text: '${properties.left}',
+        ),
+        ObjectPropertyFields.top: TextEditingController(
+          text: '${properties.top}',
+        ),
+        ObjectPropertyFields.right: TextEditingController(
+          text: '${properties.right}',
+        ),
+        ObjectPropertyFields.bottom: TextEditingController(
+          text: '${properties.bottom}',
+        ),
+      });
+    _signature = _locationSignature(properties);
+    _errors = const {};
+    _message = null;
+  }
+
+  void _disposeControllers() {
+    _nameController.dispose();
+    for (final controller in _bounds.values) {
+      controller.dispose();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final properties = widget.properties;
+    final canEdit = widget.controller.canEditProperties;
     return ListView(
       key: const Key('location-properties-inspector'),
       padding: const EdgeInsets.all(12),
@@ -2858,25 +2997,135 @@ class _LocationPropertiesInspector extends StatelessWidget {
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 14),
-        _InspectorValue(
-          label: 'Bounds',
-          value:
-              '${properties.left}, ${properties.top} → ${properties.right}, ${properties.bottom}',
+        TextField(
+          key: const Key('location-inspector-name'),
+          controller: _nameController,
+          enabled: canEdit && properties.canRename,
+          style: const TextStyle(fontSize: 11),
+          decoration: InputDecoration(
+            labelText: 'Name',
+            errorText: _errors[ObjectPropertyFields.name],
+            isDense: true,
+          ),
         ),
+        const SizedBox(height: 9),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _boundField(ObjectPropertyFields.left, 'Left')),
+            const SizedBox(width: 7),
+            Expanded(child: _boundField(ObjectPropertyFields.top, 'Top')),
+          ],
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: _boundField(ObjectPropertyFields.right, 'Right')),
+            const SizedBox(width: 7),
+            Expanded(child: _boundField(ObjectPropertyFields.bottom, 'Bottom')),
+          ],
+        ),
+        FilledButton.icon(
+          key: const Key('location-inspector-apply'),
+          onPressed: canEdit ? _apply : null,
+          icon: const Icon(Icons.check_rounded, size: 16),
+          label: const Text('Apply location'),
+        ),
+        if (_message != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _message!,
+            key: const Key('location-inspector-message'),
+            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 10),
+          ),
+        ],
+        const Divider(height: 24),
         _InspectorValue(label: 'String ID', value: '${properties.stringId}'),
         _InspectorValue(
           label: 'Elevation flags',
           value: _hex(properties.elevationFlags, 4),
         ),
-        const _InspectorNotice(
-          icon: Icons.info_outline_rounded,
-          message:
-              'Location resize and name editing are read-only here and are implemented in the next M6 task.',
-        ),
+        if (!properties.canRename)
+          _InspectorNotice(
+            icon: Icons.info_outline_rounded,
+            message:
+                properties.renameUnavailableReason ??
+                'Location naming is unavailable for this map.',
+          )
+        else
+          const _InspectorNotice(
+            icon: Icons.shield_outlined,
+            message:
+                'Renaming allocates a new string ID so shared map strings remain unchanged.',
+          ),
       ],
     );
   }
+
+  Widget _boundField(String field, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: TextField(
+        key: Key('location-inspector-$field'),
+        controller: _bounds[field],
+        enabled: widget.controller.canEditProperties,
+        keyboardType: TextInputType.number,
+        style: const TextStyle(fontSize: 11),
+        decoration: InputDecoration(
+          labelText: label,
+          errorText: _errors[field],
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
+  void _apply() {
+    final values = <String, int>{};
+    final parseErrors = <String, String>{};
+    for (final entry in _bounds.entries) {
+      final value = int.tryParse(entry.value.text.trim());
+      if (value == null) {
+        parseErrors[entry.key] = 'Enter a whole number.';
+      } else {
+        values[entry.key] = value;
+      }
+    }
+    if (parseErrors.isNotEmpty) {
+      setState(() {
+        _errors = parseErrors;
+        _message = null;
+      });
+      return;
+    }
+    final result = widget.controller.updateProperties(
+      LocationObjectPropertyUpdate(
+        object: widget.properties.object,
+        left: values[ObjectPropertyFields.left]!,
+        top: values[ObjectPropertyFields.top]!,
+        right: values[ObjectPropertyFields.right]!,
+        bottom: values[ObjectPropertyFields.bottom]!,
+        name: _nameController.text,
+      ),
+    );
+    setState(() {
+      _errors = result.errors;
+      _message = switch (result.status) {
+        ObjectPropertyEditStatus.applied => 'Location applied.',
+        ObjectPropertyEditStatus.noChanges => 'No location changes.',
+        ObjectPropertyEditStatus.invalid => 'Fix the highlighted fields.',
+        ObjectPropertyEditStatus.unavailable =>
+          'Location editing is no longer available.',
+      };
+    });
+  }
 }
+
+String _locationSignature(LocationObjectProperties properties) =>
+    '${properties.object.sectionIndex}:${properties.object.recordIndex}:'
+    '${properties.left},${properties.top},${properties.right},'
+    '${properties.bottom},${properties.stringId},${properties.elevationFlags}:'
+    '${properties.name}:${properties.canRename}';
 
 class _InspectorNotice extends StatelessWidget {
   const _InspectorNotice({required this.icon, required this.message});
