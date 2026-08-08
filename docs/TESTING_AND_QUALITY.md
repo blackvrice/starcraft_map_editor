@@ -57,6 +57,7 @@
 - `MapArchiveGateway`로 아카이브 열기/쓰기
 - 임시 출력 → 재검증 → 승격
 - 크기·UTC 수정 시각·SHA-256 fingerprint와 외부 변경 감지
+- 객체·로케이션 편집 → Undo/Redo → Save As → 출력 재열기
 - euddraft 가짜 프로세스 성공/실패/취소
 - 한글, 공백, 긴 경로
 
@@ -65,6 +66,12 @@
 fingerprint, 가짜 아카이브 helper의 최소 유효 CHK, 최종 승격과 컨트롤러
 상태까지 연결하며 실패·취소 시 출력 부재와 작업 공간 정리를 확인한다. 별도
 Windows 릴리스 후보에서는 실제 도구 스모크 테스트를 실행한다.
+
+`test/integration/object_editing_roundtrip_test.dart`는 자체 조립 CHK와 메모리
+gateway를 사용해 Open Map부터 객체 네 종류 편집, 배치, 로케이션 이름의
+Undo/Redo, 검증형 Save As, 저장본 명시적 재열기까지 연결한다. 이 흐름은 입력
+snapshot 불변, 섹션 순서와 알 수 없는 섹션, 객체의 미지원 바이트, 문자열 표의
+기존 entry와 미참조 꼬리 바이트가 그대로 유지되는지도 검증한다.
 
 ### 위젯 테스트
 
@@ -253,6 +260,9 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
   out-of-range, ambiguous 구분과 active table 비추정
 - 의미 참조 경고의 비차단·raw 비변경, Open/Save 세션 전달과 객체 Apply·Undo 시
   고쳐진 경고 제거·복원
+- 유닛·두다드·스프라이트·로케이션을 한 세션에서 편집하고 Undo/Redo한 뒤 Save
+  As와 명시적 재열기를 거쳐 속성·레코드 순서·원시 바이트·알 수 없는 섹션·문자열
+  꼬리 바이트·입력 snapshot 불변을 함께 확인하는 애플리케이션 통합 왕복
 
 ### StarCraft 데이터 자산
 
