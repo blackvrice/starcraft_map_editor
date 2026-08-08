@@ -230,6 +230,20 @@ Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 �
 않고 선택 슬롯만 비운다. 잠김·숨김·보호·제한 편집 상태와 맵 경계 밖 이동은
 변경 전에 거부한다.
 
+### ObjectPaletteController
+
+`application/editing`의 `ObjectPaletteController`는 현재 세션의 `UNIT`, `DD2 `,
+`THG2` typed view를 레이어·type ID별 `ObjectPaletteEntry`로 묶고 첫 원본
+레코드를 배치 템플릿으로 보관한다. 검색어와 현재 템플릿 선택은 문서 바이트와
+분리된 UI 상태다. Presentation은 이 컨트롤러만 사용하므로 CHK 섹션을 직접
+탐색하거나 임의의 객체 기본값을 만들지 않는다.
+
+배치는 `ObjectEditingController`에 템플릿 참조와 클릭한 StarCraft 픽셀 좌표를
+전달한다. 도메인 편집기는 원본 레코드 전체를 섹션 끝에 복사하고 x/y 필드만
+바꾼다. 적용 후 typed view 재검증, 새 레코드 선택, Undo/Redo 기록은 일반 객체
+편집과 같은 경로를 사용한다. 새 세션에서 존재하지 않는 선택은 자동 해제하며,
+연속 배치 선택 자체는 dirty나 Undo 기록에 포함하지 않는다.
+
 ### MapCanvas
 
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로
@@ -255,6 +269,9 @@ StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상�
 `MapLayerController`에 전달해 단일·추가 선택 정책을 적용한다. 선택 객체에서
 시작한 드래그는 이동 delta와 미리보기만 계산하고 실제 CHK 변경은
 `ObjectEditingController`에 위임한다.
+팔레트 템플릿이 활성화된 동안 단일 클릭 좌표는
+`ObjectPaletteController.placeSelected`에 전달하고 박스 선택과 객체 이동은
+비활성화한다. `Escape`는 문서 변경 없이 배치 모드만 해제한다.
 
 `MapCanvasPainter.paint`는 `dart:developer` Timeline에 맵 크기, zoom, grid
 step, 가시 타일 수와 texture 상태를 남긴다. 테스트·프로파일 harness가 선택적

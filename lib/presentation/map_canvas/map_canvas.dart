@@ -60,6 +60,7 @@ class MapCanvas extends StatefulWidget {
     this.onBrushStrokeCancelled,
     this.onRectangleFilled,
     this.onPaintMeasured,
+    this.isObjectPlacementActive = false,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
     super.key,
@@ -87,6 +88,7 @@ class MapCanvas extends StatefulWidget {
   final VoidCallback? onBrushStrokeCancelled;
   final ValueChanged<TerrainTileRegion>? onRectangleFilled;
   final MapCanvasPaintObserver? onPaintMeasured;
+  final bool isObjectPlacementActive;
   final double contentPadding;
   final double maximumTileExtent;
 
@@ -462,6 +464,9 @@ class _MapCanvasState extends State<MapCanvas> {
   MouseCursor get _cursor {
     if (_activePanPointer != null) {
       return SystemMouseCursors.grabbing;
+    }
+    if (widget.isObjectPlacementActive) {
+      return SystemMouseCursors.copy;
     }
     return switch (widget.editingTool) {
       TerrainEditingTool.select => SystemMouseCursors.precise,

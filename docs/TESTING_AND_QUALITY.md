@@ -231,6 +231,11 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
   섹션의 payload와 순서가 동일함
 - 편집 세션을 Save As하면 변경 `MTXM` 바이트가 재열기 검증을 통과하고
   검증된 출력 세션이 clean으로 채택되며 입력 아카이브 snapshot은 동일함
+- `UNIT`, `DD2 `, `THG2`, `MRGN` 고정 레코드 이동·삭제의 대상 좌표 외 바이트와
+  순서 보존, 로케이션 테이블 길이 보존, 맵 경계 밖 편집 거부
+- 맵 로컬 객체 팔레트의 레이어/type ID 그룹화·개수·검색·잠금 차단
+- 템플릿 배치 시 추가 레코드의 x/y 외 byte-exact 복사, 새 객체 선택,
+  반복 배치와 배치별 Undo/Redo, 위젯의 검색·맵 클릭·Escape 취소 연결
 
 ### StarCraft 데이터 자산
 

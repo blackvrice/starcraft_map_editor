@@ -57,8 +57,17 @@ class ObjectEditingController {
     final selections = _editableSelections;
     return session != null &&
         selections.isNotEmpty &&
-        !session.requiresRestrictedEditing &&
-        !_containsProtectionMarker(session.rawDocument);
+        _isEditableSession(session);
+  }
+
+  bool canPlaceTemplate(MapLayerObjectRef template) {
+    final session = openMapController.state.session;
+    return session != null &&
+        template.layer != MapLayerType.terrain &&
+        template.layer != MapLayerType.locations &&
+        mapLayerController.state.statusOf(template.layer).isSelectable &&
+        _isEditableSession(session) &&
+        _templateExists(session, template);
   }
 
   void synchronizeSession(OpenedMapSession? session) {
@@ -125,6 +134,82 @@ class ObjectEditingController {
       ),
       clearSelection: false,
     );
+    return true;
+  }
+
+  bool duplicateTemplate({
+    required MapLayerObjectRef template,
+    required int pixelX,
+    required int pixelY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !canPlaceTemplate(template) ||
+        !_pointFitsMap(session, pixelX, pixelY)) {
+      return false;
+    }
+    final sectionIndex = template.sectionIndex;
+    final newRecordIndex = switch (template.layer) {
+      MapLayerType.units => _unitSection(session, sectionIndex).units.length,
+      MapLayerType.doodads => _doodadSection(
+        session,
+        sectionIndex,
+      ).doodads.length,
+      MapLayerType.sprites => _spriteSection(
+        session,
+        sectionIndex,
+      ).sprites.length,
+      MapLayerType.terrain || MapLayerType.locations => throw StateError(
+        'This layer cannot use point-object templates.',
+      ),
+    };
+    final replacement = switch (template.layer) {
+      MapLayerType.units => sectionEditor.duplicateUnit(
+        _unitSection(session, sectionIndex),
+        templateRecordIndex: template.recordIndex,
+        x: pixelX,
+        y: pixelY,
+      ),
+      MapLayerType.doodads => sectionEditor.duplicateDoodad(
+        _doodadSection(session, sectionIndex),
+        templateRecordIndex: template.recordIndex,
+        x: pixelX,
+        y: pixelY,
+      ),
+      MapLayerType.sprites => sectionEditor.duplicateSprite(
+        _spriteSection(session, sectionIndex),
+        templateRecordIndex: template.recordIndex,
+        x: pixelX,
+        y: pixelY,
+      ),
+      MapLayerType.terrain || MapLayerType.locations => throw StateError(
+        'This layer cannot use point-object templates.',
+      ),
+    };
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label:
+            'Place ${template.layer.label.substring(0, template.layer.label.length - 1)}',
+        beforeSections: {
+          sectionIndex: session.rawDocument.sections[sectionIndex],
+        },
+        afterSections: {sectionIndex: replacement},
+      ),
+      clearSelection: true,
+    );
+    final editedSession = openMapController.state.session!;
+    final placedObject = MapLayerObjectRef(
+      layer: template.layer,
+      sectionIndex: sectionIndex,
+      recordIndex: newRecordIndex,
+    );
+    mapLayerController
+      ..setActiveLayer(template.layer)
+      ..selectObject(session: editedSession, object: placedObject);
+    final selected = mapLayerController.state.selection;
+    if (selected?.object != placedObject) {
+      throw StateError('The newly placed object could not be selected.');
+    }
     return true;
   }
 
@@ -281,6 +366,41 @@ class ObjectEditingController {
     return true;
   }
 
+  bool _pointFitsMap(OpenedMapSession session, int x, int y) {
+    if (session.metadataViews.dimensions.length != 1) {
+      return false;
+    }
+    final dimensions = session.metadataViews.dimensions.single;
+    return x >= 0 &&
+        y >= 0 &&
+        x < dimensions.width * 32 &&
+        y < dimensions.height * 32;
+  }
+
+  bool _templateExists(OpenedMapSession session, MapLayerObjectRef template) {
+    return switch (template.layer) {
+      MapLayerType.units => session.objectViews.unitSections.any(
+        (section) =>
+            section.sectionIndex == template.sectionIndex &&
+            template.recordIndex >= 0 &&
+            template.recordIndex < section.units.length,
+      ),
+      MapLayerType.doodads => session.objectViews.doodadSections.any(
+        (section) =>
+            section.sectionIndex == template.sectionIndex &&
+            template.recordIndex >= 0 &&
+            template.recordIndex < section.doodads.length,
+      ),
+      MapLayerType.sprites => session.objectViews.spriteSections.any(
+        (section) =>
+            section.sectionIndex == template.sectionIndex &&
+            template.recordIndex >= 0 &&
+            template.recordIndex < section.sprites.length,
+      ),
+      MapLayerType.terrain || MapLayerType.locations => false,
+    };
+  }
+
   void _applyAndRecord(
     _ObjectEditCommand command, {
     required bool clearSelection,
@@ -360,6 +480,10 @@ class ObjectEditingController {
 
   bool _containsProtectionMarker(RawChkDocument document) =>
       document.sections.any((section) => section.isEuddraftProtectionMarker);
+
+  bool _isEditableSession(OpenedMapSession session) =>
+      !session.requiresRestrictedEditing &&
+      !_containsProtectionMarker(session.rawDocument);
 
   void _emit() {
     _state = ObjectEditingState(

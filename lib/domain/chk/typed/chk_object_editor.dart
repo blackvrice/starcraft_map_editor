@@ -91,6 +91,54 @@ class ChkObjectSectionEditor {
     return view.rawSection.withPayload(payload);
   }
 
+  RawChkSection duplicateUnit(
+    ChkUnitSectionView view, {
+    required int templateRecordIndex,
+    required int x,
+    required int y,
+  }) => _appendPointRecord(
+    section: view.rawSection,
+    recordCount: view.units.length,
+    recordLength: ChkUnitPlacement.recordLength,
+    xOffset: 4,
+    yOffset: 6,
+    templateRecordIndex: templateRecordIndex,
+    x: x,
+    y: y,
+  );
+
+  RawChkSection duplicateDoodad(
+    ChkDoodadSectionView view, {
+    required int templateRecordIndex,
+    required int x,
+    required int y,
+  }) => _appendPointRecord(
+    section: view.rawSection,
+    recordCount: view.doodads.length,
+    recordLength: ChkDoodadPlacement.recordLength,
+    xOffset: 2,
+    yOffset: 4,
+    templateRecordIndex: templateRecordIndex,
+    x: x,
+    y: y,
+  );
+
+  RawChkSection duplicateSprite(
+    ChkSpriteSectionView view, {
+    required int templateRecordIndex,
+    required int x,
+    required int y,
+  }) => _appendPointRecord(
+    section: view.rawSection,
+    recordCount: view.sprites.length,
+    recordLength: ChkSpritePlacement.recordLength,
+    xOffset: 2,
+    yOffset: 4,
+    templateRecordIndex: templateRecordIndex,
+    x: x,
+    y: y,
+  );
+
   RawChkSection deleteUnits(
     ChkUnitSectionView view,
     Iterable<int> recordIndices,
@@ -177,6 +225,34 @@ class ChkObjectSectionEditor {
         );
     }
     return section.withPayload(payload);
+  }
+
+  RawChkSection _appendPointRecord({
+    required RawChkSection section,
+    required int recordCount,
+    required int recordLength,
+    required int xOffset,
+    required int yOffset,
+    required int templateRecordIndex,
+    required int x,
+    required int y,
+  }) {
+    _checkRecordIndex(templateRecordIndex, recordCount);
+    RangeError.checkValueInInterval(x, 0, 0xffff, 'x');
+    RangeError.checkValueInInterval(y, 0, 0xffff, 'y');
+    final source = section.payload;
+    final templateOffset = templateRecordIndex * recordLength;
+    final record = Uint8List.fromList(
+      Uint8List.sublistView(
+        source,
+        templateOffset,
+        templateOffset + recordLength,
+      ),
+    );
+    ByteData.sublistView(record)
+      ..setUint16(xOffset, x, Endian.little)
+      ..setUint16(yOffset, y, Endian.little);
+    return section.withPayload([...source, ...record]);
   }
 
   RawChkSection _removeRecords({

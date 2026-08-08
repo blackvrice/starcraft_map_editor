@@ -8,6 +8,7 @@ import '../../application/documents/open_map_controller.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
 import '../../application/editing/object_editing_controller.dart';
+import '../../application/editing/object_palette_controller.dart';
 import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
@@ -41,6 +42,7 @@ class EditorShell extends StatefulWidget {
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
+    required this.objectPaletteController,
     required this.terrainTileTextureController,
     super.key,
   });
@@ -57,6 +59,7 @@ class EditorShell extends StatefulWidget {
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
+  final ObjectPaletteController objectPaletteController;
   final TerrainTileTextureController terrainTileTextureController;
 
   @override
@@ -74,6 +77,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
   late StreamSubscription<MapLayerState> _mapLayerSubscription;
   late StreamSubscription<ObjectEditingState> _objectEditingSubscription;
+  late StreamSubscription<ObjectPaletteState> _objectPaletteSubscription;
   late StreamSubscription<TerrainTileTextureState>
   _terrainTileTextureSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
@@ -96,6 +100,9 @@ class _EditorShellState extends State<EditorShell> {
     widget.objectEditingController.synchronizeSession(
       widget.openMapController.state.session,
     );
+    widget.objectPaletteController.synchronizeSession(
+      widget.openMapController.state.session,
+    );
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
@@ -109,6 +116,9 @@ class _EditorShellState extends State<EditorShell> {
     _mapLayerSubscription = _listenForMapLayers(widget.mapLayerController);
     _objectEditingSubscription = _listenForObjectEditing(
       widget.objectEditingController,
+    );
+    _objectPaletteSubscription = _listenForObjectPalette(
+      widget.objectPaletteController,
     );
     _terrainTileTextureSubscription = _listenForTerrainTileTextures(
       widget.terrainTileTextureController,
@@ -178,6 +188,15 @@ class _EditorShellState extends State<EditorShell> {
         widget.objectEditingController,
       );
     }
+    if (oldWidget.objectPaletteController != widget.objectPaletteController) {
+      unawaited(_objectPaletteSubscription.cancel());
+      widget.objectPaletteController.synchronizeSession(
+        widget.openMapController.state.session,
+      );
+      _objectPaletteSubscription = _listenForObjectPalette(
+        widget.objectPaletteController,
+      );
+    }
     if (oldWidget.terrainTileTextureController !=
         widget.terrainTileTextureController) {
       unawaited(_terrainTileTextureSubscription.cancel());
@@ -205,6 +224,7 @@ class _EditorShellState extends State<EditorShell> {
           widget.terrainEditingController.synchronizeSession(state.session);
           widget.mapLayerController.synchronizeSession(state.session);
           widget.objectEditingController.synchronizeSession(state.session);
+          widget.objectPaletteController.synchronizeSession(state.session);
         });
         _synchronizeTerrainTextures();
       }
@@ -294,6 +314,16 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  StreamSubscription<ObjectPaletteState> _listenForObjectPalette(
+    ObjectPaletteController controller,
+  ) {
+    return controller.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   StreamSubscription<TerrainTileTextureState> _listenForTerrainTileTextures(
     TerrainTileTextureController controller,
   ) {
@@ -329,6 +359,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_terrainEditingSubscription.cancel());
     unawaited(_mapLayerSubscription.cancel());
     unawaited(_objectEditingSubscription.cancel());
+    unawaited(_objectPaletteSubscription.cancel());
     unawaited(_terrainTileTextureSubscription.cancel());
     widget.terrainTileTextureController.clear();
     super.dispose();
@@ -423,6 +454,11 @@ class _EditorShellState extends State<EditorShell> {
             widget.objectEditingController.canEditSelection
         ? widget.objectEditingController.deleteSelection
         : null;
+    final cancelObjectPlacement =
+        _workspaceView == _WorkspaceView.map &&
+            widget.objectPaletteController.state.isPlacementActive
+        ? widget.objectPaletteController.cancelPlacement
+        : null;
     final starCraftDataAssetState =
         widget.starCraftDataAssetSettingsController.state;
     final terrainTileTextureState = widget.terrainTileTextureController.state;
@@ -476,6 +512,10 @@ class _EditorShellState extends State<EditorShell> {
     if (deleteObjects != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.delete)] =
           deleteObjects;
+    }
+    if (cancelObjectPlacement != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.escape)] =
+          cancelObjectPlacement;
     }
 
     return CallbackShortcuts(
@@ -542,6 +582,8 @@ class _EditorShellState extends State<EditorShell> {
                             mapLayerController: widget.mapLayerController,
                             objectEditingController:
                                 widget.objectEditingController,
+                            objectPaletteController:
+                                widget.objectPaletteController,
                             terrainTileTextureState: terrainTileTextureState,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
@@ -882,6 +924,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
+    required this.objectPaletteController,
     required this.terrainTileTextureState,
     required this.workspaceView,
     required this.onShowMap,
@@ -899,6 +942,7 @@ class _EditorWorkspace extends StatelessWidget {
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
+  final ObjectPaletteController objectPaletteController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
@@ -920,7 +964,7 @@ class _EditorWorkspace extends StatelessWidget {
                 ? 'Project / Sources'
                 : session == null
                 ? 'Project / Layers'
-                : 'Map Layers',
+                : 'Layers / Object Palette',
             child: showingEud
                 ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
                 : session == null
@@ -928,10 +972,12 @@ class _EditorWorkspace extends StatelessWidget {
                     icon: Icons.layers_outlined,
                     message: 'No map layers',
                   )
-                : _MapLayerList(
+                : _MapLayersAndPalette(
                     session: session,
-                    controller: mapLayerController,
+                    layerController: mapLayerController,
+                    paletteController: objectPaletteController,
                     onLayerActivated: (layer) {
+                      objectPaletteController.cancelPlacement();
                       mapLayerController.setActiveLayer(layer);
                       if (layer != MapLayerType.terrain) {
                         terrainEditingController.setTool(
@@ -967,6 +1013,7 @@ class _EditorWorkspace extends StatelessWidget {
                   terrainEditingController: terrainEditingController,
                   mapLayerController: mapLayerController,
                   objectEditingController: objectEditingController,
+                  objectPaletteController: objectPaletteController,
                   terrainTileTextureState: terrainTileTextureState,
                   workspaceView: workspaceView,
                 ),
@@ -1244,6 +1291,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
+    required this.objectPaletteController,
     required this.terrainTileTextureState,
     required this.workspaceView,
   });
@@ -1259,6 +1307,7 @@ class _MapWorkspace extends StatelessWidget {
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
+  final ObjectPaletteController objectPaletteController;
   final TerrainTileTextureState terrainTileTextureState;
   final _WorkspaceView workspaceView;
 
@@ -1282,6 +1331,7 @@ class _MapWorkspace extends StatelessWidget {
         terrainEditingController: terrainEditingController,
         mapLayerController: mapLayerController,
         objectEditingController: objectEditingController,
+        objectPaletteController: objectPaletteController,
         terrainTileTextureState: terrainTileTextureState,
       );
     }
@@ -1375,6 +1425,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
+    required this.objectPaletteController,
     required this.terrainTileTextureState,
   });
 
@@ -1383,6 +1434,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
+  final ObjectPaletteController objectPaletteController;
   final TerrainTileTextureState terrainTileTextureState;
 
   @override
@@ -1407,6 +1459,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
         : null;
     final layerState = mapLayerController.state;
     final layerScene = mapLayerController.sceneFor(session);
+    final paletteState = objectPaletteController.state;
     final terrainLayer = layerState.statusOf(MapLayerType.terrain);
     final editingState = terrainEditingController.state;
     final canSelectTiles =
@@ -1516,6 +1569,12 @@ class _OpenedMapWorkspace extends StatelessWidget {
                       value:
                           'Pick ${layerState.selectionPriority.map((layer) => layer.label).join(' → ')}',
                     ),
+                    if (paletteState.selectedEntry case final entry?)
+                      _MapCanvasMetadata(
+                        key: const Key('object-placement-active'),
+                        icon: Icons.add_location_alt_outlined,
+                        value: 'Place ${entry.label} · Esc cancel',
+                      ),
                     if (blockingCount > 0 || warningCount > 0)
                       _MapCanvasMetadata(
                         icon: Icons.report_problem_outlined,
@@ -1582,9 +1641,17 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     editingTool: editingState.tool,
                     selectedTile: selectedTerrainTile,
                     layerScene: layerScene,
+                    isObjectPlacementActive: paletteState.isPlacementActive,
                     onSelectionRequested:
                         editingState.tool == TerrainEditingTool.select
                         ? (request) {
+                            if (paletteState.isPlacementActive) {
+                              objectPaletteController.placeSelected(
+                                pixelX: request.coordinate.pixelX,
+                                pixelY: request.coordinate.pixelY,
+                              );
+                              return;
+                            }
                             final selection = mapLayerController.selectAt(
                               session: session,
                               pixelX: request.coordinate.pixelX,
@@ -1604,7 +1671,8 @@ class _OpenedMapWorkspace extends StatelessWidget {
                           }
                         : null,
                     onSelectionRegionRequested:
-                        editingState.tool == TerrainEditingTool.select
+                        editingState.tool == TerrainEditingTool.select &&
+                            !paletteState.isPlacementActive
                         ? (request) => mapLayerController.selectRegion(
                             session: session,
                             region: request.region,
@@ -1613,6 +1681,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         : null,
                     onSelectedObjectsMoved:
                         editingState.tool == TerrainEditingTool.select &&
+                            !paletteState.isPlacementActive &&
                             objectEditingController.canEditSelection
                         ? (request) => objectEditingController.moveSelection(
                             dx: request.dx,
@@ -1958,6 +2027,197 @@ class _SessionStatusChip extends StatelessWidget {
           color: color,
           fontSize: 12,
           fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _MapLayersAndPalette extends StatelessWidget {
+  const _MapLayersAndPalette({
+    required this.session,
+    required this.layerController,
+    required this.paletteController,
+    required this.onLayerActivated,
+  });
+
+  final OpenedMapSession session;
+  final MapLayerController layerController;
+  final ObjectPaletteController paletteController;
+  final ValueChanged<MapLayerType> onLayerActivated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 3,
+          child: _MapLayerList(
+            session: session,
+            controller: layerController,
+            onLayerActivated: onLayerActivated,
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          flex: 2,
+          child: _ObjectPalettePanel(controller: paletteController),
+        ),
+      ],
+    );
+  }
+}
+
+class _ObjectPalettePanel extends StatelessWidget {
+  const _ObjectPalettePanel({required this.controller});
+
+  final ObjectPaletteController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = controller.state;
+    final selectedEntry = state.selectedEntry;
+    return Column(
+      key: const Key('object-palette-panel'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 38,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.category_outlined,
+                  size: 16,
+                  color: Color(0xFF8DB4FF),
+                ),
+                const SizedBox(width: 7),
+                const Expanded(
+                  child: Text(
+                    'Object Palette',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                if (selectedEntry != null)
+                  IconButton(
+                    key: const Key('object-palette-cancel'),
+                    tooltip: 'Cancel placement (Esc)',
+                    onPressed: controller.cancelPlacement,
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 16,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 7),
+          child: SizedBox(
+            height: 34,
+            child: TextField(
+              key: const Key('object-palette-search'),
+              onChanged: controller.setQuery,
+              style: const TextStyle(fontSize: 11),
+              decoration: const InputDecoration(
+                hintText: 'Search type or #id',
+                prefixIcon: Icon(Icons.search_rounded, size: 16),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ),
+        if (selectedEntry != null)
+          Container(
+            key: const Key('object-palette-placement-hint'),
+            margin: const EdgeInsets.fromLTRB(8, 0, 8, 7),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1D3049),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              '${selectedEntry.label}: click map to place',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Color(0xFFA9C7FF), fontSize: 10),
+            ),
+          ),
+        Expanded(
+          child: state.entries.isEmpty
+              ? const _ObjectPaletteMessage(
+                  message: 'No map-local object templates.',
+                )
+              : state.visibleEntries.isEmpty
+              ? const _ObjectPaletteMessage(message: 'No matching templates.')
+              : ListView.builder(
+                  key: const Key('object-palette-list'),
+                  padding: const EdgeInsets.only(bottom: 6),
+                  itemCount: state.visibleEntries.length,
+                  itemBuilder: (context, index) {
+                    final entry = state.visibleEntries[index];
+                    final canSelect = controller.canSelectEntry(entry);
+                    final selected = selectedEntry?.id == entry.id;
+                    return Material(
+                      color: selected
+                          ? const Color(0xFF233A59)
+                          : Colors.transparent,
+                      child: ListTile(
+                        key: Key(
+                          'object-palette-${entry.layer.name}-${entry.typeId}',
+                        ),
+                        dense: true,
+                        enabled: canSelect,
+                        selected: selected,
+                        minLeadingWidth: 18,
+                        horizontalTitleGap: 6,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                        ),
+                        leading: Icon(_iconForLayer(entry.layer), size: 16),
+                        title: Text(
+                          entry.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                        trailing: Text(
+                          '×${entry.count}',
+                          style: const TextStyle(
+                            color: Color(0xFF7F8BA0),
+                            fontSize: 9,
+                          ),
+                        ),
+                        onTap: canSelect
+                            ? () => controller.selectEntry(entry)
+                            : null,
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ObjectPaletteMessage extends StatelessWidget {
+  const _ObjectPaletteMessage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Color(0xFF7F8BA0), fontSize: 10),
         ),
       ),
     );

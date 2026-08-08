@@ -10,6 +10,7 @@ import 'package:starcraft_map_editor/application/commands/editor_command_dispatc
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
@@ -732,10 +733,15 @@ void main() {
       openMapController: openMapController,
       mapLayerController: mapLayerController,
     );
+    final objectPaletteController = ObjectPaletteController(
+      objectEditingController: objectEditingController,
+      mapLayerController: mapLayerController,
+    );
     addTearDown(openMapController.dispose);
     addTearDown(progressController.dispose);
     addTearDown(mapLayerController.dispose);
     addTearDown(objectEditingController.dispose);
+    addTearDown(objectPaletteController.dispose);
 
     await tester.pumpWidget(
       _createTestApp(
@@ -745,6 +751,7 @@ void main() {
         settingsStore: settingsStore,
         mapLayerController: mapLayerController,
         objectEditingController: objectEditingController,
+        objectPaletteController: objectPaletteController,
       ),
     );
     await tester.tap(find.byKey(const Key('open-map-button')));
@@ -860,6 +867,41 @@ void main() {
           .x,
       96,
     );
+
+    expect(find.text('Unit type 1'), findsOneWidget);
+    expect(find.text('Doodad type 1'), findsOneWidget);
+    expect(find.text('Sprite type 1'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('object-palette-search')),
+      'unit #1',
+    );
+    await tester.pump();
+    expect(find.text('Unit type 1'), findsOneWidget);
+    expect(find.text('Doodad type 1'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const Key('object-palette-units-1')),
+      warnIfMissed: false,
+    );
+    await tester.pump();
+    expect(objectPaletteController.state.isPlacementActive, isTrue);
+    expect(find.byKey(const Key('object-placement-active')), findsOneWidget);
+    expect(
+      tester.widget<MapCanvas>(find.byType(MapCanvas)).isObjectPlacementActive,
+      isTrue,
+    );
+
+    await _tapMapPixel(tester, pixelX: 128, pixelY: 128);
+    final placedUnits =
+        openMapController.state.session!.objectViews.unitSections.single.units;
+    expect(placedUnits, hasLength(2));
+    expect((placedUnits.last.x, placedUnits.last.y), (128, 128));
+    expect(objectPaletteController.state.isPlacementActive, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(objectPaletteController.state.isPlacementActive, isFalse);
+    expect(find.byKey(const Key('object-placement-active')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
@@ -905,6 +947,7 @@ Widget _createTestApp({
   TerrainEditingController? terrainEditingController,
   MapLayerController? mapLayerController,
   ObjectEditingController? objectEditingController,
+  ObjectPaletteController? objectPaletteController,
   TerrainTileTextureController? terrainTileTextureController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
@@ -939,6 +982,12 @@ Widget _createTestApp({
       objectEditingController ??
       ObjectEditingController(
         openMapController: resolvedOpenMapController,
+        mapLayerController: resolvedMapLayerController,
+      );
+  final resolvedObjectPaletteController =
+      objectPaletteController ??
+      ObjectPaletteController(
+        objectEditingController: resolvedObjectEditingController,
         mapLayerController: resolvedMapLayerController,
       );
   final resolvedTerrainTileTextureController =
@@ -1001,6 +1050,7 @@ Widget _createTestApp({
       terrainEditingController: resolvedTerrainEditingController,
       mapLayerController: resolvedMapLayerController,
       objectEditingController: resolvedObjectEditingController,
+      objectPaletteController: resolvedObjectPaletteController,
       terrainTileTextureController: resolvedTerrainTileTextureController,
     ),
   );

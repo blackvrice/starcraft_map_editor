@@ -4,6 +4,7 @@ import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
 import '../application/editing/object_editing_controller.dart';
+import '../application/editing/object_palette_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
@@ -71,6 +72,10 @@ void bootstrap() {
     openMapController: openMapController,
     mapLayerController: mapLayerController,
   );
+  final objectPaletteController = ObjectPaletteController(
+    objectEditingController: objectEditingController,
+    mapLayerController: mapLayerController,
+  );
   final terrainTileTextureController = TerrainTileTextureController(
     loader: TerrainTileAtlasLoader(
       gateway: ProcessStarCraftTileAtlasGateway.bundled(),
@@ -115,6 +120,7 @@ void bootstrap() {
     terrainEditingController: terrainEditingController,
     mapLayerController: mapLayerController,
     objectEditingController: objectEditingController,
+    objectPaletteController: objectPaletteController,
     terrainTileTextureController: terrainTileTextureController,
   );
 

@@ -56,6 +56,37 @@ void main() {
     expect(deleted.declaredLength, ChkSpritePlacement.recordLength);
   });
 
+  test('duplicates a template record and changes only its coordinates', () {
+    final template = Uint8List.fromList(
+      List<int>.generate(ChkUnitPlacement.recordLength, (index) => 180 - index),
+    );
+    ByteData.sublistView(template)
+      ..setUint16(4, 10, Endian.little)
+      ..setUint16(6, 20, Endian.little);
+    final view = decoder
+        .decode(_document([_section('UNIT', template)]))
+        .unitSections
+        .single;
+
+    final duplicated = editor.duplicateUnit(
+      view,
+      templateRecordIndex: 0,
+      x: 300,
+      y: 400,
+    );
+
+    expect(duplicated.declaredLength, ChkUnitPlacement.recordLength * 2);
+    expect(duplicated.payload.take(ChkUnitPlacement.recordLength), template);
+    final copy = Uint8List.fromList(
+      duplicated.payload.skip(ChkUnitPlacement.recordLength).toList(),
+    );
+    final expected = Uint8List.fromList(template);
+    ByteData.sublistView(expected)
+      ..setUint16(4, 300, Endian.little)
+      ..setUint16(6, 400, Endian.little);
+    expect(copy, expected);
+  });
+
   test('moves and blanks locations while preserving the table length', () {
     final payload = Uint8List(
       ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,

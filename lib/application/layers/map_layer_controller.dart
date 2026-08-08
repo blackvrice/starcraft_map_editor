@@ -564,6 +564,29 @@ class MapLayerController {
     return selection;
   }
 
+  MapLayerSelection? selectObject({
+    required OpenedMapSession session,
+    required MapLayerObjectRef object,
+  }) {
+    if (!_state.statusOf(object.layer).isSelectable) {
+      return null;
+    }
+    final selection = _resolveSelection(session, object);
+    if (selection == null) {
+      return null;
+    }
+    if (!_sameSelections(_state.selections, [selection])) {
+      _emit(
+        MapLayerState(
+          activeLayer: _state.activeLayer,
+          layers: _state.layers,
+          selections: [selection],
+        ),
+      );
+    }
+    return selection;
+  }
+
   List<MapLayerSelection> selectRegion({
     required OpenedMapSession session,
     required MapLayerPixelRegion region,
@@ -659,7 +682,9 @@ class MapLayerController {
         final section = session.objectViews.unitSections
             .where((section) => section.sectionIndex == object.sectionIndex)
             .firstOrNull;
-        if (section == null || object.recordIndex >= section.units.length) {
+        if (section == null ||
+            object.recordIndex < 0 ||
+            object.recordIndex >= section.units.length) {
           return null;
         }
         final unit = section.units[object.recordIndex];
@@ -672,7 +697,9 @@ class MapLayerController {
         final section = session.objectViews.doodadSections
             .where((section) => section.sectionIndex == object.sectionIndex)
             .firstOrNull;
-        if (section == null || object.recordIndex >= section.doodads.length) {
+        if (section == null ||
+            object.recordIndex < 0 ||
+            object.recordIndex >= section.doodads.length) {
           return null;
         }
         final doodad = section.doodads[object.recordIndex];
@@ -685,7 +712,9 @@ class MapLayerController {
         final section = session.objectViews.spriteSections
             .where((section) => section.sectionIndex == object.sectionIndex)
             .firstOrNull;
-        if (section == null || object.recordIndex >= section.sprites.length) {
+        if (section == null ||
+            object.recordIndex < 0 ||
+            object.recordIndex >= section.sprites.length) {
           return null;
         }
         final sprite = section.sprites[object.recordIndex];
@@ -698,7 +727,9 @@ class MapLayerController {
         final section = session.objectViews.locationSections
             .where((section) => section.sectionIndex == object.sectionIndex)
             .firstOrNull;
-        if (section == null || object.recordIndex >= section.locations.length) {
+        if (section == null ||
+            object.recordIndex < 0 ||
+            object.recordIndex >= section.locations.length) {
           return null;
         }
         final location = section.locations[object.recordIndex];

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
@@ -116,6 +117,130 @@ void main() {
     );
     expect(fixture.openMapController.state.session!.isDirty, isFalse);
   });
+
+  test('places a copied template, selects it, and records undo', () async {
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    final original = fixture.openMapController.state.session!;
+    final template = MapLayerObjectRef(
+      layer: MapLayerType.units,
+      sectionIndex: original.objectViews.unitSections.single.sectionIndex,
+      recordIndex: 0,
+    );
+    final templatePayload =
+        original.objectViews.unitSections.single.rawSection.payload;
+
+    expect(
+      fixture.objectEditingController.duplicateTemplate(
+        template: template,
+        pixelX: 64,
+        pixelY: 64,
+      ),
+      isTrue,
+    );
+
+    var units = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .unitSections
+        .single
+        .units;
+    expect(units, hasLength(3));
+    expect((units.last.x, units.last.y), (64, 64));
+    expect(fixture.mapLayerController.state.selection?.object.recordIndex, 2);
+    expect(fixture.objectEditingController.undoLabel, 'Place Unit');
+    final placedPayload = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .unitSections
+        .single
+        .rawSection
+        .payload;
+    for (var index = 0; index < ChkUnitPlacement.recordLength; index++) {
+      if ({4, 5, 6, 7}.contains(index)) {
+        continue;
+      }
+      expect(
+        placedPayload[ChkUnitPlacement.recordLength * 2 + index],
+        templatePayload[index],
+      );
+    }
+
+    expect(fixture.objectEditingController.undo(), isTrue);
+    units = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .unitSections
+        .single
+        .units;
+    expect(units, hasLength(2));
+    expect(fixture.objectEditingController.redo(), isTrue);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units,
+      hasLength(3),
+    );
+  });
+
+  test(
+    'builds, searches, and repeatedly places map-local palette entries',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final palette = ObjectPaletteController(
+        objectEditingController: fixture.objectEditingController,
+        mapLayerController: fixture.mapLayerController,
+      )..synchronizeSession(fixture.openMapController.state.session);
+      addTearDown(palette.dispose);
+
+      expect(palette.state.entries, hasLength(4));
+      expect(palette.state.entries.map((entry) => entry.label), [
+        'Unit type 2569',
+        'Unit type 25442',
+        'Doodad type 1',
+        'Sprite type 1',
+      ]);
+      palette.setQuery('unit #2569');
+      expect(palette.state.visibleEntries.single.label, 'Unit type 2569');
+
+      final entry = palette.state.visibleEntries.single;
+      expect(palette.selectEntry(entry), isTrue);
+      expect(palette.state.isPlacementActive, isTrue);
+      expect(fixture.mapLayerController.state.activeLayer, MapLayerType.units);
+      expect(palette.placeSelected(pixelX: 144, pixelY: 176), isTrue);
+      expect(palette.state.selectedEntry?.count, 2);
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .unitSections
+            .single
+            .units
+            .last
+            .x,
+        144,
+      );
+
+      palette.cancelPlacement();
+      expect(palette.state.isPlacementActive, isFalse);
+      fixture.mapLayerController.setLocked(MapLayerType.units, true);
+      expect(palette.selectEntry(palette.state.visibleEntries.single), isFalse);
+    },
+  );
 }
 
 final class _Fixture {
