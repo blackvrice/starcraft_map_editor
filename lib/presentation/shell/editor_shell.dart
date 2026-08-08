@@ -9,6 +9,7 @@ import '../../application/documents/opened_map_session.dart';
 import '../../application/documents/save_map_controller.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../application/editing/object_palette_controller.dart';
+import '../../application/editing/object_properties.dart';
 import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
@@ -1033,7 +1034,11 @@ class _EditorWorkspace extends StatelessWidget {
                     icon: Icons.tune,
                     message: 'Nothing selected',
                   )
-                : _MapInspector(session: session),
+                : _MapInspector(
+                    session: session,
+                    mapLayerController: mapLayerController,
+                    objectEditingController: objectEditingController,
+                  ),
           ),
         ),
       ],
@@ -2409,7 +2414,37 @@ IconData _iconForLayer(MapLayerType layer) => switch (layer) {
 };
 
 class _MapInspector extends StatelessWidget {
-  const _MapInspector({required this.session});
+  const _MapInspector({
+    required this.session,
+    required this.mapLayerController,
+    required this.objectEditingController,
+  });
+
+  final OpenedMapSession session;
+  final MapLayerController mapLayerController;
+  final ObjectEditingController objectEditingController;
+
+  @override
+  Widget build(BuildContext context) {
+    final selections = mapLayerController.state.selections
+        .where((selection) => selection.object.layer != MapLayerType.terrain)
+        .toList(growable: false);
+    if (selections.length > 1) {
+      return _MultiObjectInspector(selections: selections);
+    }
+    final properties = objectEditingController.selectedProperties;
+    if (properties != null) {
+      return _ObjectPropertiesInspector(
+        properties: properties,
+        controller: objectEditingController,
+      );
+    }
+    return _MapDocumentInspector(session: session);
+  }
+}
+
+class _MapDocumentInspector extends StatelessWidget {
+  const _MapDocumentInspector({required this.session});
 
   final OpenedMapSession session;
 
@@ -2496,6 +2531,476 @@ class _MapInspector extends StatelessWidget {
     );
   }
 }
+
+class _MultiObjectInspector extends StatelessWidget {
+  const _MultiObjectInspector({required this.selections});
+
+  final List<MapLayerSelection> selections;
+
+  @override
+  Widget build(BuildContext context) {
+    final layers = {
+      for (final selection in selections) selection.object.layer.label,
+    }.join(', ');
+    return ListView(
+      key: const Key('multi-object-inspector'),
+      padding: const EdgeInsets.all(12),
+      children: [
+        const Icon(
+          Icons.select_all_rounded,
+          size: 28,
+          color: Color(0xFF8DB4FF),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '${selections.length} objects selected',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 16),
+        _InspectorValue(label: 'Common layers', value: layers),
+        const _InspectorNotice(
+          icon: Icons.info_outline_rounded,
+          message:
+              'Select one object to edit its properties. Movement and deletion still apply to the full selection.',
+        ),
+      ],
+    );
+  }
+}
+
+class _ObjectPropertiesInspector extends StatefulWidget {
+  const _ObjectPropertiesInspector({
+    required this.properties,
+    required this.controller,
+  });
+
+  final ObjectProperties properties;
+  final ObjectEditingController controller;
+
+  @override
+  State<_ObjectPropertiesInspector> createState() =>
+      _ObjectPropertiesInspectorState();
+}
+
+class _ObjectPropertiesInspectorState
+    extends State<_ObjectPropertiesInspector> {
+  final Map<String, TextEditingController> _fields = {};
+  Map<String, String> _errors = const {};
+  String? _message;
+  late String _propertiesSignature;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProperties();
+  }
+
+  @override
+  void didUpdateWidget(_ObjectPropertiesInspector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final signature = _signatureOf(widget.properties);
+    if (signature != _propertiesSignature) {
+      _loadProperties();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _fields.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _loadProperties() {
+    for (final controller in _fields.values) {
+      controller.dispose();
+    }
+    _fields
+      ..clear()
+      ..addAll({
+        for (final entry in _editableValues(widget.properties).entries)
+          entry.key: TextEditingController(text: '${entry.value}'),
+      });
+    _propertiesSignature = _signatureOf(widget.properties);
+    _errors = const {};
+    _message = null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final properties = widget.properties;
+    if (properties is LocationObjectProperties) {
+      return _LocationPropertiesInspector(properties: properties);
+    }
+    final canEdit = widget.controller.canEditProperties;
+    return ListView(
+      key: const Key('object-properties-inspector'),
+      padding: const EdgeInsets.all(12),
+      children: [
+        Row(
+          children: [
+            Icon(
+              _iconForLayer(properties.object.layer),
+              size: 20,
+              color: const Color(0xFF8DB4FF),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${_objectKind(properties)} #${properties.object.recordIndex}',
+                key: const Key('object-inspector-title'),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _integerField(ObjectPropertyFields.typeId, 'Type ID', canEdit),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _integerField(ObjectPropertyFields.x, 'X (px)', canEdit),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _integerField(ObjectPropertyFields.y, 'Y (px)', canEdit),
+            ),
+          ],
+        ),
+        _integerField(ObjectPropertyFields.owner, 'Owner (raw 0-255)', canEdit),
+        if (properties is UnitObjectProperties) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _integerField(
+                  ObjectPropertyFields.hitpointPercent,
+                  'HP %',
+                  canEdit,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _integerField(
+                  ObjectPropertyFields.shieldPercent,
+                  'Shield %',
+                  canEdit,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _integerField(
+                  ObjectPropertyFields.energyPercent,
+                  'Energy %',
+                  canEdit,
+                ),
+              ),
+            ],
+          ),
+          _integerField(
+            ObjectPropertyFields.resourceAmount,
+            'Resource amount',
+            canEdit,
+          ),
+          _integerField(
+            ObjectPropertyFields.hangarAmount,
+            'Hangar amount',
+            canEdit,
+          ),
+        ],
+        if (properties is DoodadObjectProperties)
+          _integerField(
+            ObjectPropertyFields.enabledValue,
+            'Enabled raw (0=yes, 1=no)',
+            canEdit,
+          ),
+        const SizedBox(height: 4),
+        FilledButton.icon(
+          key: const Key('object-inspector-apply'),
+          onPressed: canEdit ? _apply : null,
+          icon: const Icon(Icons.check_rounded, size: 16),
+          label: const Text('Apply properties'),
+        ),
+        if (_message != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _message!,
+            key: const Key('object-inspector-message'),
+            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 10),
+          ),
+        ],
+        if (!canEdit) ...[
+          const SizedBox(height: 8),
+          const _InspectorNotice(
+            icon: Icons.lock_outline_rounded,
+            message: 'Unlock this layer and use an editable map to apply.',
+          ),
+        ],
+        const Divider(height: 24),
+        const Text(
+          'Preserved raw fields',
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        ..._rawValues(properties),
+        const _InspectorNotice(
+          icon: Icons.shield_outlined,
+          message:
+              'Raw flags and reserved fields are read-only and remain byte-exact.',
+        ),
+      ],
+    );
+  }
+
+  Widget _integerField(String field, String label, bool enabled) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: TextField(
+        key: Key('object-inspector-$field'),
+        controller: _fields[field],
+        enabled: enabled,
+        keyboardType: TextInputType.number,
+        style: const TextStyle(fontSize: 11),
+        decoration: InputDecoration(
+          labelText: label,
+          errorText: _errors[field],
+          isDense: true,
+        ),
+      ),
+    );
+  }
+
+  void _apply() {
+    final parseErrors = <String, String>{};
+    final values = <String, int>{};
+    for (final entry in _fields.entries) {
+      final value = int.tryParse(entry.value.text.trim());
+      if (value == null) {
+        parseErrors[entry.key] = 'Enter a whole number.';
+      } else {
+        values[entry.key] = value;
+      }
+    }
+    if (parseErrors.isNotEmpty) {
+      setState(() {
+        _errors = parseErrors;
+        _message = null;
+      });
+      return;
+    }
+    final properties = widget.properties;
+    final update = switch (properties) {
+      UnitObjectProperties() => UnitObjectPropertyUpdate(
+        object: properties.object,
+        typeId: values[ObjectPropertyFields.typeId]!,
+        x: values[ObjectPropertyFields.x]!,
+        y: values[ObjectPropertyFields.y]!,
+        owner: values[ObjectPropertyFields.owner]!,
+        hitpointPercent: values[ObjectPropertyFields.hitpointPercent]!,
+        shieldPercent: values[ObjectPropertyFields.shieldPercent]!,
+        energyPercent: values[ObjectPropertyFields.energyPercent]!,
+        resourceAmount: values[ObjectPropertyFields.resourceAmount]!,
+        hangarAmount: values[ObjectPropertyFields.hangarAmount]!,
+      ),
+      DoodadObjectProperties() => DoodadObjectPropertyUpdate(
+        object: properties.object,
+        typeId: values[ObjectPropertyFields.typeId]!,
+        x: values[ObjectPropertyFields.x]!,
+        y: values[ObjectPropertyFields.y]!,
+        owner: values[ObjectPropertyFields.owner]!,
+        enabledValue: values[ObjectPropertyFields.enabledValue]!,
+      ),
+      SpriteObjectProperties() => SpriteObjectPropertyUpdate(
+        object: properties.object,
+        typeId: values[ObjectPropertyFields.typeId]!,
+        x: values[ObjectPropertyFields.x]!,
+        y: values[ObjectPropertyFields.y]!,
+        owner: values[ObjectPropertyFields.owner]!,
+      ),
+      LocationObjectProperties() => throw StateError(
+        'Locations are read-only in this inspector.',
+      ),
+    };
+    final result = widget.controller.updateProperties(update);
+    setState(() {
+      _errors = result.errors;
+      _message = switch (result.status) {
+        ObjectPropertyEditStatus.applied => 'Properties applied.',
+        ObjectPropertyEditStatus.noChanges => 'No property changes.',
+        ObjectPropertyEditStatus.invalid => 'Fix the highlighted fields.',
+        ObjectPropertyEditStatus.unavailable =>
+          'Property editing is no longer available.',
+      };
+    });
+  }
+}
+
+class _LocationPropertiesInspector extends StatelessWidget {
+  const _LocationPropertiesInspector({required this.properties});
+
+  final LocationObjectProperties properties;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      key: const Key('location-properties-inspector'),
+      padding: const EdgeInsets.all(12),
+      children: [
+        Text(
+          'Location ${properties.locationId}',
+          key: const Key('object-inspector-title'),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 14),
+        _InspectorValue(
+          label: 'Bounds',
+          value:
+              '${properties.left}, ${properties.top} → ${properties.right}, ${properties.bottom}',
+        ),
+        _InspectorValue(label: 'String ID', value: '${properties.stringId}'),
+        _InspectorValue(
+          label: 'Elevation flags',
+          value: _hex(properties.elevationFlags, 4),
+        ),
+        const _InspectorNotice(
+          icon: Icons.info_outline_rounded,
+          message:
+              'Location resize and name editing are read-only here and are implemented in the next M6 task.',
+        ),
+      ],
+    );
+  }
+}
+
+class _InspectorNotice extends StatelessWidget {
+  const _InspectorNotice({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(9),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B2330),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: const Color(0xFF303C50)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF8DA2C2)),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Color(0xFF9EABC0), fontSize: 10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Map<String, int> _editableValues(ObjectProperties properties) =>
+    switch (properties) {
+      UnitObjectProperties() => {
+        ObjectPropertyFields.typeId: properties.typeId,
+        ObjectPropertyFields.x: properties.x,
+        ObjectPropertyFields.y: properties.y,
+        ObjectPropertyFields.owner: properties.owner,
+        ObjectPropertyFields.hitpointPercent: properties.hitpointPercent,
+        ObjectPropertyFields.shieldPercent: properties.shieldPercent,
+        ObjectPropertyFields.energyPercent: properties.energyPercent,
+        ObjectPropertyFields.resourceAmount: properties.resourceAmount,
+        ObjectPropertyFields.hangarAmount: properties.hangarAmount,
+      },
+      DoodadObjectProperties() => {
+        ObjectPropertyFields.typeId: properties.typeId,
+        ObjectPropertyFields.x: properties.x,
+        ObjectPropertyFields.y: properties.y,
+        ObjectPropertyFields.owner: properties.owner,
+        ObjectPropertyFields.enabledValue: properties.enabledValue,
+      },
+      SpriteObjectProperties() => {
+        ObjectPropertyFields.typeId: properties.typeId,
+        ObjectPropertyFields.x: properties.x,
+        ObjectPropertyFields.y: properties.y,
+        ObjectPropertyFields.owner: properties.owner,
+      },
+      LocationObjectProperties() => const {},
+    };
+
+String _signatureOf(ObjectProperties properties) =>
+    '${properties.object.layer.name}:${properties.object.sectionIndex}:'
+    '${properties.object.recordIndex}:${_editableValues(properties).values.join(',')}:'
+    '${_rawSignature(properties)}';
+
+String _rawSignature(ObjectProperties properties) => switch (properties) {
+  UnitObjectProperties() =>
+    '${properties.classId},${properties.relationFlags},'
+        '${properties.validStateFlags},${properties.validFieldFlags},'
+        '${properties.stateFlags},${properties.unused},'
+        '${properties.relationClassId}',
+  DoodadObjectProperties() => '',
+  SpriteObjectProperties() => '${properties.unused},${properties.flags}',
+  LocationObjectProperties() =>
+    '${properties.locationId},${properties.left},${properties.top},'
+        '${properties.right},${properties.bottom},${properties.stringId},'
+        '${properties.elevationFlags}',
+};
+
+String _objectKind(ObjectProperties properties) => switch (properties) {
+  UnitObjectProperties() => 'Unit',
+  DoodadObjectProperties() => 'Doodad',
+  SpriteObjectProperties() => 'Sprite',
+  LocationObjectProperties() => 'Location',
+};
+
+List<Widget> _rawValues(ObjectProperties properties) => switch (properties) {
+  UnitObjectProperties() => [
+    _InspectorValue(label: 'Class ID', value: _hex(properties.classId, 8)),
+    _InspectorValue(
+      label: 'Relation flags',
+      value: _hex(properties.relationFlags, 4),
+    ),
+    _InspectorValue(
+      label: 'Valid state flags',
+      value: _hex(properties.validStateFlags, 4),
+    ),
+    _InspectorValue(
+      label: 'Valid field flags',
+      value: _hex(properties.validFieldFlags, 4),
+    ),
+    _InspectorValue(
+      label: 'State flags',
+      value: _hex(properties.stateFlags, 4),
+    ),
+    _InspectorValue(label: 'Unused', value: _hex(properties.unused, 8)),
+    _InspectorValue(
+      label: 'Relation class ID',
+      value: _hex(properties.relationClassId, 8),
+    ),
+  ],
+  DoodadObjectProperties() => const [],
+  SpriteObjectProperties() => [
+    _InspectorValue(label: 'Unused', value: _hex(properties.unused, 2)),
+    _InspectorValue(label: 'Flags', value: _hex(properties.flags, 4)),
+  ],
+  LocationObjectProperties() => const [],
+};
+
+String _hex(int value, int width) =>
+    '0x${value.toRadixString(16).toUpperCase().padLeft(width, '0')}';
 
 class _InspectorValue extends StatelessWidget {
   const _InspectorValue({required this.label, required this.value});

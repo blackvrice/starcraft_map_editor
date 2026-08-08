@@ -139,6 +139,93 @@ class ChkObjectSectionEditor {
     y: y,
   );
 
+  RawChkSection updateUnitProperties(
+    ChkUnitSectionView view, {
+    required int recordIndex,
+    required int unitType,
+    required int x,
+    required int y,
+    required int owner,
+    required int hitpointPercent,
+    required int shieldPercent,
+    required int energyPercent,
+    required int resourceAmount,
+    required int hangarAmount,
+  }) {
+    _checkRecordIndex(recordIndex, view.units.length);
+    _checkUnsigned(unitType, 0xffff, 'unitType');
+    _checkUnsigned(x, 0xffff, 'x');
+    _checkUnsigned(y, 0xffff, 'y');
+    _checkUnsigned(owner, 0xff, 'owner');
+    _checkPercent(hitpointPercent, 'hitpointPercent');
+    _checkPercent(shieldPercent, 'shieldPercent');
+    _checkPercent(energyPercent, 'energyPercent');
+    _checkUnsigned(resourceAmount, 0xffffffff, 'resourceAmount');
+    _checkUnsigned(hangarAmount, 0xffff, 'hangarAmount');
+    final payload = view.rawSection.payload;
+    final offset = recordIndex * ChkUnitPlacement.recordLength;
+    ByteData.sublistView(payload)
+      ..setUint16(offset + 4, x, Endian.little)
+      ..setUint16(offset + 6, y, Endian.little)
+      ..setUint16(offset + 8, unitType, Endian.little)
+      ..setUint8(offset + 16, owner)
+      ..setUint8(offset + 17, hitpointPercent)
+      ..setUint8(offset + 18, shieldPercent)
+      ..setUint8(offset + 19, energyPercent)
+      ..setUint32(offset + 20, resourceAmount, Endian.little)
+      ..setUint16(offset + 24, hangarAmount, Endian.little);
+    return view.rawSection.withPayload(payload);
+  }
+
+  RawChkSection updateDoodadProperties(
+    ChkDoodadSectionView view, {
+    required int recordIndex,
+    required int doodadType,
+    required int x,
+    required int y,
+    required int owner,
+    required int enabledValue,
+  }) {
+    _checkRecordIndex(recordIndex, view.doodads.length);
+    _checkUnsigned(doodadType, 0xffff, 'doodadType');
+    _checkUnsigned(x, 0xffff, 'x');
+    _checkUnsigned(y, 0xffff, 'y');
+    _checkUnsigned(owner, 0xff, 'owner');
+    RangeError.checkValueInInterval(enabledValue, 0, 1, 'enabledValue');
+    final payload = view.rawSection.payload;
+    final offset = recordIndex * ChkDoodadPlacement.recordLength;
+    ByteData.sublistView(payload)
+      ..setUint16(offset, doodadType, Endian.little)
+      ..setUint16(offset + 2, x, Endian.little)
+      ..setUint16(offset + 4, y, Endian.little)
+      ..setUint8(offset + 6, owner)
+      ..setUint8(offset + 7, enabledValue);
+    return view.rawSection.withPayload(payload);
+  }
+
+  RawChkSection updateSpriteProperties(
+    ChkSpriteSectionView view, {
+    required int recordIndex,
+    required int spriteType,
+    required int x,
+    required int y,
+    required int owner,
+  }) {
+    _checkRecordIndex(recordIndex, view.sprites.length);
+    _checkUnsigned(spriteType, 0xffff, 'spriteType');
+    _checkUnsigned(x, 0xffff, 'x');
+    _checkUnsigned(y, 0xffff, 'y');
+    _checkUnsigned(owner, 0xff, 'owner');
+    final payload = view.rawSection.payload;
+    final offset = recordIndex * ChkSpritePlacement.recordLength;
+    ByteData.sublistView(payload)
+      ..setUint16(offset, spriteType, Endian.little)
+      ..setUint16(offset + 2, x, Endian.little)
+      ..setUint16(offset + 4, y, Endian.little)
+      ..setUint8(offset + 6, owner);
+    return view.rawSection.withPayload(payload);
+  }
+
   RawChkSection deleteUnits(
     ChkUnitSectionView view,
     Iterable<int> recordIndices,
@@ -296,4 +383,12 @@ void _checkRecordIndex(int index, int recordCount) {
       'recordIndex',
     );
   }
+}
+
+void _checkUnsigned(int value, int maximum, String name) {
+  RangeError.checkValueInInterval(value, 0, maximum, name);
+}
+
+void _checkPercent(int value, String name) {
+  RangeError.checkValueInInterval(value, 0, 100, name);
 }

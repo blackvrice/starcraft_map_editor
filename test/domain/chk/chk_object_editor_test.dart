@@ -87,6 +87,118 @@ void main() {
     expect(copy, expected);
   });
 
+  test('updates supported unit properties and preserves every other byte', () {
+    final record = Uint8List.fromList(
+      List<int>.generate(ChkUnitPlacement.recordLength, (index) => 220 - index),
+    );
+    final view = decoder
+        .decode(_document([_section('UNIT', record)]))
+        .unitSections
+        .single;
+
+    final updated = editor.updateUnitProperties(
+      view,
+      recordIndex: 0,
+      unitType: 321,
+      x: 123,
+      y: 234,
+      owner: 7,
+      hitpointPercent: 80,
+      shieldPercent: 70,
+      energyPercent: 60,
+      resourceAmount: 0x12345678,
+      hangarAmount: 19,
+    );
+    final expected = Uint8List.fromList(record);
+    ByteData.sublistView(expected)
+      ..setUint16(4, 123, Endian.little)
+      ..setUint16(6, 234, Endian.little)
+      ..setUint16(8, 321, Endian.little)
+      ..setUint8(16, 7)
+      ..setUint8(17, 80)
+      ..setUint8(18, 70)
+      ..setUint8(19, 60)
+      ..setUint32(20, 0x12345678, Endian.little)
+      ..setUint16(24, 19, Endian.little);
+
+    expect(updated.payload, expected);
+    expect(view.rawSection.payload, record);
+    expect(
+      () => editor.updateUnitProperties(
+        view,
+        recordIndex: 0,
+        unitType: 1,
+        x: 1,
+        y: 1,
+        owner: 1,
+        hitpointPercent: 101,
+        shieldPercent: 100,
+        energyPercent: 100,
+        resourceAmount: 0,
+        hangarAmount: 0,
+      ),
+      throwsRangeError,
+    );
+  });
+
+  test(
+    'updates doodad and sprite properties without rewriting opaque bytes',
+    () {
+      final doodadRecord = Uint8List.fromList([1, 2, 3, 4, 5, 6, 7, 1]);
+      final spriteRecord = Uint8List.fromList([
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        0xa5,
+        0x34,
+        0xb2,
+      ]);
+      final views = decoder.decode(
+        _document([
+          _section('DD2 ', doodadRecord),
+          _section('THG2', spriteRecord),
+        ]),
+      );
+
+      final doodad = editor.updateDoodadProperties(
+        views.doodadSections.single,
+        recordIndex: 0,
+        doodadType: 20,
+        x: 30,
+        y: 40,
+        owner: 5,
+        enabledValue: 0,
+      );
+      expect(doodad.payload, [20, 0, 30, 0, 40, 0, 5, 0]);
+
+      final sprite = editor.updateSpriteProperties(
+        views.spriteSections.single,
+        recordIndex: 0,
+        spriteType: 50,
+        x: 60,
+        y: 70,
+        owner: 8,
+      );
+      expect(sprite.payload, [50, 0, 60, 0, 70, 0, 8, 0xa5, 0x34, 0xb2]);
+      expect(
+        () => editor.updateDoodadProperties(
+          views.doodadSections.single,
+          recordIndex: 0,
+          doodadType: 1,
+          x: 1,
+          y: 1,
+          owner: 1,
+          enabledValue: 2,
+        ),
+        throwsRangeError,
+      );
+    },
+  );
+
   test('moves and blanks locations while preserving the table length', () {
     final payload = Uint8List(
       ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,

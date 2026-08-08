@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_properties.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
@@ -193,6 +194,186 @@ void main() {
       hasLength(3),
     );
   });
+
+  test('validates and applies selected unit properties as one edit', () async {
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    final original = fixture.openMapController.state.session!;
+    final object = MapLayerObjectRef(
+      layer: MapLayerType.units,
+      sectionIndex: original.objectViews.unitSections.single.sectionIndex,
+      recordIndex: 0,
+    );
+    fixture.mapLayerController
+      ..setActiveLayer(MapLayerType.units)
+      ..selectObject(session: original, object: object);
+    final properties = fixture.objectEditingController.selectedProperties;
+    expect(properties, isA<UnitObjectProperties>());
+
+    final invalid = fixture.objectEditingController.updateProperties(
+      UnitObjectPropertyUpdate(
+        object: object,
+        typeId: 42,
+        x: 999,
+        y: 80,
+        owner: 6,
+        hitpointPercent: 101,
+        shieldPercent: 75,
+        energyPercent: 50,
+        resourceAmount: 1000,
+        hangarAmount: 4,
+      ),
+    );
+    expect(invalid.status, ObjectPropertyEditStatus.invalid);
+    expect(invalid.errors, contains(ObjectPropertyFields.x));
+    expect(invalid.errors, contains(ObjectPropertyFields.hitpointPercent));
+    expect(fixture.openMapController.state.session, same(original));
+
+    final result = fixture.objectEditingController.updateProperties(
+      UnitObjectPropertyUpdate(
+        object: object,
+        typeId: 42,
+        x: 72,
+        y: 80,
+        owner: 6,
+        hitpointPercent: 100,
+        shieldPercent: 75,
+        energyPercent: 50,
+        resourceAmount: 1000,
+        hangarAmount: 4,
+      ),
+    );
+    expect(result.didApply, isTrue);
+    final edited = fixture
+        .openMapController
+        .state
+        .session!
+        .objectViews
+        .unitSections
+        .single
+        .units
+        .first;
+    expect(
+      (
+        edited.unitType,
+        edited.x,
+        edited.y,
+        edited.owner,
+        edited.hitpointPercent,
+        edited.shieldPercent,
+        edited.energyPercent,
+        edited.resourceAmount,
+        edited.hangarAmount,
+      ),
+      (42, 72, 80, 6, 100, 75, 50, 1000, 4),
+    );
+    expect(fixture.mapLayerController.state.selection?.object, object);
+    expect(fixture.objectEditingController.undoLabel, 'Edit Unit properties');
+    expect(fixture.objectEditingController.undo(), isTrue);
+    expect(
+      fixture
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units
+          .first
+          .unitType,
+      (properties as UnitObjectProperties).typeId,
+    );
+  });
+
+  test(
+    'applies doodad and sprite properties through their typed paths',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      var session = fixture.openMapController.state.session!;
+      final doodadObject = MapLayerObjectRef(
+        layer: MapLayerType.doodads,
+        sectionIndex: session.objectViews.doodadSections.single.sectionIndex,
+        recordIndex: 0,
+      );
+      fixture.mapLayerController
+        ..setActiveLayer(MapLayerType.doodads)
+        ..selectObject(session: session, object: doodadObject);
+      expect(
+        fixture.objectEditingController
+            .updateProperties(
+              DoodadObjectPropertyUpdate(
+                object: doodadObject,
+                typeId: 20,
+                x: 70,
+                y: 80,
+                owner: 5,
+                enabledValue: 0,
+              ),
+            )
+            .didApply,
+        isTrue,
+      );
+      var doodad = fixture
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .doodadSections
+          .single
+          .doodads
+          .single;
+      expect(
+        (
+          doodad.doodadType,
+          doodad.x,
+          doodad.y,
+          doodad.owner,
+          doodad.enabledValue,
+        ),
+        (20, 70, 80, 5, 0),
+      );
+
+      session = fixture.openMapController.state.session!;
+      final spriteObject = MapLayerObjectRef(
+        layer: MapLayerType.sprites,
+        sectionIndex: session.objectViews.spriteSections.single.sectionIndex,
+        recordIndex: 0,
+      );
+      final originalFlags =
+          session.objectViews.spriteSections.single.sprites.single.flags;
+      fixture.mapLayerController
+        ..setActiveLayer(MapLayerType.sprites)
+        ..selectObject(session: session, object: spriteObject);
+      expect(
+        fixture.objectEditingController
+            .updateProperties(
+              SpriteObjectPropertyUpdate(
+                object: spriteObject,
+                typeId: 30,
+                x: 90,
+                y: 100,
+                owner: 6,
+              ),
+            )
+            .didApply,
+        isTrue,
+      );
+      final sprite = fixture
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .spriteSections
+          .single
+          .sprites
+          .single;
+      expect(
+        (sprite.spriteType, sprite.x, sprite.y, sprite.owner, sprite.flags),
+        (30, 90, 100, 6, originalFlags),
+      );
+    },
+  );
 
   test(
     'builds, searches, and repeatedly places map-local palette entries',

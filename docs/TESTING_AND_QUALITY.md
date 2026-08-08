@@ -236,6 +236,12 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 맵 로컬 객체 팔레트의 레이어/type ID 그룹화·개수·검색·잠금 차단
 - 템플릿 배치 시 추가 레코드의 x/y 외 byte-exact 복사, 새 객체 선택,
   반복 배치와 배치별 Undo/Redo, 위젯의 검색·맵 클릭·Escape 취소 연결
+- 유닛·두다드·스프라이트 속성 Apply의 정확한 offset 쓰기와 원시 flags·예약
+  바이트 보존, 한 Apply당 한 Undo 단계와 선택 identity 유지
+- 숫자 파싱, 맵 경계, unsigned 필드 폭, 0~100 비율, 두다드 enabled 0/1 오류의
+  필드별 표시와 유효하지 않은 Apply의 세션 비변경
+- 단일 선택 편집, 다중 선택 요약, 잠금/제한 상태 비활성, 로케이션 읽기 전용
+  Inspector 위젯 연결
 
 ### StarCraft 데이터 자산
 

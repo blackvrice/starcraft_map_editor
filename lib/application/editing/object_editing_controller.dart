@@ -4,6 +4,7 @@ import '../../domain/chk/chk.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../layers/map_layer_controller.dart';
+import 'object_properties.dart';
 
 final class ObjectEditingState {
   const ObjectEditingState({this.undoDepth = 0, this.redoDepth = 0});
@@ -58,6 +59,29 @@ class ObjectEditingController {
     return session != null &&
         selections.isNotEmpty &&
         _isEditableSession(session);
+  }
+
+  ObjectProperties? get selectedProperties {
+    final session = openMapController.state.session;
+    final selections = mapLayerController.state.selections;
+    if (session == null || selections.length != 1) {
+      return null;
+    }
+    final object = selections.single.object;
+    return switch (object.layer) {
+      MapLayerType.units => _unitProperties(session, object),
+      MapLayerType.doodads => _doodadProperties(session, object),
+      MapLayerType.sprites => _spriteProperties(session, object),
+      MapLayerType.locations => _locationProperties(session, object),
+      MapLayerType.terrain => null,
+    };
+  }
+
+  bool get canEditProperties {
+    final properties = selectedProperties;
+    return properties != null &&
+        properties is! LocationObjectProperties &&
+        canEditSelection;
   }
 
   bool canPlaceTemplate(MapLayerObjectRef template) {
@@ -211,6 +235,77 @@ class ObjectEditingController {
       throw StateError('The newly placed object could not be selected.');
     }
     return true;
+  }
+
+  ObjectPropertyEditResult updateProperties(ObjectPropertyUpdate update) {
+    final session = openMapController.state.session;
+    final current = selectedProperties;
+    if (session == null ||
+        current == null ||
+        current.object != update.object ||
+        !canEditProperties) {
+      return ObjectPropertyEditResult.unavailable();
+    }
+    final errors = _validatePropertyUpdate(session, update);
+    if (errors.isNotEmpty) {
+      return ObjectPropertyEditResult.invalid(errors);
+    }
+    if (_propertyUpdateHasNoChanges(current, update)) {
+      return ObjectPropertyEditResult.noChanges();
+    }
+    final sectionIndex = update.object.sectionIndex;
+    final recordIndex = update.object.recordIndex;
+    final replacement = switch (update) {
+      UnitObjectPropertyUpdate() => sectionEditor.updateUnitProperties(
+        _unitSection(session, sectionIndex),
+        recordIndex: recordIndex,
+        unitType: update.typeId,
+        x: update.x,
+        y: update.y,
+        owner: update.owner,
+        hitpointPercent: update.hitpointPercent,
+        shieldPercent: update.shieldPercent,
+        energyPercent: update.energyPercent,
+        resourceAmount: update.resourceAmount,
+        hangarAmount: update.hangarAmount,
+      ),
+      DoodadObjectPropertyUpdate() => sectionEditor.updateDoodadProperties(
+        _doodadSection(session, sectionIndex),
+        recordIndex: recordIndex,
+        doodadType: update.typeId,
+        x: update.x,
+        y: update.y,
+        owner: update.owner,
+        enabledValue: update.enabledValue,
+      ),
+      SpriteObjectPropertyUpdate() => sectionEditor.updateSpriteProperties(
+        _spriteSection(session, sectionIndex),
+        recordIndex: recordIndex,
+        spriteType: update.typeId,
+        x: update.x,
+        y: update.y,
+        owner: update.owner,
+      ),
+    };
+    final kindLabel = switch (update.object.layer) {
+      MapLayerType.units => 'Unit',
+      MapLayerType.doodads => 'Doodad',
+      MapLayerType.sprites => 'Sprite',
+      MapLayerType.terrain || MapLayerType.locations => throw StateError(
+        'This object does not expose editable point properties.',
+      ),
+    };
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit $kindLabel properties',
+        beforeSections: {
+          sectionIndex: session.rawDocument.sections[sectionIndex],
+        },
+        afterSections: {sectionIndex: replacement},
+      ),
+      clearSelection: false,
+    );
+    return ObjectPropertyEditResult.applied();
   }
 
   bool deleteSelection() {
@@ -376,6 +471,248 @@ class ObjectEditingController {
         x < dimensions.width * 32 &&
         y < dimensions.height * 32;
   }
+
+  UnitObjectProperties _unitProperties(
+    OpenedMapSession session,
+    MapLayerObjectRef object,
+  ) {
+    final unit = _unitSection(
+      session,
+      object.sectionIndex,
+    ).units[object.recordIndex];
+    return UnitObjectProperties(
+      object: object,
+      typeId: unit.unitType,
+      x: unit.x,
+      y: unit.y,
+      owner: unit.owner,
+      hitpointPercent: unit.hitpointPercent,
+      shieldPercent: unit.shieldPercent,
+      energyPercent: unit.energyPercent,
+      resourceAmount: unit.resourceAmount,
+      hangarAmount: unit.hangarAmount,
+      classId: unit.classId,
+      relationFlags: unit.relationFlags,
+      validStateFlags: unit.validStateFlags,
+      validFieldFlags: unit.validFieldFlags,
+      stateFlags: unit.stateFlags,
+      unused: unit.unused,
+      relationClassId: unit.relationClassId,
+    );
+  }
+
+  DoodadObjectProperties _doodadProperties(
+    OpenedMapSession session,
+    MapLayerObjectRef object,
+  ) {
+    final doodad = _doodadSection(
+      session,
+      object.sectionIndex,
+    ).doodads[object.recordIndex];
+    return DoodadObjectProperties(
+      object: object,
+      typeId: doodad.doodadType,
+      x: doodad.x,
+      y: doodad.y,
+      owner: doodad.owner,
+      enabledValue: doodad.enabledValue,
+    );
+  }
+
+  SpriteObjectProperties _spriteProperties(
+    OpenedMapSession session,
+    MapLayerObjectRef object,
+  ) {
+    final sprite = _spriteSection(
+      session,
+      object.sectionIndex,
+    ).sprites[object.recordIndex];
+    return SpriteObjectProperties(
+      object: object,
+      typeId: sprite.spriteType,
+      x: sprite.x,
+      y: sprite.y,
+      owner: sprite.owner,
+      unused: sprite.unused,
+      flags: sprite.flags,
+    );
+  }
+
+  LocationObjectProperties _locationProperties(
+    OpenedMapSession session,
+    MapLayerObjectRef object,
+  ) {
+    final location = _locationSection(
+      session,
+      object.sectionIndex,
+    ).locations[object.recordIndex];
+    return LocationObjectProperties(
+      object: object,
+      locationId: location.locationId,
+      left: location.left,
+      top: location.top,
+      right: location.right,
+      bottom: location.bottom,
+      stringId: location.stringId,
+      elevationFlags: location.elevationFlags,
+    );
+  }
+
+  Map<String, String> _validatePropertyUpdate(
+    OpenedMapSession session,
+    ObjectPropertyUpdate update,
+  ) {
+    final errors = <String, String>{};
+    int? x;
+    int? y;
+    int? typeId;
+    int? owner;
+    switch (update) {
+      case UnitObjectPropertyUpdate():
+        x = update.x;
+        y = update.y;
+        typeId = update.typeId;
+        owner = update.owner;
+        _validateRange(
+          errors,
+          ObjectPropertyFields.hitpointPercent,
+          update.hitpointPercent,
+          0,
+          100,
+          'Use a percentage from 0 to 100.',
+        );
+        _validateRange(
+          errors,
+          ObjectPropertyFields.shieldPercent,
+          update.shieldPercent,
+          0,
+          100,
+          'Use a percentage from 0 to 100.',
+        );
+        _validateRange(
+          errors,
+          ObjectPropertyFields.energyPercent,
+          update.energyPercent,
+          0,
+          100,
+          'Use a percentage from 0 to 100.',
+        );
+        _validateRange(
+          errors,
+          ObjectPropertyFields.resourceAmount,
+          update.resourceAmount,
+          0,
+          0xffffffff,
+          'Use an unsigned 32-bit value.',
+        );
+        _validateRange(
+          errors,
+          ObjectPropertyFields.hangarAmount,
+          update.hangarAmount,
+          0,
+          0xffff,
+          'Use a value from 0 to 65535.',
+        );
+      case DoodadObjectPropertyUpdate():
+        x = update.x;
+        y = update.y;
+        typeId = update.typeId;
+        owner = update.owner;
+        _validateRange(
+          errors,
+          ObjectPropertyFields.enabledValue,
+          update.enabledValue,
+          0,
+          1,
+          'Use 0 for enabled or 1 for disabled.',
+        );
+      case SpriteObjectPropertyUpdate():
+        x = update.x;
+        y = update.y;
+        typeId = update.typeId;
+        owner = update.owner;
+    }
+    _validateRange(
+      errors,
+      ObjectPropertyFields.typeId,
+      typeId,
+      0,
+      0xffff,
+      'Use a type ID from 0 to 65535.',
+    );
+    _validateRange(
+      errors,
+      ObjectPropertyFields.owner,
+      owner,
+      0,
+      0xff,
+      'Use a raw owner value from 0 to 255.',
+    );
+    if (session.metadataViews.dimensions.length != 1) {
+      errors[ObjectPropertyFields.x] = 'Map dimensions are unavailable.';
+      errors[ObjectPropertyFields.y] = 'Map dimensions are unavailable.';
+      return errors;
+    }
+    final dimensions = session.metadataViews.dimensions.single;
+    _validateRange(
+      errors,
+      ObjectPropertyFields.x,
+      x,
+      0,
+      dimensions.width * 32 - 1,
+      'X must stay inside the map.',
+    );
+    _validateRange(
+      errors,
+      ObjectPropertyFields.y,
+      y,
+      0,
+      dimensions.height * 32 - 1,
+      'Y must stay inside the map.',
+    );
+    return errors;
+  }
+
+  void _validateRange(
+    Map<String, String> errors,
+    String field,
+    int? value,
+    int minimum,
+    int maximum,
+    String message,
+  ) {
+    if (value == null || value < minimum || value > maximum) {
+      errors[field] = message;
+    }
+  }
+
+  bool _propertyUpdateHasNoChanges(
+    ObjectProperties current,
+    ObjectPropertyUpdate update,
+  ) => switch ((current, update)) {
+    (UnitObjectProperties current, UnitObjectPropertyUpdate update) =>
+      current.typeId == update.typeId &&
+          current.x == update.x &&
+          current.y == update.y &&
+          current.owner == update.owner &&
+          current.hitpointPercent == update.hitpointPercent &&
+          current.shieldPercent == update.shieldPercent &&
+          current.energyPercent == update.energyPercent &&
+          current.resourceAmount == update.resourceAmount &&
+          current.hangarAmount == update.hangarAmount,
+    (DoodadObjectProperties current, DoodadObjectPropertyUpdate update) =>
+      current.typeId == update.typeId &&
+          current.x == update.x &&
+          current.y == update.y &&
+          current.owner == update.owner &&
+          current.enabledValue == update.enabledValue,
+    (SpriteObjectProperties current, SpriteObjectPropertyUpdate update) =>
+      current.typeId == update.typeId &&
+          current.x == update.x &&
+          current.y == update.y &&
+          current.owner == update.owner,
+    _ => false,
+  };
 
   bool _templateExists(OpenedMapSession session, MapLayerObjectRef template) {
     return switch (template.layer) {

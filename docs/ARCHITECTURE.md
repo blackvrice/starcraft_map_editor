@@ -224,11 +224,20 @@ Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 �
 일치하는지 확인하고, 적용 뒤 `ChkObjectViewDecoder`로 모든 객체 섹션을 다시
 검증한 세션만 `OpenMapController.adoptEditedSession`에 전달한다.
 
-도메인의 `ChkObjectSectionEditor`는 좌표 필드만 little-endian으로 갱신한다.
+도메인의 `ChkObjectSectionEditor`는 각 명령이 지원하는 필드만 little-endian으로
+갱신한다.
 고정 길이 객체 삭제는 선택 레코드를 제거하되 남은 레코드 바이트와 순서를
 그대로 유지하고, 로케이션 삭제는 참조 ID 안정성을 위해 테이블 크기를 바꾸지
 않고 선택 슬롯만 비운다. 잠김·숨김·보호·제한 편집 상태와 맵 경계 밖 이동은
 변경 전에 거부한다.
+
+`ObjectProperties` 계열은 선택한 typed 레코드를 Presentation용 불변 snapshot으로
+투영한다. Inspector의 Apply는 레이어별 `ObjectPropertyUpdate`를 다시
+`ObjectEditingController`에 전달하며 컨트롤러가 현재 단일 선택 identity,
+레이어 잠금, 제한 편집, `DIM ` 경계와 필드 폭을 재검증한다. 성공한 한 Apply는
+대상 섹션 전후 snapshot을 가진 하나의 Undo 명령이다. 도메인 편집기는 지원
+offset만 기록하고 원시 flags·예약 필드는 그대로 둔 뒤 전체 객체 view를 다시
+디코딩한다. Presentation은 raw CHK나 파일 시스템에 접근하지 않는다.
 
 ### ObjectPaletteController
 

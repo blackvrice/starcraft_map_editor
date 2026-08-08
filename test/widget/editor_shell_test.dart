@@ -904,6 +904,91 @@ void main() {
     expect(find.byKey(const Key('object-placement-active')), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('object inspector validates and applies unit properties', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final settingsStore = InMemorySettingsStore();
+    final recentProjectsService = RecentProjectsService(settingsStore);
+    final progressController = OperationProgressController();
+    final mapLayerController = MapLayerController();
+    final extractedMap = _createExtractedMap();
+    final openMapController = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: extractedMap),
+      ),
+      filePicker: _FakeMapFilePicker(extractedMap.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recentProjectsService,
+      operationProgressController: progressController,
+    );
+    final objectEditingController = ObjectEditingController(
+      openMapController: openMapController,
+      mapLayerController: mapLayerController,
+    );
+    addTearDown(openMapController.dispose);
+    addTearDown(progressController.dispose);
+    addTearDown(mapLayerController.dispose);
+    addTearDown(objectEditingController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: openMapController,
+        operationProgressController: progressController,
+        recentProjectsService: recentProjectsService,
+        settingsStore: settingsStore,
+        mapLayerController: mapLayerController,
+        objectEditingController: objectEditingController,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('map-layer-units')));
+    await tester.pump();
+    await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+
+    expect(find.text('Unit #0'), findsOneWidget);
+    expect(
+      find.byKey(const Key('object-properties-inspector')),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byKey(const Key('object-inspector-x')), '9999');
+    await tester.tap(find.byKey(const Key('object-inspector-apply')));
+    await tester.pump();
+    expect(find.text('X must stay inside the map.'), findsOneWidget);
+    expect(openMapController.state.session!.isDirty, isFalse);
+
+    await tester.enterText(
+      find.byKey(const Key('object-inspector-typeId')),
+      '42',
+    );
+    await tester.enterText(find.byKey(const Key('object-inspector-x')), '80');
+    await tester.enterText(
+      find.byKey(const Key('object-inspector-owner')),
+      '6',
+    );
+    await tester.tap(find.byKey(const Key('object-inspector-apply')));
+    await tester.pump();
+
+    final unit = openMapController
+        .state
+        .session!
+        .objectViews
+        .unitSections
+        .single
+        .units
+        .single;
+    expect((unit.unitType, unit.x, unit.owner), (42, 80, 6));
+    expect(openMapController.state.session!.isDirty, isTrue);
+    expect(objectEditingController.undoLabel, 'Edit Unit properties');
+    expect(mapLayerController.state.selection?.object.recordIndex, 0);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _tapMapPixel(

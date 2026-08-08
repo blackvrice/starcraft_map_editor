@@ -240,6 +240,12 @@ little-endian 값으로 투영한다.
   섹션 끝에 byte-exact 복사한 뒤 x/y 필드만 클릭 좌표로 바꾼다. 따라서 owner,
   flags, 예약 값과 현재 미지원 필드는 템플릿 값을 유지한다. 검증된 기본값 없이
   새 레코드를 합성하지 않으며 로케이션은 이 배치 경로에 포함하지 않는다.
+- 속성 Apply는 `UNIT`의 x/y, unit type, owner, 체력·실드·에너지 비율,
+  resource amount, hangar amount와 `DD2 `의 type/x/y/owner/enabled raw,
+  `THG2`의 type/x/y/owner만 수정한다. unit class/relation/valid/state flags,
+  relation class ID, unused와 sprite unused/flags는 읽기 전용이며 byte-exact로
+  유지한다. 각 Apply는 모든 입력을 먼저 검증한 뒤 한 레코드에 원자적으로
+  반영하므로 일부 필드만 적용된 상태를 만들지 않는다.
 - 이동 결과가 맵 경계를 벗어나거나 필드의 unsigned 범위를 넘으면 전체 동작을
   적용하지 않는다. 변경된 모든 객체 섹션은 세션 채택 전에 다시 디코딩한다.
 
