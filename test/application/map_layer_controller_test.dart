@@ -254,6 +254,7 @@ OpenedMapSession _session({String sourcePath = r'C:\Maps\Layers.scx'}) {
     ),
     rawDocument: document,
     metadataViews: const ChkMetadataViewDecoder().decode(document),
+    stringViews: const ChkStringViewDecoder().decode(document),
     terrainViews: const ChkTerrainViewDecoder().decode(document),
     objectViews: const ChkObjectViewDecoder().decode(document),
     sourceFingerprint: MapFileFingerprint(

@@ -280,7 +280,27 @@ little-endian 값으로 투영한다.
   `unused` 필드는 typed 값과 원본 `RawChkSection`에 그대로 남는다. 현재 view는
   읽기 전용이며 디코딩만으로 payload를 다시 인코딩하거나 정규화하지 않는다.
 - 좌표의 맵 경계, owner 범위, 문자열 ID 존재 여부는 구조 디코더가 추측하지
-  않는다. 이 의미 진단은 M6의 별도 검증 단계에서 추가한다.
+  않는다. 별도의 `ChkObjectReferenceValidator`가 완전히 디코딩된 view 사이의
+  의미 관계만 검사한다.
+
+#### 구현된 객체 의미 참조 진단
+
+- 유일한 `DIM `의 width/height × 32를 포함 경계로 사용해 `UNIT`, `DD2 `,
+  `THG2`의 x/y가 맵 픽셀 안인지 검사한다. `DIM `이 없거나 중복이면 임의의 크기를
+  선택하지 않고 좌표 의미 검사를 생략한다.
+- 모든 필드가 0인 `MRGN` 슬롯은 비어 있는 고정 ID이므로 검사하지 않는다. 그 외
+  로케이션은 네 좌표가 맵 안이고 left < right, top < bottom인지 검사한다.
+- 객체 owner raw 값 0~11만 Player 1~12 참조로 인정한다. 다른 byte 값은 보존하되
+  비표준/EUD 값일 수 있다는 remediation과 함께 경고한다.
+- string ID 0은 문자열 없음이다. `MRGN` 이름과 `SPRP` 이름·설명은 정확히 하나의
+  구조적으로 읽을 수 있는 `STR `/`STRx` entry에 존재해야 한다. 표가 없거나 해당
+  entry가 손상되면 unresolved, ID가 count 밖이면 out-of-range, 여러 표가 있으면
+  ambiguous 경고를 내고 active table을 추측하지 않는다.
+- 의미 진단은 `CHK_OBJECT_COORDINATE_OUT_OF_BOUNDS`,
+  `CHK_OBJECT_PLAYER_OUT_OF_RANGE`, `CHK_LOCATION_BOUNDS_INVALID`,
+  `CHK_STRING_REFERENCE_OUT_OF_RANGE`, `CHK_STRING_REFERENCE_UNRESOLVED`,
+  `CHK_STRING_REFERENCE_TABLE_AMBIGUOUS` 코드와 정확한 원본 필드 offset을 가진다.
+  모두 비차단 warning이며 raw 바이트를 변경하거나 자동 복구하지 않는다.
 
 ### 5단계: 트리거
 

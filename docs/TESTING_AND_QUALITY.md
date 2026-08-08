@@ -247,6 +247,12 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
   offset·미참조 꼬리 바이트 보존, `MRGN`+문자열 섹션의 단일 Undo/Redo
 - 중복·누락·손상 문자열 표에서는 이름만 비활성화되고 경계 편집은 유지되는지와
   UTF-8 바이트 길이·null 바이트·`STR `/`STRx` count/offset 한계 거부
+- 유일한 `DIM ` 기준 객체 좌표와 비어 있지 않은 로케이션 경계, owner 0~11,
+  `MRGN`/`SPRP` string ID의 정상 참조와 정확한 section/record/field byte offset
+- 문자열 표 누락·손상 entry·count 밖 ID·`STR `/`STRx` 중복 시 unresolved,
+  out-of-range, ambiguous 구분과 active table 비추정
+- 의미 참조 경고의 비차단·raw 비변경, Open/Save 세션 전달과 객체 Apply·Undo 시
+  고쳐진 경고 제거·복원
 
 ### StarCraft 데이터 자산
 

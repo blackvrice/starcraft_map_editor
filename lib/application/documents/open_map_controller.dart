@@ -65,8 +65,10 @@ class OpenMapController {
     required this.operationProgressController,
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
+    this.stringViewDecoder = const ChkStringViewDecoder(),
     this.terrainViewDecoder = const ChkTerrainViewDecoder(),
     this.objectViewDecoder = const ChkObjectViewDecoder(),
+    this.objectReferenceValidator = const ChkObjectReferenceValidator(),
     this.archiveTimeout = const Duration(seconds: 30),
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
@@ -86,8 +88,10 @@ class OpenMapController {
   final OperationProgressController operationProgressController;
   final RawChkParser rawChkParser;
   final ChkMetadataViewDecoder metadataViewDecoder;
+  final ChkStringViewDecoder stringViewDecoder;
   final ChkTerrainViewDecoder terrainViewDecoder;
   final ChkObjectViewDecoder objectViewDecoder;
+  final ChkObjectReferenceValidator objectReferenceValidator;
   final Duration archiveTimeout;
   final DateTime Function() _clock;
   final StreamController<OpenMapState> _changes =
@@ -236,13 +240,21 @@ class OpenMapController {
       );
       final rawDocument = parseResult.document!;
       final metadataViews = metadataViewDecoder.decode(rawDocument);
+      final stringViews = stringViewDecoder.decode(rawDocument);
       final terrainViews = terrainViewDecoder.decode(rawDocument);
       final objectViews = objectViewDecoder.decode(rawDocument);
+      final objectReferenceDiagnostics = objectReferenceValidator.validate(
+        metadataViews: metadataViews,
+        stringViews: stringViews,
+        objectViews: objectViews,
+      );
       final documentDiagnostics = [
         ...archiveResult.diagnostics,
         ...metadataViews.diagnostics,
+        ...stringViews.diagnostics,
         ...terrainViews.diagnostics,
         ...objectViews.diagnostics,
+        ...objectReferenceDiagnostics,
       ];
       late final MapFileFingerprint sourceFingerprintAfterOpen;
       try {
@@ -281,6 +293,7 @@ class OpenMapController {
         extractedMap: extractedMap,
         rawDocument: rawDocument,
         metadataViews: metadataViews,
+        stringViews: stringViews,
         terrainViews: terrainViews,
         objectViews: objectViews,
         sourceFingerprint: sourceFingerprintAfterOpen,
@@ -376,6 +389,7 @@ class OpenMapController {
       extractedMap: session.extractedMap,
       rawDocument: session.rawDocument,
       metadataViews: session.metadataViews,
+      stringViews: session.stringViews,
       terrainViews: session.terrainViews,
       objectViews: session.objectViews,
       sourceFingerprint: session.sourceFingerprint,

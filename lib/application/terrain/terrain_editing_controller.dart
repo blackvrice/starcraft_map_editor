@@ -363,6 +363,7 @@ class TerrainEditingController {
         extractedMap: session.extractedMap,
         rawDocument: rawDocument,
         metadataViews: session.metadataViews,
+        stringViews: session.stringViews,
         terrainViews: terrainViews,
         objectViews: session.objectViews,
         sourceFingerprint: session.sourceFingerprint,

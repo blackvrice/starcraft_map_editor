@@ -17,7 +17,7 @@
 | M3. 맵 아카이브 입출력 | 완료 | Open Map·검증형 Save As·fingerprint·복구 백업·자체 제작 SCX |
 | M4. EUD 수직 기능 | 완료 | 실제 euddraft 빌드·검증·안전한 출력 승격 |
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
-| M6. 객체와 로케이션 | 진행 중 | 객체 typed view·레이어·선택·검색·속성 Inspector·로케이션 편집 |
+| M6. 객체와 로케이션 | 진행 중 | 객체 편집·로케이션 편집·의미 참조 진단 |
 | M7. 일반 트리거 | 대기 | 트리거 편집 |
 | M8. 안정화와 배포 | 대기 | 검증된 Windows 릴리스 |
 
@@ -507,7 +507,7 @@
 - [x] 객체 팔레트와 검색
 - [x] 속성 Inspector와 유효성 검사
 - [x] 로케이션 생성, 크기 조절, 이름 변경
-- [ ] 잘못된 문자열/플레이어/좌표 참조 진단
+- [x] 잘못된 문자열/플레이어/좌표 참조 진단
 - [ ] 편집 왕복 통합 테스트
 
 구현 메모:
@@ -520,8 +520,8 @@
   남긴다. 불완전한 고정 레코드와 1280/5100바이트가 아닌 `MRGN`은 차단 진단을
   만들고 해당 typed view만 생략하며 raw 섹션은 변경하지 않는다.
 - Open Map과 검증형 Save As는 객체 view를 다시 디코딩해
-  `OpenedMapSession.objectViews`에 보관한다. 좌표·플레이어·문자열 참조의 전체
-  의미 검증과 속성 쓰기 API는 뒤의 M6 항목에서 추가한다.
+  `OpenedMapSession.objectViews`에 보관한다. 문자열 view도 같은 세션에 보관하며
+  Open/Save 검증과 객체 편집 후 의미 참조 진단을 다시 계산한다.
 - `MapLayerController`는 Terrain, Locations, Doodads, Sprites, Units의 활성·표시·
   잠금과 단일 검사 선택을 문서 변경 상태와 분리해 관리한다. 새 원본 스냅샷을
   열면 선택만 지우고 레이어 설정은 유지한다.
@@ -570,6 +570,18 @@
 - 생성과 속성 Apply는 각각 하나의 Undo 명령이며, 이름 변경 시 `MRGN`과 문자열
   섹션의 전후 snapshot을 같은 명령에 묶어 Undo/Redo한다. `Escape`와 레이어
   전환은 아직 적용하지 않은 생성 모드만 취소한다.
+- `ChkObjectReferenceValidator`는 유일한 `DIM ` 기준으로 유닛·두다드·스프라이트
+  좌표와 비어 있지 않은 로케이션 경계를 검사하고, 객체 owner가 Player 1~12의
+  raw 값 0~11인지 확인한다. 경계 밖 좌표와 뒤집히거나 0크기인 로케이션은 원본
+  필드의 CHK byte offset을 포함한 경고로 Problems에 표시한다.
+- 로케이션 name과 `SPRP`의 맵 이름·설명은 string ID 0을 없음으로 허용하고,
+  유일한 `STR `/`STRx`에서 범위와 entry 구조를 검사한다. 표가 없거나 손상되어
+  읽을 수 없으면 unresolved, 여러 표가 있으면 active table을 추측하지 않고
+  ambiguous 경고를 만든다.
+- 의미 참조 진단은 비표준/EUD raw 값을 자동 복구하거나 편집을 차단하지 않는
+  warning이다. 객체 Apply·배치·삭제·Undo/Redo 뒤 현재 typed view에서 다시 만들어
+  고쳐진 진단은 사라지고 되돌린 진단은 복원된다. 문자열 표 자체의 잘림·잘못된
+  offset 같은 구조 오류는 기존 blocking 진단 정책을 유지한다.
 
 완료 조건:
 

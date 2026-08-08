@@ -210,6 +210,16 @@ void main() {
       ..selectObject(session: original, object: object);
     final properties = fixture.objectEditingController.selectedProperties;
     expect(properties, isA<UnitObjectProperties>());
+    expect(
+      original.diagnostics
+          .where(
+            (diagnostic) =>
+                diagnostic.code ==
+                ChkObjectReferenceDiagnosticCodes.playerOutOfRange,
+          )
+          .length,
+      2,
+    );
 
     final invalid = fixture.objectEditingController.updateProperties(
       UnitObjectPropertyUpdate(
@@ -245,6 +255,16 @@ void main() {
       ),
     );
     expect(result.didApply, isTrue);
+    expect(
+      fixture.openMapController.state.session!.diagnostics
+          .where(
+            (diagnostic) =>
+                diagnostic.code ==
+                ChkObjectReferenceDiagnosticCodes.playerOutOfRange,
+          )
+          .length,
+      1,
+    );
     final edited = fixture
         .openMapController
         .state
@@ -271,6 +291,16 @@ void main() {
     expect(fixture.mapLayerController.state.selection?.object, object);
     expect(fixture.objectEditingController.undoLabel, 'Edit Unit properties');
     expect(fixture.objectEditingController.undo(), isTrue);
+    expect(
+      fixture.openMapController.state.session!.diagnostics
+          .where(
+            (diagnostic) =>
+                diagnostic.code ==
+                ChkObjectReferenceDiagnosticCodes.playerOutOfRange,
+          )
+          .length,
+      2,
+    );
     expect(
       fixture
           .openMapController

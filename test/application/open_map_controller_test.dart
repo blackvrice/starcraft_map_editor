@@ -208,13 +208,7 @@ void main() {
     test('decodes object sections into the opened document session', () async {
       final map = _createExtractedMap(
         _chkBytes([
-          _section(
-            'UNIT',
-            List<int>.generate(
-              ChkUnitPlacement.recordLength,
-              (index) => index + 1,
-            ),
-          ),
+          _section('UNIT', List<int>.filled(ChkUnitPlacement.recordLength, 0)),
           _section(
             'DD2 ',
             List<int>.filled(ChkDoodadPlacement.recordLength, 0),
@@ -265,6 +259,53 @@ void main() {
       expect(
         state.session!.objectViews.locationSections.single.locations,
         hasLength(64),
+      );
+    });
+
+    test('publishes nonblocking object reference diagnostics', () async {
+      final unit = Uint8List(ChkUnitPlacement.recordLength);
+      ByteData.sublistView(unit)
+        ..setUint16(4, 300, Endian.little)
+        ..setUint16(6, 64, Endian.little)
+        ..setUint8(16, 12);
+      final map = _createExtractedMap(
+        _chkBytes([
+          _section('DIM ', [8, 0, 8, 0]),
+          _section('SPRP', [2, 0, 0, 0]),
+          _section('STR ', [1, 0, 4, 0, 0x41, 0]),
+          _section('UNIT', unit),
+        ]),
+      );
+      final progressController = OperationProgressController();
+      final controller = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          result: MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progressController,
+      );
+      addTearDown(controller.dispose);
+      addTearDown(progressController.dispose);
+
+      final state = await controller.open();
+
+      expect(state.status, OpenMapStatus.opened);
+      expect(state.session!.requiresRestrictedEditing, isFalse);
+      expect(state.session!.stringViews.legacyTables, hasLength(1));
+      expect(state.diagnostics.map((diagnostic) => diagnostic.code), [
+        ChkObjectReferenceDiagnosticCodes.coordinateOutOfBounds,
+        ChkObjectReferenceDiagnosticCodes.playerOutOfRange,
+        ChkObjectReferenceDiagnosticCodes.stringReferenceOutOfRange,
+      ]);
+      expect(
+        state.diagnostics.every(
+          (diagnostic) =>
+              diagnostic.severity == DiagnosticSeverity.warning &&
+              !diagnostic.blocksOperation,
+        ),
+        isTrue,
       );
     });
 

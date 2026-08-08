@@ -29,6 +29,7 @@ class ObjectEditingController {
     this.objectViewDecoder = const ChkObjectViewDecoder(),
     this.stringViewDecoder = const ChkStringViewDecoder(),
     this.sectionEditor = const ChkObjectSectionEditor(),
+    this.objectReferenceValidator = const ChkObjectReferenceValidator(),
     this.historyLimit = 100,
   }) {
     if (historyLimit <= 0) {
@@ -45,6 +46,7 @@ class ObjectEditingController {
   final ChkObjectViewDecoder objectViewDecoder;
   final ChkStringViewDecoder stringViewDecoder;
   final ChkObjectSectionEditor sectionEditor;
+  final ChkObjectReferenceValidator objectReferenceValidator;
   final int historyLimit;
   final StreamController<ObjectEditingState> _changes =
       StreamController<ObjectEditingState>.broadcast(sync: true);
@@ -675,7 +677,7 @@ class ObjectEditingController {
       session,
       object.sectionIndex,
     ).locations[object.recordIndex];
-    final stringViews = stringViewDecoder.decode(session.rawDocument);
+    final stringViews = session.stringViews;
     final tables = [...stringViews.legacyTables, ...stringViews.extendedTables];
     final table = tables.length == 1 ? tables.single : null;
     final entry = location.stringId == 0
@@ -969,7 +971,7 @@ class ObjectEditingController {
   };
 
   ChkStringTableView? _singleSafeStringTable(OpenedMapSession session) {
-    final views = stringViewDecoder.decode(session.rawDocument);
+    final views = session.stringViews;
     final tables = [...views.legacyTables, ...views.extendedTables];
     if (tables.length != 1 ||
         !tables.single.canAppendSafely ||
@@ -1054,14 +1056,27 @@ class ObjectEditingController {
     if (clearSelection) {
       mapLayerController.clearSelection();
     }
+    final objectReferenceDiagnostics = objectReferenceValidator.validate(
+      metadataViews: session.metadataViews,
+      stringViews: stringViews,
+      objectViews: objectViews,
+    );
+    final refreshedDiagnostics = [
+      ...session.diagnostics.where(
+        (diagnostic) =>
+            !ChkObjectReferenceDiagnosticCodes.contains(diagnostic.code),
+      ),
+      ...objectReferenceDiagnostics,
+    ];
     final editedSession = OpenedMapSession(
       extractedMap: session.extractedMap,
       rawDocument: document,
       metadataViews: session.metadataViews,
+      stringViews: stringViews,
       terrainViews: session.terrainViews,
       objectViews: objectViews,
       sourceFingerprint: session.sourceFingerprint,
-      diagnostics: session.diagnostics,
+      diagnostics: refreshedDiagnostics,
     );
     openMapController.adoptEditedSession(editedSession);
     mapLayerController.synchronizeSession(editedSession);

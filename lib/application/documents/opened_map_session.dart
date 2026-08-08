@@ -8,6 +8,7 @@ class OpenedMapSession {
     required this.extractedMap,
     required this.rawDocument,
     required this.metadataViews,
+    required this.stringViews,
     required this.terrainViews,
     required this.objectViews,
     required this.sourceFingerprint,
@@ -17,6 +18,7 @@ class OpenedMapSession {
   final ExtractedMap extractedMap;
   final RawChkDocument rawDocument;
   final ChkMetadataViews metadataViews;
+  final ChkStringViews stringViews;
   final ChkTerrainViews terrainViews;
   final ChkObjectViews objectViews;
   final MapFileFingerprint sourceFingerprint;

@@ -92,8 +92,10 @@ class SaveMapController {
     this.rawChkEncoder = const RawChkEncoder(),
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
+    this.stringViewDecoder = const ChkStringViewDecoder(),
     this.terrainViewDecoder = const ChkTerrainViewDecoder(),
     this.objectViewDecoder = const ChkObjectViewDecoder(),
+    this.objectReferenceValidator = const ChkObjectReferenceValidator(),
     this.archiveTimeout = const Duration(seconds: 30),
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now {
@@ -115,8 +117,10 @@ class SaveMapController {
   final RawChkEncoder rawChkEncoder;
   final RawChkParser rawChkParser;
   final ChkMetadataViewDecoder metadataViewDecoder;
+  final ChkStringViewDecoder stringViewDecoder;
   final ChkTerrainViewDecoder terrainViewDecoder;
   final ChkObjectViewDecoder objectViewDecoder;
+  final ChkObjectReferenceValidator objectReferenceValidator;
   final Duration archiveTimeout;
   final DateTime Function() _clock;
   final StreamController<SaveMapState> _changes =
@@ -386,14 +390,22 @@ class SaveMapController {
 
       final verifiedDocument = parseResult.document!;
       final metadataViews = metadataViewDecoder.decode(verifiedDocument);
+      final stringViews = stringViewDecoder.decode(verifiedDocument);
       final terrainViews = terrainViewDecoder.decode(verifiedDocument);
       final objectViews = objectViewDecoder.decode(verifiedDocument);
+      final objectReferenceDiagnostics = objectReferenceValidator.validate(
+        metadataViews: metadataViews,
+        stringViews: stringViews,
+        objectViews: objectViews,
+      );
       final verifiedDiagnostics = [
         ...writeResult.diagnostics,
         ...reopenResult.diagnostics,
         ...metadataViews.diagnostics,
+        ...stringViews.diagnostics,
         ...terrainViews.diagnostics,
         ...objectViews.diagnostics,
+        ...objectReferenceDiagnostics,
       ];
 
       operationProgressController.update(
@@ -573,6 +585,7 @@ class SaveMapController {
           extractedMap: finalMap,
           rawDocument: verifiedDocument,
           metadataViews: metadataViews,
+          stringViews: stringViews,
           terrainViews: terrainViews,
           objectViews: objectViews,
           sourceFingerprint: verifiedOutputFingerprint,

@@ -247,6 +247,15 @@ Presentation에서 받은 맵 픽셀 사각형을 검증한 뒤 해당 20바이�
 Undo/Redo 명령으로 적용된다. 문자열 표 선택이 모호하거나 구조적으로 안전하지
 않으면 컨트롤러는 이름 변경만 거부하고 경계 편집과 raw 데이터 열람은 유지한다.
 
+`ChkObjectReferenceValidator`는 metadata·string·object typed view만 입력받는
+도메인 검증기다. 유일한 `DIM `이 있을 때 객체 좌표와 로케이션 경계를, 객체
+owner는 raw 플레이어 0~11을, `MRGN`과 `SPRP` string ID는 유일한 `STR `/`STRx`
+entry를 기준으로 검사한다. 중복 문자열 표에서는 active table을 선택하지 않는다.
+결과는 원본 section/record/field byte offset을 가진 비차단 warning이며 raw 문서를
+수정하지 않는다. `OpenMapController`와 `SaveMapController`는 구조 진단과 함께
+이를 세션에 넣고, `ObjectEditingController`는 편집·Undo/Redo 뒤 의미 진단만
+현재 view에서 교체한다. 구조 진단과 외부 도구 진단은 그대로 보존한다.
+
 ### ObjectPaletteController
 
 `application/editing`의 `ObjectPaletteController`는 현재 세션의 `UNIT`, `DD2 `,
