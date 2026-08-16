@@ -121,8 +121,9 @@ Python 플러그인은 파일 접근과 네트워크 접근이 가능한 임의 
   사용 전에 확인한다. 길이 절단이나 범위 밖 참조는 복구를 추측하지 않고
   전체 렌더 요청을 비차단 자산 진단으로 실패시킨다.
 - [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)의 객체 렌더 요청은
-  정렬·고유한 unit/sprite 키를 최대 256개만 받고 임의 CASC 경로를 허용하지
-  않는다. DAT/TBL 참조와 GRP RLE의 모든 길이·offset·run을 접근 전에 검증한다.
+  0~7 tileset과 정렬·고유한 unit/sprite 키를 최대 256개만 받고 임의 CASC
+  경로를 허용하지 않는다. DAT/TBL 참조와 GRP RLE의 모든 길이·offset·run을
+  접근 전에 검증한다.
 - 현재 객체 참조 모델은 클래식 DAT 네 파일의 정확한 알려진 크기를 요구하고
   `images.tbl` count·offset·NUL 종료를 먼저 검사한다. GRP ID는 1-based로
   해석하며 ASCII 상대 `.grp`를 `unit\\` 아래로 정규화하고 절대 경로·드라이브·
@@ -130,6 +131,9 @@ Python 플러그인은 파일 접근과 네트워크 접근이 가능한 임의 
 - 객체 RGBA envelope는 각 축 1~1,024px, 프레임당 4 MiB, 파일 전체 32 MiB로
   제한한다. 개별 미지원 객체는 marker fallback으로 격리하고 공용 metadata
   손상·overflow·출력 불일치는 전체 요청을 실패시킨다.
+- GRP 기본색은 요청 tileset의 정확히 검증된 WPE에서 얻고 player color는
+  별도로 검증한 8색 팔레트로 인덱스 8~15만 치환한다. 팔레트가 없거나
+  손상되면 다른 타일셋 또는 임의 색을 추측하지 않는다.
 - `object-atlas.rgba`는 앱 소유 요청 디렉터리의 새 일반 파일만 허용하고 검증·
   이미지 생성 직후 삭제한다. 게임 그래픽의 영구 cache·내보내기·로그 기록을
   제공하지 않는다.

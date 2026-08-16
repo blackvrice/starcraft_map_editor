@@ -86,7 +86,9 @@ Chkdraft 구현에서도 객체 종류는 `Draw as sprite` 비트의 유무로 �
 - CascLib로 필요한 DAT/TBL/GRP만 메모리에 읽는다.
 - DAT/TBL 참조와 모든 오프셋·길이를 읽기 전에 검증한다.
 - GRP 헤더와 프레임 오프셋을 검증한 뒤 픽셀 인덱스를 디코딩한다.
-- 팔레트 및 player color 정책을 적용해 RGBA 대표 프레임을 만든다.
+- 기본 팔레트는 현재 맵 타일셋의 `tileset/*.wpe`를 사용한다. player color가
+  있으면 `game\\tunit.pcx`에서 얻은 해당 8색을 GRP 인덱스 8~15에만 치환해
+  RGBA 대표 프레임을 만든다.
 - GRP의 폭·높이와 프레임 오프셋을 이용해 맵 좌표 중심에 배치한다.
 
 GRP는 첫 화면 표시를 구현하기에 범위가 작고, Remastered에서도 SD 프레임의
@@ -142,6 +144,9 @@ Carbot 같은 대체 스킨과 완전한 iscript 애니메이션 재생은 M6.1�
 protocol 3의 `renderObjectAtlas`, 가변 RGBA envelope와 구조화된 부분 fallback
 계약으로 확정했다. native `ObjectSpriteReference`는 `THG2`에서 변환된
 unit/sprite 종류와 ID를 받아 classic DAT의 참조 열, 1-based `images.tbl` ID와
-정규화된 `unit\\*.grp` 경로를 해석한다. 다음 M6.1 구현은 이 경로의 GRP frame
-0을 RGBA로 변환하고 envelope를 검증한다. 파일 경로와 원시 게임 바이트는
-Flutter 계층에 노출하지 않는다.
+정규화된 `unit\\*.grp` 경로를 해석한다. native `ObjectGrpDecoder`와
+`ObjectAtlasProtocol`은 자체 작성한 합성 GRP로 frame 0 RLE·투명도·anchor·
+player-color 치환을 검증하고 가변 RGBA envelope를 안전하게 기록한다. 다음
+M6.1 구현은 요청 tileset의 WPE와 `game\\tunit.pcx`, 도달 가능한 GRP를
+CascLib에서 읽어 이 코어와 protocol 3 gateway에 연결한다. 파일 경로와 원시
+게임 바이트는 Flutter 계층에 노출하지 않는다.

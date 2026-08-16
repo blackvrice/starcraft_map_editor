@@ -604,7 +604,7 @@
 - [x] SC:R CASC의 객체 메타데이터·그래픽 경로, 포맷, 버전 차이와 라이선스 조사
 - [x] native helper의 객체 자산 읽기·디코딩 프로토콜과 안전 한계 정의
 - [x] `THG2` sprite type에서 sprite/image/그래픽 자산으로 이어지는 참조 모델 구현
-- [ ] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
+- [x] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
 - [ ] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
 - [ ] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [ ] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
@@ -630,10 +630,24 @@
 - native `ObjectSpriteReference`는 클래식 DAT/TBL의 정확한 크기와 모든 중간
   참조를 검증하고 `unit → flingy → sprite → image` 및 pure sprite 경로를
   1-based `images.tbl` GRP ID와 정규화된 `unit\\*.grp` 경로로 해석한다.
+- native `ObjectGrpDecoder`는 합성 GRP frame 0의 논리 canvas, 투명·literal·
+  solid RLE, 중심 anchor와 선택적 player-color 인덱스 8~15 치환을 검증해
+  premultiplied RGBA8888로 만든다. `ObjectAtlasProtocol`은 정렬·고유 entry,
+  1,024px/4 MiB/32 MiB 상한을 검사하고 새 partial 파일을 flush한 뒤 고정
+  `object-atlas.rgba`로 승격한다. 실제 WPE/tunit/CASC 연결과 protocol 3
+  process gateway는 다음 항목에서 통합한다.
 - 자산 누락, 알 수 없는 ID, 지원하지 않는 포맷은 맵 열기와 저장을 차단하지 않는다.
   해당 객체는 현재의 색상·도형 위치 마커로 표시하고 Problems에 비차단 진단을 남긴다.
 - 그래픽 조회 결과는 표시 전용이다. `UNIT`, `DD2 `, `THG2` 원시 레코드와 Save As
   결과를 정규화하거나 변경하지 않는다.
+
+검증 메모:
+
+- `starcraft_object_graphics_native_test`는 자체 작성 GRP와 RGBA만 사용해
+  frame 0 RLE·투명도·anchor·player-color 치환, 손상 입력 거부와 binary
+  envelope 필드·정렬·길이·기존 출력 보존·32 MiB 상한을 검증한다.
+- 2026-08-16 Debug native CTest 3/3, `flutter analyze`, `flutter test`
+  319개 통과(환경 의존 5개 skip), `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

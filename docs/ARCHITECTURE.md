@@ -418,12 +418,15 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 3/helper 0.4.0으로 이관하며, 현재 구현된 protocol 2/helper 0.3.0은 그 전까지
 변경하지 않는다.
 
-Application은 맵의 `UNIT`와 `THG2`를 `unit`/`sprite`, ID, player color,
-direction의 정렬·중복 제거된 최대 256개 키로 바꾼다. `THG2`는 `Draw as
+Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
+`unit`/`sprite`, ID, player color, direction의 정렬·중복 제거된 최대 256개
+키로 바꾼다. `THG2`는 `Draw as
 sprite` 비트가 있을 때만 sprite ID이고, 없으면 unit ID다. helper는 요청된
 키에서 도달 가능한 DAT/TBL/GRP만 strict-read하고 frame 0을 가변 크기
-premultiplied RGBA8888과 anchor로 정규화한다. 원시 게임 자산과 내부 경로는
-Dart에 노출하지 않는다.
+premultiplied RGBA8888과 anchor로 정규화한다. 기본 256색은 요청 tileset의
+WPE를 사용하고 player color가 0~7이면 `game\\tunit.pcx`의 8색 gradient를
+GRP 인덱스 8~15에만 적용한다. 원시 게임 자산과 내부 경로는 Dart에 노출하지
+않는다.
 
 현재 native core의 `ObjectSpriteReference`는 wire protocol과 decoder보다 먼저
 구현되어 클래식 `units.dat` 228개, `flingy.dat` 209개, `sprites.dat` 517개,
@@ -433,6 +436,14 @@ GRP ID를 검증된 `images.tbl` offset과 NUL 종료 문자열에 연결한다.
 ASCII 소문자·`\\`로 정규화한 뒤 `unit\\` 아래의 상대 `.grp`만 허용한다.
 알 수 없는 포맷 크기, ID와 중간 참조 범위, 손상 TBL, 경로 탈출은 안정적인
 `SC_CASC_OBJECT_*` 실패로 반환한다.
+
+native core의 `ObjectGrpDecoder`는 GRP 전체 frame table과 frame 0의 crop·row
+offset·모든 RLE run을 접근 전에 검사한다. frame 0을 투명한 논리 canvas에
+합성하고 바깥 픽셀은 RGBA 0, 색이 있는 픽셀은 alpha 255로 만든다.
+`ObjectAtlasProtocol`은 최대 256개의 정렬·고유 entry와 RGBA 길이를 재검증하고
+32바이트 header/entry table/연속 pixel 영역을 새 partial 파일에 쓴 뒤 flush와
+원자적 rename을 수행한다. 이 코어는 아직 protocol 2 helper main에서 호출하지
+않으며 다음 Application gateway 작업에서 CASC palette/GRP 읽기와 함께 연결한다.
 
 결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
 32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축

@@ -49,6 +49,10 @@ FetchContent_MakeAvailable(nlohmann_json)
 add_library(starcraft_data_core STATIC
   src/casc_asset_inspector.cpp
   src/casc_asset_inspector.h
+  src/object_atlas_protocol.cpp
+  src/object_atlas_protocol.h
+  src/object_grp_decoder.cpp
+  src/object_grp_decoder.h
   src/object_sprite_reference.cpp
   src/object_sprite_reference.h
   src/tile_atlas_protocol.cpp
@@ -170,6 +174,40 @@ target_link_libraries(
 add_test(
   NAME starcraft_object_reference_native
   COMMAND starcraft_object_reference_native_test
+)
+
+add_executable(
+  starcraft_object_graphics_native_test
+  test/object_graphics_test.cpp
+)
+target_compile_features(
+  starcraft_object_graphics_native_test
+  PRIVATE
+    cxx_std_17
+)
+target_compile_definitions(
+  starcraft_object_graphics_native_test
+  PRIVATE
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+)
+target_compile_options(
+  starcraft_object_graphics_native_test
+  PRIVATE
+    /W4
+    /WX
+    /EHsc
+    /utf-8
+)
+target_link_libraries(
+  starcraft_object_graphics_native_test
+  PRIVATE
+    starcraft_data_core
+)
+
+add_test(
+  NAME starcraft_object_graphics_native
+  COMMAND starcraft_object_graphics_native_test
 )
 
 install(

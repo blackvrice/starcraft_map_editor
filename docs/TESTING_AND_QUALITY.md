@@ -276,8 +276,8 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
-- protocol 3의 `renderObjectAtlas` unit/sprite 키 정렬·중복·256개 상한과
-  고정 frame/player-color/direction 요청 검증
+- protocol 3의 `renderObjectAtlas` tileset enum, unit/sprite 키 정렬·중복·
+  256개 상한과 고정 frame/player-color/direction 요청 검증
 - 객체 envelope magic/version/reserved, 가변 width/height·anchor, 연속 pixel
   offset과 성공/unsupported의 요청 전체 분할 검증
 - 합성 DAT/TBL/GRP의 unit/sprite 참조, frame 0 RLE·투명도·player color와
@@ -299,12 +299,17 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 연결, 1-based TBL ID와 경로 정규화를 검증한다. 잘못된 kind·ID·DAT 크기,
 범위 밖 중간 참조, GRP 없는 image, 손상 TBL, 경로 탈출과 비-GRP 확장자를
 각각 거부한다.
+`starcraft_object_graphics_native_test`는 자체 작성한 2행 GRP로 frame 0의
+논리 canvas와 anchor, 투명·literal·solid RLE, WPE 기본색과 인덱스 8~15
+player-color 치환을 확인한다. 절단 행, 잘못된 header/crop/row offset,
+0·overflow·절단 run을 거부하고, 객체 envelope의 magic/version/entry/pixel
+offset·길이, 정렬·중복·색 값, 기존 출력 보존과 4 MiB/32 MiB 상한을 검증한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
-M6.1의 다음 구현에서는 native 테스트에 합성 GRP decoder를,
+M6.1의 다음 구현에서는
 `process_starcraft_object_atlas_gateway_test.dart`에 protocol 3 가짜 helper의
 부분 fallback·손상 envelope·timeout·취소·임시 파일 정리를 추가한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든

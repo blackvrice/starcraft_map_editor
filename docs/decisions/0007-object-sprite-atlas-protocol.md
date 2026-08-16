@@ -8,6 +8,9 @@
 구현되고 기존 설치 검사·타일 렌더 어댑터가 함께 이관될 때까지 유지한다.
 2026-08-16에 classic DAT/TBL 크기·참조·경로를 검증하는 native
 `ObjectSpriteReference`와 합성 테스트를 먼저 구현했다.
+같은 날 GRP frame 0 decoder와 binary writer를 구현하면서 GRP 색상은 맵
+타일셋 WPE에 의존한다는 점을 확인해 요청에 `tileset`을 명시하도록 계약을
+보완했다. 이 변경은 아직 배포하지 않은 protocol 3 구현 계약에 포함한다.
 
 ## Context
 
@@ -55,6 +58,7 @@ stdin은 줄바꿈으로 끝나는 단일 UTF-8 JSON 레코드다.
   "operation": "renderObjectAtlas",
   "installationPath": "C:\\Program Files (x86)\\StarCraft",
   "outputFileName": "object-atlas.rgba",
+  "tileset": 0,
   "framePolicy": "firstFrame",
   "objects": [
     {"kind": "unit", "id": 0, "playerColor": 0, "direction": 0},
@@ -63,11 +67,15 @@ stdin은 줄바꿈으로 끝나는 단일 UTF-8 JSON 레코드다.
 }
 ```
 
+- `tileset`은 CHK `ERA`의 low 3 bits와 같은 0~7 enum이다. 클래식 GRP의
+  인덱스 16~255를 RGBA로 바꾸는 기본 팔레트는 해당 타일셋 WPE에서 읽으므로
+  추측하거나 설치 기본값으로 대체하지 않는다.
 - `objects`는 1~256개다. `kind`는 `unit` 또는 `sprite`, `id`는 `u16`이다.
   `THG2`에서 `Draw as sprite` 비트가 있으면 `sprite`, 없으면 `unit`을 사용한다.
 - `playerColor`는 0~7 또는 `null`이다. Application은 owner 0~7만 같은 색으로
-  변환하고 나머지는 `null`로 요청한다. `null`은 GRP 팔레트의 기본 색을
-  유지하는 중립 변환이다.
+  변환하고 나머지는 `null`로 요청한다. `null`은 선택한 타일셋 WPE의 기본색을
+  그대로 사용한다. 0~7은 `game\\tunit.pcx`에서 얻은 해당 player gradient로
+  GRP 팔레트 인덱스 8~15만 치환하고 나머지는 WPE 색을 유지한다.
 - 첫 구현의 `framePolicy`는 `firstFrame`, `direction`은 0만 허용한다. 필드는
   캐시 키와 후속 방향 정책을 명시하기 위해 처음부터 포함하지만 지원하지 않는
   값은 조용히 무시하지 않고 protocol 오류로 거부한다.
@@ -110,8 +118,8 @@ strict-read한 자산 수·전체 바이트, 출력 파일 metadata와 부분 �
   "cascLibRevision": "4971d363e665551ac4142f541e5f2d71f1cda653",
   "status": "success",
   "installation": {"path": "...", "storageProduct": "s1", "storageBuildNumber": 13515},
-  "assets": {"readCount": 6, "totalBytes": 89000},
-  "atlas": {"fileName": "object-atlas.rgba", "fileBytes": 42000, "formatVersion": 1, "entryCount": 1},
+  "assets": {"readCount": 9, "totalBytes": 89000},
+  "atlas": {"fileName": "object-atlas.rgba", "fileBytes": 42000, "formatVersion": 1, "entryCount": 1, "tileset": 0},
   "unsupportedObjects": [
     {"kind": "sprite", "id": 130, "playerColor": null, "direction": 0, "code": "SC_CASC_OBJECT_GRP_MISSING"}
   ]
@@ -165,8 +173,8 @@ helper는 작업 디렉터리에 부분 파일을 만든 뒤 flush하고 고정 
 `(mapX - anchorX, mapY - anchorY)`를 좌상단으로 사용한다. 빈 결과도 정상
 header를 가지며 모든 요청 키가 `unsupportedObjects`에 있어야 한다.
 
-Dart 어댑터는 helper 종료 코드와 JSON metadata, 실제 일반 파일, magic/version,
-reserved, entry 순서와 요청 포함 관계, 숫자 overflow, table/pixel 길이,
+Dart 어댑터는 helper 종료 코드와 JSON metadata, 요청한 tileset, 실제 일반 파일,
+magic/version, reserved, entry 순서와 요청 포함 관계, 숫자 overflow, table/pixel 길이,
 offset의 연속성, 성공/unsupported의 정확한 분할을 모두 교차 검증한 뒤에만
 RGBA를 채택한다. link/reparse point, 기존 파일, 추가 trailing bytes와 중복
 키를 거부한다.
@@ -241,8 +249,9 @@ HD/HD2/SD 연결, 다중 레이어와 훨씬 큰 자산 상한을 동시에 설�
 
 ## Validation
 
-- 자체 제작 DAT/TBL/GRP 바이트로 unit/sprite 참조, frame 0 RLE, 투명 run,
-  player color, canvas와 anchor를 네이티브 단위 테스트한다.
+- 자체 제작 DAT/TBL/GRP 바이트로 unit/sprite 참조, frame 0의 투명·literal·solid
+  RLE, WPE 기본색, player color 8색 치환, canvas와 anchor를 네이티브 단위
+  테스트한다.
 - 절단 header/table/row, overflow offset/run, 비종료 TBL, 경로 탈출, 순환·범위
   밖 참조, 1,024px/4 MiB/32 MiB 상한과 기존·외부 출력 거부를 검증한다.
 - Dart 가짜 helper 테스트는 protocol/helper/request/path 불일치, malformed JSON,
