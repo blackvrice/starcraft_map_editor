@@ -425,6 +425,15 @@ sprite` 비트가 있을 때만 sprite ID이고, 없으면 unit ID다. helper는
 premultiplied RGBA8888과 anchor로 정규화한다. 원시 게임 자산과 내부 경로는
 Dart에 노출하지 않는다.
 
+현재 native core의 `ObjectSpriteReference`는 wire protocol과 decoder보다 먼저
+구현되어 클래식 `units.dat` 228개, `flingy.dat` 209개, `sprites.dat` 517개,
+`images.dat` 999개 엔트리의 첫 참조 열을 little-endian으로 해석한다. unit은
+flingy를 거치고 pure sprite는 sprite에서 시작하며, `images.dat`의 1-based
+GRP ID를 검증된 `images.tbl` offset과 NUL 종료 문자열에 연결한다. 결과 경로는
+ASCII 소문자·`\\`로 정규화한 뒤 `unit\\` 아래의 상대 `.grp`만 허용한다.
+알 수 없는 포맷 크기, ID와 중간 참조 범위, 손상 TBL, 경로 탈출은 안정적인
+`SC_CASC_OBJECT_*` 실패로 반환한다.
+
 결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
 32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축
 1~1,024px, 프레임당 최대 4 MiB이며 JSON/stdout/stderr와 원본 strict-read

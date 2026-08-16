@@ -294,12 +294,17 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 1,024번 이상의 확장 `CV5` 그룹, `VX4EX` 수평 반전, `VR4` 팔레트와 RGBA를
 확인하고 네 파일의 길이 절단,
 4,096그룹 초과 `CV5`, 범위 밖 메가/미니타일 참조를 거부한다.
+`starcraft_object_reference_native_test`는 저장소에 게임 데이터를 넣지 않고
+정확한 크기의 합성 DAT/TBL로 unit과 pure sprite의 flingy/sprite/image/GRP
+연결, 1-based TBL ID와 경로 정규화를 검증한다. 잘못된 kind·ID·DAT 크기,
+범위 밖 중간 참조, GRP 없는 image, 손상 TBL, 경로 탈출과 비-GRP 확장자를
+각각 거부한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
-M6.1 구현에서는 `starcraft_data_helper_native_test`에 합성 객체 자산 decoder를,
+M6.1의 다음 구현에서는 native 테스트에 합성 GRP decoder를,
 `process_starcraft_object_atlas_gateway_test.dart`에 protocol 3 가짜 helper의
 부분 fallback·손상 envelope·timeout·취소·임시 파일 정리를 추가한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든

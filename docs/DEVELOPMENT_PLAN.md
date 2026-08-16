@@ -603,7 +603,7 @@
 
 - [x] SC:R CASC의 객체 메타데이터·그래픽 경로, 포맷, 버전 차이와 라이선스 조사
 - [x] native helper의 객체 자산 읽기·디코딩 프로토콜과 안전 한계 정의
-- [ ] `THG2` sprite type에서 sprite/image/그래픽 자산으로 이어지는 참조 모델 구현
+- [x] `THG2` sprite type에서 sprite/image/그래픽 자산으로 이어지는 참조 모델 구현
 - [ ] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
 - [ ] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
 - [ ] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
@@ -627,6 +627,9 @@
   [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)의 protocol 3
   `renderObjectAtlas` 요청, 가변 RGBA envelope와 부분 fallback 상한을 따른다.
   구현 전까지 현재 helper 0.3.0/protocol 2는 유지한다.
+- native `ObjectSpriteReference`는 클래식 DAT/TBL의 정확한 크기와 모든 중간
+  참조를 검증하고 `unit → flingy → sprite → image` 및 pure sprite 경로를
+  1-based `images.tbl` GRP ID와 정규화된 `unit\\*.grp` 경로로 해석한다.
 - 자산 누락, 알 수 없는 ID, 지원하지 않는 포맷은 맵 열기와 저장을 차단하지 않는다.
   해당 객체는 현재의 색상·도형 위치 마커로 표시하고 Problems에 비차단 진단을 남긴다.
 - 그래픽 조회 결과는 표시 전용이다. `UNIT`, `DD2 `, `THG2` 원시 레코드와 Save As

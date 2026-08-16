@@ -123,6 +123,10 @@ Python 플러그인은 파일 접근과 네트워크 접근이 가능한 임의 
 - [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)의 객체 렌더 요청은
   정렬·고유한 unit/sprite 키를 최대 256개만 받고 임의 CASC 경로를 허용하지
   않는다. DAT/TBL 참조와 GRP RLE의 모든 길이·offset·run을 접근 전에 검증한다.
+- 현재 객체 참조 모델은 클래식 DAT 네 파일의 정확한 알려진 크기를 요구하고
+  `images.tbl` count·offset·NUL 종료를 먼저 검사한다. GRP ID는 1-based로
+  해석하며 ASCII 상대 `.grp`를 `unit\\` 아래로 정규화하고 절대 경로·드라이브·
+  빈 세그먼트·`.`·`..`를 거부한다.
 - 객체 RGBA envelope는 각 축 1~1,024px, 프레임당 4 MiB, 파일 전체 32 MiB로
   제한한다. 개별 미지원 객체는 marker fallback으로 격리하고 공용 metadata
   손상·overflow·출력 불일치는 전체 요청을 실패시킨다.

@@ -6,6 +6,8 @@
 구현 메모: 이 결정은 다음 구현에서 도입할 wire protocol 3과 helper 0.4.0의
 계약이다. 현재 코드의 wire protocol 2와 helper 0.3.0은 객체 operation이 실제로
 구현되고 기존 설치 검사·타일 렌더 어댑터가 함께 이관될 때까지 유지한다.
+2026-08-16에 classic DAT/TBL 크기·참조·경로를 검증하는 native
+`ObjectSpriteReference`와 합성 테스트를 먼저 구현했다.
 
 ## Context
 

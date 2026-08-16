@@ -140,6 +140,8 @@ Carbot 같은 대체 스킨과 완전한 iscript 애니메이션 재생은 M6.1�
 
 [ADR-0007](../decisions/0007-object-sprite-atlas-protocol.md)은 이 조사 결과를
 protocol 3의 `renderObjectAtlas`, 가변 RGBA envelope와 구조화된 부분 fallback
-계약으로 확정했다. 다음 M6.1 구현은 `THG2`의 `Draw as sprite` 판정과
-unit/sprite DAT 참조 모델부터 추가한다. 파일 경로와 원시 게임 바이트는 Flutter
-계층에 노출하지 않는다.
+계약으로 확정했다. native `ObjectSpriteReference`는 `THG2`에서 변환된
+unit/sprite 종류와 ID를 받아 classic DAT의 참조 열, 1-based `images.tbl` ID와
+정규화된 `unit\\*.grp` 경로를 해석한다. 다음 M6.1 구현은 이 경로의 GRP frame
+0을 RGBA로 변환하고 envelope를 검증한다. 파일 경로와 원시 게임 바이트는
+Flutter 계층에 노출하지 않는다.
