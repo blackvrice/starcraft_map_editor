@@ -138,7 +138,8 @@ Carbot 같은 대체 스킨과 완전한 iscript 애니메이션 재생은 M6.1�
 
 ## 다음 구현 입력
 
-다음 M6.1 항목은 이 조사 결과를 바탕으로 native helper 프로토콜을 정의한다.
-최소 요청은 설치 식별자, 객체 종류와 ID, player color, 대표 프레임 정책을 받고,
-응답은 image ID, 논리 중심점, RGBA 크기·바이트 또는 구조화된 fallback 사유를
-제공해야 한다. 파일 경로와 원시 게임 바이트는 Flutter 계층에 노출하지 않는다.
+[ADR-0007](../decisions/0007-object-sprite-atlas-protocol.md)은 이 조사 결과를
+protocol 3의 `renderObjectAtlas`, 가변 RGBA envelope와 구조화된 부분 fallback
+계약으로 확정했다. 다음 M6.1 구현은 `THG2`의 `Draw as sprite` 판정과
+unit/sprite DAT 참조 모델부터 추가한다. 파일 경로와 원시 게임 바이트는 Flutter
+계층에 노출하지 않는다.

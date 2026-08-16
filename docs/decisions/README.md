@@ -19,6 +19,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0004](0004-stormlib-helper-process.md) | Accepted | StormLib helper process 브리지 |
 | [0005](0005-casclib-helper-process.md) | Accepted | CascLib 기반 로컬 StarCraft 데이터 helper |
 | [0006](0006-request-scoped-tile-atlas-cache.md) | Accepted | 요청별 RGBA 타일 아틀라스와 메모리 캐시 |
+| [0007](0007-object-sprite-atlas-protocol.md) | Accepted | 요청별 객체 스프라이트 아틀라스 프로토콜 |
 
 ## 새 ADR 형식
 

@@ -410,6 +410,30 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 이미지만 우선 사용하고 실패 raw에는 기존 색상·교차 패턴을 유지한다. 자산
 설정을 지우거나 바꾸면 이전 LRU가 즉시 dispose되고 raw fallback으로 돌아간다.
 
+### StarCraft 객체 스프라이트 로딩
+
+[ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
+타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
+`renderObjectAtlas` operation으로 정의한다. 다음 구현에서 공용 wire protocol
+3/helper 0.4.0으로 이관하며, 현재 구현된 protocol 2/helper 0.3.0은 그 전까지
+변경하지 않는다.
+
+Application은 맵의 `UNIT`와 `THG2`를 `unit`/`sprite`, ID, player color,
+direction의 정렬·중복 제거된 최대 256개 키로 바꾼다. `THG2`는 `Draw as
+sprite` 비트가 있을 때만 sprite ID이고, 없으면 unit ID다. helper는 요청된
+키에서 도달 가능한 DAT/TBL/GRP만 strict-read하고 frame 0을 가변 크기
+premultiplied RGBA8888과 anchor로 정규화한다. 원시 게임 자산과 내부 경로는
+Dart에 노출하지 않는다.
+
+결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
+32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축
+1~1,024px, 프레임당 최대 4 MiB이며 JSON/stdout/stderr와 원본 strict-read
+상한은 기존 helper 경계를 따른다. Dart는 JSON, 일반 파일, header, entry 순서,
+offset·길이, 성공/unsupported의 요청 전체 분할을 교차 검증한다. 개별 객체
+실패는 위치 마커와 Problems로 대체하고 공용 metadata 손상만 요청 전체를
+실패시킨다. 임시 파일과 CPU RGBA는 이미지 생성 직후 삭제하며 객체 이미지
+LRU는 세션·설정 generation과 명시적 dispose를 따른다.
+
 ## 6. 명령과 Undo/Redo
 
 모든 사용자 편집은 명시적인 명령으로 표현한다.

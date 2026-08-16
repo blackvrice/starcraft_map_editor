@@ -276,6 +276,12 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
+- protocol 3의 `renderObjectAtlas` unit/sprite 키 정렬·중복·256개 상한과
+  고정 frame/player-color/direction 요청 검증
+- 객체 envelope magic/version/reserved, 가변 width/height·anchor, 연속 pixel
+  offset과 성공/unsupported의 요청 전체 분할 검증
+- 합성 DAT/TBL/GRP의 unit/sprite 참조, frame 0 RLE·투명도·player color와
+  절단·overflow·경로 탈출·1,024px/4 MiB/32 MiB 상한 거부
 - 설정 load/set/choose/refresh/clear와 선택 취소 시 기존 값 유지
 - 오래 걸린 이전 검사 결과가 최신 설정 상태를 덮어쓰지 않음
 - Windows method channel이 폴더 선택 메서드와 취소 결과를 전달
@@ -293,6 +299,9 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
+M6.1 구현에서는 `starcraft_data_helper_native_test`에 합성 객체 자산 decoder를,
+`process_starcraft_object_atlas_gateway_test.dart`에 protocol 3 가짜 helper의
+부분 fallback·손상 envelope·timeout·취소·임시 파일 정리를 추가한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든
 자산을 읽고 8개 타일셋 각각의 raw `0/1/0x4000`을 RGBA로 합성하는지 확인한다.
 

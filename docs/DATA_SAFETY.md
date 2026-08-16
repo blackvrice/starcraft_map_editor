@@ -120,6 +120,15 @@ Python 플러그인은 파일 접근과 네트워크 접근이 가능한 임의 
   정확히 1,024바이트인 `WPE`, `CV5→VX4EX`와 `VX4EX→VR4` 참조 범위를
   사용 전에 확인한다. 길이 절단이나 범위 밖 참조는 복구를 추측하지 않고
   전체 렌더 요청을 비차단 자산 진단으로 실패시킨다.
+- [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)의 객체 렌더 요청은
+  정렬·고유한 unit/sprite 키를 최대 256개만 받고 임의 CASC 경로를 허용하지
+  않는다. DAT/TBL 참조와 GRP RLE의 모든 길이·offset·run을 접근 전에 검증한다.
+- 객체 RGBA envelope는 각 축 1~1,024px, 프레임당 4 MiB, 파일 전체 32 MiB로
+  제한한다. 개별 미지원 객체는 marker fallback으로 격리하고 공용 metadata
+  손상·overflow·출력 불일치는 전체 요청을 실패시킨다.
+- `object-atlas.rgba`는 앱 소유 요청 디렉터리의 새 일반 파일만 허용하고 검증·
+  이미지 생성 직후 삭제한다. 게임 그래픽의 영구 cache·내보내기·로그 기록을
+  제공하지 않는다.
 - 알 수 없는 자산의 이름·내용을 변경하거나 손상된 저장소를 추측해 복구하지
   않는다. 복구가 필요하면 Battle.net Scan and Repair를 안내한다.
 - 설치 경로는 로컬 사용자 설정에만 저장한다. 진단 공유 시 개인 경로가 포함될
