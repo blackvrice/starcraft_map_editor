@@ -18,6 +18,7 @@ import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart'
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
+import 'package:starcraft_map_editor/application/objects/object_sprite_atlas_loader.dart';
 import 'package:starcraft_map_editor/application/ports/eud_build_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart';
@@ -29,6 +30,7 @@ import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gate
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_data_asset_inspector.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
@@ -38,6 +40,8 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
@@ -175,6 +179,14 @@ void main() {
         loader: TerrainTileAtlasLoader(gateway: atlasGateway),
         textureFactory: textureFactory,
       );
+      final objectAtlasGateway = _RenderingStarCraftObjectAtlasGateway();
+      final objectTextureFactory = _BorrowedObjectTextureFactory(
+        resolvedOwnedTexture.image,
+      );
+      final objectTextureController = ObjectSpriteTextureController(
+        loader: ObjectSpriteAtlasLoader(gateway: objectAtlasGateway),
+        textureFactory: objectTextureFactory,
+      );
 
       final recentProjectsService = RecentProjectsService(settingsStore);
       final progressController = OperationProgressController();
@@ -189,6 +201,7 @@ void main() {
         operationProgressController: progressController,
       );
       addTearDown(() {
+        objectTextureController.dispose();
         textureController.dispose();
         resolvedOwnedTexture.dispose();
       });
@@ -204,6 +217,7 @@ void main() {
           settingsStore: settingsStore,
           starCraftDataAssetSettingsController: assetController,
           terrainTileTextureController: textureController,
+          objectSpriteTextureController: objectTextureController,
         ),
       );
       await tester.pumpAndSettle();
@@ -228,6 +242,17 @@ void main() {
                   .painter!
               as MapCanvasPainter;
       expect(painter.terrainTextures, hasLength(33));
+      expect(objectAtlasGateway.requests, hasLength(1));
+      expect(
+        objectAtlasGateway.requests.single.installationPath,
+        installationPath,
+      );
+      expect(
+        objectTextureController.state.status,
+        ObjectSpriteTextureStatus.ready,
+      );
+      expect(objectTextureController.state.textures, isNotEmpty);
+      expect(painter.objectTextures, hasLength(1));
 
       await assetController.clear();
       await tester.pumpAndSettle();
@@ -235,6 +260,12 @@ void main() {
       expect(textureController.state.status, TerrainTileTextureStatus.idle);
       expect(textureController.state.textures, isEmpty);
       expect(textureFactory.disposedTextures, 33);
+      expect(
+        objectTextureController.state.status,
+        ObjectSpriteTextureStatus.idle,
+      );
+      expect(objectTextureController.state.textures, isEmpty);
+      expect(objectTextureFactory.disposedTextures, 1);
       expect(find.text('Raw fallback'), findsOneWidget);
     },
   );
@@ -1110,6 +1141,7 @@ Widget _createTestApp({
   ObjectEditingController? objectEditingController,
   ObjectPaletteController? objectPaletteController,
   TerrainTileTextureController? terrainTileTextureController,
+  ObjectSpriteTextureController? objectSpriteTextureController,
 }) {
   final resolvedSettingsStore = settingsStore ?? InMemorySettingsStore();
   final resolvedProgressController =
@@ -1156,6 +1188,13 @@ Widget _createTestApp({
       TerrainTileTextureController(
         loader: TerrainTileAtlasLoader(
           gateway: _UnusedStarCraftTileAtlasGateway(),
+        ),
+      );
+  final resolvedObjectSpriteTextureController =
+      objectSpriteTextureController ??
+      ObjectSpriteTextureController(
+        loader: ObjectSpriteAtlasLoader(
+          gateway: _UnusedStarCraftObjectAtlasGateway(),
         ),
       );
   final resolvedSaveMapController =
@@ -1213,6 +1252,7 @@ Widget _createTestApp({
       objectEditingController: resolvedObjectEditingController,
       objectPaletteController: resolvedObjectPaletteController,
       terrainTileTextureController: resolvedTerrainTileTextureController,
+      objectSpriteTextureController: resolvedObjectSpriteTextureController,
     ),
   );
 }
@@ -1329,6 +1369,44 @@ final class _RenderingStarCraftTileAtlasGateway
   }
 }
 
+final class _RenderingStarCraftObjectAtlasGateway
+    implements StarCraftObjectAtlasGateway {
+  final List<StarCraftObjectAtlasRequest> requests = [];
+
+  @override
+  Future<void> cancel(String operationId) async {}
+
+  @override
+  Future<StarCraftObjectAtlasResult> render(
+    StarCraftObjectAtlasRequest request,
+  ) async {
+    requests.add(request);
+    return StarCraftObjectAtlasResult(
+      request: request,
+      entries: [
+        for (final key in request.objects)
+          StarCraftObjectAtlasEntry(
+            key: key,
+            spriteId: 1,
+            imageId: 2,
+            width: 8,
+            height: 8,
+            anchorX: 4,
+            anchorY: 4,
+            frameIndex: 0,
+            rgbaBytes: Uint8List(8 * 8 * 4),
+          ),
+      ],
+      unsupportedObjects: const [],
+      storageProduct: 's1',
+      storageBuildNumber: 13515,
+      helperVersion: '0.3.0',
+      cascLibRevision: 'pinned-casc',
+      totalAssetBytes: 1024,
+    );
+  }
+}
+
 final class _BorrowedTerrainTextureFactory
     implements TerrainTileTextureFactory {
   _BorrowedTerrainTextureFactory(this.image);
@@ -1366,6 +1444,65 @@ final class _BorrowedTerrainTexture implements TerrainTileTexture {
   }
 }
 
+final class _BorrowedObjectTextureFactory
+    implements ObjectSpriteTextureFactory {
+  _BorrowedObjectTextureFactory(this.image);
+
+  final ui.Image image;
+  int disposedTextures = 0;
+
+  @override
+  Future<ObjectSpriteTexture> create(ObjectSpriteRgbaFrame frame) async {
+    return _BorrowedObjectTexture(
+      frame: frame,
+      image: image,
+      onDispose: () => disposedTextures++,
+    );
+  }
+}
+
+final class _BorrowedObjectTexture implements ObjectSpriteTexture {
+  _BorrowedObjectTexture({
+    required ObjectSpriteRgbaFrame frame,
+    required this.image,
+    required this.onDispose,
+  }) : spriteId = frame.spriteId,
+       imageId = frame.imageId,
+       width = frame.width,
+       height = frame.height,
+       anchorX = frame.anchorX,
+       anchorY = frame.anchorY,
+       frameIndex = frame.frameIndex;
+
+  @override
+  final int spriteId;
+  @override
+  final int imageId;
+  @override
+  final int width;
+  @override
+  final int height;
+  @override
+  final int anchorX;
+  @override
+  final int anchorY;
+  @override
+  final int frameIndex;
+  @override
+  final ui.Image image;
+  final VoidCallback onDispose;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    if (_disposed) {
+      return;
+    }
+    _disposed = true;
+    onDispose();
+  }
+}
+
 final class _UnusedEudCompilerGateway implements EudBuildGateway {
   @override
   Stream<EudBuildEvent> build(EudBuildPlan request) {
@@ -1381,6 +1518,19 @@ final class _UnusedStarCraftTileAtlasGateway
   @override
   Future<StarCraftTileAtlasResult> render(StarCraftTileAtlasRequest request) {
     throw StateError('The StarCraft tile gateway is not used by this test.');
+  }
+}
+
+final class _UnusedStarCraftObjectAtlasGateway
+    implements StarCraftObjectAtlasGateway {
+  @override
+  Future<void> cancel(String operationId) async {}
+
+  @override
+  Future<StarCraftObjectAtlasResult> render(
+    StarCraftObjectAtlasRequest request,
+  ) {
+    throw StateError('The StarCraft object gateway is not used by this test.');
   }
 }
 

@@ -462,8 +462,18 @@ ID를 gateway에 취소 요청하고 generation을 증가시킨다. 이미 끝�
 상태·cache에 반영하지 않는다. cache는 installation identity 또는 budget 변경으로
 퇴출된 모든 이미지를 dispose한다. concrete protocol 3 process adapter는
 JSON·설치 identity·출력 파일·binary entry·pixel coverage를 모두 검증하며
-operation 단위 timeout/cancel을 제공한다. 아직 캔버스 painter에는 연결하지
-않았으므로 현재 앱 화면은 기존 marker를 유지한다.
+operation 단위 timeout/cancel을 제공한다. `EditorShell`은 session과 준비된 설치
+inspection을 controller에 동기화하고 상태의 texture와 비차단 진단을 각각
+`MapCanvas`와 Problems에 전달한다. 설정을 지우거나 session이 사라지면 현재
+generation을 취소하고 LRU 이미지를 dispose한다.
+
+`MapLayerController`의 scene point는 원시 객체 위치와 별도로 atlas graphic key를
+가진다. `UNIT`은 unit key, `THG2`는 `DrawAsSprite` 비트에 따라 sprite 또는 unit
+key를 사용하며 `DD2 `는 아직 key가 없어 marker로 남는다. painter는 객체 중심에서
+`anchor * tileExtent / 32`를 빼고 원본 RGBA 크기도 같은 비율로 확대한다. 따라서
+선택 이동 미리보기는 먼저 중심 좌표에 적용되고 image와 선택 outline이 함께
+이동한다. key가 없거나 texture 생성이 실패한 점은 레이어별 원·마름모·사각형
+marker를 계속 그려 편집과 hit testing을 막지 않는다.
 
 결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
 32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축

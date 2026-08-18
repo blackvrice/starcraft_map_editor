@@ -164,6 +164,7 @@ void main() {
     expect(state.unsupportedObjects.single.key.id, 1);
     expect(state.fallbackObjects.map((key) => key.id), [1, 2]);
     expect(state.diagnostics.map((diagnostic) => diagnostic.code), [
+      'SC_CASC_OBJECT_GRP_MISSING',
       ObjectSpriteTextureDiagnosticCodes.imageDecodeFailed,
     ]);
     controller.dispose();

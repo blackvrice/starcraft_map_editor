@@ -607,7 +607,7 @@
 - [x] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
 - [x] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
 - [x] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
-- [ ] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
+- [x] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [ ] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
 - [ ] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
 - [ ] 다수 객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측
@@ -651,10 +651,15 @@
 - `ProcessStarCraftObjectAtlasGateway`는 protocol 3/helper 0.4.0 요청을 절대 경로의
   번들 helper에 전달하고 JSON·설치 identity·일반 파일·32바이트 header/entry·
   연속 pixel 영역·요청 전체 coverage를 교차 검증한다. timeout과 명시적 취소는
-  해당 operation ID의 프로세스만 종료한다. 캔버스 painter 주입은 다음 렌더
-  항목에서 수행한다.
+  해당 operation ID의 프로세스만 종료한다.
+- `MapLayerController` scene은 `UNIT`과 `THG2 DrawAsSprite`를 atlas key에 연결한다.
+  `EditorShell`은 열린 session·설치 inspection·tileset이 바뀔 때 객체 texture
+  generation을 동기화하며, `MapCanvasPainter`는 32 StarCraft pixel 기준으로
+  RGBA 크기와 anchor를 확대해 그린다. 레이어 표시 순서, 선택 outline과 이동
+  미리보기에도 같은 image 경로를 쓰며 texture가 없는 객체는 기존 마커를 유지한다.
 - 자산 누락, 알 수 없는 ID, 지원하지 않는 포맷은 맵 열기와 저장을 차단하지 않는다.
-  해당 객체는 현재의 색상·도형 위치 마커로 표시하고 Problems에 비차단 진단을 남긴다.
+  해당 객체는 현재의 색상·도형 위치 마커로 표시하고 stable unsupported code를
+  Problems에 비차단 진단으로 남긴다.
 - 그래픽 조회 결과는 표시 전용이다. `UNIT`, `DD2 `, `THG2` 원시 레코드와 Save As
   결과를 정규화하거나 변경하지 않는다.
 
@@ -675,6 +680,11 @@
   JSON/envelope·대량 출력·timeout·취소를 통과했다. Debug native CTest 3/3과
   로컬 SC:R의 unit 0 player 0 대표 프레임 선택적 스모크도 통과했다.
   `flutter analyze`와 `flutter test` 339개(환경 의존 6개 skip)가 통과했다.
+- 2026-08-18 scene key·anchor image·선택 이동·marker fallback widget 테스트와
+  EditorShell의 객체 texture 로드/해제 통합 테스트를 추가했다. 자산 설정을
+  지우면 객체 LRU 이미지도 dispose되고 painter가 marker 경로로 복귀한다.
+  `flutter analyze`, `flutter test` 341개(환경 의존 6개 skip),
+  `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

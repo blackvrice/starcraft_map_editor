@@ -152,5 +152,8 @@ player-color 치환을 검증하고 가변 RGBA envelope를 안전하게 기록�
 요청 tileset의 WPE와 128×1 `game\\tunit.pcx`, 도달 가능한 고유 GRP를
 CascLib에서 strict-read하고 concrete protocol 3 process adapter에 연결됐다.
 로컬 SC:R unit 0 player 0 대표 프레임 스모크도 통과했다. 파일 경로와 원시 게임
-바이트는 Flutter 계층에 노출하지 않는다. 다음 M6.1 구현은 준비된 RGBA 이미지를
-캔버스 painter에 주입하고 실패 객체의 기존 위치 marker fallback을 유지한다.
+바이트는 Flutter 계층에 노출하지 않는다. 준비된 RGBA는 scene graphic key로
+캔버스 painter에 주입되고, 원본 크기와 anchor를 32 StarCraft pixel 좌표계로
+확대한다. 선택 이동·outline에도 같은 중심을 사용하며 실패 객체는 기존 위치
+marker와 stable Problems 진단을 유지한다. 다음 M6.1 구현 입력은 player color,
+방향, 대표 프레임과 애니메이션 범위 정책이다.

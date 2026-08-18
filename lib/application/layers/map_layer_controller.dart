@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../documents/opened_map_session.dart';
+import '../ports/starcraft_object_atlas_gateway.dart';
 
 enum MapLayerType { terrain, locations, doodads, sprites, units }
 
@@ -13,6 +14,8 @@ extension MapLayerTypeLabel on MapLayerType {
     MapLayerType.units => 'Units',
   };
 }
+
+int? _objectPlayerColor(int owner) => owner >= 0 && owner <= 7 ? owner : null;
 
 final class MapLayerStatus {
   const MapLayerStatus({this.isVisible = true, this.isLocked = false});
@@ -81,11 +84,13 @@ final class MapLayerPointObject {
     required this.object,
     required this.pixelX,
     required this.pixelY,
+    this.graphicKey,
   });
 
   final MapLayerObjectRef object;
   final int pixelX;
   final int pixelY;
+  final StarCraftObjectGraphicKey? graphicKey;
 }
 
 final class MapLayerRegionObject {
@@ -368,6 +373,11 @@ class MapLayerController {
             ),
             pixelX: unit.x,
             pixelY: unit.y,
+            graphicKey: StarCraftObjectGraphicKey(
+              kind: StarCraftObjectGraphicKind.unit,
+              id: unit.unitType,
+              playerColor: _objectPlayerColor(unit.owner),
+            ),
           ),
         );
       }
@@ -388,6 +398,13 @@ class MapLayerController {
             ),
             pixelX: sprite.x,
             pixelY: sprite.y,
+            graphicKey: StarCraftObjectGraphicKey(
+              kind: sprite.drawsAsSprite
+                  ? StarCraftObjectGraphicKind.sprite
+                  : StarCraftObjectGraphicKind.unit,
+              id: sprite.spriteType,
+              playerColor: _objectPlayerColor(sprite.owner),
+            ),
           ),
         );
       }

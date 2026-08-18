@@ -6,8 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/layers/map_layer_controller.dart';
+import '../../application/ports/starcraft_object_atlas_gateway.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
+import 'object_sprite_texture.dart';
+import 'object_sprite_texture_controller.dart';
 import 'terrain_tile_texture.dart';
 import 'terrain_tile_texture_controller.dart';
 
@@ -46,6 +49,7 @@ class MapCanvas extends StatefulWidget {
     required this.mapHeight,
     this.rawTileValues,
     this.terrainTextureState = const TerrainTileTextureState.idle(),
+    this.objectSpriteTextureState = const ObjectSpriteTextureState.idle(),
     this.editingTool = TerrainEditingTool.select,
     this.selectedTile,
     this.onTileSelected,
@@ -73,6 +77,7 @@ class MapCanvas extends StatefulWidget {
   final int mapHeight;
   final List<int>? rawTileValues;
   final TerrainTileTextureState terrainTextureState;
+  final ObjectSpriteTextureState objectSpriteTextureState;
   final TerrainEditingTool editingTool;
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
@@ -257,6 +262,8 @@ class _MapCanvasState extends State<MapCanvas> {
                               unsupportedRawValues: widget
                                   .terrainTextureState
                                   .unsupportedRawValues,
+                              objectTextures:
+                                  widget.objectSpriteTextureState.textures,
                               onPaintMeasured: widget.onPaintMeasured,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
@@ -1025,6 +1032,7 @@ class MapCanvasPainter extends CustomPainter {
     required this.rawTileValues,
     this.terrainTextures = const {},
     this.unsupportedRawValues = const [],
+    this.objectTextures = const {},
     this.onPaintMeasured,
     this.selectedTile,
     this.rectanglePreview,
@@ -1067,6 +1075,7 @@ class MapCanvasPainter extends CustomPainter {
   final List<int>? rawTileValues;
   final Map<int, TerrainTileTexture> terrainTextures;
   final List<int> unsupportedRawValues;
+  final Map<StarCraftObjectGraphicKey, ObjectSpriteTexture> objectTextures;
   final MapCanvasPaintObserver? onPaintMeasured;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
@@ -1269,9 +1278,6 @@ class MapCanvasPainter extends CustomPainter {
           point.pixelX + (move?.dx ?? 0),
           point.pixelY + (move?.dy ?? 0),
         );
-        if (!(Offset.zero & layout.viewportSize).inflate(12).contains(center)) {
-          continue;
-        }
         _paintPointObject(canvas, point, center, selected: selected);
       }
     }
@@ -1283,6 +1289,16 @@ class MapCanvasPainter extends CustomPainter {
     Offset center, {
     required bool selected,
   }) {
+    final texture = point.graphicKey == null
+        ? null
+        : objectTextures[point.graphicKey];
+    if (texture != null) {
+      _paintObjectTexture(canvas, texture, center, selected: selected);
+      return;
+    }
+    if (!(Offset.zero & layout.viewportSize).inflate(12).contains(center)) {
+      return;
+    }
     final radius = (layout.tileExtent * 0.32).clamp(3.5, 9.0).toDouble();
     final fill = Paint()
       ..color = switch (point.object.layer) {
@@ -1330,6 +1346,39 @@ class MapCanvasPainter extends CustomPainter {
       case MapLayerType.terrain:
       case MapLayerType.locations:
         break;
+    }
+  }
+
+  void _paintObjectTexture(
+    Canvas canvas,
+    ObjectSpriteTexture texture,
+    Offset center, {
+    required bool selected,
+  }) {
+    final scale = layout.tileExtent / 32;
+    final destination = Rect.fromLTWH(
+      center.dx - texture.anchorX * scale,
+      center.dy - texture.anchorY * scale,
+      texture.width * scale,
+      texture.height * scale,
+    );
+    if (!destination.overlaps(Offset.zero & layout.viewportSize)) {
+      return;
+    }
+    canvas.drawImageRect(
+      texture.image,
+      Rect.fromLTWH(0, 0, texture.width.toDouble(), texture.height.toDouble()),
+      destination,
+      Paint()..filterQuality = FilterQuality.none,
+    );
+    if (selected) {
+      canvas.drawRect(
+        destination,
+        Paint()
+          ..color = const Color(0xFFF6C85F)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
     }
   }
 
@@ -1421,6 +1470,7 @@ class MapCanvasPainter extends CustomPainter {
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
         !identical(oldDelegate.terrainTextures, terrainTextures) ||
         !identical(oldDelegate.unsupportedRawValues, unsupportedRawValues) ||
+        !identical(oldDelegate.objectTextures, objectTextures) ||
         oldDelegate.onPaintMeasured != onPaintMeasured ||
         oldDelegate.selectedTile != selectedTile ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||

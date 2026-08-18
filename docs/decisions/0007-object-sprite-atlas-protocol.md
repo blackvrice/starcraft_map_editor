@@ -261,8 +261,9 @@ HD/HD2/SD 연결, 다중 레이어와 훨씬 큰 자산 상한을 동시에 설�
 - Dart 가짜 helper 테스트는 protocol/helper/request/path 불일치, malformed JSON,
   대량 출력, timeout·취소, link, header/entry/pixel 불일치, 성공과 unsupported의
   중복·누락을 검증한다.
-- Application/Widget 테스트는 배치, cache identity, player color 구분, 부분 실패
-  marker fallback, generation 전환과 모든 `ui.Image.dispose()` 경로를 검증한다.
+- Application/Widget 테스트는 배치, cache identity, player color 구분, 부분 실패,
+  scene key, anchor image, 선택 이동, marker fallback, generation 전환과 모든
+  `ui.Image.dispose()` 경로를 검증한다.
 - 로컬 SC:R 선택적 스모크는 재배포하지 않는 대표 unit/sprite의 크기·anchor와
   색을 Chkdraft 또는 게임 화면과 비교한다.
 

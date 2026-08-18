@@ -14,6 +14,7 @@ import '../application/recent_projects/recent_projects_service.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../application/terrain/terrain_editing_controller.dart';
 import '../presentation/map_canvas/terrain_tile_texture_controller.dart';
+import '../presentation/map_canvas/object_sprite_texture_controller.dart';
 import '../presentation/shell/editor_shell.dart';
 
 class EditorAppDependencies {
@@ -32,6 +33,7 @@ class EditorAppDependencies {
     required this.objectEditingController,
     required this.objectPaletteController,
     required this.terrainTileTextureController,
+    required this.objectSpriteTextureController,
   });
 
   final EditorCommandDispatcher commandDispatcher;
@@ -49,6 +51,7 @@ class EditorAppDependencies {
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
   final TerrainTileTextureController terrainTileTextureController;
+  final ObjectSpriteTextureController objectSpriteTextureController;
 }
 
 class StarCraftMapEditorApp extends StatelessWidget {
@@ -87,6 +90,8 @@ class StarCraftMapEditorApp extends StatelessWidget {
         objectEditingController: dependencies.objectEditingController,
         objectPaletteController: dependencies.objectPaletteController,
         terrainTileTextureController: dependencies.terrainTileTextureController,
+        objectSpriteTextureController:
+            dependencies.objectSpriteTextureController,
       ),
     );
   }

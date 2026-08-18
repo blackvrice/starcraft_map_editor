@@ -141,6 +141,19 @@ final class ObjectSpriteTextureController {
       diagnostics.addAll(result.diagnostics);
       for (final unsupported in result.unsupportedObjects) {
         unsupportedByKey[unsupported.key] = unsupported;
+        if (result.diagnostics.isEmpty) {
+          diagnostics.add(
+            _diagnostic(
+              code: unsupported.code,
+              message:
+                  '${unsupported.key.kind.wireName} object '
+                  '${unsupported.key.id} uses marker fallback.',
+              filePath: context.identity.installationPath,
+              remediation:
+                  'Keep the marker fallback or repair the StarCraft assets.',
+            ),
+          );
+        }
       }
       final created = <StarCraftObjectGraphicKey, ObjectSpriteTexture>{};
       for (final entry in result.frames.entries) {

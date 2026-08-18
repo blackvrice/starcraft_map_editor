@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
+import 'package:starcraft_map_editor/application/objects/object_sprite_atlas_loader.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
@@ -168,6 +171,122 @@ void main() {
     expect(pixels.getUint8(extendedImagePixel + 2), 0);
     expect(pixels.getUint8(extendedImagePixel + 3), 255);
   });
+
+  testWidgets(
+    'paints anchored object images, moves selections, and keeps marker fallback',
+    (tester) async {
+      const unitKey = StarCraftObjectGraphicKey(
+        kind: StarCraftObjectGraphicKind.unit,
+        id: 7,
+        playerColor: 0,
+      );
+      const spriteKey = StarCraftObjectGraphicKey(
+        kind: StarCraftObjectGraphicKind.sprite,
+        id: 9,
+      );
+      final rgba = Uint8List(8 * 8 * 4);
+      for (var offset = 0; offset < rgba.length; offset += 4) {
+        rgba[offset] = 255;
+        rgba[offset + 3] = 255;
+      }
+      final texture = await tester.runAsync(
+        () => const UiObjectSpriteTextureFactory().create(
+          ObjectSpriteRgbaFrame(
+            key: unitKey,
+            spriteId: 11,
+            imageId: 12,
+            width: 8,
+            height: 8,
+            anchorX: 4,
+            anchorY: 4,
+            frameIndex: 0,
+            rgbaBytes: rgba,
+          ),
+        ),
+      );
+      expect(texture, isNotNull);
+      final resolvedTexture = texture!;
+      addTearDown(resolvedTexture.dispose);
+
+      const unitObject = MapLayerObjectRef(
+        layer: MapLayerType.units,
+        sectionIndex: 1,
+        recordIndex: 0,
+      );
+      const spriteObject = MapLayerObjectRef(
+        layer: MapLayerType.sprites,
+        sectionIndex: 2,
+        recordIndex: 0,
+      );
+      final scene = MapLayerScene(
+        points: const [
+          MapLayerPointObject(
+            object: unitObject,
+            pixelX: 32,
+            pixelY: 32,
+            graphicKey: unitKey,
+          ),
+          MapLayerPointObject(
+            object: spriteObject,
+            pixelX: 80,
+            pixelY: 32,
+            graphicKey: spriteKey,
+          ),
+        ],
+        regions: const [],
+        objectCounts: const {MapLayerType.units: 1, MapLayerType.sprites: 1},
+        selections: const [
+          MapLayerSelection(object: unitObject, pixelX: 32, pixelY: 32),
+        ],
+      );
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      final layout = MapCanvasLayout.fit(
+        viewportSize: const Size(128, 64),
+        mapWidth: 4,
+        mapHeight: 2,
+        contentPadding: 0,
+      );
+      final textures = {unitKey: resolvedTexture};
+      MapCanvasPainter(
+        layout: layout,
+        rawTileValues: null,
+        objectTextures: textures,
+        layerScene: scene,
+        selectionMovePreview: const MapCanvasMoveRequest(dx: 32, dy: 0),
+      ).paint(canvas, const Size(128, 64));
+      final rendered = await tester.runAsync(
+        () => recorder.endRecording().toImage(128, 64),
+      );
+      expect(rendered, isNotNull);
+      final resolvedRendered = rendered!;
+      addTearDown(resolvedRendered.dispose);
+      final pixels = await tester.runAsync(
+        () => resolvedRendered.toByteData(format: ui.ImageByteFormat.rawRgba),
+      );
+      expect(pixels, isNotNull);
+
+      int redAt(int x, int y) => pixels!.getUint8((y * 128 + x) * 4);
+      int greenAt(int x, int y) => pixels!.getUint8((y * 128 + x) * 4 + 1);
+      expect(redAt(64, 32), 255);
+      expect(greenAt(64, 32), 0);
+      expect(redAt(32, 32), isNot(255));
+      expect(redAt(80, 32), 255);
+      expect(greenAt(80, 32), 139);
+
+      final original = MapCanvasPainter(
+        layout: layout,
+        rawTileValues: null,
+        objectTextures: textures,
+      );
+      final changed = MapCanvasPainter(
+        layout: layout,
+        rawTileValues: null,
+        objectTextures: Map.unmodifiable(textures),
+      );
+      expect(changed.shouldRepaint(original), isTrue);
+    },
+  );
 
   testWidgets('shows loading mode before the first StarCraft tile is ready', (
     tester,

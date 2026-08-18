@@ -5,6 +5,7 @@ import 'package:starcraft_map_editor/application/documents/opened_map_session.da
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 
 void main() {
@@ -82,6 +83,36 @@ void main() {
           .orderedHitsAt(session: session, pixelX: 64, pixelY: 64)
           .where((hit) => hit.object.layer == MapLayerType.units),
       isEmpty,
+    );
+  });
+
+  test('maps UNIT and THG2 records to renderable object graphic keys', () {
+    final controller = MapLayerController();
+    final scene = controller.sceneFor(_session());
+    addTearDown(controller.dispose);
+
+    final unit = scene.points.firstWhere(
+      (point) => point.object.layer == MapLayerType.units,
+    );
+    final sprite = scene.points.singleWhere(
+      (point) => point.object.layer == MapLayerType.sprites,
+    );
+
+    expect(
+      unit.graphicKey,
+      const StarCraftObjectGraphicKey(
+        kind: StarCraftObjectGraphicKind.unit,
+        id: 1,
+        playerColor: 0,
+      ),
+    );
+    expect(
+      sprite.graphicKey,
+      const StarCraftObjectGraphicKey(
+        kind: StarCraftObjectGraphicKind.sprite,
+        id: 1,
+        playerColor: 0,
+      ),
     );
   });
 
@@ -310,7 +341,8 @@ Uint8List _spriteRecord(int x, int y) {
   data
     ..setUint16(0, 1, Endian.little)
     ..setUint16(2, x, Endian.little)
-    ..setUint16(4, y, Endian.little);
+    ..setUint16(4, y, Endian.little)
+    ..setUint16(8, ChkSpritePlacement.drawAsSpriteFlag, Endian.little);
   return bytes;
 }
 

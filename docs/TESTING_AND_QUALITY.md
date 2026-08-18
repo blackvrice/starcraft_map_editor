@@ -310,7 +310,12 @@ offset·길이, 정렬·중복·색 값, 기존 출력 보존과 4 MiB/32 MiB �
 player color 키를 만들고 설치 identity·batch 결과 불일치, gateway 예외와 cancel
 전달을 검증한다. `object_sprite_texture_test`는 256+1 배치, identity별 cache reuse,
 64 MiB LRU의 dispose/eviction, 부분 fallback, 활성 operation 취소와 늦은 결과의
-generation 차단을 가짜 gateway와 가짜 이미지로 검증한다.
+generation 차단을 가짜 gateway와 가짜 이미지로 검증한다. `map_layer_controller_test`
+와 `map_canvas_test`는 scene graphic key, 32px 좌표계의 이미지 크기·anchor, 선택
+이동과 outline, texture 누락 시 marker fallback을 검증한다. `editor_shell_test`는
+맵을 연 뒤 terrain/object texture를 함께 painter에 주입하고 설치 설정을 지우면
+두 controller의 이미지를 dispose해 fallback으로 복귀하는 실제 widget 경로를
+검증한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 3 가짜 helper로
