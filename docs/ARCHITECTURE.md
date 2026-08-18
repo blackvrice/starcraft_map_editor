@@ -443,7 +443,25 @@ offset·모든 RLE run을 접근 전에 검사한다. frame 0을 투명한 논�
 `ObjectAtlasProtocol`은 최대 256개의 정렬·고유 entry와 RGBA 길이를 재검증하고
 32바이트 header/entry table/연속 pixel 영역을 새 partial 파일에 쓴 뒤 flush와
 원자적 rename을 수행한다. 이 코어는 아직 protocol 2 helper main에서 호출하지
-않으며 다음 Application gateway 작업에서 CASC palette/GRP 읽기와 함께 연결한다.
+않으며 다음 native process 작업에서 CASC palette/GRP 읽기와 함께 연결한다.
+
+Application의 `StarCraftObjectAtlasGateway`는 외부 프로세스 타입을 노출하지 않고
+`render(request)`와 `cancel(operationId)`를 정의한다. 요청 키는 kind, u16 ID,
+0~7 또는 neutral player color, 고정 direction으로 정렬·고유하며 최대 256개다.
+결과는 가변 RGBA entry와 안정적인 `SC_CASC_OBJECT_*` unsupported key의 합집합이
+요청을 정확히 덮어야 한다. `ObjectSpriteAtlasLoader`는 map의 `UNIT`과 `THG2`를
+키로 바꾸며 `THG2.DrawAsSprite`가 없으면 unit, 있으면 sprite로 해석한다. 설치
+경로·제품·빌드·helper·CascLib·tileset·inspection object identity를 묶어 다른
+설치 generation의 결과와 cache가 섞이지 않게 한다.
+
+Presentation의 `ObjectSpriteTextureController`는 위 loader만 호출하고 native나
+파일 시스템을 알지 않는다. 누락 key를 256개씩 요청해 가변 `ui.Image`로 만들고
+64 MiB 객체 전용 LRU에 보관한다. 새 synchronize, clear, dispose는 현재 operation
+ID를 gateway에 취소 요청하고 generation을 증가시킨다. 이미 끝난 helper 또는
+늦게 끝난 이미지 생성이 이전 generation이면 생성된 이미지를 즉시 dispose하고
+상태·cache에 반영하지 않는다. cache는 installation identity 또는 budget 변경으로
+퇴출된 모든 이미지를 dispose한다. 아직 concrete protocol 3 process adapter와
+캔버스 painter에는 연결하지 않았으므로 현재 앱 화면은 기존 marker를 유지한다.
 
 결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
 32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축

@@ -11,6 +11,9 @@
 같은 날 GRP frame 0 decoder와 binary writer를 구현하면서 GRP 색상은 맵
 타일셋 WPE에 의존한다는 점을 확인해 요청에 `tileset`을 명시하도록 계약을
 보완했다. 이 변경은 아직 배포하지 않은 protocol 3 구현 계약에 포함한다.
+2026-08-18에는 Dart `StarCraftObjectAtlasGateway` 계약, map key loader, 객체 전용
+LRU와 operation 취소·generation 차단 controller를 구현했다. concrete helper
+process adapter와 캔버스 painter는 아직 연결하지 않았다.
 
 ## Context
 

@@ -304,12 +304,19 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 player-color 치환을 확인한다. 절단 행, 잘못된 header/crop/row offset,
 0·overflow·절단 run을 거부하고, 객체 envelope의 magic/version/entry/pixel
 offset·길이, 정렬·중복·색 값, 기존 출력 보존과 4 MiB/32 MiB 상한을 검증한다.
+`starcraft_object_atlas_gateway_test`는 operation ID와 최대 256개 key의 정렬·
+중복·불변성, 가변 RGBA entry와 unsupported의 정확한 요청 분할을 검증한다.
+`object_sprite_atlas_loader_test`는 자체 작성 `UNIT`/`THG2`에서 unit/sprite와
+player color 키를 만들고 설치 identity·batch 결과 불일치, gateway 예외와 cancel
+전달을 검증한다. `object_sprite_texture_test`는 256+1 배치, identity별 cache reuse,
+64 MiB LRU의 dispose/eviction, 부분 fallback, 활성 operation 취소와 늦은 결과의
+generation 차단을 가짜 gateway와 가짜 이미지로 검증한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
 `process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
-M6.1의 다음 구현에서는
+M6.1의 다음 구현에서는 concrete
 `process_starcraft_object_atlas_gateway_test.dart`에 protocol 3 가짜 helper의
 부분 fallback·손상 envelope·timeout·취소·임시 파일 정리를 추가한다.
 실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든

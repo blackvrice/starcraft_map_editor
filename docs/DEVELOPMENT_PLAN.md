@@ -605,7 +605,8 @@
 - [x] native helper의 객체 자산 읽기·디코딩 프로토콜과 안전 한계 정의
 - [x] `THG2` sprite type에서 sprite/image/그래픽 자산으로 이어지는 참조 모델 구현
 - [x] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
-- [ ] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
+- [x] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
+- [ ] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
 - [ ] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [ ] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
 - [ ] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
@@ -634,8 +635,17 @@
   solid RLE, 중심 anchor와 선택적 player-color 인덱스 8~15 치환을 검증해
   premultiplied RGBA8888로 만든다. `ObjectAtlasProtocol`은 정렬·고유 entry,
   1,024px/4 MiB/32 MiB 상한을 검사하고 새 partial 파일을 flush한 뒤 고정
-  `object-atlas.rgba`로 승격한다. 실제 WPE/tunit/CASC 연결과 protocol 3
-  process gateway는 다음 항목에서 통합한다.
+  `object-atlas.rgba`로 승격한다.
+- Application `StarCraftObjectAtlasGateway`는 operation ID, tileset과 최대 256개의
+  정렬·고유 unit/sprite/player-color 키, 성공 entry와 unsupported의 정확한 분할,
+  가변 RGBA·anchor 메타데이터와 취소 계약을 정의한다. `ObjectSpriteAtlasLoader`는
+  `UNIT` 및 `THG2 DrawAsSprite`를 이 키로 중복 제거하고 설치 inspection snapshot을
+  포함한 identity로 요청·응답을 교차 검증한다.
+- Presentation의 `ObjectSpriteTextureController`는 256개 요청 배치, 64 MiB 객체
+  전용 LRU, 설정·설치·타일셋 identity 변경 시 dispose, 새 synchronize/clear/dispose
+  시 활성 operation 취소와 generation 기반 stale 응답 차단을 제공한다. 실제
+  WPE/tunit/GRP CASC 읽기와 protocol 3 process adapter는 별도 다음 항목에서
+  연결하고, 캔버스 painter 주입은 그 다음 렌더 항목에서 수행한다.
 - 자산 누락, 알 수 없는 ID, 지원하지 않는 포맷은 맵 열기와 저장을 차단하지 않는다.
   해당 객체는 현재의 색상·도형 위치 마커로 표시하고 Problems에 비차단 진단을 남긴다.
 - 그래픽 조회 결과는 표시 전용이다. `UNIT`, `DD2 `, `THG2` 원시 레코드와 Save As
@@ -648,6 +658,12 @@
   envelope 필드·정렬·길이·기존 출력 보존·32 MiB 상한을 검증한다.
 - 2026-08-16 Debug native CTest 3/3, `flutter analyze`, `flutter test`
   319개 통과(환경 의존 5개 skip), `flutter build windows --debug`가 통과했다.
+- `starcraft_object_atlas_gateway_test`, `object_sprite_atlas_loader_test`,
+  `object_sprite_texture_test`는 key/coverage/불변 RGBA 계약, `UNIT`/`THG2` 변환,
+  256+1 배치, cache reuse·invalidation·eviction, 부분 fallback, 활성 취소와 stale
+  결과 폐기를 자체 작성 CHK와 가짜 gateway/texture만으로 검증한다.
+- 2026-08-18 `flutter analyze`, `flutter test` 332개 통과(환경 의존 5개 skip),
+  `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

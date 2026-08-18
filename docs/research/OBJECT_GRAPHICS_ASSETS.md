@@ -146,7 +146,9 @@ protocol 3의 `renderObjectAtlas`, 가변 RGBA envelope와 구조화된 부분 f
 unit/sprite 종류와 ID를 받아 classic DAT의 참조 열, 1-based `images.tbl` ID와
 정규화된 `unit\\*.grp` 경로를 해석한다. native `ObjectGrpDecoder`와
 `ObjectAtlasProtocol`은 자체 작성한 합성 GRP로 frame 0 RLE·투명도·anchor·
-player-color 치환을 검증하고 가변 RGBA envelope를 안전하게 기록한다. 다음
-M6.1 구현은 요청 tileset의 WPE와 `game\\tunit.pcx`, 도달 가능한 GRP를
-CascLib에서 읽어 이 코어와 protocol 3 gateway에 연결한다. 파일 경로와 원시
-게임 바이트는 Flutter 계층에 노출하지 않는다.
+player-color 치환을 검증하고 가변 RGBA envelope를 안전하게 기록한다.
+`StarCraftObjectAtlasGateway`, `ObjectSpriteAtlasLoader`와 객체 이미지 LRU는
+정렬 key, 설치 identity, 취소와 stale 결과 폐기 경계를 구현했다. 다음 M6.1
+구현은 요청 tileset의 WPE와 `game\\tunit.pcx`, 도달 가능한 GRP를 CascLib에서
+읽어 이 코어와 concrete protocol 3 process adapter에 연결한다. 파일 경로와
+원시 게임 바이트는 Flutter 계층에 노출하지 않는다.
