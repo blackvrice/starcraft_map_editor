@@ -606,7 +606,7 @@
 - [x] `THG2` sprite type에서 sprite/image/그래픽 자산으로 이어지는 참조 모델 구현
 - [x] 대표 프레임을 RGBA로 변환하는 decoder와 응답 envelope 검증 구현
 - [x] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
-- [ ] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
+- [x] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
 - [ ] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [ ] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
 - [ ] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
@@ -627,7 +627,7 @@
 - 객체 렌더 경계는
   [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)의 protocol 3
   `renderObjectAtlas` 요청, 가변 RGBA envelope와 부분 fallback 상한을 따른다.
-  구현 전까지 현재 helper 0.3.0/protocol 2는 유지한다.
+  helper 0.4.0부터 설치 검사·타일 렌더·객체 렌더가 공용 protocol 3을 사용한다.
 - native `ObjectSpriteReference`는 클래식 DAT/TBL의 정확한 크기와 모든 중간
   참조를 검증하고 `unit → flingy → sprite → image` 및 pure sprite 경로를
   1-based `images.tbl` GRP ID와 정규화된 `unit\\*.grp` 경로로 해석한다.
@@ -643,9 +643,16 @@
   포함한 identity로 요청·응답을 교차 검증한다.
 - Presentation의 `ObjectSpriteTextureController`는 256개 요청 배치, 64 MiB 객체
   전용 LRU, 설정·설치·타일셋 identity 변경 시 dispose, 새 synchronize/clear/dispose
-  시 활성 operation 취소와 generation 기반 stale 응답 차단을 제공한다. 실제
-  WPE/tunit/GRP CASC 읽기와 protocol 3 process adapter는 별도 다음 항목에서
-  연결하고, 캔버스 painter 주입은 그 다음 렌더 항목에서 수행한다.
+  시 활성 operation 취소와 generation 기반 stale 응답 차단을 제공한다.
+- native `ObjectAssetReader`는 5개 DAT/TBL, 요청 tileset WPE,
+  `game\\tunit.pcx`와 요청에서 도달한 고유 GRP만 CascLib strict-read한다.
+  `tunit.pcx`의 128×1 색상표에서 player별 연속 8색을 읽고 공용 metadata 손상은
+  전체 실패, 개별 ID·GRP 실패는 정렬된 unsupported로 격리한다.
+- `ProcessStarCraftObjectAtlasGateway`는 protocol 3/helper 0.4.0 요청을 절대 경로의
+  번들 helper에 전달하고 JSON·설치 identity·일반 파일·32바이트 header/entry·
+  연속 pixel 영역·요청 전체 coverage를 교차 검증한다. timeout과 명시적 취소는
+  해당 operation ID의 프로세스만 종료한다. 캔버스 painter 주입은 다음 렌더
+  항목에서 수행한다.
 - 자산 누락, 알 수 없는 ID, 지원하지 않는 포맷은 맵 열기와 저장을 차단하지 않는다.
   해당 객체는 현재의 색상·도형 위치 마커로 표시하고 Problems에 비차단 진단을 남긴다.
 - 그래픽 조회 결과는 표시 전용이다. `UNIT`, `DD2 `, `THG2` 원시 레코드와 Save As
@@ -664,6 +671,10 @@
   결과 폐기를 자체 작성 CHK와 가짜 gateway/texture만으로 검증한다.
 - 2026-08-18 `flutter analyze`, `flutter test` 332개 통과(환경 의존 5개 skip),
   `flutter build windows --debug`가 통과했다.
+- 2026-08-18 protocol 3 process 테스트는 정상·부분 fallback·빈 atlas·손상
+  JSON/envelope·대량 출력·timeout·취소를 통과했다. Debug native CTest 3/3과
+  로컬 SC:R의 unit 0 player 0 대표 프레임 선택적 스모크도 통과했다.
+  `flutter analyze`와 `flutter test` 339개(환경 의존 6개 skip)가 통과했다.
 
 완료 조건:
 

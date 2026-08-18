@@ -375,7 +375,7 @@ helper는 tileset enum을 고정 매니페스트 경로로 바꾸고 `CV5` group
 17 MiB binary envelope로 임시 교환하고, Dart 어댑터가 응답·header·실제
 길이·raw 엔트리를 교차 검증한 뒤 이미지 생성 직후 삭제한다.
 
-현재 구현된 protocol 2에서 `StarCraftTileAtlasRequest`는 정렬·중복 제거된
+현재 protocol 3에서 `StarCraftTileAtlasRequest`는 정렬·중복 제거된
 1~4,096개 `u16`만 허용한다. `renderTileAtlas` helper는 해당 tileset의
 `CV5`·`VX4EX`·`VR4`·`WPE` 네 경로만 strict-read하고 고정 이름
 `tile-atlas.rgba`를 새 파일로 만든다. envelope는 32바이트 little-endian
@@ -384,7 +384,7 @@ header(`SCTRGBA\0`, format 1, tile 32px, 열·행·타일 수, 엔트리·픽셀
 실제 파일, header와 요청 값의 전체 포함 관계가 모두 맞을 때만 바이트를
 채택한다.
 
-helper 0.3.0의 네이티브 디코더는 각 파일의 고정 레코드 길이와 모든 참조를
+helper 0.4.0의 타일 디코더는 각 파일의 고정 레코드 길이와 모든 참조를
 접근 전에 검사한다. `CV5` group/member가 고른 메가타일을 4×4 `VX4EX`
 미니타일로 분해하고 bit 0 수평 반전, `VR4`의 8×8 팔레트 인덱스와 `WPE`
 RGB를 적용해 alpha 255 RGBA를 만든다. 지원 raw는 최대 64열의 결정적 순서로
@@ -414,9 +414,8 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
-`renderObjectAtlas` operation으로 정의한다. 다음 구현에서 공용 wire protocol
-3/helper 0.4.0으로 이관하며, 현재 구현된 protocol 2/helper 0.3.0은 그 전까지
-변경하지 않는다.
+`renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
+렌더는 공용 wire protocol 3/helper 0.4.0을 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
 `unit`/`sprite`, ID, player color, direction의 정렬·중복 제거된 최대 256개
@@ -442,8 +441,9 @@ offset·모든 RLE run을 접근 전에 검사한다. frame 0을 투명한 논�
 합성하고 바깥 픽셀은 RGBA 0, 색이 있는 픽셀은 alpha 255로 만든다.
 `ObjectAtlasProtocol`은 최대 256개의 정렬·고유 entry와 RGBA 길이를 재검증하고
 32바이트 header/entry table/연속 pixel 영역을 새 partial 파일에 쓴 뒤 flush와
-원자적 rename을 수행한다. 이 코어는 아직 protocol 2 helper main에서 호출하지
-않으며 다음 native process 작업에서 CASC palette/GRP 읽기와 함께 연결한다.
+원자적 rename을 수행한다. `ObjectAssetReader`는 요청마다 CascLib 저장소를
+읽기 전용으로 열어 5개 DAT/TBL, tileset WPE, 128×1 `game\\tunit.pcx`와
+도달 가능한 고유 GRP만 strict-read하고 이 코어에 전달한다.
 
 Application의 `StarCraftObjectAtlasGateway`는 외부 프로세스 타입을 노출하지 않고
 `render(request)`와 `cancel(operationId)`를 정의한다. 요청 키는 kind, u16 ID,
@@ -460,8 +460,10 @@ Presentation의 `ObjectSpriteTextureController`는 위 loader만 호출하고 na
 ID를 gateway에 취소 요청하고 generation을 증가시킨다. 이미 끝난 helper 또는
 늦게 끝난 이미지 생성이 이전 generation이면 생성된 이미지를 즉시 dispose하고
 상태·cache에 반영하지 않는다. cache는 installation identity 또는 budget 변경으로
-퇴출된 모든 이미지를 dispose한다. 아직 concrete protocol 3 process adapter와
-캔버스 painter에는 연결하지 않았으므로 현재 앱 화면은 기존 marker를 유지한다.
+퇴출된 모든 이미지를 dispose한다. concrete protocol 3 process adapter는
+JSON·설치 identity·출력 파일·binary entry·pixel coverage를 모두 검증하며
+operation 단위 timeout/cancel을 제공한다. 아직 캔버스 painter에는 연결하지
+않았으므로 현재 앱 화면은 기존 marker를 유지한다.
 
 결과는 요청별 `object-atlas.rgba`의 32바이트 header(`SCORGBA\0`, format 1),
 32바이트 entry table과 연속 RGBA pixel 블록이다. 파일은 최대 32 MiB, 각 축

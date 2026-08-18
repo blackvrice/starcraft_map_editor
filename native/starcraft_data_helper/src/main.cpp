@@ -1,4 +1,6 @@
 #include "casc_asset_inspector.h"
+#include "object_asset_reader.h"
+#include "object_atlas_protocol.h"
 #include "tile_atlas_protocol.h"
 #include "tileset_asset_reader.h"
 #include "tileset_tile_decoder.h"
@@ -17,11 +19,12 @@ namespace {
 
 using json = nlohmann::json;
 
-constexpr std::int32_t kProtocolVersion = 2;
+constexpr std::int32_t kProtocolVersion = 3;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
 constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
-constexpr char kHelperVersion[] = "0.3.0";
+constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
+constexpr char kHelperVersion[] = "0.4.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -261,6 +264,209 @@ int RenderTileAtlas(
   return 0;
 }
 
+const char* ObjectKindName(
+    const starcraft_map_editor::starcraft_data::ObjectGraphicKind kind) {
+  using starcraft_map_editor::starcraft_data::ObjectGraphicKind;
+  return kind == ObjectGraphicKind::kUnit ? "unit" : "sprite";
+}
+
+int RenderObjectAtlas(
+    const json& request,
+    const std::string& request_id,
+    const std::filesystem::path& installation_path) {
+  namespace sc = starcraft_map_editor::starcraft_data;
+  if (!request.contains("tileset") ||
+      !request["tileset"].is_number_integer() ||
+      !request.contains("objects") || !request["objects"].is_array() ||
+      !IsNonEmptyString(request, "outputFileName") ||
+      !IsNonEmptyString(request, "framePolicy")) {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        "SC_CASC_PROTOCOL_INVALID_REQUEST",
+        "The object atlas request is missing a required field.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+
+  const auto tileset_value = request["tileset"].get<std::int64_t>();
+  if (tileset_value < 0 ||
+      tileset_value >= static_cast<std::int64_t>(sc::kTilesetCount)) {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        "SC_CASC_PROTOCOL_INVALID_TILESET",
+        "The requested StarCraft tileset is not supported.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+  if (request["outputFileName"].get<std::string>() !=
+          sc::kObjectAtlasFileName ||
+      request["framePolicy"].get<std::string>() != "firstFrame") {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        "SC_CASC_PROTOCOL_INVALID_OBJECT_POLICY",
+        "The object atlas output or frame policy is not supported.",
+        "protocol",
+        ERROR_NOT_SUPPORTED,
+        2);
+  }
+
+  std::vector<sc::ObjectRenderRequest> objects;
+  objects.reserve(request["objects"].size());
+  for (const auto& value : request["objects"]) {
+    if (!value.is_object() || !IsNonEmptyString(value, "kind") ||
+        !value.contains("id") || !value["id"].is_number_integer() ||
+        !value.contains("playerColor") || !value.contains("direction") ||
+        !value["direction"].is_number_integer()) {
+      return WriteError(
+          request_id,
+          kRenderObjectOperation,
+          "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+          "An object atlas key is malformed.",
+          "protocol",
+          ERROR_INVALID_DATA,
+          2);
+    }
+
+    sc::ObjectRenderRequest object;
+    const auto kind = value["kind"].get<std::string>();
+    if (kind == "unit") {
+      object.kind = sc::ObjectGraphicKind::kUnit;
+    } else if (kind == "sprite") {
+      object.kind = sc::ObjectGraphicKind::kSprite;
+    } else {
+      return WriteError(
+          request_id,
+          kRenderObjectOperation,
+          "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+          "An object atlas kind is not supported.",
+          "protocol",
+          ERROR_INVALID_DATA,
+          2);
+    }
+
+    const auto object_id = value["id"].get<std::int64_t>();
+    const auto direction = value["direction"].get<std::int64_t>();
+    if (object_id < 0 || object_id > 0xffff || direction != 0) {
+      return WriteError(
+          request_id,
+          kRenderObjectOperation,
+          "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+          "An object atlas ID or direction is not supported.",
+          "protocol",
+          ERROR_INVALID_DATA,
+          2);
+    }
+    object.object_id = static_cast<std::uint16_t>(object_id);
+    object.direction = static_cast<std::uint8_t>(direction);
+
+    if (value["playerColor"].is_null()) {
+      object.player_color = sc::kNeutralObjectPlayerColor;
+    } else if (value["playerColor"].is_number_integer()) {
+      const auto player_color = value["playerColor"].get<std::int64_t>();
+      if (player_color < 0 || player_color > 7) {
+        return WriteError(
+            request_id,
+            kRenderObjectOperation,
+            "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+            "An object player color is not supported.",
+            "protocol",
+            ERROR_INVALID_DATA,
+            2);
+      }
+      object.player_color = static_cast<std::uint8_t>(player_color);
+    } else {
+      return WriteError(
+          request_id,
+          kRenderObjectOperation,
+          "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+          "An object player color is malformed.",
+          "protocol",
+          ERROR_INVALID_DATA,
+          2);
+    }
+    objects.push_back(object);
+  }
+  if (!sc::ValidateObjectRenderRequests(objects)) {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        "SC_CASC_PROTOCOL_INVALID_OBJECTS",
+        "Object atlas keys must be sorted, unique, and bounded.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+
+  auto rendered = sc::RenderObjectAssets(
+      installation_path,
+      static_cast<std::uint32_t>(tileset_value),
+      objects);
+  if (!rendered.success) {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        rendered.error_code,
+        rendered.message,
+        rendered.stage,
+        rendered.native_error,
+        3);
+  }
+
+  const auto atlas = sc::WriteObjectAtlas(
+      std::filesystem::current_path(), rendered.entries);
+  if (!atlas.success) {
+    return WriteError(
+        request_id,
+        kRenderObjectOperation,
+        atlas.error_code,
+        atlas.message,
+        atlas.stage,
+        atlas.native_error,
+        3);
+  }
+
+  auto response = BaseResponse(request_id, kRenderObjectOperation);
+  response["status"] = "success";
+  response["installation"] = {
+      {"path", rendered.installation_path},
+      {"storageProduct", rendered.storage_product},
+      {"storageBuildNumber", rendered.storage_build_number},
+  };
+  response["tileset"] = tileset_value;
+  response["assets"] = {
+      {"readCount", rendered.read_asset_count},
+      {"totalBytes", rendered.total_asset_bytes},
+  };
+  response["atlas"] = {
+      {"fileName", sc::kObjectAtlasFileName},
+      {"fileBytes", atlas.file_bytes},
+      {"formatVersion", sc::kObjectAtlasFormatVersion},
+      {"entryCount", atlas.entry_count},
+      {"tileset", tileset_value},
+  };
+  response["unsupportedObjects"] = json::array();
+  for (const auto& unsupported : rendered.unsupported_objects) {
+    json player_color = nullptr;
+    if (unsupported.request.player_color != sc::kNeutralObjectPlayerColor) {
+      player_color = unsupported.request.player_color;
+    }
+    response["unsupportedObjects"].push_back({
+        {"kind", ObjectKindName(unsupported.request.kind)},
+        {"id", unsupported.request.object_id},
+        {"playerColor", player_color},
+        {"direction", unsupported.request.direction},
+        {"code", unsupported.error_code},
+    });
+  }
+  std::cout << response.dump() << '\n';
+  return 0;
+}
+
 }  // namespace
 
 int main() {
@@ -321,7 +527,8 @@ int main() {
           ERROR_REVISION_MISMATCH,
           2);
     }
-    if (operation != kInspectOperation && operation != kRenderOperation) {
+    if (operation != kInspectOperation && operation != kRenderOperation &&
+        operation != kRenderObjectOperation) {
       return WriteError(
           request_id,
           operation,
@@ -358,7 +565,10 @@ int main() {
     if (operation == kInspectOperation) {
       return InspectInstallation(request_id, installation_path);
     }
-    return RenderTileAtlas(request, request_id, installation_path);
+    if (operation == kRenderOperation) {
+      return RenderTileAtlas(request, request_id, installation_path);
+    }
+    return RenderObjectAtlas(request, request_id, installation_path);
   } catch (const json::exception&) {
     return WriteError(
         "",

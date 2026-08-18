@@ -272,7 +272,7 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 프로토콜, request ID, helper/CascLib revision, 요청/응답 경로 불일치 거부
 - CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
 - found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
-- protocol 2의 설치 검사/타일 렌더 operation 분리와 helper 0.3.0 검증
+- protocol 3의 설치 검사/타일/객체 렌더 operation 분리와 helper 0.4.0 검증
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
@@ -313,14 +313,15 @@ player color 키를 만들고 설치 identity·batch 결과 불일치, gateway �
 generation 차단을 가짜 gateway와 가짜 이미지로 검증한다.
 `process_starcraft_data_asset_inspector_test.dart`는 가짜 helper 프로세스로
 성공, 누락, 읽기 오류, 저장소 오류, 손상·대량 응답과 timeout을 검증한다.
-`process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 2 가짜 helper로
+`process_starcraft_tile_atlas_gateway_test.dart`는 같은 protocol 3 가짜 helper로
 정상 RGBA, 전체 unsupported, 자산 오류, 응답·header·엔트리·크기 불일치,
 누락 출력, 대량 출력과 timeout을 검증한다.
-M6.1의 다음 구현에서는 concrete
-`process_starcraft_object_atlas_gateway_test.dart`에 protocol 3 가짜 helper의
-부분 fallback·손상 envelope·timeout·취소·임시 파일 정리를 추가한다.
-실제 설치가 있는 개발 환경에서는 다음 선택적 스모크로 번들 helper가 모든
-자산을 읽고 8개 타일셋 각각의 raw `0/1/0x4000`을 RGBA로 합성하는지 확인한다.
+`process_starcraft_object_atlas_gateway_test.dart`는 protocol 3 가짜 helper의
+정상/빈 atlas, 부분 fallback, 손상 envelope, metadata 불일치, 대량 출력,
+timeout과 operation 취소를 검증한다. native graphics 테스트는 WPE와 128×1
+tunit PCX 색상표의 player별 8색 해석도 검증한다. 실제 설치가 있는 개발
+환경에서는 다음 선택적 스모크로 번들 helper가 모든 자산을 읽고 8개 타일셋의
+raw `0/1/0x4000` 및 unit 0 player 0 대표 프레임을 RGBA로 합성하는지 확인한다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

@@ -5,9 +5,9 @@
 
 구현 메모: [ADR-0006](0006-request-scoped-tile-atlas-cache.md)에 따라
 2026-08-01부터 같은 helper의 설치 검사와 타일 렌더 작업을 protocol 2로
-함께 이관했다. 최초 렌더 경계는 helper 0.2.0, 네 포맷 디코더가 포함된 현재
-버전은 0.3.0이다. 아래 protocol 1은 최초 검사 전용 결정의 기록이며 현재
-wire version은 아니다.
+함께 이관했다. 최초 렌더 경계는 helper 0.2.0, 네 포맷 디코더는 0.3.0에서
+도입됐다. 2026-08-18 객체 렌더 작업과 함께 protocol 3/helper 0.4.0으로
+이관됐으며 아래 protocol 1은 최초 검사 전용 결정의 기록이다.
 
 ## Context
 

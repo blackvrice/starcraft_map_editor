@@ -1,5 +1,7 @@
 #include "object_atlas_protocol.h"
+#include "object_asset_reader.h"
 #include "object_grp_decoder.h"
+#include "object_palette_decoder.h"
 
 #include <Windows.h>
 
@@ -90,6 +92,39 @@ ObjectRgbPalette MakeBasePalette() {
   return palette;
 }
 
+std::vector<std::byte> MakeWpe() {
+  std::vector<std::byte> bytes(256 * 4);
+  for (std::size_t index = 0; index < 256; ++index) {
+    bytes[index * 4] = static_cast<std::byte>(index);
+    bytes[index * 4 + 1] = static_cast<std::byte>(255 - index);
+    bytes[index * 4 + 2] = static_cast<std::byte>(index ^ 0x55U);
+  }
+  return bytes;
+}
+
+std::vector<std::byte> MakeTunitPcx() {
+  std::vector<std::byte> bytes(128 + 128 + 1 + 256 * 3);
+  bytes[0] = std::byte{0x0a};
+  bytes[2] = std::byte{1};
+  bytes[3] = std::byte{8};
+  PutUint16(&bytes, 8, 127);
+  bytes[65] = std::byte{1};
+  PutUint16(&bytes, 66, 128);
+  for (std::size_t index = 0; index < 128; ++index) {
+    bytes[128 + index] = static_cast<std::byte>(index);
+  }
+  const auto marker = 128 + 128;
+  bytes[marker] = std::byte{0x0c};
+  for (std::size_t index = 0; index < 256; ++index) {
+    bytes[marker + 1 + index * 3] = static_cast<std::byte>(index);
+    bytes[marker + 1 + index * 3 + 1] =
+        static_cast<std::byte>(index ^ 0x33U);
+    bytes[marker + 1 + index * 3 + 2] =
+        static_cast<std::byte>(255 - index);
+  }
+  return bytes;
+}
+
 bool HasPixel(const std::vector<std::byte> &rgba, const std::size_t width,
               const std::size_t x, const std::size_t y, const std::uint8_t red,
               const std::uint8_t green, const std::uint8_t blue,
@@ -126,6 +161,50 @@ int main() {
 
   const auto grp = MakeGrp();
   const auto base_palette = MakeBasePalette();
+
+  const auto palettes = DecodeObjectPalettes(MakeWpe(), MakeTunitPcx());
+  if (!palettes.success || palettes.base_palette[0].red != 0 ||
+      palettes.base_palette[0].green != 255 ||
+      palettes.base_palette[255].blue != (255 ^ 0x55U) ||
+      palettes.player_palettes[3][5].red != 29 ||
+      palettes.player_palettes[3][5].green != (29 ^ 0x33U) ||
+      palettes.player_palettes[3][5].blue != 226) {
+    return Fail("Synthetic WPE and tunit PCX palettes decoded incorrectly.");
+  }
+  auto invalid_pcx = MakeTunitPcx();
+  invalid_pcx[128 + 128] = std::byte{0};
+  if (DecodeObjectPalettes(MakeWpe(), invalid_pcx).success) {
+    return Fail("A tunit PCX without a palette marker was accepted.");
+  }
+  invalid_pcx = MakeTunitPcx();
+  invalid_pcx.insert(invalid_pcx.begin() + 128, std::byte{1});
+  if (DecodeObjectPalettes(MakeWpe(), invalid_pcx).success) {
+    return Fail("A tunit PCX with trailing compressed data was accepted.");
+  }
+  auto invalid_wpe = MakeWpe();
+  invalid_wpe.pop_back();
+  if (DecodeObjectPalettes(invalid_wpe, MakeTunitPcx()).success) {
+    return Fail("A truncated WPE palette was accepted.");
+  }
+
+  const std::vector<ObjectRenderRequest> render_requests = {
+      {ObjectGraphicKind::kUnit, 0, 0, 0},
+      {ObjectGraphicKind::kSprite, 1, kNeutralObjectPlayerColor, 0},
+  };
+  if (!ValidateObjectRenderRequests(render_requests)) {
+    return Fail("Valid object render requests were rejected.");
+  }
+  auto invalid_requests = render_requests;
+  invalid_requests[1] = invalid_requests[0];
+  if (ValidateObjectRenderRequests(invalid_requests)) {
+    return Fail("Duplicate object render requests were accepted.");
+  }
+  invalid_requests = render_requests;
+  invalid_requests[0].player_color = 8;
+  if (ValidateObjectRenderRequests(invalid_requests)) {
+    return Fail("An invalid render request player color was accepted.");
+  }
+
   const auto decoded = DecodeObjectGrpFirstFrame(grp, base_palette);
   if (!decoded.success || decoded.width != 6 || decoded.height != 4 ||
       decoded.anchor_x != 3 || decoded.anchor_y != 2 ||

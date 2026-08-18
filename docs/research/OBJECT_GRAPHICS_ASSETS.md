@@ -148,7 +148,9 @@ unit/sprite 종류와 ID를 받아 classic DAT의 참조 열, 1-based `images.tb
 `ObjectAtlasProtocol`은 자체 작성한 합성 GRP로 frame 0 RLE·투명도·anchor·
 player-color 치환을 검증하고 가변 RGBA envelope를 안전하게 기록한다.
 `StarCraftObjectAtlasGateway`, `ObjectSpriteAtlasLoader`와 객체 이미지 LRU는
-정렬 key, 설치 identity, 취소와 stale 결과 폐기 경계를 구현했다. 다음 M6.1
-구현은 요청 tileset의 WPE와 `game\\tunit.pcx`, 도달 가능한 GRP를 CascLib에서
-읽어 이 코어와 concrete protocol 3 process adapter에 연결한다. 파일 경로와
-원시 게임 바이트는 Flutter 계층에 노출하지 않는다.
+정렬 key, 설치 identity, 취소와 stale 결과 폐기 경계를 구현했다. native reader는
+요청 tileset의 WPE와 128×1 `game\\tunit.pcx`, 도달 가능한 고유 GRP를
+CascLib에서 strict-read하고 concrete protocol 3 process adapter에 연결됐다.
+로컬 SC:R unit 0 player 0 대표 프레임 스모크도 통과했다. 파일 경로와 원시 게임
+바이트는 Flutter 계층에 노출하지 않는다. 다음 M6.1 구현은 준비된 RGBA 이미지를
+캔버스 painter에 주입하고 실패 객체의 기존 위치 marker fallback을 유지한다.

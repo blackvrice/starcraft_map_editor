@@ -9,7 +9,11 @@ abstract final class StarCraftObjectAtlasDiagnosticCodes {
   static const helperStartFailed = 'SC_CASC_HELPER_START_FAILED';
   static const helperTimedOut = 'SC_CASC_HELPER_TIMED_OUT';
   static const helperCancelled = 'SC_CASC_HELPER_CANCELLED';
+  static const helperOutputLimitExceeded =
+      'SC_CASC_HELPER_OUTPUT_LIMIT_EXCEEDED';
   static const helperInvalidResponse = 'SC_CASC_HELPER_INVALID_RESPONSE';
+  static const storageOpenFailed = 'SC_CASC_STORAGE_OPEN_FAILED';
+  static const storageInfoFailed = 'SC_CASC_STORAGE_INFO_FAILED';
   static const atlasOutputInvalid = 'SC_CASC_OBJECT_ATLAS_OUTPUT_INVALID';
   static const renderFailed = 'SC_CASC_OBJECT_RENDER_FAILED';
 }

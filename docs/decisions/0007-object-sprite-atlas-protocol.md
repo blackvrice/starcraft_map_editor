@@ -3,17 +3,18 @@
 - Status: Accepted
 - Date: 2026-08-16
 
-구현 메모: 이 결정은 다음 구현에서 도입할 wire protocol 3과 helper 0.4.0의
-계약이다. 현재 코드의 wire protocol 2와 helper 0.3.0은 객체 operation이 실제로
-구현되고 기존 설치 검사·타일 렌더 어댑터가 함께 이관될 때까지 유지한다.
+구현 메모: 이 결정의 wire protocol 3과 helper 0.4.0은 2026-08-18 구현됐다.
+설치 검사·타일 렌더·객체 렌더 어댑터가 같은 버전으로 함께 이관됐다.
 2026-08-16에 classic DAT/TBL 크기·참조·경로를 검증하는 native
 `ObjectSpriteReference`와 합성 테스트를 먼저 구현했다.
 같은 날 GRP frame 0 decoder와 binary writer를 구현하면서 GRP 색상은 맵
 타일셋 WPE에 의존한다는 점을 확인해 요청에 `tileset`을 명시하도록 계약을
 보완했다. 이 변경은 아직 배포하지 않은 protocol 3 구현 계약에 포함한다.
 2026-08-18에는 Dart `StarCraftObjectAtlasGateway` 계약, map key loader, 객체 전용
-LRU와 operation 취소·generation 차단 controller를 구현했다. concrete helper
-process adapter와 캔버스 painter는 아직 연결하지 않았다.
+LRU와 operation 취소·generation 차단 controller를 구현했다. 이어서 native
+CascLib object reader, WPE/128×1 tunit palette decoder와 concrete helper process
+adapter를 연결하고 로컬 SC:R unit 0 대표 프레임 스모크를 통과했다. 캔버스
+painter는 아직 연결하지 않았다.
 
 ## Context
 
