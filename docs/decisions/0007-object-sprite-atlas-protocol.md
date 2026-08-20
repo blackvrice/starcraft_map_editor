@@ -257,8 +257,9 @@ HD/HD2/SD 연결, 다중 레이어와 훨씬 큰 자산 상한을 동시에 설�
   한다.
 - helper와 Dart 양쪽에 가변 entry 검증, 배치 분할, 부분 fallback과 별도 이미지
   LRU가 필요하다.
-- frame 0은 모든 객체의 게임 내 초기 모습을 완전히 재현하지 않으며 방향과
-  애니메이션은 후속 정책이 필요하다.
+- frame 0은 모든 객체의 게임 내 초기 모습을 완전히 재현하지 않는다. 방향과
+  애니메이션을 지원하려면 확정된 정적 preview 의미를 바꾸지 않는 별도 버전
+  확장이 필요하다.
 
 ## Validation
 
@@ -273,8 +274,10 @@ HD/HD2/SD 연결, 다중 레이어와 훨씬 큰 자산 상한을 동시에 설�
 - Application/Widget 테스트는 배치, cache identity, player color 구분, 부분 실패,
   scene key, anchor image, 선택 이동, marker fallback, generation 전환과 모든
   `ui.Image.dispose()` 경로를 검증한다.
-- 로컬 SC:R 선택적 스모크는 재배포하지 않는 대표 unit/sprite의 크기·anchor와
-  색을 Chkdraft 또는 게임 화면과 비교한다.
+- 로컬 SC:R 선택적 스모크는 unit 0의 player 0/기본 팔레트 RGBA가 다르고,
+  classic sprite ID 0~15 후보 중 하나 이상의 pure sprite가 유효한 크기와
+  비어 있지 않은 대표 프레임을 반환하는지 확인한다. 수동 시각 QA에서는 해당
+  크기·anchor와 색을 Chkdraft 또는 게임 화면과 비교한다.
 
 ## References
 

@@ -330,7 +330,11 @@ timeout과 operation 취소를 검증한다. 가짜 helper도 `firstFrame`과 di
 테스트는 WPE와 128×1
 tunit PCX 색상표의 player별 8색 해석도 검증한다. 실제 설치가 있는 개발
 환경에서는 다음 선택적 스모크로 번들 helper가 모든 자산을 읽고 8개 타일셋의
-raw `0/1/0x4000` 및 unit 0 player 0 대표 프레임을 RGBA로 합성하는지 확인한다.
+raw `0/1/0x4000`을 합성하는지 확인한다. 객체 스모크는 unit 0을 player 0과
+기본 팔레트로 각각 렌더해 RGBA가 달라지는지 확인하고, classic sprite ID 0~15
+후보 중 하나 이상의 pure sprite가 유효한 크기·비어 있지 않은 RGBA 대표
+프레임으로 렌더되는지도 검증한다. 추출한 게임 자산은 테스트 출력이나 저장소에
+남기지 않는다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

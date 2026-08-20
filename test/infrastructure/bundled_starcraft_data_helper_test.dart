@@ -98,7 +98,7 @@ void main() {
   );
 
   test(
-    'bundled CascLib helper renders a classic unit sprite frame',
+    'bundled CascLib helper renders unit colors and a pure sprite frame',
     () async {
       final gateway = ProcessStarCraftObjectAtlasGateway(
         helperExecutablePath: helperPath!,
@@ -108,12 +108,21 @@ void main() {
         operationId: 'bundled-object-smoke',
         installationPath: installationPath!,
         tileset: StarCraftTilesetAssetSet.jungle,
-        objects: const [
-          StarCraftObjectGraphicKey(
+        objects: [
+          const StarCraftObjectGraphicKey(
             kind: StarCraftObjectGraphicKind.unit,
             id: 0,
             playerColor: 0,
           ),
+          const StarCraftObjectGraphicKey(
+            kind: StarCraftObjectGraphicKind.unit,
+            id: 0,
+          ),
+          for (var spriteId = 0; spriteId < 16; spriteId++)
+            StarCraftObjectGraphicKey(
+              kind: StarCraftObjectGraphicKind.sprite,
+              id: spriteId,
+            ),
         ],
       );
 
@@ -130,13 +139,33 @@ void main() {
             )
             .join('\n'),
       );
-      expect(result.entries, hasLength(1));
-      expect(result.unsupportedObjects, isEmpty);
-      expect(result.entries.single.width, greaterThan(0));
-      expect(result.entries.single.height, greaterThan(0));
-      expect(result.entries.single.rgbaBytes, isNotEmpty);
+      final unitEntries = result.entries
+          .where((entry) => entry.key.kind == StarCraftObjectGraphicKind.unit)
+          .toList(growable: false);
+      final spriteEntries = result.entries
+          .where((entry) => entry.key.kind == StarCraftObjectGraphicKind.sprite)
+          .toList(growable: false);
+      expect(unitEntries, hasLength(2));
       expect(
-        result.entries.single.rgbaBytes.where((value) => value != 0),
+        result.unsupportedObjects.where(
+          (unsupported) =>
+              unsupported.key.kind == StarCraftObjectGraphicKind.unit,
+        ),
+        isEmpty,
+      );
+      expect(unitEntries[0].key.playerColor, 0);
+      expect(unitEntries[1].key.playerColor, isNull);
+      expect(unitEntries[0].width, unitEntries[1].width);
+      expect(unitEntries[0].height, unitEntries[1].height);
+      expect(unitEntries[0].rgbaBytes, isNot(equals(unitEntries[1].rgbaBytes)));
+      expect(spriteEntries, isNotEmpty);
+      expect(spriteEntries.first.width, greaterThan(0));
+      expect(spriteEntries.first.height, greaterThan(0));
+      expect(spriteEntries.first.rgbaBytes, isNotEmpty);
+      expect(
+        result.entries
+            .expand((entry) => entry.rgbaBytes)
+            .where((value) => value != 0),
         isNotEmpty,
       );
       expect(result.totalAssetBytes, greaterThan(0));

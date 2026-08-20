@@ -161,5 +161,10 @@ marker와 stable Problems 진단을 유지한다.
 player gradient를 사용하고 나머지는 tileset WPE 기본색을 유지한다. direction은
 0, 대표 프레임은 classic GRP frame 0이며 iscript/ANIM 재생과 대체 스킨은 현재
 범위 밖이다. 확장 시 기존 protocol 3 값을 재해석하지 않고 protocol·envelope·
-cache identity를 함께 버전 변경한다. 다음 M6.1 입력은 자체 제작 합성 자산의
-단위·통합·위젯 검증과 실제 설치 선택적 스모크 증거를 정리하는 작업이다.
+cache identity를 함께 버전 변경한다.
+
+2026-08-20 로컬 SC:R 선택적 스모크는 설치 검사, 8개 tileset, unit 0의 player 0
+대 기본 팔레트 RGBA 차이와 sprite ID 0~15 후보 중 하나 이상의 pure sprite
+대표 프레임을 통과했다. 자체 작성 합성 자산만 저장소 테스트에 남기며 실제
+설치의 DAT/TBL/GRP 또는 RGBA 출력은 보존하지 않는다. 다음 M6.1 입력은 다수
+객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측이다.

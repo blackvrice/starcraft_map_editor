@@ -609,7 +609,7 @@
 - [x] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
 - [x] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [x] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
-- [ ] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
+- [x] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
 - [ ] 다수 객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측
 
 구현 원칙:
@@ -695,6 +695,13 @@
   adapter 집중 테스트와 Debug native CTest 4/4가 통과했다. `flutter analyze`,
   `flutter test` 342개(환경 의존 6개 skip), `flutter build windows --debug`도
   통과했다.
+- 2026-08-20 합성 DAT/TBL/GRP native 단위 테스트, 자체 CHK Application 테스트,
+  가짜 protocol 3 process 통합 테스트, 실제 `ui.Image`와 marker fallback widget
+  테스트의 계층별 증거를 다시 확인했다. 로컬 SC:R 선택적 스모크 3/3은 8개
+  tileset과 unit 0의 player 0/기본 팔레트 차이, sprite ID 0~15 중 하나 이상의
+  pure sprite 대표 프레임을 번들 CascLib helper로 검증했다. 일반 환경의
+  `flutter analyze`, `flutter test` 342개(환경 의존 6개 skip),
+  `flutter build windows --debug`도 통과했다.
 
 완료 조건:
 
