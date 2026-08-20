@@ -11,15 +11,16 @@ void main() {
   final sprite = _key(StarCraftObjectGraphicKind.sprite, 11);
 
   test('request requires a safe ID and sorted unique bounded object keys', () {
-    expect(
-      () => StarCraftObjectAtlasRequest(
-        operationId: 'object-atlas-1',
-        installationPath: r'C:\Games\StarCraft',
-        tileset: StarCraftTilesetAssetSet.jungle,
-        objects: [unit, neutralUnit, sprite],
-      ),
-      returnsNormally,
+    final request = StarCraftObjectAtlasRequest(
+      operationId: 'object-atlas-1',
+      installationPath: r'C:\Games\StarCraft',
+      tileset: StarCraftTilesetAssetSet.jungle,
+      objects: [unit, neutralUnit, sprite],
     );
+    expect(request.framePolicy, StarCraftObjectFramePolicy.firstFrame);
+    expect(request.framePolicy.wireName, 'firstFrame');
+    expect(request.framePolicy.frameIndex, 0);
+    expect(request.objects.map((key) => key.direction), everyElement(0));
     for (final objects in [
       <StarCraftObjectGraphicKey>[],
       [unit, unit],
@@ -48,6 +49,18 @@ void main() {
       ),
       throwsArgumentError,
     );
+  });
+
+  test('static preview policy maps only player owners 0 through 7', () {
+    expect([
+      for (var owner = 0; owner <= 7; owner++)
+        StarCraftObjectPreviewPolicy.playerColorForOwner(owner),
+    ], List.generate(8, (owner) => owner));
+    expect(StarCraftObjectPreviewPolicy.playerColorForOwner(-1), isNull);
+    expect(StarCraftObjectPreviewPolicy.playerColorForOwner(8), isNull);
+    expect(StarCraftObjectPreviewPolicy.playerColorForOwner(11), isNull);
+    expect(StarCraftObjectPreviewPolicy.framePolicy.frameIndex, 0);
+    expect(StarCraftObjectPreviewPolicy.direction, 0);
   });
 
   test(

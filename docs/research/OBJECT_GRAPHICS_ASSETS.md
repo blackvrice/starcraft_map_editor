@@ -155,5 +155,11 @@ CascLib에서 strict-read하고 concrete protocol 3 process adapter에 연결됐
 바이트는 Flutter 계층에 노출하지 않는다. 준비된 RGBA는 scene graphic key로
 캔버스 painter에 주입되고, 원본 크기와 anchor를 32 StarCraft pixel 좌표계로
 확대한다. 선택 이동·outline에도 같은 중심을 사용하며 실패 객체는 기존 위치
-marker와 stable Problems 진단을 유지한다. 다음 M6.1 구현 입력은 player color,
-방향, 대표 프레임과 애니메이션 범위 정책이다.
+marker와 stable Problems 진단을 유지한다.
+
+2026-08-20 정적 preview 정책을 코드 계약으로 확정했다. owner 0~7만 tunit의
+player gradient를 사용하고 나머지는 tileset WPE 기본색을 유지한다. direction은
+0, 대표 프레임은 classic GRP frame 0이며 iscript/ANIM 재생과 대체 스킨은 현재
+범위 밖이다. 확장 시 기존 protocol 3 값을 재해석하지 않고 protocol·envelope·
+cache identity를 함께 버전 변경한다. 다음 M6.1 입력은 자체 제작 합성 자산의
+단위·통합·위젯 검증과 실제 설치 선택적 스모크 증거를 정리하는 작업이다.

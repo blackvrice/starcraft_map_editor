@@ -204,11 +204,17 @@ int main() {
   if (ValidateObjectRenderRequests(invalid_requests)) {
     return Fail("An invalid render request player color was accepted.");
   }
+  invalid_requests = render_requests;
+  invalid_requests[0].direction = kObjectPreviewDirection + 1;
+  if (ValidateObjectRenderRequests(invalid_requests)) {
+    return Fail("An unsupported preview direction was accepted.");
+  }
 
   const auto decoded = DecodeObjectGrpFirstFrame(grp, base_palette);
   if (!decoded.success || decoded.width != 6 || decoded.height != 4 ||
       decoded.anchor_x != 3 || decoded.anchor_y != 2 ||
-      decoded.frame_index != 0 || decoded.rgba_bytes.size() != 6 * 4 * 4) {
+      decoded.frame_index != kObjectPreviewFrameIndex ||
+      decoded.rgba_bytes.size() != 6 * 4 * 4) {
     return Fail("A synthetic GRP did not decode to its logical RGBA canvas.");
   }
   if (!HasPixel(decoded.rgba_bytes, 6, 0, 0, 0, 0, 0, 0) ||

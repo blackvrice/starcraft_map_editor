@@ -140,7 +140,7 @@ final class ProcessStarCraftObjectAtlasGateway
           'installationPath': request.installationPath,
           'tileset': request.tileset.rawValue,
           'outputFileName': atlasFileName,
-          'framePolicy': 'firstFrame',
+          'framePolicy': request.framePolicy.wireName,
           'objects': [
             for (final key in request.objects)
               {
@@ -426,11 +426,13 @@ final class ProcessStarCraftObjectAtlasGateway
       final entryPixelBytes = data.getUint32(offset + 24, Endian.little);
       final reserved = data.getUint32(offset + 28, Endian.little);
       if (kindValue > 1 ||
-          (playerValue > 7 && playerValue != 0xff) ||
-          direction != 0 ||
+          (playerValue > StarCraftObjectPreviewPolicy.maximumPlayerColor &&
+              playerValue !=
+                  StarCraftObjectPreviewPolicy.neutralPlayerColorValue) ||
+          direction != StarCraftObjectPreviewPolicy.direction ||
           reservedByte != 0 ||
           reserved != 0 ||
-          frameIndex != 0 ||
+          frameIndex != StarCraftObjectPreviewPolicy.framePolicy.frameIndex ||
           width == 0 ||
           width > StarCraftObjectAtlasEntry.maximumDimension ||
           height == 0 ||
@@ -445,7 +447,10 @@ final class ProcessStarCraftObjectAtlasGateway
       final key = StarCraftObjectGraphicKey(
         kind: StarCraftObjectGraphicKind.values[kindValue],
         id: objectId,
-        playerColor: playerValue == 0xff ? null : playerValue,
+        playerColor:
+            playerValue == StarCraftObjectPreviewPolicy.neutralPlayerColorValue
+            ? null
+            : playerValue,
         direction: direction,
       );
       try {
@@ -510,9 +515,12 @@ final class ProcessStarCraftObjectAtlasGateway
     final playerValue = value['playerColor'];
     if (id < 0 ||
         id > 0xffff ||
-        direction != 0 ||
+        direction != StarCraftObjectPreviewPolicy.direction ||
         (playerValue != null &&
-            (playerValue is! int || playerValue < 0 || playerValue > 7))) {
+            (playerValue is! int ||
+                playerValue < StarCraftObjectPreviewPolicy.minimumPlayerColor ||
+                playerValue >
+                    StarCraftObjectPreviewPolicy.maximumPlayerColor))) {
       throw const FormatException('Object key is invalid.');
     }
     return StarCraftObjectGraphicKey(

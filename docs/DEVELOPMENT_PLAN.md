@@ -608,7 +608,7 @@
 - [x] Application port 뒤에 객체 이미지 atlas/cache와 취소·오래된 응답 차단 구현
 - [x] `renderObjectAtlas` native CASC reader와 protocol 3 process adapter 연결
 - [x] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
-- [ ] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
+- [x] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
 - [ ] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
 - [ ] 다수 객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측
 
@@ -636,6 +636,11 @@
   premultiplied RGBA8888로 만든다. `ObjectAtlasProtocol`은 정렬·고유 entry,
   1,024px/4 MiB/32 MiB 상한을 검사하고 새 partial 파일을 flush한 뒤 고정
   `object-atlas.rgba`로 승격한다.
+- 정적 preview 정책은 owner 0~7만 같은 player color로 요청하고 그 밖의 owner는
+  `null`로 보내 현재 tileset WPE 색을 유지한다. 방향은 0, 대표 프레임은 classic
+  GRP frame 0으로 고정하며 iscript 애니메이션, Remastered ANIM, 대체 스킨과
+  시간 기반 재생은 M6.1에서 제외한다. 이 의미를 확장할 때는 protocol/envelope와
+  cache identity를 함께 버전 변경하고 기존 값을 조용히 재해석하지 않는다.
 - Application `StarCraftObjectAtlasGateway`는 operation ID, tileset과 최대 256개의
   정렬·고유 unit/sprite/player-color 키, 성공 entry와 unsupported의 정확한 분할,
   가변 RGBA·anchor 메타데이터와 취소 계약을 정의한다. `ObjectSpriteAtlasLoader`는
@@ -685,6 +690,11 @@
   지우면 객체 LRU 이미지도 dispose되고 painter가 marker 경로로 복귀한다.
   `flutter analyze`, `flutter test` 341개(환경 의존 6개 skip),
   `flutter build windows --debug`가 통과했다.
+- 2026-08-20 `StarCraftObjectPreviewPolicy`와 native 공용 상수로 owner 색상,
+  `firstFrame`, direction 0, frame index 0 계약을 고정했다. Dart 요청·process
+  adapter 집중 테스트와 Debug native CTest 4/4가 통과했다. `flutter analyze`,
+  `flutter test` 342개(환경 의존 6개 skip), `flutter build windows --debug`도
+  통과했다.
 
 완료 조건:
 

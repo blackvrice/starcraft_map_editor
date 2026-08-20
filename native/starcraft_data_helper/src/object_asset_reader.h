@@ -14,7 +14,7 @@ struct ObjectRenderRequest {
   ObjectGraphicKind kind = ObjectGraphicKind::kUnit;
   std::uint16_t object_id = 0;
   std::uint8_t player_color = kNeutralObjectPlayerColor;
-  std::uint8_t direction = 0;
+  std::uint8_t direction = kObjectPreviewDirection;
 };
 
 struct UnsupportedObjectRender {

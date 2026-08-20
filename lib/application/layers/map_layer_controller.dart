@@ -15,8 +15,6 @@ extension MapLayerTypeLabel on MapLayerType {
   };
 }
 
-int? _objectPlayerColor(int owner) => owner >= 0 && owner <= 7 ? owner : null;
-
 final class MapLayerStatus {
   const MapLayerStatus({this.isVisible = true, this.isLocked = false});
 
@@ -376,7 +374,9 @@ class MapLayerController {
             graphicKey: StarCraftObjectGraphicKey(
               kind: StarCraftObjectGraphicKind.unit,
               id: unit.unitType,
-              playerColor: _objectPlayerColor(unit.owner),
+              playerColor: StarCraftObjectPreviewPolicy.playerColorForOwner(
+                unit.owner,
+              ),
             ),
           ),
         );
@@ -403,7 +403,9 @@ class MapLayerController {
                   ? StarCraftObjectGraphicKind.sprite
                   : StarCraftObjectGraphicKind.unit,
               id: sprite.spriteType,
-              playerColor: _objectPlayerColor(sprite.owner),
+              playerColor: StarCraftObjectPreviewPolicy.playerColorForOwner(
+                sprite.owner,
+              ),
             ),
           ),
         );

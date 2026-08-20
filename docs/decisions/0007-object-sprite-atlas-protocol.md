@@ -14,7 +14,9 @@
 LRU와 operation 취소·generation 차단 controller를 구현했다. 이어서 native
 CascLib object reader, WPE/128×1 tunit palette decoder와 concrete helper process
 adapter를 연결하고 로컬 SC:R unit 0 대표 프레임 스모크를 통과했다. 캔버스
-painter는 아직 연결하지 않았다.
+painter도 anchor·선택 이동·marker fallback과 함께 연결됐다. 2026-08-20에는
+Dart `StarCraftObjectPreviewPolicy`와 native 공용 상수로 player color,
+`firstFrame`, direction 0과 frame index 0의 의미를 한곳에 고정했다.
 
 ## Context
 
@@ -83,6 +85,13 @@ stdin은 줄바꿈으로 끝나는 단일 UTF-8 JSON 레코드다.
 - 첫 구현의 `framePolicy`는 `firstFrame`, `direction`은 0만 허용한다. 필드는
   캐시 키와 후속 방향 정책을 명시하기 위해 처음부터 포함하지만 지원하지 않는
   값은 조용히 무시하지 않고 protocol 오류로 거부한다.
+- `firstFrame`은 classic GRP frame table의 index 0을 투명한 논리 canvas에
+  합성한다는 뜻이다. iscript의 초기 상태나 facing을 실행해 고른 프레임이라는
+  뜻이 아니며 시간 기반 애니메이션도 시작하지 않는다.
+- `UNIT`과 `THG2` placement에 신뢰 가능한 facing 입력이 없으므로 direction 0은
+  미지의 방향을 추측하지 않는 정적 preview key다. 다른 방향이나 Remastered
+  ANIM/iscript 정책을 추가할 때는 protocol, binary envelope와 cache identity를
+  함께 버전 변경한다.
 - 객체 키는 `kind`(`unit` 먼저), `id`, `playerColor`(`null`은 255),
   `direction` 순으로 엄격히 증가해야 한다. helper와 Dart가 중복·비정렬 요청을
   모두 거부한다.

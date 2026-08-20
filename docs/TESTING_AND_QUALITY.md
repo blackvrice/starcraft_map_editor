@@ -306,6 +306,8 @@ player-color 치환을 확인한다. 절단 행, 잘못된 header/crop/row offse
 offset·길이, 정렬·중복·색 값, 기존 출력 보존과 4 MiB/32 MiB 상한을 검증한다.
 `starcraft_object_atlas_gateway_test`는 operation ID와 최대 256개 key의 정렬·
 중복·불변성, 가변 RGBA entry와 unsupported의 정확한 요청 분할을 검증한다.
+또한 정적 preview 정책이 owner 0~7만 player color로 보존하고 나머지는 neutral
+요청으로 바꾸며 `firstFrame`·direction 0·frame index 0을 유지하는지 확인한다.
 `object_sprite_atlas_loader_test`는 자체 작성 `UNIT`/`THG2`에서 unit/sprite와
 player color 키를 만들고 설치 identity·batch 결과 불일치, gateway 예외와 cancel
 전달을 검증한다. `object_sprite_texture_test`는 256+1 배치, identity별 cache reuse,
@@ -323,7 +325,9 @@ generation 차단을 가짜 gateway와 가짜 이미지로 검증한다. `map_la
 누락 출력, 대량 출력과 timeout을 검증한다.
 `process_starcraft_object_atlas_gateway_test.dart`는 protocol 3 가짜 helper의
 정상/빈 atlas, 부분 fallback, 손상 envelope, metadata 불일치, 대량 출력,
-timeout과 operation 취소를 검증한다. native graphics 테스트는 WPE와 128×1
+timeout과 operation 취소를 검증한다. 가짜 helper도 `firstFrame`과 direction 0이
+아닌 요청을 거부해 process adapter의 wire 정책을 고정한다. native graphics
+테스트는 WPE와 128×1
 tunit PCX 색상표의 player별 8색 해석도 검증한다. 실제 설치가 있는 개발
 환경에서는 다음 선택적 스모크로 번들 helper가 모든 자산을 읽고 8개 타일셋의
 raw `0/1/0x4000` 및 unit 0 player 0 대표 프레임을 RGBA로 합성하는지 확인한다.

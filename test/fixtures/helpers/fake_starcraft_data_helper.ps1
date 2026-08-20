@@ -182,6 +182,19 @@ elseif ($request.operation -eq "renderTileAtlas") {
     }
 }
 elseif ($request.operation -eq "renderObjectAtlas") {
+    if ($request.framePolicy -ne "firstFrame" -or
+        @($request.objects | Where-Object { [int]$_.direction -ne 0 }).Count -ne 0) {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_PROTOCOL_INVALID_OBJECT_POLICY"
+            message = "The object preview policy is invalid."
+            stage = "protocol"
+            nativeError = 50
+        }
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        exit 2
+    }
+
     if ($request.installationPath -like "*object-error*") {
         $base.status = "error"
         $base.error = [ordered]@{

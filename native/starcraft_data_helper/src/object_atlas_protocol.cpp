@@ -91,9 +91,10 @@ auto EntryKey(const ObjectAtlasEntry &entry) {
 bool IsEntryValid(const ObjectAtlasEntry &entry) {
   if ((entry.kind != ObjectGraphicKind::kUnit &&
        entry.kind != ObjectGraphicKind::kSprite) ||
-      (entry.player_color > 7U &&
+      (entry.player_color > kMaximumObjectPlayerColor &&
        entry.player_color != kNeutralObjectPlayerColor) ||
-      entry.direction != 0 || entry.frame_index != 0 ||
+      entry.direction != kObjectPreviewDirection ||
+      entry.frame_index != kObjectPreviewFrameIndex ||
       entry.sprite_id >= kClassicSpriteCount ||
       entry.image_id >= kClassicImageCount || entry.width == 0 ||
       entry.height == 0 || entry.width > kMaximumObjectGrpDimension ||

@@ -427,6 +427,14 @@ WPE를 사용하고 player color가 0~7이면 `game\\tunit.pcx`의 8색 gradient
 GRP 인덱스 8~15에만 적용한다. 원시 게임 자산과 내부 경로는 Dart에 노출하지
 않는다.
 
+`StarCraftObjectPreviewPolicy`는 이 세대의 렌더 의미를 한곳에 고정한다. CHK
+owner 0~7은 같은 player gradient를 사용하고 그 밖의 owner는 player color를
+지정하지 않아 tileset WPE 색을 유지한다. `UNIT`/`THG2`에는 편집기가 신뢰할 수
+있는 facing 값이 없으므로 direction은 0만 허용하고, 대표 프레임은 classic GRP
+frame 0이다. iscript 상태 진행, 시간 기반 애니메이션, Remastered ANIM 레이어와
+대체 스킨은 현재 cache key나 화면에서 추측하지 않는다. 이를 지원할 때는 wire
+protocol, atlas format과 cache identity를 명시적으로 버전 변경한다.
+
 현재 native core의 `ObjectSpriteReference`는 wire protocol과 decoder보다 먼저
 구현되어 클래식 `units.dat` 228개, `flingy.dat` 209개, `sprites.dat` 517개,
 `images.dat` 999개 엔트리의 첫 참조 열을 little-endian으로 해석한다. unit은

@@ -178,9 +178,9 @@ bool ValidateObjectRenderRequests(
     const auto& request = requests[index];
     if ((request.kind != ObjectGraphicKind::kUnit &&
          request.kind != ObjectGraphicKind::kSprite) ||
-        (request.player_color > 7U &&
+        (request.player_color > kMaximumObjectPlayerColor &&
          request.player_color != kNeutralObjectPlayerColor) ||
-        request.direction != 0 ||
+        request.direction != kObjectPreviewDirection ||
         (index > 0 &&
          !(RequestKey(requests[index - 1]) < RequestKey(request)))) {
       return false;

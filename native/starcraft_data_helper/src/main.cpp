@@ -304,7 +304,7 @@ int RenderObjectAtlas(
   }
   if (request["outputFileName"].get<std::string>() !=
           sc::kObjectAtlasFileName ||
-      request["framePolicy"].get<std::string>() != "firstFrame") {
+      request["framePolicy"].get<std::string>() != sc::kObjectFramePolicy) {
     return WriteError(
         request_id,
         kRenderObjectOperation,
@@ -351,7 +351,8 @@ int RenderObjectAtlas(
 
     const auto object_id = value["id"].get<std::int64_t>();
     const auto direction = value["direction"].get<std::int64_t>();
-    if (object_id < 0 || object_id > 0xffff || direction != 0) {
+    if (object_id < 0 || object_id > 0xffff ||
+        direction != sc::kObjectPreviewDirection) {
       return WriteError(
           request_id,
           kRenderObjectOperation,
@@ -368,7 +369,8 @@ int RenderObjectAtlas(
       object.player_color = sc::kNeutralObjectPlayerColor;
     } else if (value["playerColor"].is_number_integer()) {
       const auto player_color = value["playerColor"].get<std::int64_t>();
-      if (player_color < 0 || player_color > 7) {
+      if (player_color < sc::kMinimumObjectPlayerColor ||
+          player_color > sc::kMaximumObjectPlayerColor) {
         return WriteError(
             request_id,
             kRenderObjectOperation,

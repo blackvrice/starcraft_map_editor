@@ -160,7 +160,9 @@ final class ObjectSpriteAtlasLoader {
           StarCraftObjectGraphicKey(
             kind: StarCraftObjectGraphicKind.unit,
             id: unit.unitType,
-            playerColor: _playerColor(unit.owner),
+            playerColor: StarCraftObjectPreviewPolicy.playerColorForOwner(
+              unit.owner,
+            ),
           ),
         );
       }
@@ -173,7 +175,9 @@ final class ObjectSpriteAtlasLoader {
                 ? StarCraftObjectGraphicKind.sprite
                 : StarCraftObjectGraphicKind.unit,
             id: sprite.spriteType,
-            playerColor: _playerColor(sprite.owner),
+            playerColor: StarCraftObjectPreviewPolicy.playerColorForOwner(
+              sprite.owner,
+            ),
           ),
         );
       }
@@ -289,8 +293,6 @@ final class ObjectSpriteAtlasLoader {
     }
   }
 }
-
-int? _playerColor(int owner) => owner >= 0 && owner <= 7 ? owner : null;
 
 List<StarCraftUnsupportedObjectGraphic> _failedObjects(
   List<StarCraftObjectGraphicKey> keys,

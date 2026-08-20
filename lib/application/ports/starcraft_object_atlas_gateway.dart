@@ -36,23 +36,52 @@ enum StarCraftObjectGraphicKind {
   final String wireName;
 }
 
+enum StarCraftObjectFramePolicy {
+  firstFrame('firstFrame', 0);
+
+  const StarCraftObjectFramePolicy(this.wireName, this.frameIndex);
+
+  final String wireName;
+  final int frameIndex;
+}
+
+abstract final class StarCraftObjectPreviewPolicy {
+  static const framePolicy = StarCraftObjectFramePolicy.firstFrame;
+  static const direction = 0;
+  static const minimumPlayerColor = 0;
+  static const maximumPlayerColor = 7;
+  static const neutralPlayerColorValue = 0xff;
+
+  static int? playerColorForOwner(int owner) {
+    return owner >= minimumPlayerColor && owner <= maximumPlayerColor
+        ? owner
+        : null;
+  }
+}
+
 final class StarCraftObjectGraphicKey
     implements Comparable<StarCraftObjectGraphicKey> {
   const StarCraftObjectGraphicKey({
     required this.kind,
     required this.id,
     this.playerColor,
-    this.direction = 0,
+    this.direction = StarCraftObjectPreviewPolicy.direction,
   }) : assert(id >= 0 && id <= 0xffff),
-       assert(playerColor == null || (playerColor >= 0 && playerColor <= 7)),
-       assert(direction == 0);
+       assert(
+         playerColor == null ||
+             (playerColor >= StarCraftObjectPreviewPolicy.minimumPlayerColor &&
+                 playerColor <=
+                     StarCraftObjectPreviewPolicy.maximumPlayerColor),
+       ),
+       assert(direction == StarCraftObjectPreviewPolicy.direction);
 
   final StarCraftObjectGraphicKind kind;
   final int id;
   final int? playerColor;
   final int direction;
 
-  int get playerColorSortValue => playerColor ?? 0xff;
+  int get playerColorSortValue =>
+      playerColor ?? StarCraftObjectPreviewPolicy.neutralPlayerColorValue;
 
   @override
   int compareTo(StarCraftObjectGraphicKey other) {
@@ -90,6 +119,7 @@ final class StarCraftObjectAtlasRequest {
     required this.installationPath,
     required this.tileset,
     required List<StarCraftObjectGraphicKey> objects,
+    this.framePolicy = StarCraftObjectPreviewPolicy.framePolicy,
   }) : objects = List.unmodifiable(objects) {
     if (!_isValidOperationId(operationId)) {
       throw ArgumentError.value(
@@ -122,6 +152,7 @@ final class StarCraftObjectAtlasRequest {
   final String installationPath;
   final StarCraftTilesetAssetSet tileset;
   final List<StarCraftObjectGraphicKey> objects;
+  final StarCraftObjectFramePolicy framePolicy;
 }
 
 final class StarCraftObjectAtlasEntry {
@@ -148,7 +179,7 @@ final class StarCraftObjectAtlasEntry {
         anchorX > 0x7fff ||
         anchorY < -0x8000 ||
         anchorY > 0x7fff ||
-        frameIndex != 0 ||
+        frameIndex != StarCraftObjectPreviewPolicy.framePolicy.frameIndex ||
         this.rgbaBytes.length != width * height * bytesPerPixel ||
         this.rgbaBytes.length > maximumFrameBytes) {
       throw ArgumentError('Object atlas entry metadata is inconsistent.');
@@ -272,8 +303,11 @@ void _expectStrictlyIncreasingKeys(
     if (key.id < 0 ||
         key.id > 0xffff ||
         (key.playerColor != null &&
-            (key.playerColor! < 0 || key.playerColor! > 7)) ||
-        key.direction != 0 ||
+            (key.playerColor! <
+                    StarCraftObjectPreviewPolicy.minimumPlayerColor ||
+                key.playerColor! >
+                    StarCraftObjectPreviewPolicy.maximumPlayerColor)) ||
+        key.direction != StarCraftObjectPreviewPolicy.direction ||
         (previous != null && previous.compareTo(key) >= 0)) {
       throw ArgumentError.value(
         keys,
