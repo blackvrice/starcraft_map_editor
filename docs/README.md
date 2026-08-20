@@ -13,6 +13,7 @@
 | [에디터 UX](EDITOR_UX.md) | 화면 구조, 핵심 작업 흐름, 입력 규칙 | 사용자 흐름이 바뀔 때 |
 | [테스트와 품질](TESTING_AND_QUALITY.md) | 테스트 계층, 픽스처, 성능과 릴리스 게이트 | 검증 방법이 바뀔 때 |
 | [256×256 캔버스 성능 기준선](performance/MAP_CANVAS_256_SMOKE.md) | 캔버스 계측 방법, 환경과 측정 결과 | 렌더 경로나 성능 기준이 바뀔 때 |
+| [256×256 객체 스프라이트 성능 기준선](performance/OBJECT_SPRITE_256_SMOKE.md) | 다수 객체 로딩·LRU·paint 계측 방법과 결과 | 객체 렌더 경로나 성능 기준이 바뀔 때 |
 | [SC:R 객체 그래픽 자산 조사](research/OBJECT_GRAPHICS_ASSETS.md) | 객체 ID와 로컬 그래픽 자산의 연결, 포맷·버전·배포 경계 | 객체 그래픽 경로나 지원 범위가 바뀔 때 |
 | [데이터 안전과 보안](DATA_SAFETY.md) | 원본 보호, 입력 검증, 외부 코드 실행 정책 | 파일·프로세스 정책이 바뀔 때 |
 | [개발 워크플로](DEVELOPMENT_WORKFLOW.md) | 로컬 개발, 브랜치, 커밋, 완료 정의 | 팀 작업 방식이 바뀔 때 |

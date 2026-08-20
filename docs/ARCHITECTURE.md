@@ -303,10 +303,12 @@ StarCraft 맵 픽셀 좌표로 역변환한다. 이미지 준비와 실패 상�
 비활성화한다. `Escape`는 문서 변경 없이 배치 모드만 해제한다.
 
 `MapCanvasPainter.paint`는 `dart:developer` Timeline에 맵 크기, zoom, grid
-step, 가시 타일 수와 texture 상태를 남긴다. 테스트·프로파일 harness가 선택적
+step, 가시 타일 수, terrain/object texture와 scene point 수를 남긴다.
+테스트·프로파일 harness가 선택적
 `MapCanvasPaintObserver`를 주입하면 paint 경로의 Stopwatch 시간과 실제
-texture/fallback/unsupported 타일 수를 받는다. 일반 앱 경로에서는 observer가
-없으므로 타일별 성능 카운터를 할당하거나 증가시키지 않는다.
+texture/fallback/unsupported 타일 수, 그린 object image·marker와 viewport에서
+제외된 object 수를 받는다. 일반 앱 경로에서는 observer가 없으므로 타일·객체별
+성능 카운터를 할당하거나 증가시키지 않는다.
 
 `TerrainEditingController`는 Presentation과 raw CHK 사이의 Application
 경계다. 선택한 raw 타일 값과 Select/Brush/Rectangle 도구 상태를 관리하고,

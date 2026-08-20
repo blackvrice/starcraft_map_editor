@@ -18,7 +18,7 @@
 | M4. EUD 수직 기능 | 완료 | 실제 euddraft 빌드·검증·안전한 출력 승격 |
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
 | M6. 객체와 로케이션 | 완료 | 객체·로케이션 편집·의미 참조 진단·Save As 왕복 |
-| M6.1. 실제 객체 그래픽 | 진행 | CascLib 객체 자산·스프라이트 매핑·캔버스 이미지 렌더 |
+| M6.1. 실제 객체 그래픽 | 완료 | CascLib 객체 자산·스프라이트 렌더·fallback·성능 기준 |
 | M7. 일반 트리거 | 대기 | 트리거 편집 |
 | M8. 안정화와 배포 | 대기 | 검증된 Windows 릴리스 |
 
@@ -610,7 +610,7 @@
 - [x] 스프라이트 캔버스 이미지 렌더링과 누락·미지원 자산의 위치 마커 fallback
 - [x] player color, 방향, 대표 프레임 및 애니메이션 범위 정책 확정
 - [x] 자체 제작 합성 자산 단위·통합·위젯 테스트와 실제 설치 선택적 스모크 테스트
-- [ ] 다수 객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측
+- [x] 다수 객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측
 
 구현 원칙:
 
@@ -701,6 +701,13 @@
   tileset과 unit 0의 player 0/기본 팔레트 차이, sprite ID 0~15 중 하나 이상의
   pure sprite 대표 프레임을 번들 CascLib helper로 검증했다. 일반 환경의
   `flutter analyze`, `flutter test` 342개(환경 의존 6개 skip),
+  `flutter build windows --debug`도 통과했다.
+- 2026-08-20 객체 성능 스모크는 256×256 맵의 4,096 placements와 256 unique
+  key에서 실제 `ui.Image` 240개, fallback 16종을 준비했다. synchronize 46.844 ms,
+  LRU 983,040 bytes, fit/zoom/pan paint 15.853/4.253/4.760 ms였고 clear 뒤 LRU가
+  0 bytes로 복귀했다. debug 자동 상한은 load 2초, paint 1초, LRU 64 MiB이며
+  [객체 성능 기록](performance/OBJECT_SPRITE_256_SMOKE.md)에 조건과 한계를 남겼다.
+  전체 `flutter analyze`, `flutter test` 343개(환경 의존 6개 skip),
   `flutter build windows --debug`도 통과했다.
 
 완료 조건:

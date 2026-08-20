@@ -27,6 +27,9 @@ final class MapCanvasPaintMetrics {
     required this.textureTileCount,
     required this.fallbackTileCount,
     required this.unsupportedTileCount,
+    required this.objectTextureCount,
+    required this.objectMarkerCount,
+    required this.culledObjectCount,
   });
 
   final Duration paintDuration;
@@ -38,9 +41,16 @@ final class MapCanvasPaintMetrics {
   final int textureTileCount;
   final int fallbackTileCount;
   final int unsupportedTileCount;
+  final int objectTextureCount;
+  final int objectMarkerCount;
+  final int culledObjectCount;
 
   int get paintedTerrainTileCount =>
       textureTileCount + fallbackTileCount + unsupportedTileCount;
+
+  int get paintedObjectCount => objectTextureCount + objectMarkerCount;
+
+  int get visitedObjectCount => paintedObjectCount + culledObjectCount;
 }
 
 class MapCanvas extends StatefulWidget {
@@ -1098,6 +1108,8 @@ class MapCanvasPainter extends CustomPainter {
         'gridStep': layout.gridStep,
         'hasTerrain': rawTileValues != null,
         'textureCount': terrainTextures.length,
+        'objectPointCount': layerScene?.points.length ?? 0,
+        'availableObjectTextureCount': objectTextures.length,
       },
     );
     try {
@@ -1109,7 +1121,7 @@ class MapCanvasPainter extends CustomPainter {
       canvas.drawRect(mapRect, Paint()..color = mapBackground);
       _paintTerrain(canvas, counters);
       _paintGrid(canvas);
-      _paintObjectLayers(canvas);
+      _paintObjectLayers(canvas, counters);
       _paintEditOverlay(canvas);
       canvas.drawRect(
         mapRect,
@@ -1135,6 +1147,9 @@ class MapCanvasPainter extends CustomPainter {
             textureTileCount: counters.textureTileCount,
             fallbackTileCount: counters.fallbackTileCount,
             unsupportedTileCount: counters.unsupportedTileCount,
+            objectTextureCount: counters.objectTextureCount,
+            objectMarkerCount: counters.objectMarkerCount,
+            culledObjectCount: counters.culledObjectCount,
           ),
         );
       }
@@ -1231,7 +1246,7 @@ class MapCanvasPainter extends CustomPainter {
     }
   }
 
-  void _paintObjectLayers(Canvas canvas) {
+  void _paintObjectLayers(Canvas canvas, _MapCanvasPaintCounters? counters) {
     final scene = layerScene;
     if (scene == null) {
       return;
@@ -1278,7 +1293,13 @@ class MapCanvasPainter extends CustomPainter {
           point.pixelX + (move?.dx ?? 0),
           point.pixelY + (move?.dy ?? 0),
         );
-        _paintPointObject(canvas, point, center, selected: selected);
+        _paintPointObject(
+          canvas,
+          point,
+          center,
+          selected: selected,
+          counters: counters,
+        );
       }
     }
   }
@@ -1288,17 +1309,24 @@ class MapCanvasPainter extends CustomPainter {
     MapLayerPointObject point,
     Offset center, {
     required bool selected,
+    required _MapCanvasPaintCounters? counters,
   }) {
     final texture = point.graphicKey == null
         ? null
         : objectTextures[point.graphicKey];
     if (texture != null) {
-      _paintObjectTexture(canvas, texture, center, selected: selected);
+      if (_paintObjectTexture(canvas, texture, center, selected: selected)) {
+        counters?.objectTextureCount++;
+      } else {
+        counters?.culledObjectCount++;
+      }
       return;
     }
     if (!(Offset.zero & layout.viewportSize).inflate(12).contains(center)) {
+      counters?.culledObjectCount++;
       return;
     }
+    counters?.objectMarkerCount++;
     final radius = (layout.tileExtent * 0.32).clamp(3.5, 9.0).toDouble();
     final fill = Paint()
       ..color = switch (point.object.layer) {
@@ -1349,7 +1377,7 @@ class MapCanvasPainter extends CustomPainter {
     }
   }
 
-  void _paintObjectTexture(
+  bool _paintObjectTexture(
     Canvas canvas,
     ObjectSpriteTexture texture,
     Offset center, {
@@ -1363,7 +1391,7 @@ class MapCanvasPainter extends CustomPainter {
       texture.height * scale,
     );
     if (!destination.overlaps(Offset.zero & layout.viewportSize)) {
-      return;
+      return false;
     }
     canvas.drawImageRect(
       texture.image,
@@ -1380,6 +1408,7 @@ class MapCanvasPainter extends CustomPainter {
           ..strokeWidth = 2,
       );
     }
+    return true;
   }
 
   Offset _mapPixelOffset(int pixelX, int pixelY) => Offset(
@@ -1487,6 +1516,9 @@ final class _MapCanvasPaintCounters {
   int textureTileCount = 0;
   int fallbackTileCount = 0;
   int unsupportedTileCount = 0;
+  int objectTextureCount = 0;
+  int objectMarkerCount = 0;
+  int culledObjectCount = 0;
 }
 
 class _CanvasBadge extends StatelessWidget {

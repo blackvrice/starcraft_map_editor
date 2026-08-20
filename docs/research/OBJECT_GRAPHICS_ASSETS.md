@@ -166,5 +166,10 @@ cache identity를 함께 버전 변경한다.
 2026-08-20 로컬 SC:R 선택적 스모크는 설치 검사, 8개 tileset, unit 0의 player 0
 대 기본 팔레트 RGBA 차이와 sprite ID 0~15 후보 중 하나 이상의 pure sprite
 대표 프레임을 통과했다. 자체 작성 합성 자산만 저장소 테스트에 남기며 실제
-설치의 DAT/TBL/GRP 또는 RGBA 출력은 보존하지 않는다. 다음 M6.1 입력은 다수
-객체가 있는 256×256 맵의 로딩·메모리·paint 성능 계측이다.
+설치의 DAT/TBL/GRP 또는 RGBA 출력은 보존하지 않는다.
+
+2026-08-20 합성 256×256 객체 성능 스모크는 4,096 placements, 256 unique key,
+실제 `ui.Image` 240개와 fallback 16종으로 synchronize·LRU·fit/zoom/pan paint를
+계측해 자동 상한을 통과했다. 조건과 결과는
+[객체 성능 기준선](../performance/OBJECT_SPRITE_256_SMOKE.md)에 보존한다. 이로써
+classic GRP 정적 preview를 대상으로 한 M6.1 구현·검증 범위는 완료됐다.

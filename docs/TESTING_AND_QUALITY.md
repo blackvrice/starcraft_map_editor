@@ -423,6 +423,14 @@ profile Windows 빌드를 DevTools에서 열고 `MapCanvasPainter.paint` Timelin
 범위와 Flutter frame timing을 함께 기록해 판정한다. 현재 환경과 측정값은
 [256×256 캔버스 성능 기준선](performance/MAP_CANVAS_256_SMOKE.md)에 남긴다.
 
+자동 `test/performance/object_sprite_performance_test.dart`는 같은 viewport와 맵에
+4,096개 placement, 256개 고유 key, 실제 32×32 `ui.Image` 240개와 fallback
+16종을 구성한다. texture synchronize 2초, 각 debug paint 1초, 객체 LRU 64 MiB를
+병적 회귀 상한으로 사용하고 fit·zoom·pan의 image/marker/culled 수와 cache bytes,
+관찰용 RSS 변화를 출력한다. 현재 측정값과 profile 절차는
+[256×256 객체 스프라이트 성능 기준선](performance/OBJECT_SPRITE_256_SMOKE.md)에
+남긴다.
+
 ## 6. 정적 검사와 포맷
 
 기본 명령:

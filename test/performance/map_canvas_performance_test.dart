@@ -47,6 +47,7 @@ void main() {
     expect(fitted.textureTileCount, 0);
     expect(fitted.unsupportedTileCount, 0);
     expect(fitted.paintedTerrainTileCount, 256 * 256);
+    expect(fitted.visitedObjectCount, 0);
     _expectWithinSmokeCeiling(fitted);
 
     await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
