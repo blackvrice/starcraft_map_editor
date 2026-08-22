@@ -244,6 +244,12 @@ little-endian 값으로 투영한다.
   섹션 끝에 byte-exact 복사한 뒤 x/y 필드만 클릭 좌표로 바꾼다. 따라서 owner,
   flags, 예약 값과 현재 미지원 필드는 템플릿 값을 유지한다. 검증된 기본값 없이
   새 레코드를 합성하지 않으며 로케이션은 이 배치 경로에 포함하지 않는다.
+- M6.2 전체 카탈로그는 위 복제 경로를 `mapTemplate` fallback으로 유지하면서
+  [ADR-0008](decisions/0008-validated-visual-placement-catalog.md)의 검증된 종류별
+  factory/recipe를 추가한다. Doodad 합성 배치는 footprint `MTXM`, enabled `DD2 `,
+  optional overlay `THG2`를 한 명령으로 적용한다. 다시 연 기존 Doodad의 아래
+  지형은 `DD2 `만으로 알 수 없으므로 `TILE` 복원 규칙이 검증되기 전에는 추측해
+  삭제하지 않는다.
 - 속성 Apply는 `UNIT`의 x/y, unit type, owner, 체력·실드·에너지 비율,
   resource amount, hangar amount와 `DD2 `의 type/x/y/owner/enabled raw,
   `THG2`의 type/x/y/owner만 수정한다. unit class/relation/valid/state flags,

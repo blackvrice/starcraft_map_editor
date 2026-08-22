@@ -15,6 +15,7 @@
 | [256×256 캔버스 성능 기준선](performance/MAP_CANVAS_256_SMOKE.md) | 캔버스 계측 방법, 환경과 측정 결과 | 렌더 경로나 성능 기준이 바뀔 때 |
 | [256×256 객체 스프라이트 성능 기준선](performance/OBJECT_SPRITE_256_SMOKE.md) | 다수 객체 로딩·LRU·paint 계측 방법과 결과 | 객체 렌더 경로나 성능 기준이 바뀔 때 |
 | [SC:R 객체 그래픽 자산 조사](research/OBJECT_GRAPHICS_ASSETS.md) | 객체 ID와 로컬 그래픽 자산의 연결, 포맷·버전·배포 경계 | 객체 그래픽 경로나 지원 범위가 바뀔 때 |
+| [시각적 배치와 CHK 생성 규칙 조사](research/VISUAL_PLACEMENT_AND_CHK_RULES.md) | Tile·Doodad·Unit·Sprite 선택 흐름, factory와 복합 배치 경계 | 배치 카탈로그나 생성 규칙이 바뀔 때 |
 | [데이터 안전과 보안](DATA_SAFETY.md) | 원본 보호, 입력 검증, 외부 코드 실행 정책 | 파일·프로세스 정책이 바뀔 때 |
 | [개발 워크플로](DEVELOPMENT_WORKFLOW.md) | 로컬 개발, 브랜치, 커밋, 완료 정의 | 팀 작업 방식이 바뀔 때 |
 | [개발 계획](DEVELOPMENT_PLAN.md) | 단계별 작업과 인수 조건 | 작업을 시작하거나 마칠 때 |

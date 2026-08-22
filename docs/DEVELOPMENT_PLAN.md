@@ -731,7 +731,7 @@
 Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치할 수 있게 한다.
 이 단계가 완료되기 전에는 M7 일반 트리거 구현을 시작하지 않는다.
 
-- [ ] 기존 에디터의 Tile·Doodad·Unit·Sprite 선택 흐름과 CHK 생성 규칙 조사
+- [x] 기존 에디터의 Tile·Doodad·Unit·Sprite 선택 흐름과 CHK 생성 규칙 조사
 - [ ] 로컬 SC:R 배치 카탈로그 포트·모델과 안전한 이름/ID fallback 정의
 - [ ] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
 - [ ] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
@@ -759,8 +759,11 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
      sprite가 함께 구성될 수 있다. 타일셋별 정의·폭·높이·중심점·소유자·enabled
      규칙을 확인해 하나의 배치 recipe로 모델링한다. recipe가 완전하지 않은
      항목은 배치 버튼을 비활성화하고 이유를 보여주며 바이트를 추측하지 않는다.
-   - 이 조사 결과와 기본 레코드 값은 새 ADR에 고정한다. 기존 맵의 첫 레코드를
-     복제하는 현재 `ObjectPaletteController` 경로는 호환 fallback으로 유지하되,
+   - 조사 결과와 기본 레코드 값은
+     [시각적 배치와 CHK 생성 규칙 조사](research/VISUAL_PLACEMENT_AND_CHK_RULES.md)와
+     [ADR-0008](decisions/0008-validated-visual-placement-catalog.md)에 고정했다.
+     기존 맵의 첫 레코드를 복제하는 현재 `ObjectPaletteController` 경로는
+     호환 fallback으로 유지하되,
      전체 카탈로그의 기본값을 대신하는 근거로 사용하지 않는다.
 
 2. **Application 경계와 로컬 자산 공급**
@@ -798,6 +801,11 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
      overlay를 하나의 명령으로 적용한다. 경계 밖 footprint, 손상 recipe, 잠긴
      레이어나 중복/모호한 대상 섹션이면 전체를 거부한다. Undo/Redo도 세 섹션을
      함께 복원하며 중간 상태를 사용자 문서에 노출하지 않는다.
+   - 다시 연 기존 Doodad의 `DD2 `에는 아래 지형이 없으므로, 유일하고 유효한
+     `TILE`을 이용한 복원과 overlay 귀속 규칙을 상호 운용 테스트로 확정하기
+     전에는 기존 Doodad의 복합 삭제에서 `MTXM`이나 같은 위치의 `THG2`를 추측해
+     지우지 않는다. 같은 세션에서 새로 배치한 Doodad는 command의 before snapshot과
+     record identity로 정확히 Undo/Redo한다.
    - 저장은 기존 검증형 Save As만 사용한다. 알 수 없는 섹션, 중복 섹션, 기존
      객체 순서·예약 바이트와 원시 문자열은 이 기능과 무관한 경우 그대로 보존한다.
 
