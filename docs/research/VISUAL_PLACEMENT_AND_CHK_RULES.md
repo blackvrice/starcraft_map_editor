@@ -200,6 +200,20 @@ recipe 타일과 일치할 때에만 `TILE` editor scope의 underlying tile로 �
   identity를 Undo 동안 추적하되, 재open 뒤에는 같은 좌표/type만으로 사용자가
   배치한 Sprite까지 자동 삭제하지 않는다.
 
+구현 확인(2026-08-22):
+
+- helper 0.7.0은 각 tileset의 `CV5`와 `dddata.bin`을 함께 읽고 `index == 1`,
+  name ID가 0이 아닌 시작 group을 `(DDData ID, start group)` 순서로 페이지화한다.
+- 폭·높이는 1~16, footprint는 최대 256칸으로 제한한다. non-empty CV5 member만
+  `16*(startGroup+y)+x` raw `MTXM`을 가지며 DDData의 앞 `width*height` u16을
+  같은 row-major 순서의 placibility group으로 보존한다.
+- overlay 0은 없음, `DrawAsSprite`가 있으면 classic Sprite 0~516, 없으면
+  sprite-unit Unit 0~227로 검증한다. 중심은 footprint 시작점 기준
+  `(width*16, height*16)`이고 `DD2 ` enabled 값은 1로 고정한다.
+- 정상 recipe도 원자적 command 구현 전에는 배치 불가다. 잘린 footprint,
+  flags 0, 범위 밖 DDData/overlay 등은 `SC_CASC_DOODAD_*`로 해당 항목만
+  비활성화하며 값을 추측하지 않는다.
+
 참조:
 
 - [CV5 Doodad recipe 구성](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/chkdraft/mapping/clipboard.cpp#L57-L138)
@@ -263,4 +277,3 @@ Popup selection (no document change)
 - Doodad는 `MTXM + DD2 + optional THG2`의 하나의 recipe/command다.
 - 안전하게 합성할 수 없는 항목은 숫자 ID와 이유를 보여주고 배치만 비활성화한다.
 - 현재 맵 레코드 복제는 raw 보존형 호환 fallback으로 계속 제공한다.
-

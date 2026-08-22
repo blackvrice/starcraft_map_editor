@@ -164,7 +164,7 @@ void main() {
           ],
           storageProduct: 's1',
           storageBuildNumber: 13515,
-          helperVersion: '0.6.0',
+          helperVersion: '0.7.0',
           cascLibRevision: 'revision',
         ),
       ),
@@ -276,7 +276,7 @@ StarCraftPlacementCatalogPage _page(
   entries: entries,
   storageProduct: 's1',
   storageBuildNumber: 13515,
-  helperVersion: '0.6.0',
+  helperVersion: '0.7.0',
   cascLibRevision: 'revision',
 );
 
@@ -290,7 +290,7 @@ StarCraftObjectAtlasResult _atlas(
   unsupportedObjects: const [],
   storageProduct: 's1',
   storageBuildNumber: storageBuildNumber,
-  helperVersion: '0.6.0',
+  helperVersion: '0.7.0',
   cascLibRevision: 'revision',
 );
 

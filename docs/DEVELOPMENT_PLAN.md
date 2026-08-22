@@ -19,7 +19,7 @@
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
 | M6. 객체와 로케이션 | 완료 | 객체·로케이션 편집·의미 참조 진단·Save As 왕복 |
 | M6.1. 실제 객체 그래픽 | 완료 | CascLib 객체 자산·스프라이트 렌더·fallback·성능 기준 |
-| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile·Unit·Sprite 카탈로그와 썸네일 공급 완료 |
+| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile·Unit·Sprite 공급과 Doodad recipe 해석 완료 |
 | M7. 일반 트리거 | 대기 | M6.2 완료 후 트리거 편집 |
 | M8. 안정화와 배포 | 대기 | 검증된 Windows 릴리스 |
 
@@ -735,7 +735,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 로컬 SC:R 배치 카탈로그 포트·모델과 안전한 이름/ID fallback 정의
 - [x] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
 - [x] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
-- [ ] Doodad 정의, 크기, 중심점, 지형·overlay 구성 관계 해석
+- [x] Doodad 정의, 크기, 중심점, 지형·overlay 구성 관계 해석
 - [ ] 현재 맵에 없는 Unit·Sprite를 위한 검증된 기본 레코드 factory 구현
 - [ ] Doodad의 `DD2 `·`MTXM`·필요한 `THG2` 원자적 배치/삭제/Undo 구현
 - [ ] Tile·Doodad·Unit·Sprite 탭이 있는 크기 조절 가능 선택 팝업 구현
@@ -855,6 +855,21 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
   thumbnail을 bundled gateway/loader 왕복으로 확인했다.
 - `flutter analyze`, 단일 동시성 전체 `flutter test` 372개(환경 의존 8개 skip),
   native CTest, 로컬 bundled helper 스모크 5개와
+  `flutter build windows --debug`가 통과했다.
+- 2026-08-22 protocol 3/helper 0.7.0은 tileset별 CV5와
+  `tileset\\<name>\\dddata.bin`을 strict-read해 Doodad를 `(tileset, DDData ID,
+  CV5 start group)` 안정 키로 페이지화한다. 각 recipe는 1~16 타일 폭·높이,
+  row-major sparse `MTXM`, DDData placibility group, footprint 시작점 기준
+  `(width*16, height*16)` 중심 오프셋, enabled `DD2 ` 값과 optional pure
+  Sprite/sprite-unit `THG2` 의미를 함께 가진다. 구조가 불완전한 항목은
+  `SC_CASC_DOODAD_*` code로 개별 격리한다.
+- 로컬 SC:R `s1` build 13515의 8개 tileset 전체 Doodad page를 검사했다.
+  tileset별 194~1,217개, 총 6,730개 중 6,668개 recipe가 검증됐고 62개
+  비표시/잘린 정의는 항목별로 격리됐다. 최대 256개 JSON page는 162,711 bytes로
+  256 KiB process 상한 안이었다. 배치 command는 다음 항목이므로 정상 recipe도
+  `SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING`으로 아직 문서를 변경하지 않는다.
+- `flutter analyze`, 단일 동시성 전체 `flutter test` 378개(환경 의존 9개 skip),
+  native CTest 5/5, 로컬 bundled helper 스모크 6/6과
   `flutter build windows --debug`가 통과했다.
 
 완료 조건:

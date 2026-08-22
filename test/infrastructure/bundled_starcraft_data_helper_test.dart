@@ -7,6 +7,7 @@ import 'package:starcraft_map_editor/application/ports/starcraft_placement_catal
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/terrain/tile_placement_catalog_loader.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
+import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_data_asset_inspector.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
@@ -209,6 +210,62 @@ void main() {
           expect(thumbnail.height, greaterThan(0));
           expect(thumbnail.rgbaBytes, isNotEmpty);
           expect(thumbnail.rgbaBytes.where((value) => value != 0), isNotEmpty);
+        }
+      }
+    },
+    skip: canRun
+        ? false
+        : 'Set STARCRAFT_DATA_HELPER_PATH and '
+              'STARCRAFT_TEST_INSTALLATION after building the Windows app.',
+  );
+
+  test(
+    'bundled helper supplies validated Doodad placement recipes',
+    () async {
+      final gateway = ProcessStarCraftPlacementCatalogGateway(
+        helperExecutablePath: helperPath!,
+        timeout: const Duration(seconds: 30),
+      );
+      for (final tileset in StarCraftTilesetAssetSet.values) {
+        final page = await gateway.list(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'bundled-doodad-catalog-${tileset.rawValue}',
+            installationPath: installationPath!,
+            kind: StarCraftPlacementKind.doodad,
+            tileset: tileset,
+            limit: 16,
+          ),
+        );
+
+        expect(
+          page.isSuccess,
+          isTrue,
+          reason: page.diagnostics
+              .map(
+                (diagnostic) =>
+                    '${diagnostic.code}: ${diagnostic.message} '
+                    '${diagnostic.rawDetails ?? ''}',
+              )
+              .join('\n'),
+        );
+        expect(page.totalEntries, greaterThan(0));
+        expect(page.entries, isNotEmpty);
+        expect(page.entries.every((entry) => !entry.isPlaceable), isTrue);
+        final recipes = page.entries
+            .map((entry) => entry.doodadRecipe)
+            .whereType<DoodadPlacementRecipe>()
+            .toList(growable: false);
+        expect(recipes, isNotEmpty);
+        for (final recipe in recipes) {
+          expect(recipe.tileset, tileset);
+          expect(recipe.width, inInclusiveRange(1, 16));
+          expect(recipe.height, inInclusiveRange(1, 16));
+          expect(recipe.centerOffsetX, recipe.width * 16);
+          expect(recipe.centerOffsetY, recipe.height * 16);
+          expect(
+            recipe.footprint.where((cell) => cell.writesTerrain),
+            isNotEmpty,
+          );
         }
       }
     },

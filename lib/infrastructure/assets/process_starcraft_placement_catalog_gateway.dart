@@ -5,6 +5,7 @@ import 'dart:io';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import '../../domain/placement/doodad_placement_recipe.dart';
 import 'starcraft_data_helper_protocol.dart';
 
 final class ProcessStarCraftPlacementCatalogGateway
@@ -78,6 +79,7 @@ final class ProcessStarCraftPlacementCatalogGateway
       );
     }
     if (request.kind != StarCraftPlacementKind.tile &&
+        request.kind != StarCraftPlacementKind.doodad &&
         request.kind != StarCraftPlacementKind.unit &&
         request.kind != StarCraftPlacementKind.pureSprite) {
       return _failure(
@@ -85,7 +87,7 @@ final class ProcessStarCraftPlacementCatalogGateway
         code: StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
         message: 'This helper version does not support that catalog kind.',
         filePath: request.installationPath,
-        remediation: 'Choose the Tile, Unit, or pure Sprite catalog.',
+        remediation: 'Choose the Tile, Doodad, Unit, or pure Sprite catalog.',
       );
     }
     if (_reservedOperations.contains(request.operationId)) {
@@ -304,6 +306,8 @@ final class ProcessStarCraftPlacementCatalogGateway
       final totalBytes = _jsonInteger(assets, 'totalBytes');
       final validReadCount = request.kind == StarCraftPlacementKind.tile
           ? readCount == StarCraftDataAssetManifest.renderAssetKinds.length
+          : request.kind == StarCraftPlacementKind.doodad
+          ? readCount == 5
           : readCount >= 7 &&
                 readCount <= 7 + StarCraftPlacementCatalogRequest.maximumLimit;
       if (!validReadCount ||
@@ -337,17 +341,22 @@ final class ProcessStarCraftPlacementCatalogGateway
         throw const FormatException('Catalog page length is invalid.');
       }
       final entries = <StarCraftPlacementCatalogEntry>[];
+      StarCraftPlacementCatalogKey? previousKey;
       for (var index = 0; index < rawEntries.length; index++) {
         final item = rawEntries[index];
         if (item is! Map<String, dynamic>) {
           throw const FormatException('Catalog entry must be an object.');
         }
         final id = _jsonInteger(item, 'id');
-        if (id != request.offset + index || id < 0 || id > 0xFFFF) {
-          throw const FormatException('Catalog IDs must be contiguous u16s.');
+        if (id < 0 ||
+            id > 0xFFFF ||
+            (request.kind != StarCraftPlacementKind.doodad &&
+                id != request.offset + index)) {
+          throw const FormatException('Catalog IDs are invalid.');
         }
         final String? previewIssueCode;
-        if (request.kind == StarCraftPlacementKind.tile) {
+        if (request.kind == StarCraftPlacementKind.tile ||
+            request.kind == StarCraftPlacementKind.doodad) {
           previewIssueCode = null;
         } else {
           previewIssueCode = _jsonNullableString(item, 'previewIssueCode');
@@ -361,26 +370,85 @@ final class ProcessStarCraftPlacementCatalogGateway
             );
           }
         }
+        final int? doodadStartTileGroup;
+        final String? recipeIssueCode;
+        final DoodadPlacementRecipe? doodadRecipe;
+        if (request.kind == StarCraftPlacementKind.doodad) {
+          doodadStartTileGroup = _jsonInteger(item, 'startTileGroup');
+          if (doodadStartTileGroup < 0 || doodadStartTileGroup > 0xFFFF) {
+            throw const FormatException('Doodad start tile group is invalid.');
+          }
+          recipeIssueCode = _jsonNullableString(item, 'recipeIssueCode');
+          if (recipeIssueCode != null &&
+              (!recipeIssueCode.startsWith('SC_CASC_DOODAD_') ||
+                  recipeIssueCode.length >
+                      StarCraftPlacementCatalogIssue.maximumCodeLength)) {
+            throw const FormatException('Doodad recipe issue is invalid.');
+          }
+          final rawRecipe = item['recipe'];
+          if (recipeIssueCode == null) {
+            if (rawRecipe is! Map<String, dynamic>) {
+              throw const FormatException('Doodad recipe is missing.');
+            }
+            doodadRecipe = _parseDoodadRecipe(
+              rawRecipe,
+              request.tileset,
+              id,
+              doodadStartTileGroup,
+            );
+          } else {
+            if (rawRecipe != null) {
+              throw const FormatException(
+                'Invalid Doodad entries cannot include a recipe.',
+              );
+            }
+            doodadRecipe = null;
+          }
+        } else {
+          doodadStartTileGroup = null;
+          recipeIssueCode = null;
+          doodadRecipe = null;
+        }
         final key = switch (request.kind) {
           StarCraftPlacementKind.tile => StarCraftPlacementCatalogKey.tile(
             tileset: request.tileset,
             rawValue: id,
           ),
           StarCraftPlacementKind.unit => StarCraftPlacementCatalogKey.unit(id),
+          StarCraftPlacementKind.doodad => StarCraftPlacementCatalogKey.doodad(
+            tileset: request.tileset,
+            doodadId: id,
+            startTileGroup: doodadStartTileGroup!,
+          ),
           StarCraftPlacementKind.pureSprite =>
             StarCraftPlacementCatalogKey.pureSprite(id),
           _ => throw const FormatException('Unsupported catalog kind.'),
         };
-        final placementIssue = request.kind == StarCraftPlacementKind.tile
-            ? null
-            : StarCraftPlacementCatalogIssue(
-                code: previewIssueCode == null
-                    ? 'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING'
-                    : 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
-                message: previewIssueCode == null
-                    ? 'Placement defaults are not implemented yet.'
-                    : 'The local object preview is unavailable.',
-              );
+        if (previousKey != null && previousKey.compareTo(key) >= 0) {
+          throw const FormatException(
+            'Catalog keys must be strictly increasing.',
+          );
+        }
+        previousKey = key;
+        final placementIssue = switch (request.kind) {
+          StarCraftPlacementKind.tile => null,
+          StarCraftPlacementKind.doodad => StarCraftPlacementCatalogIssue(
+            code: recipeIssueCode == null
+                ? 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING'
+                : 'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID',
+            message: recipeIssueCode == null
+                ? 'Atomic Doodad placement is not implemented yet.'
+                : 'The local Doodad recipe is invalid.',
+          ),
+          _ => StarCraftPlacementCatalogIssue(
+            code: previewIssueCode == null
+                ? 'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING'
+                : 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+            message: previewIssueCode == null
+                ? 'Placement defaults are not implemented yet.'
+                : 'The local object preview is unavailable.',
+          ),
+        };
         entries.add(
           StarCraftPlacementCatalogEntry(
             key: key,
@@ -390,6 +458,8 @@ final class ProcessStarCraftPlacementCatalogGateway
                 : StarCraftPlacementAvailability.unsupported,
             issue: placementIssue,
             previewIssueCode: previewIssueCode,
+            doodadRecipe: doodadRecipe,
+            doodadRecipeIssueCode: recipeIssueCode,
           ),
         );
       }
@@ -416,6 +486,95 @@ final class ProcessStarCraftPlacementCatalogGateway
           parserError: error.message,
         ),
       );
+    }
+  }
+
+  DoodadPlacementRecipe _parseDoodadRecipe(
+    Map<String, dynamic> recipe,
+    StarCraftTilesetAssetSet tileset,
+    int doodadType,
+    int startTileGroup,
+  ) {
+    final width = _jsonInteger(recipe, 'width');
+    final height = _jsonInteger(recipe, 'height');
+    final centerOffsetX = _jsonInteger(recipe, 'centerOffsetX');
+    final centerOffsetY = _jsonInteger(recipe, 'centerOffsetY');
+    final enabledValue = _jsonInteger(recipe, 'enabledValue');
+    if (width < 1 ||
+        width > DoodadPlacementRecipe.maximumFootprintAxis ||
+        height < 1 ||
+        height > DoodadPlacementRecipe.maximumFootprintAxis ||
+        width * height > DoodadPlacementRecipe.maximumFootprintCells) {
+      throw const FormatException('Doodad recipe dimensions are invalid.');
+    }
+    final rawValues = recipe['footprintRawValues'];
+    final placibility = recipe['placibilityTileGroups'];
+    if (rawValues is! List ||
+        placibility is! List ||
+        rawValues.length != width * height ||
+        placibility.length != width * height) {
+      throw const FormatException('Doodad footprint arrays are invalid.');
+    }
+    final cells = <DoodadFootprintCell>[];
+    for (var index = 0; index < rawValues.length; index++) {
+      final raw = rawValues[index];
+      if (raw != null &&
+          (raw is! int ||
+              raw < 0 ||
+              raw > StarCraftPlacementCatalogKey.maximumId)) {
+        throw const FormatException('Doodad MTXM value is invalid.');
+      }
+      final requiredGroup = placibility[index];
+      if (requiredGroup is! int ||
+          requiredGroup < 0 ||
+          requiredGroup > StarCraftPlacementCatalogKey.maximumId) {
+        throw const FormatException('Doodad placibility value is invalid.');
+      }
+      cells.add(
+        DoodadFootprintCell(
+          x: index % width,
+          y: index ~/ width,
+          rawTileValue: raw as int?,
+          requiredTileGroup: requiredGroup,
+        ),
+      );
+    }
+    final rawOverlay = recipe['overlay'];
+    final DoodadOverlayRecipe? overlay;
+    if (rawOverlay == null) {
+      overlay = null;
+    } else if (rawOverlay is Map<String, dynamic>) {
+      final semantic = switch (_jsonString(rawOverlay, 'kind')) {
+        'pureSprite' => DoodadOverlaySemantic.pureSprite,
+        'spriteUnit' => DoodadOverlaySemantic.spriteUnit,
+        _ => throw const FormatException('Doodad overlay kind is invalid.'),
+      };
+      final overlayId = _jsonInteger(rawOverlay, 'id');
+      final maximumOverlayId = semantic == DoodadOverlaySemantic.pureSprite
+          ? DoodadOverlayRecipe.maximumSpriteId
+          : DoodadOverlayRecipe.maximumUnitId;
+      if (overlayId < 0 || overlayId > maximumOverlayId) {
+        throw const FormatException('Doodad overlay ID is invalid.');
+      }
+      overlay = DoodadOverlayRecipe(semantic: semantic, id: overlayId);
+    } else {
+      throw const FormatException('Doodad overlay is invalid.');
+    }
+    try {
+      return DoodadPlacementRecipe(
+        tileset: tileset,
+        startTileGroup: startTileGroup,
+        doodadType: doodadType,
+        width: width,
+        height: height,
+        centerOffsetX: centerOffsetX,
+        centerOffsetY: centerOffsetY,
+        enabledValue: enabledValue,
+        footprint: cells,
+        overlay: overlay,
+      );
+    } on ArgumentError catch (error) {
+      throw FormatException('Doodad recipe is invalid: $error');
     }
   }
 
@@ -453,12 +612,14 @@ final class ProcessStarCraftPlacementCatalogGateway
         StarCraftPlacementCatalogDiagnosticCodes.storageOpenFailed,
       'SC_CASC_ASSET_MISSING' ||
       'SC_CASC_TILE_ASSET_MISSING' ||
+      'SC_CASC_DOODAD_ASSET_MISSING' ||
       'SC_CASC_OBJECT_METADATA_MISSING' ||
       'SC_CASC_OBJECT_PALETTE_MISSING' =>
         StarCraftPlacementCatalogDiagnosticCodes.metadataMissing,
       'SC_CASC_ASSET_INVALID' ||
       'SC_CASC_TILE_ASSET_INVALID' ||
       'SC_CASC_TILE_CATALOG_INVALID' ||
+      'SC_CASC_DOODAD_ASSET_INVALID' ||
       'SC_CASC_OBJECT_METADATA_INVALID' ||
       'SC_CASC_OBJECT_PALETTE_INVALID' ||
       'SC_CASC_OBJECT_ASSETS_TOO_LARGE' ||
@@ -542,6 +703,8 @@ const _helperErrorCodes = {
   'SC_CASC_TILE_ASSET_MISSING',
   'SC_CASC_TILE_ASSET_INVALID',
   'SC_CASC_TILE_CATALOG_INVALID',
+  'SC_CASC_DOODAD_ASSET_MISSING',
+  'SC_CASC_DOODAD_ASSET_INVALID',
   'SC_CASC_OBJECT_METADATA_MISSING',
   'SC_CASC_OBJECT_METADATA_INVALID',
   'SC_CASC_OBJECT_PALETTE_MISSING',

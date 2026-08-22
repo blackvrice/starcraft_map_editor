@@ -11,7 +11,10 @@ protocol 3/helper 0.5.0의 Tile `listPlacementCatalog` operation, 실제 decoder
 이후 helper 0.6.0에서 Unit 228개·pure Sprite 517개 전체 page, DAT/TBL/GRP
 preview 검증과 object atlas thumbnail loader를 추가했다. 기본 CHK factory가
 완료되기 전에는 preview와 placement availability를 분리해 factory-pending으로
-유지한다. Doodad 공급과 기존 Object Palette/UI merge는 후속 항목이다.
+유지한다. helper 0.7.0은 이어서 tileset CV5/DDData를 결합한
+`DoodadPlacementRecipe`를 추가했다. footprint raw `MTXM`, placibility, 중심과
+optional overlay가 모두 검증된 항목도 원자적 command가 완료되기 전에는
+command-pending으로 유지한다. 기존 Object Palette/UI merge는 후속 항목이다.
 
 ## Context
 

@@ -274,10 +274,10 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.6.0의
-`listPlacementCatalog`를 실행한다. Unit·pure Sprite 공급도 같은 operation을
-사용하며, Doodad와 기존 `ObjectPaletteController` template의 UI merge는 후속
-단계로 남아 있다.
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.7.0의
+`listPlacementCatalog`를 실행한다. Unit·pure Sprite와 tileset별 Doodad recipe도
+같은 operation을 사용하며, 기존 `ObjectPaletteController` template의 UI merge는
+후속 단계로 남아 있다.
 
 - `StarCraftPlacementCatalogRequest`는 설치 경로, 현재 tileset, 한 종류, offset과
   최대 256개 limit를 가진다. operation ID는 안전한 ASCII 1~128자로 제한하고
@@ -312,6 +312,16 @@ M6.2의 전체 배치 목록은 `application/ports`의
   catalog stable key에 연결된다. Unit·Sprite CHK factory가 아직 없으므로 이미지
   유무와 별개로 placement availability는 factory-pending 상태이며, 다음 factory
   단계 전에는 popup에서 배치 가능으로 표시하지 않는다.
+- Doodad 요청은 현재 tileset의 `CV5`, `VX4EX`, `VR4`, `WPE`와 DDData를 고정
+  경로로 읽는다. native decoder는 `index == 1`이고 이름 ID가 있는 CV5 시작
+  group을 DDData ID와 함께 정렬하고, 1~16 타일 footprint의 sparse raw `MTXM`,
+  row-major placibility group, `(width*16, height*16)` 중심 오프셋, enabled
+  `DD2 ` 값과 optional pure Sprite/sprite-unit overlay를 하나의
+  `DoodadPlacementRecipe`로 만든다. Dart domain 모델은 모든 u16, 배열 길이,
+  CV5 group/member raw 값과 overlay ID 범위를 다시 검증한다.
+- 손상 Doodad는 page 전체 실패가 아니라 `doodadRecipeIssueCode`가 있는 항목으로
+  격리한다. 검증된 recipe도 아직 `DD2 `·`MTXM`·`THG2` 원자적 command가 없으므로
+  command-pending 상태이며, 카탈로그 탐색만으로 CHK나 dirty/Undo를 바꾸지 않는다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.
@@ -463,7 +473,8 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile/Unit/Sprite 카탈로그는 공용 wire protocol 3/helper 0.6.0을 사용한다.
+렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.7.0을
+사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
 `unit`/`sprite`, ID, player color, direction의 정렬·중복 제거된 최대 256개

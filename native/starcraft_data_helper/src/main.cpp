@@ -1,4 +1,5 @@
 #include "casc_asset_inspector.h"
+#include "doodad_recipe_decoder.h"
 #include "object_asset_reader.h"
 #include "object_atlas_protocol.h"
 #include "object_sprite_reference.h"
@@ -27,7 +28,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.6.0";
+constexpr char kHelperVersion[] = "0.7.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -289,7 +290,8 @@ int ListPlacementCatalog(
         2);
   }
   const auto kind = request["kind"].get<std::string>();
-  if (kind != "tile" && kind != "unit" && kind != "pureSprite") {
+  if (kind != "tile" && kind != "doodad" && kind != "unit" &&
+      kind != "pureSprite") {
     return WriteError(
         request_id,
         kListCatalogOperation,
@@ -323,6 +325,99 @@ int ListPlacementCatalog(
         "protocol",
         ERROR_INVALID_DATA,
         2);
+  }
+
+  if (kind == "doodad") {
+    const auto assets = sc::ReadDoodadAssets(
+        installation_path, static_cast<std::uint32_t>(tileset));
+    if (!assets.success) {
+      return WriteError(
+          request_id,
+          kListCatalogOperation,
+          assets.error_code,
+          assets.message,
+          assets.stage,
+          assets.native_error,
+          3);
+    }
+    const auto catalog = sc::ListDoodadRecipes(
+        assets.assets,
+        static_cast<std::uint32_t>(offset),
+        static_cast<std::uint32_t>(limit));
+    if (!catalog.success) {
+      return WriteError(
+          request_id,
+          kListCatalogOperation,
+          catalog.error_code,
+          catalog.message,
+          catalog.stage,
+          catalog.native_error,
+          3);
+    }
+
+    auto response = BaseResponse(request_id, kListCatalogOperation);
+    response["status"] = "success";
+    response["installation"] = {
+        {"path", assets.installation_path},
+        {"storageProduct", assets.storage_product},
+        {"storageBuildNumber", assets.storage_build_number},
+    };
+    response["kind"] = kind;
+    response["tileset"] = tileset;
+    response["assets"] = {
+        {"readCount", sc::kDoodadAssetCount},
+        {"totalBytes", assets.total_asset_bytes},
+    };
+    response["catalog"] = {
+        {"offset", offset},
+        {"limit", limit},
+        {"totalEntries", catalog.total_entries},
+    };
+    response["entries"] = json::array();
+    for (const auto& recipe : catalog.entries) {
+      json entry = {
+          {"id", recipe.doodad_id},
+          {"startTileGroup", recipe.start_tile_group},
+          {"recipeIssueCode",
+           recipe.issue_code.empty() ? json(nullptr)
+                                     : json(recipe.issue_code)},
+          {"recipe", nullptr},
+      };
+      if (recipe.issue_code.empty()) {
+        json footprint_raw_values = json::array();
+        json placibility_tile_groups = json::array();
+        for (const auto& cell : recipe.footprint) {
+          footprint_raw_values.push_back(
+              cell.raw_tile_value.has_value()
+                  ? json(*cell.raw_tile_value)
+                  : json(nullptr));
+          placibility_tile_groups.push_back(cell.required_tile_group);
+        }
+        json overlay = nullptr;
+        if (recipe.overlay.has_value()) {
+          overlay = {
+              {"kind",
+               recipe.overlay->kind == sc::DoodadOverlayKind::kSprite
+                   ? "pureSprite"
+                   : "spriteUnit"},
+              {"id", recipe.overlay->id},
+          };
+        }
+        entry["recipe"] = {
+            {"width", recipe.width},
+            {"height", recipe.height},
+            {"centerOffsetX", recipe.center_offset_x},
+            {"centerOffsetY", recipe.center_offset_y},
+            {"enabledValue", recipe.enabled_value},
+            {"footprintRawValues", std::move(footprint_raw_values)},
+            {"placibilityTileGroups", std::move(placibility_tile_groups)},
+            {"overlay", std::move(overlay)},
+        };
+      }
+      response["entries"].push_back(std::move(entry));
+    }
+    std::cout << response.dump() << '\n';
+    return 0;
   }
 
   if (kind != "tile") {

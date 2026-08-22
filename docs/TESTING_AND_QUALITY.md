@@ -273,11 +273,14 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
 - found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
 - protocol 3의 설치 검사/타일/객체 렌더/배치 카탈로그 operation 분리와
-  helper 0.6.0 검증
+  helper 0.7.0 검증
 - Tile 카탈로그 page의 tileset·offset·limit·total·연속 u16 ID와 page 끝/빈 page,
   실제 decoder로 검증한 항목만 32×32 atlas thumbnail에 연결되는지 확인
 - Unit 228개·pure Sprite 517개 고정 total과 연속 page, DAT/TBL/GRP preview
   가능/불가 항목 격리, factory-pending 배치 상태와 object atlas thumbnail 연결
+- tileset별 CV5 Doodad 시작 group과 DDData의 512-byte placibility 레코드 결합,
+  1~16 타일 크기·홀수/짝수 중심·sparse `MTXM`·row-major group·pure
+  Sprite/sprite-unit overlay 및 손상 recipe 항목별 격리
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
@@ -360,6 +363,15 @@ catalog 테스트는 Unit 228/Sprite 517 total과 마지막 page, 항목별 prev
 손상 code/누락 필드를 거부한다. 선택적 bundled helper 스모크는 로컬 설치의
 전체 Unit/Sprite ID를 page로 검증하고 대표 8/16개 실제 frame을 loader까지
 왕복한다.
+
+`doodad_placement_recipe_test.dart`와 native
+`starcraft_doodad_recipe_native_test`는 합성 CV5/DDData로 footprint raw 값,
+placibility, 중심 오프셋, overlay `THG2` 의미, stable key 정렬·page 끝과 손상
+metadata 격리를 검증한다. process 테스트는 recipe 배열·중심·issue code·자산 수
+불일치를 거부한다. 선택적 bundled helper 스모크는 로컬 SC:R의 8개 tileset에서
+각각 실제 recipe를 읽으며, 별도 전체 page 스캔은 총 6,730개 정의와 최대
+162,711-byte 응답이 process 상한 안인지 확인한다. 게임 자산은 임시 메모리에서만
+해석하고 저장소에 남기지 않는다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

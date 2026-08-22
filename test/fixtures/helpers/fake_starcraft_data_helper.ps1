@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.6.0"
+    helperVersion = "0.7.0"
     cascLibRevision = $revision
 }
 
@@ -93,6 +93,18 @@ elseif ($request.operation -eq "listPlacementCatalog") {
         [Console]::Error.WriteLine("SC_CASC_OBJECT_METADATA_INVALID")
         exit 3
     }
+    if ($request.installationPath -like "*doodad-asset-error*") {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_DOODAD_ASSET_INVALID"
+            message = "A required Doodad catalog asset is invalid."
+            stage = "decode-doodads"
+            nativeError = 13
+        }
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        [Console]::Error.WriteLine("SC_CASC_DOODAD_ASSET_INVALID")
+        exit 3
+    }
     if ($request.installationPath -like "*asset-missing*") {
         $base.status = "error"
         $base.error = [ordered]@{
@@ -119,6 +131,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     }
 
     $totalEntries = switch ($request.kind) {
+        "doodad" { 3 }
         "unit" { 228 }
         "pureSprite" { 517 }
         default { 260 }
@@ -126,7 +139,51 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     $start = [int]$request.offset
     $end = [Math]::Min($totalEntries, $start + [int]$request.limit)
     $entries = @()
-    for ($id = $start; $id -lt $end; $id++) {
+    if ($request.kind -eq "doodad") {
+        $doodads = @(
+            [ordered]@{
+                id = 1
+                startTileGroup = 200
+                recipeIssueCode = $null
+                recipe = [ordered]@{
+                    width = 2
+                    height = 2
+                    centerOffsetX = 32
+                    centerOffsetY = 32
+                    enabledValue = 1
+                    footprintRawValues = @(3200, 3201, 3216, $null)
+                    placibilityTileGroups = @(4, 0, 5, 6)
+                    overlay = [ordered]@{ kind = "pureSprite"; id = 130 }
+                }
+            },
+            [ordered]@{
+                id = 2
+                startTileGroup = 240
+                recipeIssueCode = "SC_CASC_DOODAD_OVERLAY_INVALID"
+                recipe = $null
+            },
+            [ordered]@{
+                id = 3
+                startTileGroup = 300
+                recipeIssueCode = $null
+                recipe = [ordered]@{
+                    width = 1
+                    height = 1
+                    centerOffsetX = 16
+                    centerOffsetY = 16
+                    enabledValue = 1
+                    footprintRawValues = @(4800)
+                    placibilityTileGroups = @(0)
+                    overlay = [ordered]@{ kind = "spriteUnit"; id = 100 }
+                }
+            }
+        )
+        for ($index = $start; $index -lt $end; $index++) {
+            $entries += $doodads[$index]
+        }
+    }
+    else {
+      for ($id = $start; $id -lt $end; $id++) {
         $entry = [ordered]@{ id = $id }
         if ($request.kind -eq "unit" -or $request.kind -eq "pureSprite") {
             $previewUnavailable =
@@ -139,6 +196,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
             }
         }
         $entries += $entry
+      }
     }
     $base.status = "success"
     $base.installation = [ordered]@{
@@ -149,7 +207,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     $base.kind = $request.kind
     $base.tileset = [int]$request.tileset
     $base.assets = [ordered]@{
-        readCount = if ($request.kind -eq "tile") { 4 } else { 8 }
+        readCount = if ($request.kind -eq "tile") { 4 } elseif ($request.kind -eq "doodad") { 5 } else { 8 }
         totalBytes = 1048576
     }
     $base.catalog = [ordered]@{
@@ -173,6 +231,18 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     }
     if (($request.installationPath -like "*catalog-preview-field-missing*") -and $base.entries.Count -gt 0) {
         $base.entries[0].Remove("previewIssueCode")
+    }
+    if (($request.installationPath -like "*catalog-recipe-code-mismatch*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].recipeIssueCode = "UNSTABLE_CODE"
+    }
+    if (($request.installationPath -like "*catalog-recipe-field-missing*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].Remove("recipe")
+    }
+    if (($request.installationPath -like "*catalog-recipe-center-mismatch*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].recipe.centerOffsetX++
+    }
+    if (($request.installationPath -like "*catalog-recipe-value-mismatch*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].recipe.placibilityTileGroups[0] = -1
     }
     if ($request.installationPath -like "*catalog-size-mismatch*") {
         $base.assets.totalBytes = 0

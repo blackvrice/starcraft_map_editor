@@ -1,5 +1,6 @@
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
+import '../../domain/placement/doodad_placement_recipe.dart';
 
 abstract final class StarCraftPlacementCatalogDiagnosticCodes {
   static const installationPathInvalid = 'SC_CATALOG_INSTALLATION_PATH_INVALID';
@@ -204,6 +205,8 @@ final class StarCraftPlacementCatalogEntry {
     Iterable<String> categoryPath = const [],
     this.issue,
     this.previewIssueCode,
+    this.doodadRecipe,
+    this.doodadRecipeIssueCode,
   }) : verifiedName = _safeOptionalDisplayText(verifiedName, maximumNameLength),
        categoryPath = List.unmodifiable(
          categoryPath.map((segment) {
@@ -245,12 +248,38 @@ final class StarCraftPlacementCatalogEntry {
         'Must be a stable object preview diagnostic for an object kind.',
       );
     }
+    if (doodadRecipe != null &&
+        (key.kind != StarCraftPlacementKind.doodad ||
+            doodadRecipe!.tileset != key.tileset ||
+            doodadRecipe!.doodadType != key.id ||
+            doodadRecipe!.startTileGroup != key.doodadStartTileGroup)) {
+      throw ArgumentError.value(
+        doodadRecipe,
+        'doodadRecipe',
+        'Must match the Doodad catalog key.',
+      );
+    }
+    if (doodadRecipeIssueCode != null &&
+        (!_isSafeIdentifier(
+              doodadRecipeIssueCode!,
+              maximumDoodadRecipeCodeLength,
+            ) ||
+            !doodadRecipeIssueCode!.startsWith('SC_CASC_DOODAD_') ||
+            key.kind != StarCraftPlacementKind.doodad ||
+            doodadRecipe != null)) {
+      throw ArgumentError.value(
+        doodadRecipeIssueCode,
+        'doodadRecipeIssueCode',
+        'Must describe a Doodad entry without a validated recipe.',
+      );
+    }
   }
 
   static const maximumNameLength = 128;
   static const maximumCategoryLength = 64;
   static const maximumCategoryDepth = 8;
   static const maximumPreviewCodeLength = 128;
+  static const maximumDoodadRecipeCodeLength = 128;
 
   final StarCraftPlacementCatalogKey key;
   final StarCraftPlacementCatalogSource source;
@@ -259,6 +288,8 @@ final class StarCraftPlacementCatalogEntry {
   final List<String> categoryPath;
   final StarCraftPlacementCatalogIssue? issue;
   final String? previewIssueCode;
+  final DoodadPlacementRecipe? doodadRecipe;
+  final String? doodadRecipeIssueCode;
 
   String get displayName =>
       verifiedName ?? '${key.kind.fallbackLabel} #${key.id}';

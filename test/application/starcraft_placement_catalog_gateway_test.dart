@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
+import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 
 void main() {
   group('StarCraftPlacementCatalogKey', () {
@@ -183,6 +184,59 @@ void main() {
           source: StarCraftPlacementCatalogSource.localData,
           availability: StarCraftPlacementAvailability.placeable,
           previewIssueCode: 'SC_CASC_OBJECT_GRP_UNAVAILABLE',
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('requires a Doodad recipe to match its composite catalog key', () {
+      final recipe = DoodadPlacementRecipe(
+        tileset: StarCraftTilesetAssetSet.jungle,
+        startTileGroup: 200,
+        doodadType: 7,
+        width: 1,
+        height: 1,
+        centerOffsetX: 16,
+        centerOffsetY: 16,
+        footprint: [
+          DoodadFootprintCell(
+            x: 0,
+            y: 0,
+            rawTileValue: 3200,
+            requiredTileGroup: 0,
+          ),
+        ],
+      );
+      final entry = StarCraftPlacementCatalogEntry(
+        key: StarCraftPlacementCatalogKey.doodad(
+          tileset: StarCraftTilesetAssetSet.jungle,
+          doodadId: 7,
+          startTileGroup: 200,
+        ),
+        source: StarCraftPlacementCatalogSource.localData,
+        availability: StarCraftPlacementAvailability.unsupported,
+        issue: StarCraftPlacementCatalogIssue(
+          code: 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING',
+          message: 'Atomic placement is pending.',
+        ),
+        doodadRecipe: recipe,
+      );
+
+      expect(entry.doodadRecipe, same(recipe));
+      expect(
+        () => StarCraftPlacementCatalogEntry(
+          key: StarCraftPlacementCatalogKey.doodad(
+            tileset: StarCraftTilesetAssetSet.jungle,
+            doodadId: 8,
+            startTileGroup: 200,
+          ),
+          source: StarCraftPlacementCatalogSource.localData,
+          availability: StarCraftPlacementAvailability.unsupported,
+          issue: StarCraftPlacementCatalogIssue(
+            code: 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING',
+            message: 'Atomic placement is pending.',
+          ),
+          doodadRecipe: recipe,
         ),
         throwsArgumentError,
       );

@@ -67,7 +67,7 @@ void main() {
       expect(page.nextOffset, 3);
       expect(page.storageProduct, 's1');
       expect(page.storageBuildNumber, 13515);
-      expect(page.helperVersion, '0.6.0');
+      expect(page.helperVersion, '0.7.0');
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 
@@ -147,6 +147,53 @@ void main() {
       expect(page.entries.last.displayName, 'Sprite #501');
     }, skip: !Platform.isWindows);
 
+    test(
+      'lists validated Doodad recipes and isolates an invalid entry',
+      () async {
+        final page = await createGateway().list(
+          requestFor(
+            'StarCraft',
+            operationId: 'doodads',
+            kind: StarCraftPlacementKind.doodad,
+            limit: 4,
+          ),
+        );
+
+        expect(page.isSuccess, isTrue, reason: page.diagnostics.toString());
+        expect(page.totalEntries, 3);
+        expect(page.entries.map((entry) => entry.key.id), [1, 2, 3]);
+        final first = page.entries.first;
+        expect(first.key.doodadStartTileGroup, 200);
+        expect(first.isPlaceable, isFalse);
+        expect(first.issue?.code, 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING');
+        expect(first.doodadRecipe!.width, 2);
+        expect(first.doodadRecipe!.height, 2);
+        expect(first.doodadRecipe!.centerOffsetX, 32);
+        expect(first.doodadRecipe!.centerOffsetY, 32);
+        expect(first.doodadRecipe!.footprint.map((cell) => cell.rawTileValue), [
+          3200,
+          3201,
+          3216,
+          null,
+        ]);
+        expect(
+          first.doodadRecipe!.footprint.map((cell) => cell.requiredTileGroup),
+          [4, 0, 5, 6],
+        );
+        expect(first.doodadRecipe!.overlay!.id, 130);
+        expect(first.doodadRecipe!.overlay!.thg2Flags, 0x1000);
+
+        final invalid = page.entries[1];
+        expect(invalid.doodadRecipe, isNull);
+        expect(invalid.doodadRecipeIssueCode, 'SC_CASC_DOODAD_OVERLAY_INVALID');
+        expect(invalid.issue?.code, 'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID');
+        final unitOverlay = page.entries[2].doodadRecipe!.overlay!;
+        expect(unitOverlay.id, 100);
+        expect(unitOverlay.thg2Flags, 0);
+      },
+      skip: !Platform.isWindows,
+    );
+
     test('maps native storage and asset errors', () async {
       final gateway = createGateway();
       final storage = await gateway.list(
@@ -165,6 +212,13 @@ void main() {
           kind: StarCraftPlacementKind.unit,
         ),
       );
+      final doodad = await gateway.list(
+        requestFor(
+          'doodad-asset-error',
+          operationId: 'doodad-assets',
+          kind: StarCraftPlacementKind.doodad,
+        ),
+      );
 
       expect(
         storage.diagnostics.single.code,
@@ -180,6 +234,10 @@ void main() {
       );
       expect(
         object.diagnostics.single.code,
+        StarCraftPlacementCatalogDiagnosticCodes.metadataInvalid,
+      );
+      expect(
+        doodad.diagnostics.single.code,
         StarCraftPlacementCatalogDiagnosticCodes.metadataInvalid,
       );
     }, skip: !Platform.isWindows);
@@ -218,6 +276,29 @@ void main() {
             scenario,
             operationId: 'bad-$scenario',
             kind: StarCraftPlacementKind.pureSprite,
+          ),
+        );
+        expect(
+          page.diagnostics.single.code,
+          StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+          reason: scenario,
+        );
+      }
+    }, skip: !Platform.isWindows);
+
+    test('rejects malformed Doodad recipe metadata', () async {
+      for (final scenario in const [
+        'catalog-recipe-code-mismatch',
+        'catalog-recipe-field-missing',
+        'catalog-recipe-center-mismatch',
+        'catalog-recipe-value-mismatch',
+        'catalog-read-count-mismatch',
+      ]) {
+        final page = await createGateway().list(
+          requestFor(
+            scenario,
+            operationId: 'bad-doodad-$scenario',
+            kind: StarCraftPlacementKind.doodad,
           ),
         );
         expect(
