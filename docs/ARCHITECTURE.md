@@ -270,6 +270,30 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 편집과 같은 경로를 사용한다. 새 세션에서 존재하지 않는 선택은 자동 해제하며,
 연속 배치 선택 자체는 dirty나 Undo 기록에 포함하지 않는다.
 
+### StarCraftPlacementCatalogGateway
+
+M6.2의 전체 배치 목록은 `application/ports`의
+`StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 이 포트는 아직 기존
+`ObjectPaletteController`의 맵 template 목록과 UI에 합치지 않았으며, 후속
+Tile·Doodad·Unit·Sprite 공급 작업이 공통으로 지켜야 할 계약을 먼저 고정한다.
+
+- `StarCraftPlacementCatalogRequest`는 설치 경로, 현재 tileset, 한 종류, offset과
+  최대 256개 limit를 가진다. operation ID는 안전한 ASCII 1~128자로 제한하고
+  gateway는 같은 ID의 취소를 지원한다.
+- `StarCraftPlacementCatalogKey`는 Tile의 `(tileset, MTXM raw)`, Doodad의
+  `(tileset, DD2 ID, CV5 start group)`, Unit·pure Sprite·sprite-unit의 종류별 ID를
+  충돌하지 않는 stable ID로 만든다. 모든 숫자는 u16 범위에서 runtime 검증한다.
+- `StarCraftPlacementCatalogEntry`는 local data 또는 map template source,
+  category path, 배치 가능 상태와 항목별 진단을 가진다. 검증된 이름만 최대
+  128 Unicode scalar의 단일 행 텍스트로 채택하고 빈 값·제어 문자·초과 문자열은
+  `Unit #37`, `Sprite #130` 같은 숫자 fallback으로 안전하게 표시한다.
+- `StarCraftPlacementCatalogPage`는 요청 종류·tileset에 맞는 local-data 항목만
+  strict key 순서로 받고 total/offset/limit와 다음 페이지를 검증한다. 입력 목록과
+  진단은 불변 복사하며 helper/storage metadata를 함께 보관한다.
+- popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
+  맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
+  controller에서 source가 구분된 별도 항목으로 합친다.
+
 ### MapCanvas
 
 `presentation/map_canvas`의 `MapCanvasLayout`은 viewport와 `DIM ` 타일 크기로

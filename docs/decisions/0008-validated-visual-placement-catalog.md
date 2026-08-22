@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-08-22
 
+구현 메모: 2026-08-22에 Application의
+`StarCraftPlacementCatalogGateway`, 종류별 stable key, 제한된 페이지 요청/응답,
+안전한 이름 fallback과 항목별 availability/diagnostic 모델을 구현했다. helper의
+실제 카탈로그 operation과 기존 Object Palette/UI merge는 후속 항목이다.
+
 ## Context
 
 현재 Object Palette는 열린 맵에 이미 있는 `UNIT`, `DD2 `, `THG2` 레코드를
@@ -116,4 +121,3 @@ MTXM만 칠하면 편집 가능한 Doodad metadata가 없다. 하나의 복합 r
 - [ADR-0005 CascLib helper](0005-casclib-helper-process.md)
 - [ADR-0006 타일 아틀라스](0006-request-scoped-tile-atlas-cache.md)
 - [ADR-0007 객체 스프라이트 아틀라스](0007-object-sprite-atlas-protocol.md)
-
