@@ -314,7 +314,9 @@ player color 키를 만들고 설치 identity·batch 결과 불일치, gateway �
 64 MiB LRU의 dispose/eviction, 부분 fallback, 활성 operation 취소와 늦은 결과의
 generation 차단을 가짜 gateway와 가짜 이미지로 검증한다. `map_layer_controller_test`
 와 `map_canvas_test`는 scene graphic key, 32px 좌표계의 이미지 크기·anchor, 선택
-이동과 outline, texture 누락 시 marker fallback을 검증한다. `editor_shell_test`는
+이동과 outline, texture 누락 시 marker fallback을 검증한다. `DD2 ` 두다드는
+`MTXM` 지형을 가리는 평상시 마커를 생략하고 선택된 경우에만 위치 마커를
+그리는지도 고정한다. `editor_shell_test`는
 맵을 연 뒤 terrain/object texture를 함께 painter에 주입하고 설치 설정을 지우면
 두 controller의 이미지를 dispose해 fallback으로 복귀하는 실제 widget 경로를
 검증한다.

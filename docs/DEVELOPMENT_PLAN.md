@@ -709,6 +709,11 @@
   [객체 성능 기록](performance/OBJECT_SPRITE_256_SMOKE.md)에 조건과 한계를 남겼다.
   전체 `flutter analyze`, `flutter test` 343개(환경 의존 6개 skip),
   `flutter build windows --debug`도 통과했다.
+- 2026-08-22 `DD2 ` 두다드 위에 항상 겹치던 주황색 fallback 마커를 제거했다.
+  두다드 외형은 `MTXM` 지형으로 표시하고 선택·이동 중일 때만 위치 마커를
+  그리며, 클릭·박스 선택은 기존 scene 좌표를 그대로 사용한다. 중심 픽셀과
+  paint marker 수 회귀 테스트를 포함해 `flutter analyze`, `flutter test`
+  344개(환경 의존 6개 skip), `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

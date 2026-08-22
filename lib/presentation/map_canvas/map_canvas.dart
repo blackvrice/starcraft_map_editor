@@ -1288,6 +1288,12 @@ class MapCanvasPainter extends CustomPainter {
         (candidate) => candidate.object.layer == layer,
       )) {
         final selected = scene.selectedObjects.contains(point.object);
+        // DD2 records describe editor metadata for doodad terrain that is
+        // already visible through MTXM. Painting the generic missing-texture
+        // marker for every record covers that terrain with orange squares.
+        if (layer == MapLayerType.doodads && !selected) {
+          continue;
+        }
         final move = selected ? selectionMovePreview : null;
         final center = _mapPixelOffset(
           point.pixelX + (move?.dx ?? 0),

@@ -288,6 +288,79 @@ void main() {
     },
   );
 
+  testWidgets('shows terrain-backed doodad markers only while selected', (
+    tester,
+  ) async {
+    const doodadObject = MapLayerObjectRef(
+      layer: MapLayerType.doodads,
+      sectionIndex: 3,
+      recordIndex: 0,
+    );
+    const doodadPoint = MapLayerPointObject(
+      object: doodadObject,
+      pixelX: 16,
+      pixelY: 16,
+    );
+    final layout = MapCanvasLayout.fit(
+      viewportSize: const Size(32, 32),
+      mapWidth: 1,
+      mapHeight: 1,
+      contentPadding: 0,
+    );
+
+    Future<(MapCanvasPaintMetrics, ByteData)> paint(MapLayerScene scene) async {
+      final measurements = <MapCanvasPaintMetrics>[];
+      final recorder = ui.PictureRecorder();
+      MapCanvasPainter(
+        layout: layout,
+        rawTileValues: null,
+        layerScene: scene,
+        onPaintMeasured: measurements.add,
+      ).paint(Canvas(recorder), const Size(32, 32));
+      final picture = recorder.endRecording();
+      final image = await tester.runAsync(() => picture.toImage(32, 32));
+      picture.dispose();
+      expect(image, isNotNull);
+      final resolvedImage = image!;
+      final pixels = await tester.runAsync(
+        () => resolvedImage.toByteData(format: ui.ImageByteFormat.rawRgba),
+      );
+      resolvedImage.dispose();
+      expect(pixels, isNotNull);
+      return (measurements.single, pixels!);
+    }
+
+    final (unselected, unselectedPixels) = await paint(
+      MapLayerScene(
+        points: const [doodadPoint],
+        regions: const [],
+        objectCounts: const {MapLayerType.doodads: 1},
+      ),
+    );
+    expect(unselected.objectMarkerCount, 0);
+    expect(unselected.paintedObjectCount, 0);
+    final centerOffset = (16 * 32 + 16) * 4;
+    expect(unselectedPixels.getUint8(centerOffset), 0x17);
+    expect(unselectedPixels.getUint8(centerOffset + 1), 0x20);
+    expect(unselectedPixels.getUint8(centerOffset + 2), 0x2a);
+
+    final (selected, selectedPixels) = await paint(
+      MapLayerScene(
+        points: const [doodadPoint],
+        regions: const [],
+        objectCounts: const {MapLayerType.doodads: 1},
+        selections: const [
+          MapLayerSelection(object: doodadObject, pixelX: 16, pixelY: 16),
+        ],
+      ),
+    );
+    expect(selected.objectMarkerCount, 1);
+    expect(selected.paintedObjectCount, 1);
+    expect(selectedPixels.getUint8(centerOffset), 0xff);
+    expect(selectedPixels.getUint8(centerOffset + 1), 0xb4);
+    expect(selectedPixels.getUint8(centerOffset + 2), 0x54);
+  });
+
   testWidgets('shows loading mode before the first StarCraft tile is ready', (
     tester,
   ) async {
