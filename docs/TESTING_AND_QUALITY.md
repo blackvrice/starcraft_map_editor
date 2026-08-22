@@ -272,10 +272,12 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 프로토콜, request ID, helper/CascLib revision, 요청/응답 경로 불일치 거부
 - CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
 - found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
-- protocol 3의 설치 검사/타일/객체 렌더/Tile 카탈로그 operation 분리와
-  helper 0.5.0 검증
+- protocol 3의 설치 검사/타일/객체 렌더/배치 카탈로그 operation 분리와
+  helper 0.6.0 검증
 - Tile 카탈로그 page의 tileset·offset·limit·total·연속 u16 ID와 page 끝/빈 page,
   실제 decoder로 검증한 항목만 32×32 atlas thumbnail에 연결되는지 확인
+- Unit 228개·pure Sprite 517개 고정 total과 연속 page, DAT/TBL/GRP preview
+  가능/불가 항목 격리, factory-pending 배치 상태와 object atlas thumbnail 연결
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
@@ -350,6 +352,14 @@ storage/helper identity 불일치를 thumbnail로 채택하지 않는지 확인�
 테스트는 합성 CV5 page가 실제 decoder를 통과한 항목만 반환하고 마지막 page를
 정확히 자르는지도 검증한다. 선택적 bundled helper 스모크는 로컬 설치의 8개
 tileset에서 ID 0~3 page와 실제 32×32 RGBA thumbnail을 함께 확인한다.
+
+`object_placement_catalog_loader_test.dart`는 Unit/pure Sprite key 변환,
+preview 불가 항목의 atlas 제외, 가변 크기·anchor·RGBA thumbnail, identity와
+coverage 불일치, gateway 예외 및 catalog/derived-atlas 취소를 검증한다. process
+catalog 테스트는 Unit 228/Sprite 517 total과 마지막 page, 항목별 preview code,
+손상 code/누락 필드를 거부한다. 선택적 bundled helper 스모크는 로컬 설치의
+전체 Unit/Sprite ID를 page로 검증하고 대표 8/16개 실제 frame을 loader까지
+왕복한다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

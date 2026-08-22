@@ -274,9 +274,10 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.5.0의
-`listPlacementCatalog`를 실행하고, Unit·Sprite·Doodad와 기존
-`ObjectPaletteController` template의 UI merge는 후속 단계로 남아 있다.
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.6.0의
+`listPlacementCatalog`를 실행한다. Unit·pure Sprite 공급도 같은 operation을
+사용하며, Doodad와 기존 `ObjectPaletteController` template의 UI merge는 후속
+단계로 남아 있다.
 
 - `StarCraftPlacementCatalogRequest`는 설치 경로, 현재 tileset, 한 종류, offset과
   최대 256개 limit를 가진다. operation ID는 안전한 ASCII 1~128자로 제한하고
@@ -300,6 +301,17 @@ M6.2의 전체 배치 목록은 `application/ports`의
   요청한다. page와 atlas의 설치 product/build, helper/CascLib revision,
   tileset과 전체 ID coverage가 같고 unsupported가 없을 때만 raw ID별 불변
   4,096바이트 RGBA thumbnail을 반환한다. 이 조회는 CHK나 dirty/Undo를 바꾸지 않는다.
+- Unit은 classic `units.dat`의 228개 ID, pure Sprite는 `sprites.dat`의 517개 ID를
+  고정 total로 페이지화한다. helper는 각 page를 기존 unit/sprite→image→GRP
+  참조와 frame 0 decoder로 검증하고, 전체 metadata 실패는 page 실패로,
+  개별 GRP/참조 실패는 `previewIssueCode`로 격리한다. 이름 근거가 없는 항목은
+  `Unit #37`, `Sprite #130` 숫자 fallback을 유지한다.
+- `ObjectPlacementCatalogLoader`는 preview issue가 없는 ID만 neutral player color의
+  `renderObjectAtlas`로 요청하고 설치 product/build, helper/CascLib revision과
+  요청 전체 coverage를 다시 대조한다. 성공 frame의 가변 크기, anchor와 RGBA는
+  catalog stable key에 연결된다. Unit·Sprite CHK factory가 아직 없으므로 이미지
+  유무와 별개로 placement availability는 factory-pending 상태이며, 다음 factory
+  단계 전에는 popup에서 배치 가능으로 표시하지 않는다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.
@@ -451,7 +463,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile 카탈로그는 공용 wire protocol 3/helper 0.5.0을 사용한다.
+렌더·Tile/Unit/Sprite 카탈로그는 공용 wire protocol 3/helper 0.6.0을 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
 `unit`/`sprite`, ID, player color, direction의 정렬·중복 제거된 최대 256개

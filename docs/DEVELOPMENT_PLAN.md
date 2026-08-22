@@ -19,7 +19,7 @@
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
 | M6. 객체와 로케이션 | 완료 | 객체·로케이션 편집·의미 참조 진단·Save As 왕복 |
 | M6.1. 실제 객체 그래픽 | 완료 | CascLib 객체 자산·스프라이트 렌더·fallback·성능 기준 |
-| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile 카탈로그·32×32 썸네일 공급 완료 |
+| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile·Unit·Sprite 카탈로그와 썸네일 공급 완료 |
 | M7. 일반 트리거 | 대기 | M6.2 완료 후 트리거 편집 |
 | M8. 안정화와 배포 | 대기 | 검증된 Windows 릴리스 |
 
@@ -734,7 +734,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 기존 에디터의 Tile·Doodad·Unit·Sprite 선택 흐름과 CHK 생성 규칙 조사
 - [x] 로컬 SC:R 배치 카탈로그 포트·모델과 안전한 이름/ID fallback 정의
 - [x] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
-- [ ] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
+- [x] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
 - [ ] Doodad 정의, 크기, 중심점, 지형·overlay 구성 관계 해석
 - [ ] 현재 맵에 없는 Unit·Sprite를 위한 검증된 기본 레코드 factory 구현
 - [ ] Doodad의 `DD2 `·`MTXM`·필요한 `THG2` 원자적 배치/삭제/Undo 구현
@@ -840,6 +840,22 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
   카탈로그와 32×32 RGBA thumbnail을 실제 생성하는 선택적 스모크가 통과했다.
 - `flutter analyze`, 단일 동시성 전체 `flutter test` 362개(환경 의존 7개 skip),
   native CTest와 `flutter build windows --debug`가 통과했다.
+- 2026-08-22 protocol 3/helper 0.6.0은 `listPlacementCatalog`에 classic
+  `units.dat` 228개와 `sprites.dat` 517개의 전체 ID page를 추가했다. 각 항목은
+  기존 DAT/TBL/GRP frame 0 renderer를 먼저 통과하며, 실패 코드는 항목별
+  `previewIssueCode`로 격리된다. Dart adapter는 종류별 고정 total, 연속 ID,
+  object asset read count와 preview code를 검증한다.
+- `ObjectPlacementCatalogLoader`는 preview 가능한 항목만 기존
+  `renderObjectAtlas`에 다시 요청하고 storage/helper/CascLib identity와 전체
+  coverage가 같을 때 가변 width/height·anchor·RGBA thumbnail을 채택한다.
+  Unit·Sprite 기본 CHK factory는 다음 항목이므로 현재 항목은 실제 이미지가 있어도
+  `SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING`으로 배치 비활성 상태를 유지한다.
+- 로컬 SC:R build 13515에서 Unit 228개와 pure Sprite 517개 전체 catalog page의
+  DAT/TBL/GRP preview 검증이 통과했고, 대표 Unit 8개·Sprite 16개의 실제 RGBA
+  thumbnail을 bundled gateway/loader 왕복으로 확인했다.
+- `flutter analyze`, 단일 동시성 전체 `flutter test` 372개(환경 의존 8개 skip),
+  native CTest, 로컬 bundled helper 스모크 5개와
+  `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

@@ -1,6 +1,7 @@
 #include "casc_asset_inspector.h"
 #include "object_asset_reader.h"
 #include "object_atlas_protocol.h"
+#include "object_sprite_reference.h"
 #include "tile_atlas_protocol.h"
 #include "tileset_asset_reader.h"
 #include "tileset_tile_decoder.h"
@@ -9,6 +10,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
@@ -25,7 +27,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.5.0";
+constexpr char kHelperVersion[] = "0.6.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -286,12 +288,13 @@ int ListPlacementCatalog(
         ERROR_INVALID_DATA,
         2);
   }
-  if (request["kind"].get<std::string>() != "tile") {
+  const auto kind = request["kind"].get<std::string>();
+  if (kind != "tile" && kind != "unit" && kind != "pureSprite") {
     return WriteError(
         request_id,
         kListCatalogOperation,
         "SC_CASC_PROTOCOL_CATALOG_KIND_UNSUPPORTED",
-        "This helper version only supports the tile placement catalog.",
+        "The requested placement catalog kind is not supported.",
         "protocol",
         ERROR_NOT_SUPPORTED,
         2);
@@ -320,6 +323,111 @@ int ListPlacementCatalog(
         "protocol",
         ERROR_INVALID_DATA,
         2);
+  }
+
+  if (kind != "tile") {
+    const auto graphic_kind =
+        kind == "unit" ? sc::ObjectGraphicKind::kUnit
+                       : sc::ObjectGraphicKind::kSprite;
+    const auto total_entries =
+        kind == "unit" ? sc::kClassicUnitCount : sc::kClassicSpriteCount;
+    const auto start = std::min<std::size_t>(
+        static_cast<std::size_t>(offset), total_entries);
+    const auto end = std::min<std::size_t>(
+        total_entries, start + static_cast<std::size_t>(limit));
+    std::vector<sc::ObjectRenderRequest> page_requests;
+    page_requests.reserve(end - start);
+    for (auto id = start; id < end; ++id) {
+      sc::ObjectRenderRequest object;
+      object.kind = graphic_kind;
+      object.object_id = static_cast<std::uint16_t>(id);
+      object.player_color = sc::kNeutralObjectPlayerColor;
+      object.direction = sc::kObjectPreviewDirection;
+      page_requests.push_back(object);
+    }
+
+    auto render_requests = page_requests;
+    if (render_requests.empty()) {
+      sc::ObjectRenderRequest probe;
+      probe.kind = graphic_kind;
+      probe.object_id = 0;
+      probe.player_color = sc::kNeutralObjectPlayerColor;
+      probe.direction = sc::kObjectPreviewDirection;
+      render_requests.push_back(probe);
+    }
+    const auto rendered = sc::RenderObjectAssets(
+        installation_path,
+        static_cast<std::uint32_t>(tileset),
+        render_requests);
+    if (!rendered.success) {
+      return WriteError(
+          request_id,
+          kListCatalogOperation,
+          rendered.error_code,
+          rendered.message,
+          rendered.stage,
+          rendered.native_error,
+          3);
+    }
+
+    auto response = BaseResponse(request_id, kListCatalogOperation);
+    response["status"] = "success";
+    response["installation"] = {
+        {"path", rendered.installation_path},
+        {"storageProduct", rendered.storage_product},
+        {"storageBuildNumber", rendered.storage_build_number},
+    };
+    response["kind"] = kind;
+    response["tileset"] = tileset;
+    response["assets"] = {
+        {"readCount", rendered.read_asset_count},
+        {"totalBytes", rendered.total_asset_bytes},
+    };
+    response["catalog"] = {
+        {"offset", offset},
+        {"limit", limit},
+        {"totalEntries", total_entries},
+    };
+    response["entries"] = json::array();
+    for (const auto& object : page_requests) {
+      const auto rendered_entry = std::find_if(
+          rendered.entries.begin(),
+          rendered.entries.end(),
+          [&object](const sc::ObjectAtlasEntry& entry) {
+            return entry.kind == object.kind &&
+                   entry.object_id == object.object_id;
+          });
+      if (rendered_entry != rendered.entries.end()) {
+        response["entries"].push_back({
+            {"id", object.object_id},
+            {"previewIssueCode", nullptr},
+        });
+        continue;
+      }
+      const auto unsupported = std::find_if(
+          rendered.unsupported_objects.begin(),
+          rendered.unsupported_objects.end(),
+          [&object](const sc::UnsupportedObjectRender& item) {
+            return item.request.kind == object.kind &&
+                   item.request.object_id == object.object_id;
+          });
+      if (unsupported == rendered.unsupported_objects.end()) {
+        return WriteError(
+            request_id,
+            kListCatalogOperation,
+            "SC_CASC_OBJECT_CATALOG_INVALID",
+            "The object catalog preview coverage is incomplete.",
+            "list-catalog",
+            ERROR_INVALID_DATA,
+            3);
+      }
+      response["entries"].push_back({
+          {"id", object.object_id},
+          {"previewIssueCode", unsupported->error_code},
+      });
+    }
+    std::cout << response.dump() << '\n';
+    return 0;
   }
 
   const auto assets = sc::ReadTilesetAssets(

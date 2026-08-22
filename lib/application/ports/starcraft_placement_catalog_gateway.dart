@@ -203,6 +203,7 @@ final class StarCraftPlacementCatalogEntry {
     String? verifiedName,
     Iterable<String> categoryPath = const [],
     this.issue,
+    this.previewIssueCode,
   }) : verifiedName = _safeOptionalDisplayText(verifiedName, maximumNameLength),
        categoryPath = List.unmodifiable(
          categoryPath.map((segment) {
@@ -232,11 +233,24 @@ final class StarCraftPlacementCatalogEntry {
         'must explain why.',
       );
     }
+    if (previewIssueCode != null &&
+        (!_isSafeIdentifier(previewIssueCode!, maximumPreviewCodeLength) ||
+            !previewIssueCode!.startsWith('SC_CASC_OBJECT_') ||
+            (key.kind != StarCraftPlacementKind.unit &&
+                key.kind != StarCraftPlacementKind.pureSprite &&
+                key.kind != StarCraftPlacementKind.spriteUnit))) {
+      throw ArgumentError.value(
+        previewIssueCode,
+        'previewIssueCode',
+        'Must be a stable object preview diagnostic for an object kind.',
+      );
+    }
   }
 
   static const maximumNameLength = 128;
   static const maximumCategoryLength = 64;
   static const maximumCategoryDepth = 8;
+  static const maximumPreviewCodeLength = 128;
 
   final StarCraftPlacementCatalogKey key;
   final StarCraftPlacementCatalogSource source;
@@ -244,6 +258,7 @@ final class StarCraftPlacementCatalogEntry {
   final String? verifiedName;
   final List<String> categoryPath;
   final StarCraftPlacementCatalogIssue? issue;
+  final String? previewIssueCode;
 
   String get displayName =>
       verifiedName ?? '${key.kind.fallbackLabel} #${key.id}';
@@ -252,6 +267,8 @@ final class StarCraftPlacementCatalogEntry {
 
   bool get isPlaceable =>
       availability == StarCraftPlacementAvailability.placeable;
+
+  bool get hasPreview => previewIssueCode == null;
 }
 
 final class StarCraftPlacementCatalogRequest {

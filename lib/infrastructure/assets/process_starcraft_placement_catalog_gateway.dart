@@ -48,6 +48,8 @@ final class ProcessStarCraftPlacementCatalogGateway
   static const helperVersion = StarCraftDataHelperProtocol.helperVersion;
   static const cascLibRevision = StarCraftDataHelperProtocol.cascLibRevision;
   static const maximumTotalAssetBytes = 256 * 1024 * 1024;
+  static const classicUnitCount = 228;
+  static const classicSpriteCount = 517;
   static const _operation = 'listPlacementCatalog';
 
   final String helperExecutablePath;
@@ -75,13 +77,15 @@ final class ProcessStarCraftPlacementCatalogGateway
         remediation: 'Choose the StarCraft installation folder again.',
       );
     }
-    if (request.kind != StarCraftPlacementKind.tile) {
+    if (request.kind != StarCraftPlacementKind.tile &&
+        request.kind != StarCraftPlacementKind.unit &&
+        request.kind != StarCraftPlacementKind.pureSprite) {
       return _failure(
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
-        message: 'This helper version only supports the Tile catalog.',
+        message: 'This helper version does not support that catalog kind.',
         filePath: request.installationPath,
-        remediation: 'Choose the Tile placement catalog.',
+        remediation: 'Choose the Tile, Unit, or pure Sprite catalog.',
       );
     }
     if (_reservedOperations.contains(request.operationId)) {
@@ -298,7 +302,11 @@ final class ProcessStarCraftPlacementCatalogGateway
       final assets = _jsonObject(decoded, 'assets');
       final readCount = _jsonInteger(assets, 'readCount');
       final totalBytes = _jsonInteger(assets, 'totalBytes');
-      if (readCount != StarCraftDataAssetManifest.renderAssetKinds.length ||
+      final validReadCount = request.kind == StarCraftPlacementKind.tile
+          ? readCount == StarCraftDataAssetManifest.renderAssetKinds.length
+          : readCount >= 7 &&
+                readCount <= 7 + StarCraftPlacementCatalogRequest.maximumLimit;
+      if (!validReadCount ||
           totalBytes <= 0 ||
           totalBytes > maximumTotalAssetBytes) {
         throw const FormatException('Catalog asset metadata is invalid.');
@@ -308,10 +316,17 @@ final class ProcessStarCraftPlacementCatalogGateway
       final offset = _jsonInteger(catalog, 'offset');
       final limit = _jsonInteger(catalog, 'limit');
       final totalEntries = _jsonInteger(catalog, 'totalEntries');
+      final expectedTotalEntries = switch (request.kind) {
+        StarCraftPlacementKind.unit => classicUnitCount,
+        StarCraftPlacementKind.pureSprite => classicSpriteCount,
+        _ => null,
+      };
       if (offset != request.offset ||
           limit != request.limit ||
           totalEntries < 0 ||
-          totalEntries > StarCraftPlacementCatalogPage.maximumTotalEntries) {
+          totalEntries > StarCraftPlacementCatalogPage.maximumTotalEntries ||
+          (expectedTotalEntries != null &&
+              totalEntries != expectedTotalEntries)) {
         throw const FormatException('Catalog page metadata is invalid.');
       }
       final expectedLength = request.offset >= totalEntries
@@ -331,14 +346,50 @@ final class ProcessStarCraftPlacementCatalogGateway
         if (id != request.offset + index || id < 0 || id > 0xFFFF) {
           throw const FormatException('Catalog IDs must be contiguous u16s.');
         }
+        final String? previewIssueCode;
+        if (request.kind == StarCraftPlacementKind.tile) {
+          previewIssueCode = null;
+        } else {
+          previewIssueCode = _jsonNullableString(item, 'previewIssueCode');
+          if (previewIssueCode != null &&
+              (!previewIssueCode.startsWith('SC_CASC_OBJECT_') ||
+                  previewIssueCode.length >
+                      StarCraftPlacementCatalogEntry
+                          .maximumPreviewCodeLength)) {
+            throw const FormatException(
+              'Object preview issue code is invalid.',
+            );
+          }
+        }
+        final key = switch (request.kind) {
+          StarCraftPlacementKind.tile => StarCraftPlacementCatalogKey.tile(
+            tileset: request.tileset,
+            rawValue: id,
+          ),
+          StarCraftPlacementKind.unit => StarCraftPlacementCatalogKey.unit(id),
+          StarCraftPlacementKind.pureSprite =>
+            StarCraftPlacementCatalogKey.pureSprite(id),
+          _ => throw const FormatException('Unsupported catalog kind.'),
+        };
+        final placementIssue = request.kind == StarCraftPlacementKind.tile
+            ? null
+            : StarCraftPlacementCatalogIssue(
+                code: previewIssueCode == null
+                    ? 'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING'
+                    : 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+                message: previewIssueCode == null
+                    ? 'Placement defaults are not implemented yet.'
+                    : 'The local object preview is unavailable.',
+              );
         entries.add(
           StarCraftPlacementCatalogEntry(
-            key: StarCraftPlacementCatalogKey.tile(
-              tileset: request.tileset,
-              rawValue: id,
-            ),
+            key: key,
             source: StarCraftPlacementCatalogSource.localData,
-            availability: StarCraftPlacementAvailability.placeable,
+            availability: request.kind == StarCraftPlacementKind.tile
+                ? StarCraftPlacementAvailability.placeable
+                : StarCraftPlacementAvailability.unsupported,
+            issue: placementIssue,
+            previewIssueCode: previewIssueCode,
           ),
         );
       }
@@ -400,11 +451,18 @@ final class ProcessStarCraftPlacementCatalogGateway
     final code = switch (nativeCode) {
       'SC_CASC_STORAGE_OPEN_FAILED' =>
         StarCraftPlacementCatalogDiagnosticCodes.storageOpenFailed,
-      'SC_CASC_ASSET_MISSING' || 'SC_CASC_TILE_ASSET_MISSING' =>
+      'SC_CASC_ASSET_MISSING' ||
+      'SC_CASC_TILE_ASSET_MISSING' ||
+      'SC_CASC_OBJECT_METADATA_MISSING' ||
+      'SC_CASC_OBJECT_PALETTE_MISSING' =>
         StarCraftPlacementCatalogDiagnosticCodes.metadataMissing,
       'SC_CASC_ASSET_INVALID' ||
       'SC_CASC_TILE_ASSET_INVALID' ||
-      'SC_CASC_TILE_CATALOG_INVALID' =>
+      'SC_CASC_TILE_CATALOG_INVALID' ||
+      'SC_CASC_OBJECT_METADATA_INVALID' ||
+      'SC_CASC_OBJECT_PALETTE_INVALID' ||
+      'SC_CASC_OBJECT_ASSETS_TOO_LARGE' ||
+      'SC_CASC_OBJECT_CATALOG_INVALID' =>
         StarCraftPlacementCatalogDiagnosticCodes.metadataInvalid,
       _ => StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
     };
@@ -484,6 +542,12 @@ const _helperErrorCodes = {
   'SC_CASC_TILE_ASSET_MISSING',
   'SC_CASC_TILE_ASSET_INVALID',
   'SC_CASC_TILE_CATALOG_INVALID',
+  'SC_CASC_OBJECT_METADATA_MISSING',
+  'SC_CASC_OBJECT_METADATA_INVALID',
+  'SC_CASC_OBJECT_PALETTE_MISSING',
+  'SC_CASC_OBJECT_PALETTE_INVALID',
+  'SC_CASC_OBJECT_ASSETS_TOO_LARGE',
+  'SC_CASC_OBJECT_CATALOG_INVALID',
   'SC_CASC_PROTOCOL_INVALID_CATALOG_PAGE',
   'SC_CASC_PROTOCOL_CATALOG_KIND_UNSUPPORTED',
 };
@@ -549,6 +613,20 @@ int _jsonInteger(Map<String, dynamic> value, String key) {
     throw FormatException('$key must be an integer.');
   }
   return integer;
+}
+
+String? _jsonNullableString(Map<String, dynamic> value, String key) {
+  if (!value.containsKey(key)) {
+    throw FormatException('$key is required.');
+  }
+  final string = value[key];
+  if (string == null) {
+    return null;
+  }
+  if (string is! String || string.isEmpty || string.length > 4096) {
+    throw FormatException('$key must be null or a bounded nonempty string.');
+  }
+  return string;
 }
 
 String _rawProcessDetails({

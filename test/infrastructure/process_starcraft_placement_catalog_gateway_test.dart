@@ -43,10 +43,11 @@ void main() {
       String operationId = 'catalog-test',
       int offset = 0,
       int limit = 3,
+      StarCraftPlacementKind kind = StarCraftPlacementKind.tile,
     }) => StarCraftPlacementCatalogRequest(
       operationId: operationId,
       installationPath: 'C:\\Games\\$scenario',
-      kind: StarCraftPlacementKind.tile,
+      kind: kind,
       tileset: StarCraftTilesetAssetSet.jungle,
       offset: offset,
       limit: limit,
@@ -66,7 +67,7 @@ void main() {
       expect(page.nextOffset, 3);
       expect(page.storageProduct, 's1');
       expect(page.storageBuildNumber, 13515);
-      expect(page.helperVersion, '0.5.0');
+      expect(page.helperVersion, '0.6.0');
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 
@@ -85,6 +86,67 @@ void main() {
       expect(exhausted.entries, isEmpty);
     }, skip: !Platform.isWindows);
 
+    test(
+      'lists the complete Unit range as previewable factory-pending items',
+      () async {
+        final gateway = createGateway();
+        final first = await gateway.list(
+          requestFor(
+            'StarCraft',
+            operationId: 'units-first',
+            kind: StarCraftPlacementKind.unit,
+          ),
+        );
+        final last = await gateway.list(
+          requestFor(
+            'StarCraft',
+            operationId: 'units-last',
+            kind: StarCraftPlacementKind.unit,
+            offset: 226,
+            limit: 4,
+          ),
+        );
+
+        expect(first.totalEntries, 228);
+        expect(first.entries.map((entry) => entry.key.id), [0, 1, 2]);
+        expect(first.entries.every((entry) => entry.hasPreview), isTrue);
+        expect(first.entries.every((entry) => !entry.isPlaceable), isTrue);
+        expect(first.entries.map((entry) => entry.issue?.code).toSet(), {
+          'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING',
+        });
+        expect(last.entries.map((entry) => entry.key.id), [226, 227]);
+        expect(last.entries.first.hasPreview, isTrue);
+        expect(
+          last.entries.last.previewIssueCode,
+          'SC_CASC_OBJECT_GRP_UNAVAILABLE',
+        );
+        expect(last.nextOffset, isNull);
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test('lists all pure Sprites and isolates unavailable previews', () async {
+      final page = await createGateway().list(
+        requestFor(
+          'StarCraft',
+          operationId: 'sprites',
+          kind: StarCraftPlacementKind.pureSprite,
+          offset: 498,
+          limit: 4,
+        ),
+      );
+
+      expect(page.totalEntries, 517);
+      expect(page.entries.map((entry) => entry.key.id), [498, 499, 500, 501]);
+      expect(page.entries.take(2).every((entry) => entry.hasPreview), isTrue);
+      expect(page.entries.skip(2).every((entry) => !entry.hasPreview), isTrue);
+      expect(
+        page.entries.last.issue?.code,
+        'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+      );
+      expect(page.entries.last.displayName, 'Sprite #501');
+    }, skip: !Platform.isWindows);
+
     test('maps native storage and asset errors', () async {
       final gateway = createGateway();
       final storage = await gateway.list(
@@ -95,6 +157,13 @@ void main() {
       );
       final missing = await gateway.list(
         requestFor('asset-missing', operationId: 'missing'),
+      );
+      final object = await gateway.list(
+        requestFor(
+          'object-metadata-error',
+          operationId: 'object-metadata',
+          kind: StarCraftPlacementKind.unit,
+        ),
       );
 
       expect(
@@ -108,6 +177,10 @@ void main() {
       expect(
         missing.diagnostics.single.code,
         StarCraftPlacementCatalogDiagnosticCodes.metadataMissing,
+      );
+      expect(
+        object.diagnostics.single.code,
+        StarCraftPlacementCatalogDiagnosticCodes.metadataInvalid,
       );
     }, skip: !Platform.isWindows);
 
@@ -124,6 +197,28 @@ void main() {
       ]) {
         final page = await createGateway().list(
           requestFor(scenario, operationId: 'bad-$scenario'),
+        );
+        expect(
+          page.diagnostics.single.code,
+          StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+          reason: scenario,
+        );
+      }
+    }, skip: !Platform.isWindows);
+
+    test('rejects malformed object preview availability', () async {
+      for (final scenario in const [
+        'catalog-preview-code-mismatch',
+        'catalog-preview-field-missing',
+        'catalog-total-mismatch',
+        'catalog-read-count-mismatch',
+      ]) {
+        final page = await createGateway().list(
+          requestFor(
+            scenario,
+            operationId: 'bad-$scenario',
+            kind: StarCraftPlacementKind.pureSprite,
+          ),
         );
         expect(
           page.diagnostics.single.code,

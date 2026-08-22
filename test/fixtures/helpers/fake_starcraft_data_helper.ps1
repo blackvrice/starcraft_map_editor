@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.5.0"
+    helperVersion = "0.6.0"
     cascLibRevision = $revision
 }
 
@@ -81,6 +81,18 @@ if ($request.operation -eq "inspectInstallation") {
     }
 }
 elseif ($request.operation -eq "listPlacementCatalog") {
+    if ($request.installationPath -like "*object-metadata-error*") {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_OBJECT_METADATA_INVALID"
+            message = "A required object catalog metadata asset is invalid."
+            stage = "parse-metadata"
+            nativeError = 13
+        }
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        [Console]::Error.WriteLine("SC_CASC_OBJECT_METADATA_INVALID")
+        exit 3
+    }
     if ($request.installationPath -like "*asset-missing*") {
         $base.status = "error"
         $base.error = [ordered]@{
@@ -106,12 +118,27 @@ elseif ($request.operation -eq "listPlacementCatalog") {
         exit 3
     }
 
-    $totalEntries = 260
+    $totalEntries = switch ($request.kind) {
+        "unit" { 228 }
+        "pureSprite" { 517 }
+        default { 260 }
+    }
     $start = [int]$request.offset
     $end = [Math]::Min($totalEntries, $start + [int]$request.limit)
     $entries = @()
     for ($id = $start; $id -lt $end; $id++) {
-        $entries += [ordered]@{ id = $id }
+        $entry = [ordered]@{ id = $id }
+        if ($request.kind -eq "unit" -or $request.kind -eq "pureSprite") {
+            $previewUnavailable =
+                ($request.kind -eq "unit" -and $id -eq 227) -or
+                ($request.kind -eq "pureSprite" -and $id -ge 500)
+            $entry.previewIssueCode = if ($previewUnavailable) {
+                "SC_CASC_OBJECT_GRP_UNAVAILABLE"
+            } else {
+                $null
+            }
+        }
+        $entries += $entry
     }
     $base.status = "success"
     $base.installation = [ordered]@{
@@ -122,7 +149,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     $base.kind = $request.kind
     $base.tileset = [int]$request.tileset
     $base.assets = [ordered]@{
-        readCount = 4
+        readCount = if ($request.kind -eq "tile") { 4 } else { 8 }
         totalBytes = 1048576
     }
     $base.catalog = [ordered]@{
@@ -135,11 +162,23 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     if ($request.installationPath -like "*catalog-page-mismatch*") {
         $base.catalog.offset++
     }
+    if ($request.installationPath -like "*catalog-total-mismatch*") {
+        $base.catalog.totalEntries++
+    }
     if (($request.installationPath -like "*catalog-entry-mismatch*") -and $base.entries.Count -gt 0) {
         $base.entries[0].id++
     }
+    if (($request.installationPath -like "*catalog-preview-code-mismatch*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].previewIssueCode = "UNSTABLE_CODE"
+    }
+    if (($request.installationPath -like "*catalog-preview-field-missing*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].Remove("previewIssueCode")
+    }
     if ($request.installationPath -like "*catalog-size-mismatch*") {
         $base.assets.totalBytes = 0
+    }
+    if ($request.installationPath -like "*catalog-read-count-mismatch*") {
+        $base.assets.readCount = 4
     }
 }
 elseif ($request.operation -eq "renderTileAtlas") {

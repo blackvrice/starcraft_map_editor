@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/application/objects/object_placement_catalog_loader.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
@@ -141,6 +142,73 @@ void main() {
         for (final thumbnail in result.thumbnails.values) {
           expect(thumbnail, hasLength(32 * 32 * 4));
           expect(thumbnail[3], 0xFF);
+        }
+      }
+    },
+    skip: canRun
+        ? false
+        : 'Set STARCRAFT_DATA_HELPER_PATH and '
+              'STARCRAFT_TEST_INSTALLATION after building the Windows app.',
+  );
+
+  test(
+    'bundled helper supplies Unit and pure Sprite catalog thumbnails',
+    () async {
+      final loader = ObjectPlacementCatalogLoader(
+        catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: helperPath!,
+          timeout: const Duration(seconds: 30),
+        ),
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: helperPath,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+      for (final catalogRequest in [
+        StarCraftPlacementCatalogRequest(
+          operationId: 'bundled-unit-catalog',
+          installationPath: installationPath!,
+          kind: StarCraftPlacementKind.unit,
+          tileset: StarCraftTilesetAssetSet.jungle,
+          limit: 8,
+        ),
+        StarCraftPlacementCatalogRequest(
+          operationId: 'bundled-sprite-catalog',
+          installationPath: installationPath,
+          kind: StarCraftPlacementKind.pureSprite,
+          tileset: StarCraftTilesetAssetSet.jungle,
+          limit: 16,
+        ),
+      ]) {
+        final result = await loader.load(catalogRequest);
+
+        expect(
+          result.isSuccess,
+          isTrue,
+          reason: result.diagnostics
+              .map(
+                (diagnostic) =>
+                    '${diagnostic.code}: ${diagnostic.message} '
+                    '${diagnostic.rawDetails ?? ''}',
+              )
+              .join('\n'),
+        );
+        expect(
+          result.page.totalEntries,
+          catalogRequest.kind == StarCraftPlacementKind.unit ? 228 : 517,
+        );
+        expect(result.page.entries, hasLength(catalogRequest.limit));
+        expect(result.page.entries.every((entry) => entry.hasPreview), isTrue);
+        expect(
+          result.page.entries.every((entry) => !entry.isPlaceable),
+          isTrue,
+        );
+        expect(result.thumbnails, hasLength(catalogRequest.limit));
+        for (final thumbnail in result.thumbnails.values) {
+          expect(thumbnail.width, greaterThan(0));
+          expect(thumbnail.height, greaterThan(0));
+          expect(thumbnail.rgbaBytes, isNotEmpty);
+          expect(thumbnail.rgbaBytes.where((value) => value != 0), isNotEmpty);
         }
       }
     },

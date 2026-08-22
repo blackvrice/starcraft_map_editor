@@ -149,6 +149,44 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('tracks object preview support separately from placement', () {
+      final pendingFactory = StarCraftPlacementCatalogEntry(
+        key: StarCraftPlacementCatalogKey.unit(7),
+        source: StarCraftPlacementCatalogSource.localData,
+        availability: StarCraftPlacementAvailability.unsupported,
+        issue: StarCraftPlacementCatalogIssue(
+          code: 'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING',
+          message: 'Placement defaults are not implemented yet.',
+        ),
+      );
+      final missingPreview = StarCraftPlacementCatalogEntry(
+        key: StarCraftPlacementCatalogKey.pureSprite(500),
+        source: StarCraftPlacementCatalogSource.localData,
+        availability: StarCraftPlacementAvailability.unsupported,
+        issue: StarCraftPlacementCatalogIssue(
+          code: 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+          message: 'The local object preview is unavailable.',
+        ),
+        previewIssueCode: 'SC_CASC_OBJECT_GRP_UNAVAILABLE',
+      );
+
+      expect(pendingFactory.isPlaceable, isFalse);
+      expect(pendingFactory.hasPreview, isTrue);
+      expect(missingPreview.hasPreview, isFalse);
+      expect(
+        () => StarCraftPlacementCatalogEntry(
+          key: StarCraftPlacementCatalogKey.tile(
+            tileset: StarCraftTilesetAssetSet.jungle,
+            rawValue: 1,
+          ),
+          source: StarCraftPlacementCatalogSource.localData,
+          availability: StarCraftPlacementAvailability.placeable,
+          previewIssueCode: 'SC_CASC_OBJECT_GRP_UNAVAILABLE',
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 
   group('StarCraftPlacementCatalogRequest', () {
