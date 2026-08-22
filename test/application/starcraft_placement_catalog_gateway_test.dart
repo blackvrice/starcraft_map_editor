@@ -170,6 +170,26 @@ void main() {
   });
 
   group('StarCraftPlacementCatalogPage', () {
+    test('accepts an empty page after the catalog is exhausted', () {
+      final request = StarCraftPlacementCatalogRequest(
+        operationId: 'exhausted',
+        installationPath: r'C:\Games\StarCraft',
+        kind: StarCraftPlacementKind.tile,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        offset: 20,
+        limit: 8,
+      );
+
+      final page = StarCraftPlacementCatalogPage(
+        request: request,
+        totalEntries: 16,
+      );
+
+      expect(page.entries, isEmpty);
+      expect(page.nextOffset, isNull);
+      expect(page.isSuccess, isTrue);
+    });
+
     test('requires a sorted request-matching immutable page', () {
       final request = _request(limit: 2);
       final sourceEntries = [_unitEntry(7), _unitEntry(8, name: 'Terran SCV')];

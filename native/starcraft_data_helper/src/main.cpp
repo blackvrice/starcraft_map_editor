@@ -24,7 +24,8 @@ constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
 constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
-constexpr char kHelperVersion[] = "0.4.0";
+constexpr char kListCatalogOperation[] = "listPlacementCatalog";
+constexpr char kHelperVersion[] = "0.5.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -260,6 +261,116 @@ int RenderTileAtlas(
       {"tileCount", atlas.tile_count},
   };
   response["unsupportedRawValues"] = decoded.unsupported_raw_values;
+  std::cout << response.dump() << '\n';
+  return 0;
+}
+
+int ListPlacementCatalog(
+    const json& request,
+    const std::string& request_id,
+    const std::filesystem::path& installation_path) {
+  namespace sc = starcraft_map_editor::starcraft_data;
+  if (!IsNonEmptyString(request, "kind") ||
+      !request.contains("tileset") ||
+      !request["tileset"].is_number_integer() ||
+      !request.contains("offset") ||
+      !request["offset"].is_number_integer() ||
+      !request.contains("limit") ||
+      !request["limit"].is_number_integer()) {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        "SC_CASC_PROTOCOL_INVALID_REQUEST",
+        "The placement catalog request is missing a required field.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+  if (request["kind"].get<std::string>() != "tile") {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        "SC_CASC_PROTOCOL_CATALOG_KIND_UNSUPPORTED",
+        "This helper version only supports the tile placement catalog.",
+        "protocol",
+        ERROR_NOT_SUPPORTED,
+        2);
+  }
+
+  const auto tileset = request["tileset"].get<std::int64_t>();
+  const auto offset = request["offset"].get<std::int64_t>();
+  const auto limit = request["limit"].get<std::int64_t>();
+  if (tileset < 0 || tileset >= static_cast<std::int64_t>(sc::kTilesetCount)) {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        "SC_CASC_PROTOCOL_INVALID_TILESET",
+        "The requested StarCraft tileset is not supported.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+  if (offset < 0 || offset > 0xFFFF || limit < 1 ||
+      limit > static_cast<std::int64_t>(sc::kMaximumCatalogPageSize)) {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        "SC_CASC_PROTOCOL_INVALID_CATALOG_PAGE",
+        "The tile catalog page is outside the supported range.",
+        "protocol",
+        ERROR_INVALID_DATA,
+        2);
+  }
+
+  const auto assets = sc::ReadTilesetAssets(
+      installation_path, static_cast<std::uint32_t>(tileset));
+  if (!assets.success) {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        assets.error_code,
+        assets.message,
+        assets.stage,
+        assets.native_error,
+        3);
+  }
+  const auto catalog = sc::ListTilesetTiles(
+      assets.assets,
+      static_cast<std::uint32_t>(offset),
+      static_cast<std::uint32_t>(limit));
+  if (!catalog.success) {
+    return WriteError(
+        request_id,
+        kListCatalogOperation,
+        catalog.error_code,
+        catalog.message,
+        catalog.stage,
+        catalog.native_error,
+        3);
+  }
+
+  auto response = BaseResponse(request_id, kListCatalogOperation);
+  response["status"] = "success";
+  response["installation"] = {
+      {"path", assets.installation_path},
+      {"storageProduct", assets.storage_product},
+      {"storageBuildNumber", assets.storage_build_number},
+  };
+  response["kind"] = "tile";
+  response["tileset"] = tileset;
+  response["assets"] = {
+      {"readCount", sc::kRenderAssetCount},
+      {"totalBytes", assets.total_asset_bytes},
+  };
+  response["catalog"] = {
+      {"offset", offset},
+      {"limit", limit},
+      {"totalEntries", catalog.total_entries},
+  };
+  response["entries"] = json::array();
+  for (const auto raw_value : catalog.raw_values) {
+    response["entries"].push_back({{"id", raw_value}});
+  }
   std::cout << response.dump() << '\n';
   return 0;
 }
@@ -530,7 +641,8 @@ int main() {
           2);
     }
     if (operation != kInspectOperation && operation != kRenderOperation &&
-        operation != kRenderObjectOperation) {
+        operation != kRenderObjectOperation &&
+        operation != kListCatalogOperation) {
       return WriteError(
           request_id,
           operation,
@@ -569,6 +681,9 @@ int main() {
     }
     if (operation == kRenderOperation) {
       return RenderTileAtlas(request, request_id, installation_path);
+    }
+    if (operation == kListCatalogOperation) {
+      return ListPlacementCatalog(request, request_id, installation_path);
     }
     return RenderObjectAtlas(request, request_id, installation_path);
   } catch (const json::exception&) {

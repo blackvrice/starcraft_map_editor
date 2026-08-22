@@ -2,10 +2,13 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
+import 'package:starcraft_map_editor/application/terrain/tile_placement_catalog_loader.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_data_asset_inspector.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 
 void main() {
@@ -89,6 +92,56 @@ void main() {
         expect(result.rgbaBytes, hasLength(3 * 32 * 32 * 4));
         expect(result.rgbaBytes[3], 0xFF);
         expect(result.unsupportedRawValues, isEmpty);
+      }
+    },
+    skip: canRun
+        ? false
+        : 'Set STARCRAFT_DATA_HELPER_PATH and '
+              'STARCRAFT_TEST_INSTALLATION after building the Windows app.',
+  );
+
+  test(
+    'bundled helper supplies Tile catalog thumbnails for every tileset',
+    () async {
+      final loader = TilePlacementCatalogLoader(
+        catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: helperPath!,
+          timeout: const Duration(seconds: 30),
+        ),
+        tileAtlasGateway: ProcessStarCraftTileAtlasGateway(
+          helperExecutablePath: helperPath,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+      for (final tileset in StarCraftTilesetAssetSet.values) {
+        final result = await loader.load(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'bundled-tile-catalog-${tileset.rawValue}',
+            installationPath: installationPath!,
+            kind: StarCraftPlacementKind.tile,
+            tileset: tileset,
+            limit: 4,
+          ),
+        );
+
+        expect(
+          result.isSuccess,
+          isTrue,
+          reason: result.diagnostics
+              .map(
+                (diagnostic) =>
+                    '${diagnostic.code}: ${diagnostic.message} '
+                    '${diagnostic.rawDetails ?? ''}',
+              )
+              .join('\n'),
+        );
+        expect(result.page.totalEntries, greaterThanOrEqualTo(4));
+        expect(result.page.entries.map((entry) => entry.key.id), [0, 1, 2, 3]);
+        expect(result.thumbnails.keys, [0, 1, 2, 3]);
+        for (final thumbnail in result.thumbnails.values) {
+          expect(thumbnail, hasLength(32 * 32 * 4));
+          expect(thumbnail[3], 0xFF);
+        }
       }
     },
     skip: canRun

@@ -5,8 +5,10 @@
 
 구현 메모: 2026-08-22에 Application의
 `StarCraftPlacementCatalogGateway`, 종류별 stable key, 제한된 페이지 요청/응답,
-안전한 이름 fallback과 항목별 availability/diagnostic 모델을 구현했다. helper의
-실제 카탈로그 operation과 기존 Object Palette/UI merge는 후속 항목이다.
+안전한 이름 fallback과 항목별 availability/diagnostic 모델을 구현했다. 같은 날
+protocol 3/helper 0.5.0의 Tile `listPlacementCatalog` operation, 실제 decoder
+검증과 기존 tile atlas를 재사용하는 32×32 thumbnail loader까지 연결했다.
+Unit·Sprite·Doodad 공급과 기존 Object Palette/UI merge는 후속 항목이다.
 
 ## Context
 

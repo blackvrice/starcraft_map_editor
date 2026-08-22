@@ -180,6 +180,28 @@ int main() {
     return Fail("Palette colors or VX4EX horizontal flipping are incorrect.");
   }
 
+  const auto catalog_page =
+      starcraft_map_editor::starcraft_data::ListTilesetTiles(
+          valid_tile_assets, 14, 4);
+  if (!catalog_page.success || catalog_page.total_entries != 16 ||
+      catalog_page.raw_values != std::vector<std::uint16_t>({14, 15})) {
+    return Fail("The tile catalog did not clamp its final page correctly.");
+  }
+  const auto empty_catalog_page =
+      starcraft_map_editor::starcraft_data::ListTilesetTiles(
+          valid_tile_assets, 16, 4);
+  if (!empty_catalog_page.success ||
+      empty_catalog_page.total_entries != 16 ||
+      !empty_catalog_page.raw_values.empty()) {
+    return Fail("The tile catalog did not return an empty exhausted page.");
+  }
+  if (starcraft_map_editor::starcraft_data::ListTilesetTiles(
+          valid_tile_assets, 0, 0).success ||
+      starcraft_map_editor::starcraft_data::ListTilesetTiles(
+          valid_tile_assets, 0, 257).success) {
+    return Fail("The tile catalog accepted an invalid page size.");
+  }
+
   auto extended_cv5 = valid_tile_assets;
   extended_cv5[0].resize(1025 * 52);
   PutUint16(&extended_cv5[0], 1024 * 52 + 20, 0);
@@ -217,6 +239,10 @@ int main() {
   if (starcraft_map_editor::starcraft_data::DecodeTilesetTiles(
           invalid_cv5_reference, {0}).success) {
     return Fail("An out-of-range CV5 mega-tile reference was accepted.");
+  }
+  if (starcraft_map_editor::starcraft_data::ListTilesetTiles(
+          invalid_cv5_reference, 0, 1).success) {
+    return Fail("The tile catalog exposed an unrenderable CV5 entry.");
   }
   auto invalid_vx4ex_reference = valid_tile_assets;
   PutUint32(&invalid_vx4ex_reference[1], 0, 4);

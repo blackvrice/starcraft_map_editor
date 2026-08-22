@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 
+#include <algorithm>
 #include <array>
 #include <stdexcept>
 #include <utility>
@@ -9,9 +10,7 @@
 namespace starcraft_map_editor::starcraft_data {
 namespace {
 
-constexpr std::size_t kCv5GroupBytes = 52;
 constexpr std::size_t kCv5MegaTileReferencesOffset = 20;
-constexpr std::size_t kMaximumCv5Groups = 4096;
 constexpr std::size_t kVx4ExMegaTileBytes = 64;
 constexpr std::size_t kVr4MiniTileBytes = 64;
 constexpr std::size_t kWpeColorBytes = 4;
@@ -173,6 +172,60 @@ TilesetTileDecodeResult DecodeTilesetTiles(
   }
 
   result.success = true;
+  return result;
+}
+
+TilesetTileCatalogResult ListTilesetTiles(
+    const std::array<std::vector<std::byte>, kRenderAssetCount>& assets,
+    const std::uint32_t offset,
+    const std::uint32_t limit) {
+  TilesetTileCatalogResult result;
+  if (offset > 0xFFFFU || limit == 0 || limit > kMaximumCatalogPageSize) {
+    result.error_code = "SC_CASC_PROTOCOL_INVALID_CATALOG_PAGE";
+    result.message = "The tile catalog page is outside the supported range.";
+    result.stage = "protocol";
+    result.native_error = ERROR_INVALID_DATA;
+    return result;
+  }
+
+  const auto structural_validation = DecodeTilesetTiles(assets, {});
+  if (!structural_validation.success) {
+    result.error_code = structural_validation.error_code;
+    result.message = structural_validation.message;
+    result.stage = structural_validation.stage;
+    result.native_error = structural_validation.native_error;
+    return result;
+  }
+
+  result.total_entries = assets[0].size() / kCv5GroupBytes * 16;
+  const auto end = std::min<std::size_t>(
+      result.total_entries,
+      static_cast<std::size_t>(offset) + limit);
+  std::vector<std::uint32_t> requested;
+  requested.reserve(end > offset ? end - offset : 0);
+  for (auto raw_value = static_cast<std::size_t>(offset);
+       raw_value < end;
+       ++raw_value) {
+    requested.push_back(static_cast<std::uint32_t>(raw_value));
+  }
+
+  const auto decoded = DecodeTilesetTiles(assets, requested);
+  if (!decoded.success || !decoded.unsupported_raw_values.empty() ||
+      decoded.rendered_raw_values.size() != requested.size()) {
+    result.error_code = decoded.success
+                            ? "SC_CASC_TILE_CATALOG_INVALID"
+                            : decoded.error_code;
+    result.message = decoded.success
+                         ? "The tile catalog contains an unrenderable entry."
+                         : decoded.message;
+    result.stage = decoded.success ? "list-catalog" : decoded.stage;
+    result.native_error = decoded.success ? ERROR_INVALID_DATA
+                                          : decoded.native_error;
+    return result;
+  }
+
+  result.success = true;
+  result.raw_values = decoded.rendered_raw_values;
   return result;
 }
 

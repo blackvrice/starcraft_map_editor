@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.4.0"
+    helperVersion = "0.5.0"
     cascLibRevision = $revision
 }
 
@@ -78,6 +78,68 @@ if ($request.operation -eq "inspectInstallation") {
     }
     if ($request.installationPath -like "*size-mismatch*") {
         $base.assets.totalBytes = 268435457
+    }
+}
+elseif ($request.operation -eq "listPlacementCatalog") {
+    if ($request.installationPath -like "*asset-missing*") {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_TILE_ASSET_MISSING"
+            message = "A required Tile catalog asset is missing."
+            stage = "read-assets"
+            nativeError = 2
+        }
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        [Console]::Error.WriteLine("SC_CASC_TILE_ASSET_MISSING")
+        exit 3
+    }
+    if ($request.installationPath -like "*asset-error*") {
+        $base.status = "error"
+        $base.error = [ordered]@{
+            code = "SC_CASC_TILE_ASSET_INVALID"
+            message = "A required Tile catalog asset is invalid."
+            stage = "decode-assets"
+            nativeError = 13
+        }
+        [Console]::Out.WriteLine(($base | ConvertTo-Json -Depth 8 -Compress))
+        [Console]::Error.WriteLine("SC_CASC_TILE_ASSET_INVALID")
+        exit 3
+    }
+
+    $totalEntries = 260
+    $start = [int]$request.offset
+    $end = [Math]::Min($totalEntries, $start + [int]$request.limit)
+    $entries = @()
+    for ($id = $start; $id -lt $end; $id++) {
+        $entries += [ordered]@{ id = $id }
+    }
+    $base.status = "success"
+    $base.installation = [ordered]@{
+        path = $request.installationPath
+        storageProduct = "s1"
+        storageBuildNumber = 13515
+    }
+    $base.kind = $request.kind
+    $base.tileset = [int]$request.tileset
+    $base.assets = [ordered]@{
+        readCount = 4
+        totalBytes = 1048576
+    }
+    $base.catalog = [ordered]@{
+        offset = [int]$request.offset
+        limit = [int]$request.limit
+        totalEntries = $totalEntries
+    }
+    $base.entries = $entries
+
+    if ($request.installationPath -like "*catalog-page-mismatch*") {
+        $base.catalog.offset++
+    }
+    if (($request.installationPath -like "*catalog-entry-mismatch*") -and $base.entries.Count -gt 0) {
+        $base.entries[0].id++
+    }
+    if ($request.installationPath -like "*catalog-size-mismatch*") {
+        $base.assets.totalBytes = 0
     }
 }
 elseif ($request.operation -eq "renderTileAtlas") {

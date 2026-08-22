@@ -69,7 +69,7 @@ void main() {
       expect(result.rgbaBytes, hasLength(3 * 32 * 32 * 4));
       expect(result.storageProduct, 's1');
       expect(result.storageBuildNumber, 13515);
-      expect(result.helperVersion, '0.4.0');
+      expect(result.helperVersion, '0.5.0');
       expect(
         result.cascLibRevision,
         ProcessStarCraftTileAtlasGateway.cascLibRevision,

@@ -272,7 +272,10 @@ euddraft CHK를 선택하는 동작을 검증한다. Windows CI는 이 native CT
 - 프로토콜, request ID, helper/CascLib revision, 요청/응답 경로 불일치 거부
 - CASC 저장소 열기 실패, 필수 자산 누락과 읽기 실패의 별도 진단
 - found/required/누락/무효 경로의 매니페스트 완전성 교차 검증
-- protocol 3의 설치 검사/타일/객체 렌더 operation 분리와 helper 0.4.0 검증
+- protocol 3의 설치 검사/타일/객체 렌더/Tile 카탈로그 operation 분리와
+  helper 0.5.0 검증
+- Tile 카탈로그 page의 tileset·offset·limit·total·연속 u16 ID와 page 끝/빈 page,
+  실제 decoder로 검증한 항목만 32×32 atlas thumbnail에 연결되는지 확인
 - tileset enum, 정렬·고유 `u16` 1~4,096개, 고정 출력 이름 외 요청 거부
 - RGBA envelope magic/version/grid/길이/reserved 필드와 JSON 크기 교차 검증
 - raw 엔트리와 unsupported 목록의 중복 없는 요청 전체 포함, link/누락 출력 거부
@@ -337,6 +340,16 @@ raw `0/1/0x4000`을 합성하는지 확인한다. 객체 스모크는 unit 0을 
 후보 중 하나 이상의 pure sprite가 유효한 크기·비어 있지 않은 RGBA 대표
 프레임으로 렌더되는지도 검증한다. 추출한 게임 자산은 테스트 출력이나 저장소에
 남기지 않는다.
+
+`process_starcraft_placement_catalog_gateway_test.dart`는 가짜 helper process로
+Tile page의 연속 ID, 마지막/소진 page, 설치·버전·page·entry·자산 metadata
+불일치, 저장소/자산 실패, 대량 출력, timeout과 operation 취소를 검증한다.
+`tile_placement_catalog_loader_test.dart`는 page마다 기존 tile atlas를 한 번만
+요청해 raw ID별 32×32 RGBA를 분리하고, 빈 page는 렌더하지 않으며 unsupported나
+storage/helper identity 불일치를 thumbnail로 채택하지 않는지 확인한다. native
+테스트는 합성 CV5 page가 실제 decoder를 통과한 항목만 반환하고 마지막 page를
+정확히 자르는지도 검증한다. 선택적 bundled helper 스모크는 로컬 설치의 8개
+tileset에서 ID 0~3 page와 실제 32×32 RGBA thumbnail을 함께 확인한다.
 
 ```powershell
 $env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path `

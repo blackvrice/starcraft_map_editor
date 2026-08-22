@@ -19,7 +19,7 @@
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
 | M6. 객체와 로케이션 | 완료 | 객체·로케이션 편집·의미 참조 진단·Save As 왕복 |
 | M6.1. 실제 객체 그래픽 | 완료 | CascLib 객체 자산·스프라이트 렌더·fallback·성능 기준 |
-| M6.2. 시각적 배치 선택 팝업 | 대기 | Tile·Doodad·Unit·Sprite 카탈로그 선택과 배치 |
+| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile 카탈로그·32×32 썸네일 공급 완료 |
 | M7. 일반 트리거 | 대기 | M6.2 완료 후 트리거 편집 |
 | M8. 안정화와 배포 | 대기 | 검증된 Windows 릴리스 |
 
@@ -733,7 +733,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 
 - [x] 기존 에디터의 Tile·Doodad·Unit·Sprite 선택 흐름과 CHK 생성 규칙 조사
 - [x] 로컬 SC:R 배치 카탈로그 포트·모델과 안전한 이름/ID fallback 정의
-- [ ] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
+- [x] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
 - [ ] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
 - [ ] Doodad 정의, 크기, 중심점, 지형·overlay 구성 관계 해석
 - [ ] 현재 맵에 없는 Unit·Sprite를 위한 검증된 기본 레코드 factory 구현
@@ -823,6 +823,23 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
   문서에 기록한다. 자동 상한은 첫 기준 측정 뒤 CI 변동 폭을 반영해 확정한다.
 - 로컬 설치 스모크는 각 tileset에서 Tile/Doodad 하나와 Unit/Sprite 대표 항목을
   실제 이미지로 선택·배치하되 게임 자산이나 결과 맵을 저장소에 추가하지 않는다.
+
+검증 메모:
+
+- 2026-08-22 protocol 3/helper 0.5.0에 `listPlacementCatalog`의 Tile page를
+  추가했다. helper는 현재 tileset의 `CV5` group/member 범위를 최대 256개씩
+  열거하고 같은 `CV5`·`VX4EX`·`VR4`·`WPE` decoder로 해당 페이지를 실제
+  렌더 가능한지 먼저 검증한다. Dart process adapter는 operation ID 취소,
+  설치·버전·타일셋·offset/limit·연속 u16 ID·자산 크기를 교차 검증한다.
+- `TilePlacementCatalogLoader`는 검증된 page만 기존 `renderTileAtlas`에 넘기고
+  storage product/build와 helper/CascLib identity 및 전체 ID coverage가 같을 때만
+  항목별 32×32 RGBA thumbnail을 공급한다. 자체 작성 native 자산, 가짜 process와
+  application gateway 테스트가 페이지 끝·빈 페이지·손상 응답·timeout·취소·
+  unsupported/mismatched atlas를 검증하며 게임 자산은 저장소에 포함하지 않는다.
+- 로컬 SC:R build 13515에서 번들 helper로 8개 tileset 각각 Tile ID 0~3의
+  카탈로그와 32×32 RGBA thumbnail을 실제 생성하는 선택적 스모크가 통과했다.
+- `flutter analyze`, 단일 동시성 전체 `flutter test` 362개(환경 의존 7개 skip),
+  native CTest와 `flutter build windows --debug`가 통과했다.
 
 완료 조건:
 

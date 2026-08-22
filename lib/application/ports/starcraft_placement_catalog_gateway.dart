@@ -315,8 +315,10 @@ final class StarCraftPlacementCatalogPage {
         totalEntries > maximumTotalEntries ||
         totalMetadataBytes < 0 ||
         this.entries.length > request.limit ||
-        request.offset < totalEntries && this.entries.isEmpty ||
-        request.offset + this.entries.length > totalEntries) {
+        (request.offset >= totalEntries
+            ? this.entries.isNotEmpty
+            : this.entries.isEmpty ||
+                  request.offset + this.entries.length > totalEntries)) {
       throw ArgumentError('Catalog page counts are inconsistent.');
     }
     StarCraftPlacementCatalogKey? previous;

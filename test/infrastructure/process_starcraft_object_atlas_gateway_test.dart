@@ -85,7 +85,7 @@ void main() {
       expect(entry.rgbaBytes, hasLength(24));
       expect(entry.rgbaBytes[3], 255);
       expect(result.unsupportedObjects.single.key.id, 500);
-      expect(result.helperVersion, '0.4.0');
+      expect(result.helperVersion, '0.5.0');
       expect(result.storageProduct, 's1');
       expect(result.totalAssetBytes, 1048576);
     }, skip: !Platform.isWindows);

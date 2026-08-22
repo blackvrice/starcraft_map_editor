@@ -273,9 +273,10 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 ### StarCraftPlacementCatalogGateway
 
 M6.2의 전체 배치 목록은 `application/ports`의
-`StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 이 포트는 아직 기존
-`ObjectPaletteController`의 맵 template 목록과 UI에 합치지 않았으며, 후속
-Tile·Doodad·Unit·Sprite 공급 작업이 공통으로 지켜야 할 계약을 먼저 고정한다.
+`StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.5.0의
+`listPlacementCatalog`를 실행하고, Unit·Sprite·Doodad와 기존
+`ObjectPaletteController` template의 UI merge는 후속 단계로 남아 있다.
 
 - `StarCraftPlacementCatalogRequest`는 설치 경로, 현재 tileset, 한 종류, offset과
   최대 256개 limit를 가진다. operation ID는 안전한 ASCII 1~128자로 제한하고
@@ -290,6 +291,15 @@ Tile·Doodad·Unit·Sprite 공급 작업이 공통으로 지켜야 할 계약을
 - `StarCraftPlacementCatalogPage`는 요청 종류·tileset에 맞는 local-data 항목만
   strict key 순서로 받고 total/offset/limit와 다음 페이지를 검증한다. 입력 목록과
   진단은 불변 복사하며 helper/storage metadata를 함께 보관한다.
+- Tile operation은 선택한 tileset의 `CV5`가 주소화하는 group/member를 연속
+  u16 page로 열거한다. helper는 page의 네 렌더 자산을 기존 decoder에 통과시켜
+  실제 렌더 불가능한 참조를 카탈로그 항목으로 노출하지 않는다. process adapter는
+  최대 256개 page, 정확한 연속 ID와 설치/버전/자산 metadata를 교차 검증하고
+  operation ID 단위 timeout·취소를 제공한다.
+- `TilePlacementCatalogLoader`는 성공 page의 ID만 기존 `renderTileAtlas` 포트에
+  요청한다. page와 atlas의 설치 product/build, helper/CascLib revision,
+  tileset과 전체 ID coverage가 같고 unsupported가 없을 때만 raw ID별 불변
+  4,096바이트 RGBA thumbnail을 반환한다. 이 조회는 CHK나 dirty/Undo를 바꾸지 않는다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.
@@ -441,7 +451,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더는 공용 wire protocol 3/helper 0.4.0을 사용한다.
+렌더·Tile 카탈로그는 공용 wire protocol 3/helper 0.5.0을 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
 `unit`/`sprite`, ID, player color, direction의 정렬·중복 제거된 최대 256개
