@@ -65,7 +65,7 @@ flutter run -d windows
 최소 검증:
 
 ```powershell
-dart format --output=none --set-exit-if-changed .
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test
 ```
