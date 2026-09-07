@@ -399,6 +399,16 @@ flutter test test/infrastructure/bundled_starcraft_data_helper_test.dart
 
 ### EUD
 
+M6.3.1~M6.3.2/M7.1의 확장 탭·실행 규칙은 다음 검증을 추가한다(미구현 항목).
+
+- category별 지원 매니페스트와 단위/enum/참조/실행 시점 및 미지원 빌드 차단
+- 탭 간 동일 값 공유, CHK/기본 액션/EUD override 충돌 및 중복 소스 생성 방지
+- 프로젝트 저장/재열기/Undo와 설정/소스/빌드 hash 및 사용자 entry 보존
+- 그래픽 공유 참조·classic/HD 차이, 인구수 상한·재계산과 업그레이드 전역/플레이어 값 구분
+- 런타임 객체 수명·슬롯 재사용, 계산 영역 경계, 동적 텍스트 길이와 참조 안전성
+- 규칙 순서·1회/주기·순환·비용 상한과 동기화/로컬 표시 영역 분리
+- 각 category의 실제 euddraft·SC:R 실행, 반복 빌드 비누적과 멀티플레이 검증
+
 - 단일 untitled 문서 생성과 중복 생성 방지
 - 동일 텍스트 변경 무시와 revision 증가
 - 저장 기준선으로 되돌렸을 때 dirty 해제
