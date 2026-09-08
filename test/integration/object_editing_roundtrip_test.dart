@@ -296,6 +296,33 @@ void main() {
         throwsStateError,
       );
 
+      final beforeForces = openController.state.session!.rawDocument;
+      editingController.applyForceSettings(
+        expectedDocument: beforeForces,
+        assignments: {0: 3},
+        flags: {0: 15},
+        names: {0: '세력 하나'},
+      );
+      expect(editingController.forceSettings.names.first, '세력 하나');
+      editingController.undo();
+      expect(
+        identical(
+          openController.state.session!.rawDocument.sections.firstWhere(
+            (s) => s.name == 'FORC',
+          ),
+          beforeForces.sections.firstWhere((s) => s.name == 'FORC'),
+        ),
+        isTrue,
+      );
+      editingController.redo();
+      expect(
+        () => editingController.applyForceSettings(
+          expectedDocument: beforeForces,
+          assignments: {0: 2},
+        ),
+        throwsStateError,
+      );
+
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -383,12 +410,13 @@ void main() {
           .decode(writtenDocument)
           .legacyTables
           .single;
-      expect(writtenStrings.declaredStringCount, 5);
+      expect(writtenStrings.declaredStringCount, 6);
+      expect(writtenStrings.entries[5].rawBytes, utf8.encode('세력 하나'));
       expect(writtenStrings.entries[0].rawBytes, utf8.encode('Existing'));
       expect(writtenStrings.entries[1].rawBytes, utf8.encode('Shared'));
       expect(writtenStrings.entries[2].rawBytes, utf8.encode('왕복 위치'));
       expect(
-        writtenStrings.rawSection.payload.sublist(28, 30),
+        writtenStrings.rawSection.payload.sublist(30, 32),
         const [0xde, 0xad],
         reason: 'Unreferenced string-table tail bytes must survive the append.',
       );
@@ -416,6 +444,15 @@ void main() {
         6,
         7,
       ]);
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'FORC').payload.first,
+        3,
+      );
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'FORC').payload[16],
+        0xaf,
+      );
+      expect(editingController.forceSettings.names.first, '세력 하나');
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
       expect(editingController.mapInformation.title, '왕복 맵');
@@ -764,6 +801,21 @@ Uint8List _sourceChkBytes() {
     _section('OWNR', List.filled(12, 0)),
     _section('SIDE', List.filled(12, 1)),
     _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
+    _section('FORC', [
+      ...List<int>.filled(8, 0),
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0xa0,
+      0,
+      0,
+      0,
+    ]),
   ]);
 }
 

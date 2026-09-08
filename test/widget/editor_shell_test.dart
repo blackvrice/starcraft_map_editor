@@ -47,6 +47,88 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets('force settings apply drafts atomically and undo', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final settings = InMemorySettingsStore();
+    final recent = RecentProjectsService(settings);
+    final progress = OperationProgressController();
+    final map = _createExtractedMap(includeMapInformation: true);
+    final open = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: map),
+      ),
+      filePicker: _FakeMapFilePicker(map.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recent,
+      operationProgressController: progress,
+    );
+    addTearDown(open.dispose);
+    addTearDown(progress.dispose);
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: open,
+        operationProgressController: progress,
+        recentProjectsService: recent,
+        settingsStore: settings,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+    Future<void> showForces() async {
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Force Settings…'));
+      await tester.pumpAndSettle();
+    }
+
+    await showForces();
+    await tester.enterText(find.byKey(const Key('force-name')), 'discarded');
+    await tester.tap(find.text('Cancel').last);
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await showForces();
+    await tester.enterText(find.byKey(const Key('force-name')), 'First force');
+    await tester.tap(find.byKey(const Key('force-flag-4')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('force-assignment')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Assign to Force 3').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('force-selection')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Force 2').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('force-name')), 'Second force');
+    await tester.tap(find.byKey(const Key('force-apply')));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isTrue);
+    expect(
+      open.state.session!.rawDocument.sections
+          .firstWhere((s) => s.name == 'FORC')
+          .payload
+          .first,
+      2,
+    );
+    await tester.tap(find.text('Undo: Edit force settings'));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await tester.tap(find.text('Redo: Edit force settings'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('force-name')))
+          .controller!
+          .text,
+      'Second force',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'player settings preserve drafts across slots and undo applied changes',
     (tester) async {
@@ -1996,6 +2078,7 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     if (includeMapInformation) _section('OWNR', List.filled(12, 0)),
     if (includeMapInformation) _section('SIDE', List.filled(12, 1)),
     if (includeMapInformation) _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
+    if (includeMapInformation) _section('FORC', List<int>.filled(20, 0)),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',

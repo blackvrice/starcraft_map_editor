@@ -31,6 +31,7 @@ import '../map_canvas/terrain_tile_texture_controller.dart';
 import '../placement/placement_catalog_pane.dart';
 import '../settings/map_information_dialog.dart';
 import '../settings/player_settings_dialog.dart';
+import '../settings/force_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud, catalog }
@@ -618,6 +619,15 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openForceSettings:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => ForceSettingsDialog(
+                            controller: widget.objectEditingController,
+                          ),
+                        ),
                   openPlayerSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -742,6 +752,7 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    required this.openForceSettings,
     required this.openPlayerSettings,
     required this.openMapInformation,
     required this.openMap,
@@ -756,6 +767,7 @@ class _EditorMenuBar extends StatelessWidget {
 
   final VoidCallback? openMap;
   final VoidCallback? openMapInformation;
+  final VoidCallback? openForceSettings;
   final VoidCallback? openPlayerSettings;
   final VoidCallback? saveAs;
   final VoidCallback? newEudSource;
@@ -782,6 +794,10 @@ class _EditorMenuBar extends StatelessWidget {
               child: const Text('Player Settings…'),
             ),
             const Divider(),
+            MenuItemButton(
+              onPressed: openForceSettings,
+              child: const Text('Force Settings…'),
+            ),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],
           child: const Text('File'),
