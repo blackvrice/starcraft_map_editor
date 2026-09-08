@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_scenario_text_editor.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
@@ -75,6 +76,46 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  ChkScenarioText get mapInformation {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map before changing map information.');
+    }
+    return const ChkScenarioTextEditor().read(session.rawDocument);
+  }
+
+  void applyMapInformation({
+    required RawChkDocument expectedDocument,
+    required String title,
+    required String description,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError(
+        'The map changed. Reopen Map Information before applying.',
+      );
+    }
+    final replacements = const ChkScenarioTextEditor().edit(
+      session.rawDocument,
+      title: title,
+      description: description,
+    );
+    if (replacements.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit map information',
+        beforeSections: {
+          for (final index in replacements.keys)
+            index: session.rawDocument.sections[index],
+        },
+        afterSections: replacements,
+      ),
+      clearSelection: false,
+    );
+  }
 
   bool get canEditSelection {
     final session = openMapController.state.session;

@@ -29,6 +29,7 @@ import '../map_canvas/map_canvas.dart';
 import '../map_canvas/object_sprite_texture_controller.dart';
 import '../map_canvas/terrain_tile_texture_controller.dart';
 import '../placement/placement_catalog_pane.dart';
+import '../settings/map_information_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud, catalog }
@@ -616,6 +617,15 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openMapInformation:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => MapInformationDialog(
+                            controller: widget.objectEditingController,
+                          ),
+                        ),
                   openMap: openMap,
                   saveAs: saveAs,
                   newEudSource: newEudSource,
@@ -722,6 +732,7 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    required this.openMapInformation,
     required this.openMap,
     required this.saveAs,
     required this.newEudSource,
@@ -733,6 +744,7 @@ class _EditorMenuBar extends StatelessWidget {
   });
 
   final VoidCallback? openMap;
+  final VoidCallback? openMapInformation;
   final VoidCallback? saveAs;
   final VoidCallback? newEudSource;
   final VoidCallback? buildEud;
@@ -749,6 +761,10 @@ class _EditorMenuBar extends StatelessWidget {
           menuChildren: [
             MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
             MenuItemButton(onPressed: saveAs, child: const Text('Save As…')),
+            MenuItemButton(
+              onPressed: openMapInformation,
+              child: const Text('Map Information…'),
+            ),
             const Divider(),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],

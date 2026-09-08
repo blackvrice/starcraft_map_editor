@@ -244,6 +244,26 @@ void main() {
         3,
       );
 
+      final beforeInfo = openController.state.session!.rawDocument;
+      editingController.applyMapInformation(
+        expectedDocument: beforeInfo,
+        title: '왕복 맵',
+        description: '새 설명',
+      );
+      expect(editingController.mapInformation.title, '왕복 맵');
+      expect(
+        () => editingController.applyMapInformation(
+          expectedDocument: beforeInfo,
+          title: 'Stale',
+          description: 'Stale',
+        ),
+        throwsStateError,
+      );
+      editingController.undo();
+      expect(editingController.mapInformation.title, 'Existing');
+      editingController.redo();
+      expect(editingController.mapInformation.description, '새 설명');
+
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -331,12 +351,12 @@ void main() {
           .decode(writtenDocument)
           .legacyTables
           .single;
-      expect(writtenStrings.declaredStringCount, 3);
+      expect(writtenStrings.declaredStringCount, 5);
       expect(writtenStrings.entries[0].rawBytes, utf8.encode('Existing'));
       expect(writtenStrings.entries[1].rawBytes, utf8.encode('Shared'));
       expect(writtenStrings.entries[2].rawBytes, utf8.encode('왕복 위치'));
       expect(
-        writtenStrings.rawSection.payload.sublist(24, 26),
+        writtenStrings.rawSection.payload.sublist(28, 30),
         const [0xde, 0xad],
         reason: 'Unreferenced string-table tail bytes must survive the append.',
       );
@@ -346,6 +366,8 @@ void main() {
       expect(reopened.diagnostics, isEmpty);
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
+      expect(editingController.mapInformation.title, '왕복 맵');
+      expect(editingController.mapInformation.description, '새 설명');
       final objectViews = reopened.session!.objectViews;
       expect(objectViews.unitSections.single.units, hasLength(3));
       expect(
@@ -599,6 +621,7 @@ Uint8List _placementSourceChkBytes() {
     _section('DD2 ', _doodadRecord()),
     _section('MRGN', locations),
     _section('STR ', _legacyStringTableWithTail()),
+    _section('SPRP', [1, 0, 1, 0]),
   ]);
 }
 
@@ -685,6 +708,7 @@ Uint8List _sourceChkBytes() {
     _section('THG2', _spriteRecord()),
     _section('MRGN', locations),
     _section('STR ', _legacyStringTableWithTail()),
+    _section('SPRP', [1, 0, 1, 0]),
   ]);
 }
 

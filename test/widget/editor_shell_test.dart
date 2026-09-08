@@ -47,6 +47,86 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets('map information drafts cancel and applied text supports undo', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final settings = InMemorySettingsStore();
+    final recent = RecentProjectsService(settings);
+    final progress = OperationProgressController();
+    final map = _createExtractedMap(includeMapInformation: true);
+    final open = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: map),
+      ),
+      filePicker: _FakeMapFilePicker(map.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recent,
+      operationProgressController: progress,
+    );
+    addTearDown(open.dispose);
+    addTearDown(progress.dispose);
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: open,
+        operationProgressController: progress,
+        recentProjectsService: recent,
+        settingsStore: settings,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+    Future<void> showInfo() async {
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Map Information…'));
+      await tester.pumpAndSettle();
+    }
+
+    await showInfo();
+    await tester.enterText(
+      find.byKey(const Key('map-information-title')),
+      'Discard me',
+    );
+    await tester.tap(find.text('Cancel').last);
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await showInfo();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('map-information-title')))
+          .controller!
+          .text,
+      'Existing',
+    );
+    await tester.enterText(
+      find.byKey(const Key('map-information-title')),
+      '새 맵',
+    );
+    await tester.enterText(
+      find.byKey(const Key('map-information-description')),
+      '설명',
+    );
+    await tester.tap(find.byKey(const Key('map-information-apply')));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isTrue);
+    await tester.tap(find.text('Undo: Edit map information'));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await tester.tap(find.text('Redo: Edit map information'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('map-information-title')))
+          .controller!
+          .text,
+      '새 맵',
+    );
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('renders the desktop editor shell', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 720);
@@ -1783,7 +1863,7 @@ class _FakeMapFileFingerprintGateway implements MapFileFingerprintGateway {
   }
 }
 
-ExtractedMap _createExtractedMap() {
+ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
   const mapWidth = 64;
   const mapHeight = 96;
   final terrainPayload = Uint8List(mapWidth * mapHeight * 2);
@@ -1817,6 +1897,7 @@ ExtractedMap _createExtractedMap() {
     _section('THG2', _spriteRecord(64, 64)),
     _section('MRGN', locationPayload),
     _section('STR ', _legacyStringTable(['Existing'])),
+    if (includeMapInformation) _section('SPRP', [1, 0, 1, 0]),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',
