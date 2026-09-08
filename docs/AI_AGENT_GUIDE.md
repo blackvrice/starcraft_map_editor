@@ -192,6 +192,7 @@ ctest --test-dir build/windows/x64 -C Debug --output-on-failure
 | 증상 | 원인 | 대응 |
 | --- | --- | --- |
 | `flutter build windows` 실패, MSVC 못 찾음 | VS2022 C++ 워크로드 누락 | `flutter doctor` 지시대로 설치 후 재시도 |
+| helper `main.cpp`의 `AddUnitCapability`에서 C2653 (`sc` 미정의) | 네임스페이스 별칭이 다른 함수 안에만 선언됨 | 공통 함수 선언보다 앞선 파일 범위에 별칭을 선언하고 Windows 빌드·native CTest로 확인 |
 | CMake configure에서 fetch 실패 | 첫 빌드 네트워크 차단 / Git 없음 | 네트워크·Git 확인. 오프라인이면 helper 관련 작업을 보류하고 보고 |
 | `dart format` CI 실패, 로컬 통과 | 대상 경로 차이 | CI와 동일하게 `lib test tool`을 지정해 실행 |
 | 선택 스모크 테스트 skip | 환경 변수 미설정 | 정상. 미실행 사실을 완료 보고에 기록 |

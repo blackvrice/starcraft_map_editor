@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/object_placement_factory.dart';
+import '../../domain/placement/unit_placement_capability.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../layers/map_layer_controller.dart';
+import 'object_placement.dart';
 import 'object_properties.dart';
 
 final class ObjectEditingState {
@@ -28,8 +32,12 @@ class ObjectEditingController {
     required this.mapLayerController,
     this.objectViewDecoder = const ChkObjectViewDecoder(),
     this.stringViewDecoder = const ChkStringViewDecoder(),
+    this.terrainViewDecoder = const ChkTerrainViewDecoder(),
     this.sectionEditor = const ChkObjectSectionEditor(),
     this.objectReferenceValidator = const ChkObjectReferenceValidator(),
+    this.unitPlacementFactory = const UnitPlacementFactory(),
+    this.spritePlacementFactory = const SpritePlacementFactory(),
+    this.doodadPlacementFactory = const DoodadPlacementFactory(),
     this.historyLimit = 100,
   }) {
     if (historyLimit <= 0) {
@@ -45,8 +53,12 @@ class ObjectEditingController {
   final MapLayerController mapLayerController;
   final ChkObjectViewDecoder objectViewDecoder;
   final ChkStringViewDecoder stringViewDecoder;
+  final ChkTerrainViewDecoder terrainViewDecoder;
   final ChkObjectSectionEditor sectionEditor;
   final ChkObjectReferenceValidator objectReferenceValidator;
+  final UnitPlacementFactory unitPlacementFactory;
+  final SpritePlacementFactory spritePlacementFactory;
+  final DoodadPlacementFactory doodadPlacementFactory;
   final int historyLimit;
   final StreamController<ObjectEditingState> _changes =
       StreamController<ObjectEditingState>.broadcast(sync: true);
@@ -334,6 +346,269 @@ class ObjectEditingController {
     return true;
   }
 
+  /// Places a Unit the current map does not have to contain yet.
+  ///
+  /// The synthesized record is appended to the single `UNIT` section, or to a
+  /// new `UNIT` section appended at the end of the document when the map has
+  /// none. Anything ambiguous refuses the placement instead of guessing.
+  ObjectPlacementResult placeCatalogUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    final blocked = _checkPlacementTarget(
+      session: session,
+      layer: MapLayerType.units,
+      pixelX: pixelX,
+      pixelY: pixelY,
+    );
+    if (blocked != null) {
+      return ObjectPlacementResult.refused(blocked);
+    }
+    final classId = _nextUnitClassId(session);
+    if (classId == null) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.classIdExhausted,
+      );
+    }
+    final record = unitPlacementFactory.create(
+      capability: capability,
+      unitId: unitId,
+      owner: owner,
+      x: pixelX,
+      y: pixelY,
+      classId: classId,
+    );
+    if (!record.isSynthesized) {
+      return ObjectPlacementResult.refused(record.issueCode!);
+    }
+    return _appendCatalogRecord(
+      session: session,
+      layer: MapLayerType.units,
+      nameBytes: ChkSectionNames.unitPlacements,
+      record: record.bytes,
+      label: 'Place Unit',
+    );
+  }
+
+  /// Places a pure Sprite the current map does not have to contain yet.
+  ObjectPlacementResult placeCatalogPureSprite({
+    required int spriteId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    final blocked = _checkPlacementTarget(
+      session: session,
+      layer: MapLayerType.sprites,
+      pixelX: pixelX,
+      pixelY: pixelY,
+    );
+    if (blocked != null) {
+      return ObjectPlacementResult.refused(blocked);
+    }
+    final record = spritePlacementFactory.createPureSprite(
+      spriteId: spriteId,
+      owner: owner,
+      x: pixelX,
+      y: pixelY,
+    );
+    if (!record.isSynthesized) {
+      return ObjectPlacementResult.refused(record.issueCode!);
+    }
+    return _appendCatalogRecord(
+      session: session,
+      layer: MapLayerType.sprites,
+      nameBytes: ChkSectionNames.spritePlacements,
+      record: record.bytes,
+      label: 'Place Sprite',
+    );
+  }
+
+  /// Places one Doodad as a single atomic command.
+  ///
+  /// The `DD2 ` metadata, every footprint `MTXM` cell and the optional `THG2`
+  /// overlay are applied together and share one Undo entry. If any part is out
+  /// of bounds, ambiguous or fails the DDData placibility rule, nothing is
+  /// written at all.
+  ObjectPlacementResult placeCatalogDoodad({
+    required DoodadPlacementRecipe recipe,
+    required int owner,
+    required int originTileX,
+    required int originTileY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    if (!mapLayerController.state.statusOf(MapLayerType.doodads).isSelectable) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+    }
+    if (!mapLayerController.state.statusOf(MapLayerType.terrain).isSelectable) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+    }
+    final dimensions = _singleDimensions(session);
+    if (dimensions == null) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.dimensionsUnavailable,
+      );
+    }
+    final tilesetIssue = _checkDoodadTileset(session, recipe);
+    if (tilesetIssue != null) {
+      return ObjectPlacementResult.refused(tilesetIssue);
+    }
+    final terrain = _singleTerrainView(session);
+    if (terrain == null) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.terrainUnavailable,
+      );
+    }
+
+    final planned = doodadPlacementFactory.create(
+      recipe: recipe,
+      owner: owner,
+      originTileX: originTileX,
+      originTileY: originTileY,
+    );
+    if (!planned.isPlanned) {
+      return ObjectPlacementResult.refused(planned.issueCode!);
+    }
+    final plan = planned.plan;
+    if (plan.centerPixelX >= dimensions.width * _tilePixels ||
+        plan.centerPixelY >= dimensions.height * _tilePixels) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.outOfBounds,
+      );
+    }
+
+    final tileValues = terrain.rawTileValues.toList();
+    for (final write in plan.tileWrites) {
+      if (write.tileX >= terrain.width! || write.tileY >= terrain.height!) {
+        return ObjectPlacementResult.refused(
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+      }
+      final index = write.tileY * terrain.width! + write.tileX;
+      if (!write.acceptsAnyTerrain &&
+          DoodadTileWrite.groupOf(tileValues[index]) !=
+              write.requiredTileGroup) {
+        return ObjectPlacementResult.refused(
+          ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+        );
+      }
+      tileValues[index] = write.rawTileValue;
+    }
+
+    final doodadTarget = _resolveSectionTarget(
+      session: session,
+      nameBytes: ChkSectionNames.doodadPlacements,
+      decodedIndices: [
+        for (final section in session.objectViews.doodadSections)
+          section.sectionIndex,
+      ],
+    );
+    if (doodadTarget.issueCode != null) {
+      return ObjectPlacementResult.refused(doodadTarget.issueCode!);
+    }
+    final overlayTarget = plan.hasOverlay
+        ? _resolveSectionTarget(
+            session: session,
+            nameBytes: ChkSectionNames.spritePlacements,
+            decodedIndices: [
+              for (final section in session.objectViews.spriteSections)
+                section.sectionIndex,
+            ],
+          )
+        : null;
+    if (overlayTarget?.issueCode != null) {
+      return ObjectPlacementResult.refused(overlayTarget!.issueCode!);
+    }
+
+    final document = session.rawDocument;
+    final beforeSections = <int, RawChkSection>{
+      terrain.sectionIndex: terrain.rawSection,
+    };
+    final afterSections = <int, RawChkSection>{
+      terrain.sectionIndex: terrain.withRawTileValues(tileValues),
+    };
+    final appendedSections = <RawChkSection>[];
+
+    final placedRecordIndex = doodadTarget.sectionIndex == null
+        ? 0
+        : _doodadSection(session, doodadTarget.sectionIndex!).doodads.length;
+    if (doodadTarget.sectionIndex case final index?) {
+      beforeSections[index] = document.sections[index];
+      afterSections[index] = sectionEditor.appendDoodadRecord(
+        _doodadSection(session, index),
+        plan.doodadRecord,
+      );
+    } else {
+      appendedSections.add(
+        _newSectionWith(
+          document: document,
+          nameBytes: ChkSectionNames.doodadPlacements,
+          record: plan.doodadRecord,
+        ),
+      );
+    }
+
+    final overlayRecord = plan.overlayRecord;
+    if (overlayRecord != null) {
+      if (overlayTarget!.sectionIndex case final index?) {
+        beforeSections[index] = document.sections[index];
+        afterSections[index] = sectionEditor.appendSpriteRecord(
+          _spriteSection(session, index),
+          overlayRecord,
+        );
+      } else {
+        appendedSections.add(
+          _newSectionWith(
+            document: document,
+            nameBytes: ChkSectionNames.spritePlacements,
+            record: overlayRecord,
+          ),
+        );
+      }
+    }
+
+    final doodadSectionIndex =
+        doodadTarget.sectionIndex ?? document.sections.length;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Place Doodad',
+        beforeSections: beforeSections,
+        afterSections: afterSections,
+        appendedSections: appendedSections,
+      ),
+      clearSelection: true,
+    );
+    return _selectPlacedObject(
+      layer: MapLayerType.doodads,
+      sectionIndex: doodadSectionIndex,
+      recordIndex: placedRecordIndex,
+    );
+  }
+
   ObjectPropertyEditResult updateProperties(ObjectPropertyUpdate update) {
     final session = openMapController.state.session;
     final current = selectedProperties;
@@ -497,6 +772,7 @@ class ObjectEditingController {
     _applySections(
       expected: command.afterSections,
       replacements: command.beforeSections,
+      removedTrailingSections: command.appendedSections,
       clearSelection: true,
     );
     _redoStack.add(command);
@@ -513,6 +789,7 @@ class ObjectEditingController {
     _applySections(
       expected: command.beforeSections,
       replacements: command.afterSections,
+      appendedSections: command.appendedSections,
       clearSelection: true,
     );
     _undoStack.add(command);
@@ -1005,6 +1282,215 @@ class ObjectEditingController {
     };
   }
 
+  static const _tilePixels = 32;
+
+  ChkDimensionsView? _singleDimensions(OpenedMapSession session) =>
+      session.metadataViews.dimensions.length == 1
+      ? session.metadataViews.dimensions.single
+      : null;
+
+  ChkTerrainTileMapView? _singleTerrainView(OpenedMapSession session) {
+    if (session.terrainViews.tileMaps.length != 1) {
+      return null;
+    }
+    final terrain = session.terrainViews.tileMaps.single;
+    return terrain.hasGridDimensions ? terrain : null;
+  }
+
+  String? _checkPlacementTarget({
+    required OpenedMapSession session,
+    required MapLayerType layer,
+    required int pixelX,
+    required int pixelY,
+  }) {
+    if (!mapLayerController.state.statusOf(layer).isSelectable) {
+      return ObjectPlacementDiagnosticCodes.layerLocked;
+    }
+    if (_singleDimensions(session) == null) {
+      return ObjectPlacementDiagnosticCodes.dimensionsUnavailable;
+    }
+    if (!_pointFitsMap(session, pixelX, pixelY)) {
+      return ObjectPlacementDiagnosticCodes.outOfBounds;
+    }
+    return null;
+  }
+
+  String? _checkDoodadTileset(
+    OpenedMapSession session,
+    DoodadPlacementRecipe recipe,
+  ) {
+    final tilesets = session.metadataViews.tilesets;
+    if (tilesets.length != 1) {
+      return ObjectPlacementDiagnosticCodes.tilesetUnavailable;
+    }
+    final rawValue = tilesets.single.rawValue;
+    if (rawValue < 0 || rawValue > 7) {
+      return ObjectPlacementDiagnosticCodes.tilesetUnavailable;
+    }
+    return rawValue == recipe.tileset.rawValue
+        ? null
+        : ObjectPlacementDiagnosticCodes.doodadTilesetMismatch;
+  }
+
+  /// Allocates the next class instance so it cannot collide with an existing
+  /// record in any `UNIT` section.
+  int? _nextUnitClassId(OpenedMapSession session) {
+    var maximum = -1;
+    for (final section in session.objectViews.unitSections) {
+      for (final unit in section.units) {
+        if (unit.classId > maximum) {
+          maximum = unit.classId;
+        }
+      }
+    }
+    final next = maximum + 1;
+    return next > 0xffffffff ? null : next;
+  }
+
+  _SectionTarget _resolveSectionTarget({
+    required OpenedMapSession session,
+    required List<int> nameBytes,
+    required List<int> decodedIndices,
+  }) {
+    final rawIndices = <int>[];
+    for (var index = 0; index < session.rawDocument.sections.length; index++) {
+      if (session.rawDocument.sections[index].hasNameBytes(nameBytes)) {
+        rawIndices.add(index);
+      }
+    }
+    if (rawIndices.length > 1) {
+      return const _SectionTarget.refused(
+        ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+      );
+    }
+    if (rawIndices.isEmpty) {
+      return const _SectionTarget.create();
+    }
+    if (decodedIndices.length != 1 ||
+        decodedIndices.single != rawIndices.single) {
+      return const _SectionTarget.refused(
+        ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+      );
+    }
+    return _SectionTarget.existing(rawIndices.single);
+  }
+
+  RawChkSection _newSectionWith({
+    required RawChkDocument document,
+    required List<int> nameBytes,
+    required List<int> record,
+  }) => sectionEditor
+      .createEmptySection(
+        nameBytes: nameBytes,
+        sourceOffset: document.sourceLength,
+      )
+      .withPayload(record);
+
+  ObjectPlacementResult _appendCatalogRecord({
+    required OpenedMapSession session,
+    required MapLayerType layer,
+    required List<int> nameBytes,
+    required List<int> record,
+    required String label,
+  }) {
+    final decodedIndices = switch (layer) {
+      MapLayerType.units => [
+        for (final section in session.objectViews.unitSections)
+          section.sectionIndex,
+      ],
+      MapLayerType.sprites => [
+        for (final section in session.objectViews.spriteSections)
+          section.sectionIndex,
+      ],
+      MapLayerType.doodads => [
+        for (final section in session.objectViews.doodadSections)
+          section.sectionIndex,
+      ],
+      MapLayerType.terrain || MapLayerType.locations => const <int>[],
+    };
+    final target = _resolveSectionTarget(
+      session: session,
+      nameBytes: nameBytes,
+      decodedIndices: decodedIndices,
+    );
+    if (target.issueCode != null) {
+      return ObjectPlacementResult.refused(target.issueCode!);
+    }
+
+    final document = session.rawDocument;
+    final beforeSections = <int, RawChkSection>{};
+    final afterSections = <int, RawChkSection>{};
+    final appendedSections = <RawChkSection>[];
+    final int sectionIndex;
+    final int recordIndex;
+
+    if (target.sectionIndex case final index?) {
+      sectionIndex = index;
+      beforeSections[index] = document.sections[index];
+      switch (layer) {
+        case MapLayerType.units:
+          final view = _unitSection(session, index);
+          recordIndex = view.units.length;
+          afterSections[index] = sectionEditor.appendUnitRecord(view, record);
+        case MapLayerType.sprites:
+          final view = _spriteSection(session, index);
+          recordIndex = view.sprites.length;
+          afterSections[index] = sectionEditor.appendSpriteRecord(view, record);
+        case MapLayerType.doodads:
+          final view = _doodadSection(session, index);
+          recordIndex = view.doodads.length;
+          afterSections[index] = sectionEditor.appendDoodadRecord(view, record);
+        case MapLayerType.terrain || MapLayerType.locations:
+          throw StateError('This layer has no catalog placement section.');
+      }
+    } else {
+      sectionIndex = document.sections.length;
+      recordIndex = 0;
+      appendedSections.add(
+        _newSectionWith(
+          document: document,
+          nameBytes: nameBytes,
+          record: record,
+        ),
+      );
+    }
+
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: label,
+        beforeSections: beforeSections,
+        afterSections: afterSections,
+        appendedSections: appendedSections,
+      ),
+      clearSelection: true,
+    );
+    return _selectPlacedObject(
+      layer: layer,
+      sectionIndex: sectionIndex,
+      recordIndex: recordIndex,
+    );
+  }
+
+  ObjectPlacementResult _selectPlacedObject({
+    required MapLayerType layer,
+    required int sectionIndex,
+    required int recordIndex,
+  }) {
+    final editedSession = openMapController.state.session!;
+    final placedObject = MapLayerObjectRef(
+      layer: layer,
+      sectionIndex: sectionIndex,
+      recordIndex: recordIndex,
+    );
+    mapLayerController
+      ..setActiveLayer(layer)
+      ..selectObject(session: editedSession, object: placedObject);
+    if (mapLayerController.state.selection?.object != placedObject) {
+      throw StateError('The newly placed object could not be selected.');
+    }
+    return ObjectPlacementResult.placed(placedObject);
+  }
+
   void _applyAndRecord(
     _ObjectEditCommand command, {
     required bool clearSelection,
@@ -1012,6 +1498,7 @@ class ObjectEditingController {
     _applySections(
       expected: command.beforeSections,
       replacements: command.afterSections,
+      appendedSections: command.appendedSections,
       clearSelection: clearSelection,
     );
     _undoStack.add(command);
@@ -1026,12 +1513,36 @@ class ObjectEditingController {
     required Map<int, RawChkSection> expected,
     required Map<int, RawChkSection> replacements,
     required bool clearSelection,
+    List<RawChkSection> appendedSections = const [],
+    List<RawChkSection> removedTrailingSections = const [],
   }) {
     final session = openMapController.state.session;
     if (session == null) {
       throw StateError('An object edit requires an open map session.');
     }
     var document = session.rawDocument;
+    if (removedTrailingSections.isNotEmpty) {
+      final firstRemoved =
+          document.sections.length - removedTrailingSections.length;
+      if (firstRemoved < 0) {
+        throw StateError(
+          'The object edit history expects appended sections that are gone.',
+        );
+      }
+      for (var offset = 0; offset < removedTrailingSections.length; offset++) {
+        if (!identical(
+          document.sections[firstRemoved + offset],
+          removedTrailingSections[offset],
+        )) {
+          throw StateError(
+            'The object edit history no longer matches the appended sections.',
+          );
+        }
+      }
+      document = document.removeTrailingSections(
+        removedTrailingSections.length,
+      );
+    }
     for (final entry in expected.entries) {
       if (!identical(document.sections[entry.key], entry.value)) {
         throw StateError(
@@ -1040,17 +1551,31 @@ class ObjectEditingController {
       }
       document = document.replaceSection(entry.key, replacements[entry.key]!);
     }
+    for (final section in appendedSections) {
+      document = document.appendSection(section);
+    }
+    final changedSections = [...replacements.values, ...appendedSections];
     final objectViews = objectViewDecoder.decode(document);
     final stringViews = stringViewDecoder.decode(document);
-    final editsStringTable = replacements.values.any(
+    final editsStringTable = changedSections.any(
       (section) =>
           ChkSectionNames.isLegacyStrings(section) ||
           ChkSectionNames.isExtendedStrings(section),
     );
+    final editsTerrain = [
+      ...changedSections,
+      ...removedTrailingSections,
+    ].any(ChkSectionNames.isTerrainTiles);
+    final terrainViews = editsTerrain
+        ? terrainViewDecoder.decode(document)
+        : session.terrainViews;
     if (objectViews.hasBlockingDiagnostics ||
-        (editsStringTable && stringViews.hasBlockingDiagnostics)) {
+        (editsStringTable && stringViews.hasBlockingDiagnostics) ||
+        (editsTerrain &&
+            (terrainViews.hasBlockingDiagnostics ||
+                terrainViews.tileMaps.length != 1))) {
       throw StateError(
-        'The edited object or string sections failed validation.',
+        'The edited object, string or terrain sections failed validation.',
       );
     }
     if (clearSelection) {
@@ -1073,7 +1598,7 @@ class ObjectEditingController {
       rawDocument: document,
       metadataViews: session.metadataViews,
       stringViews: stringViews,
-      terrainViews: session.terrainViews,
+      terrainViews: terrainViews,
       objectViews: objectViews,
       sourceFingerprint: session.sourceFingerprint,
       diagnostics: refreshedDiagnostics,
@@ -1128,10 +1653,33 @@ final class _ObjectEditCommand {
     required this.label,
     required Map<int, RawChkSection> beforeSections,
     required Map<int, RawChkSection> afterSections,
+    List<RawChkSection> appendedSections = const [],
   }) : beforeSections = Map.unmodifiable(beforeSections),
-       afterSections = Map.unmodifiable(afterSections);
+       afterSections = Map.unmodifiable(afterSections),
+       appendedSections = List.unmodifiable(appendedSections);
 
   final String label;
   final Map<int, RawChkSection> beforeSections;
   final Map<int, RawChkSection> afterSections;
+
+  /// Sections this command appended at the end of the document. Undo removes
+  /// exactly these, so an append and its record share one history entry.
+  final List<RawChkSection> appendedSections;
+}
+
+/// Where a placement record must go: an existing section, a section the
+/// command has to create, or a refusal when the document is ambiguous.
+final class _SectionTarget {
+  const _SectionTarget.existing(int index)
+    : sectionIndex = index,
+      issueCode = null;
+
+  const _SectionTarget.create() : sectionIndex = null, issueCode = null;
+
+  const _SectionTarget.refused(String code)
+    : sectionIndex = null,
+      issueCode = code;
+
+  final int? sectionIndex;
+  final String? issueCode;
 }

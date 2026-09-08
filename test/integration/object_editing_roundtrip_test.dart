@@ -13,7 +13,10 @@ import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gate
 import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
+import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
@@ -373,6 +376,230 @@ void main() {
       ]);
     },
   );
+
+  test(
+    'places catalog objects into created sections and saves them byte-safe',
+    () async {
+      const sourcePath = r'C:\Maps\Placement Roundtrip Source.scx';
+      const outputPath = r'C:\Maps\Placement Roundtrip Saved.scx';
+      const temporaryPath =
+          r'C:\Maps\.starcraft_map_editor_placement_roundtrip\temporary.scx';
+      final sourceChk = _placementSourceChkBytes();
+      final sourceMap = _extractedMap(sourcePath, sourceChk);
+      final archiveGateway = _RoundtripArchiveGateway(sourceMap);
+      final filePicker = _RoundtripFilePicker(
+        openPath: sourcePath,
+        savePath: outputPath,
+      );
+      final fingerprintGateway = _RoundtripFingerprintGateway(
+        sourcePath: sourcePath,
+        temporaryPath: temporaryPath,
+        outputPath: outputPath,
+      );
+      final saveFileGateway = _RoundtripSaveFileGateway(temporaryPath);
+      final progressController = OperationProgressController();
+      final recentProjects = RecentProjectsService(InMemorySettingsStore());
+      final openController = OpenMapController(
+        archiveGateway: archiveGateway,
+        filePicker: filePicker,
+        fingerprintGateway: fingerprintGateway,
+        recentProjectsService: recentProjects,
+        operationProgressController: progressController,
+      );
+      final saveController = SaveMapController(
+        archiveGateway: archiveGateway,
+        filePicker: filePicker,
+        fingerprintGateway: fingerprintGateway,
+        saveFileGateway: saveFileGateway,
+        openMapController: openController,
+        operationProgressController: progressController,
+      );
+      final layerController = MapLayerController();
+      final editingController = ObjectEditingController(
+        openMapController: openController,
+        mapLayerController: layerController,
+      );
+      addTearDown(editingController.dispose);
+      addTearDown(layerController.dispose);
+      addTearDown(saveController.dispose);
+      addTearDown(openController.dispose);
+      addTearDown(progressController.dispose);
+
+      final opened = await openController.open();
+      expect(opened.status, OpenMapStatus.opened);
+      layerController.synchronizeSession(opened.session);
+      editingController.synchronizeSession(opened.session);
+      final originalNames = opened.session!.rawDocument.sections
+          .map((section) => section.name)
+          .toList(growable: false);
+      expect(originalNames, isNot(contains('UNIT')));
+      expect(originalNames, isNot(contains('THG2')));
+      final originalUnknownPayload = _sectionNamed(
+        opened.session!.rawDocument,
+        'XTRA',
+      ).payload;
+      final originalDoodadPayload = _sectionNamed(
+        opened.session!.rawDocument,
+        'DD2 ',
+      ).payload;
+
+      expect(
+        editingController
+            .placeCatalogUnit(
+              capability: _placementCapability(37),
+              unitId: 37,
+              owner: 4,
+              pixelX: 100,
+              pixelY: 120,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      expect(
+        editingController
+            .placeCatalogPureSprite(
+              spriteId: 130,
+              owner: 2,
+              pixelX: 40,
+              pixelY: 56,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      expect(
+        editingController
+            .placeCatalogDoodad(
+              recipe: _placementRecipe(),
+              owner: 1,
+              originTileX: 3,
+              originTileY: 2,
+            )
+            .isPlaced,
+        isTrue,
+      );
+
+      final saved = await saveController.saveAs();
+      expect(saved.status, SaveMapStatus.saved);
+      expect(sourceMap.scenarioChkBytes, sourceChk);
+
+      final writtenDocument = const RawChkParser()
+          .parse(
+            Uint8List.fromList(
+              archiveGateway.writeRequests.single.scenarioChkBytes,
+            ),
+          )
+          .document!;
+      expect(writtenDocument.sections.map((section) => section.name), [
+        ...originalNames,
+        'UNIT',
+        'THG2',
+      ]);
+      expect(
+        _sectionNamed(writtenDocument, 'XTRA').payload,
+        originalUnknownPayload,
+      );
+
+      final reopened = const ChkObjectViewDecoder().decode(writtenDocument);
+      expect(reopened.diagnostics, isEmpty);
+      final unit = reopened.unitSections.single.units.single;
+      expect(unit.unitType, 37);
+      expect(unit.owner, 4);
+      expect(unit.x, 100);
+      expect(unit.y, 120);
+      expect(unit.classId, 0);
+      expect(unit.validFieldFlags, ChkUnitPlacement.validFieldOwnerFlag);
+
+      final sprites = reopened.spriteSections.single.sprites;
+      expect(sprites, hasLength(2));
+      expect(sprites.first.spriteType, 130);
+      expect(sprites.first.drawsAsSprite, isTrue);
+      expect(sprites.last.spriteType, 42);
+      expect(sprites.last.x, 3 * 32 + 32);
+      expect(sprites.last.y, 2 * 32 + 16);
+
+      final doodads = reopened.doodadSections.single.doodads;
+      expect(doodads, hasLength(2));
+      expect(
+        _sectionNamed(
+          writtenDocument,
+          'DD2 ',
+        ).payload.sublist(0, originalDoodadPayload.length),
+        orderedEquals(originalDoodadPayload),
+      );
+      expect(doodads.last.doodadType, 7);
+      expect(doodads.last.owner, 1);
+
+      final terrain = const ChkTerrainViewDecoder()
+          .decode(writtenDocument)
+          .tileMaps
+          .single;
+      expect(terrain.rawTileValueAt(x: 3, y: 2), 200 * 16);
+      expect(terrain.rawTileValueAt(x: 4, y: 2), 200 * 16 + 1);
+      expect(terrain.rawTileValueAt(x: 0, y: 0), 0);
+    },
+  );
+}
+
+UnitPlacementCapability _placementCapability(int unitId) =>
+    UnitPlacementCapability(
+      unitId: unitId,
+      isSpellcaster: false,
+      hasShields: false,
+      isResourceContainer: false,
+      isGasResourceContainer: false,
+      hasHangar: false,
+      isFlyingBuilding: false,
+      isBurrowable: false,
+      isCloakable: false,
+      isInvincible: false,
+      isBuilding: false,
+      requiresRelationLink: false,
+    );
+
+DoodadPlacementRecipe _placementRecipe() => DoodadPlacementRecipe(
+  tileset: StarCraftTilesetAssetSet.jungle,
+  startTileGroup: 200,
+  doodadType: 7,
+  width: 2,
+  height: 1,
+  centerOffsetX: 32,
+  centerOffsetY: 16,
+  footprint: [
+    DoodadFootprintCell(
+      x: 0,
+      y: 0,
+      rawTileValue: 200 * 16,
+      requiredTileGroup: 0,
+    ),
+    DoodadFootprintCell(
+      x: 1,
+      y: 0,
+      rawTileValue: 200 * 16 + 1,
+      requiredTileGroup: 0,
+    ),
+  ],
+  overlay: DoodadOverlayRecipe(
+    semantic: DoodadOverlaySemantic.pureSprite,
+    id: 42,
+  ),
+);
+
+Uint8List _placementSourceChkBytes() {
+  final locations = Uint8List(
+    ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,
+  );
+  return _chkBytes([
+    _section('TYPE', const [0x52, 0x41, 0x57, 0x53]),
+    _section('VER ', const [206, 0]),
+    _section('IVER', const [10, 0]),
+    _section('DIM ', const [8, 0, 8, 0]),
+    _section('ERA ', const [4, 0]),
+    _section('MTXM', Uint8List(8 * 8 * 2)),
+    _section('XTRA', const [0xde, 0xad, 0xbe, 0xef, 0x00]),
+    _section('DD2 ', _doodadRecord()),
+    _section('MRGN', locations),
+    _section('STR ', _legacyStringTableWithTail()),
+  ]);
 }
 
 MapLayerObjectRef _select({

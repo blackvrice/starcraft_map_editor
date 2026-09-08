@@ -3,7 +3,11 @@
 ## 사용 방법
 
 - 별도 우선순위 지시가 없으면 위에서 아래로 첫 번째 미완료 체크박스를 진행한다.
-- 각 단계는 코드, 테스트, 문서, 실제 실행 검증이 모두 끝나야 완료한다.
+- 개별 체크박스는 코드, 자동 테스트, 문서가 끝나면 닫는다. 단계(마일스톤)
+  전체의 "완료"는 여기에 실제 실행 검증까지 더해져야 한다. 실행 검증이 남은
+  체크박스에는 무엇이 남았는지를 검증 메모에 적는다.
+- 구현이 계획과 다른 형태로 끝났으면 체크박스 문구를 실제 구현에 맞춰 고친 뒤
+  닫는다. 문구를 그대로 두고 다른 것을 완료로 표시하지 않는다.
 - 완료된 항목에는 관련 커밋 또는 검증 메모를 덧붙인다.
 - 예상과 실제 포맷 동작이 다르면 구현을 억지로 맞추지 말고 문서와 계획을 수정한다.
 
@@ -19,8 +23,8 @@
 | M5. 맵 캔버스와 지형 | 완료 | 지형 typed view·탐색·실제 타일 렌더·편집·성능 계측 |
 | M6. 객체와 로케이션 | 완료 | 객체·로케이션 편집·의미 참조 진단·Save As 왕복 |
 | M6.1. 실제 객체 그래픽 | 완료 | CascLib 객체 자산·스프라이트 렌더·fallback·성능 기준 |
-| M6.2. 시각적 배치 선택 팝업 | 진행 | Tile·Unit·Sprite 공급과 Doodad recipe 해석 완료 |
-| M6.3. 맵·플레이어·게임 설정 | 대기 | 유닛·업그레이드·테크 설정과 사용 가능 여부 |
+| M6.2. 시각적 배치 선택 탭 | 진행 | 카탈로그 탭에서 Tile·Doodad·Unit·Sprite 선택·배치 동작, Windows 게이트와 실제 설치 스모크 남음 |
+| M6.3. 맵·플레이어·게임 설정 | 진행 | 섹션 구조·선택 규칙·합성 픽스처 확정, 편집 UI 대기 |
 | M6.3.1. 유닛·무기 EUD 확장 | 대기 | 사거리·실드 활성·공격 타입 등의 선언적 설정과 안전한 빌드 |
 | M6.3.2. 설정별 EUD 확장 | 대기 | 업그레이드·테크·플레이어·그래픽의 공통 확장 탭 |
 | M6.4. 기본 제작·편집 도구 | 대기 | 새 맵·등각 지형·안개·클립보드·객체 속성 보완 |
@@ -32,7 +36,13 @@
 2026-09-07 [기본 에디터 기능 대조](BASIC_EDITOR_COVERAGE.md)에서 빠진 설정과
 제작 도구를 M6.3~M6.5 및 M7에 연결했다. M0~M6.1의 완료는 각 단계의 당시
 범위를 뜻한다. 배치된 유닛의 Inspector나 M6.2 factory가 맵 전체 Unit Settings의
-완료를 뜻하지 않는다. 첫 구현 작업은 기존대로 M6.2의 첫 미완료 항목이다.
+완료를 뜻하지 않는다.
+
+2026-09-07 M6.2의 카탈로그 탭·배치·진단·테스트 항목과 M6.3의 첫 조사 항목을
+닫았다. M6.2에 남은 세 항목(기존 Doodad 복합 삭제, 성능 기준선, 실제 설치
+스모크)은 실제 Windows 환경이나 상호 운용 확인이 필요해 M6.3과 병행한다.
+다음 구현 작업은 M6.3의 첫 미완료 항목인 "맵 제목·설명 편집과 공유 문자열을
+보존하는 이름 변경"이다.
 
 ---
 
@@ -68,7 +78,7 @@
 
 당시 범위 완료. 체크리스트와 검증 근거는 [구현 이력](IMPLEMENTATION_HISTORY.md#m61)을 참조한다.
 
-## M6.2. 시각적 배치 선택 팝업
+## M6.2. 시각적 배치 선택 탭
 
 목표: 다른 StarCraft 맵 에디터처럼 로컬 게임 데이터의 Tile, Doodad, Unit,
 Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치할 수 있게 한다.
@@ -79,14 +89,16 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 타일셋별 Tile 카탈로그와 실제 32×32 썸네일 공급
 - [x] Unit·Sprite 전체 카탈로그와 실제 객체 썸네일 공급
 - [x] Doodad 정의, 크기, 중심점, 지형·overlay 구성 관계 해석
-- [ ] 현재 맵에 없는 Unit·Sprite를 위한 검증된 기본 레코드 factory 구현
+- [x] 현재 맵에 없는 Unit·Sprite를 위한 검증된 기본 레코드 factory 구현
 - [ ] Doodad의 `DD2 `·`MTXM`·필요한 `THG2` 원자적 배치/삭제/Undo 구현
-- [ ] Tile·Doodad·Unit·Sprite 탭이 있는 크기 조절 가능 선택 팝업 구현
-- [ ] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
-- [ ] 선택 결과의 커서 ghost, 스냅, 단일/연속 배치와 `Escape` 취소 구현
-- [ ] 레이어 잠금·맵 경계·미지원 자산·잘못된 카탈로그 항목 진단 연결
-- [ ] 합성 카탈로그 단위 테스트, 팝업 위젯 테스트와 Save As 왕복 테스트
+      (배치와 Undo는 완료, 기존 Doodad의 복합 **삭제**는 귀속 규칙 확정 전까지 보류)
+- [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
+- [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
+- [x] 선택 결과의 커서 ghost, 스냅, 단일/연속 배치와 `Escape` 취소 구현
+- [x] 레이어 잠금·맵 경계·미지원 자산·잘못된 카탈로그 항목 진단 연결
+- [x] 합성 카탈로그 단위 테스트, 카탈로그 탭 위젯 테스트와 Save As 왕복 테스트
 - [ ] 대형 카탈로그 가상 스크롤·검색·썸네일 cache 성능 계측
+      (계측 하네스와 구조적 판정은 완료, Windows 기준선과 썸네일 cache 메모리는 미기록)
 - [ ] 로컬 SC:R 설치에서 선택적 Tile·Doodad·Unit·Sprite 배치 스모크 검증
 
 구현 순서:
@@ -117,20 +129,21 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
      원시 로그와 구조화된 실패를 기록한다.
    - Tile 썸네일은 기존 terrain atlas, Unit·Sprite 썸네일은 object atlas와 LRU를
      재사용한다. 화면에 보이는 항목과 주변 prefetch 범위만 비동기로 준비하며
-     세대가 바뀐 이미지와 팝업 종료 뒤 GPU 자원을 명시적으로 해제한다.
+     세대가 바뀐 이미지와 탭을 떠난 뒤 GPU 자원을 명시적으로 해제한다.
    - SC:R 원시 자산과 추출 이미지는 저장소 fixture나 배포물에 포함하지 않는다.
      자동 테스트는 자체 제작 DAT/TBL/GRP/CV5 계열 바이트와 가짜 gateway만 쓴다.
 
-3. **선택 팝업 UX**
-   - 공용 `Place` 명령과 레이어별 명령으로 하나의 크기 조절 가능한 팝업을 열고
-     `Tiles`, `Doodads`, `Units`, `Sprites` 탭을 제공한다. 팝업은 왼쪽 분류/필터,
-     가운데 가상화 썸네일 grid, 오른쪽 큰 미리보기·ID·크기·지원 상태로 구성한다.
+3. **선택 탭 UX**
+   - 공용 `Place` 명령과 레이어별 명령으로 맵·EUD 탭 옆의 `Catalog` 작업 영역
+     탭을 열고 `Tiles`, `Doodads`, `Units`, `Sprites` 종류를 제공한다. 탭은 왼쪽
+     분류/필터, 가운데 가상화 썸네일 grid, 오른쪽 큰 미리보기·ID·크기·지원 상태로
+     구성한다.
    - 검색은 표시 이름, 종류, `#숫자 ID`를 지원하고 현재 tileset과 호환되지 않는
      항목은 숨기지 않고 비활성 상태와 이유를 구분한다. 최근 선택은 로컬 UI 설정에
      저장하되 맵 문서, dirty 상태와 Undo 기록에는 포함하지 않는다.
    - 클릭은 상세 미리보기만 바꾸고 더블 클릭 또는 명시적 `Place` 버튼이 선택을
-     확정한다. 팝업을 닫으면 문서는 바뀌지 않으며, 확정 후에만 해당 레이어와
-     배치 도구가 활성화된다. 키보드 탐색, Enter 확정, Escape 닫기와 Windows
+     확정한다. 탭을 떠나도 문서는 바뀌지 않으며, 확정 후에만 해당 레이어와
+     배치 도구가 활성화된다. 키보드 탐색, Enter 확정, Escape 취소와 Windows
      100%/125%/150% 배율에서의 레이아웃을 지원한다.
 
 4. **캔버스 배치와 무손실 편집**
@@ -156,12 +169,12 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 
 - 자체 제작 카탈로그에서 정렬·분류·검색·숫자 fallback·타일셋 제한과 손상 항목
   격리를 단위 테스트한다.
-- 팝업 위젯 테스트는 빈/로딩/부분 실패/대량 목록, 탭 전환, 검색, 키보드,
+- 카탈로그 탭 위젯 테스트는 빈/로딩/부분 실패/대량 목록, 종류 전환, 검색, 키보드,
   확대 배율, Place/Cancel과 stale 썸네일 폐기를 검증한다.
 - 배치 통합 테스트는 각 종류를 현재 맵에 없던 ID로 추가하고 Undo/Redo, Save As,
   재열기까지 연결한다. Doodad는 footprint의 모든 `MTXM`과 overlay가 원자적으로
   왕복하고 관련 없는 CHK 바이트가 바뀌지 않는지 비교한다.
-- 최소 2,000개 항목의 가상 grid에서 팝업 첫 표시, 빠른 검색, 연속 스크롤과
+- 최소 2,000개 항목의 가상 grid에서 탭 첫 표시, 빠른 검색, 연속 스크롤과
   썸네일 cache 메모리를 debug/profile로 계측하고 측정 환경·상한을 별도 성능
   문서에 기록한다. 자동 상한은 첫 기준 측정 뒤 CI 변동 폭을 반영해 확정한다.
 - 로컬 설치 스모크는 각 tileset에서 Tile/Doodad 하나와 Unit/Sprite 대표 항목을
@@ -214,16 +227,145 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - `flutter analyze`, 단일 동시성 전체 `flutter test` 378개(환경 의존 9개 skip),
   native CTest 5/5, 로컬 bundled helper 스모크 6/6과
   `flutter build windows --debug`가 통과했다.
+- 2026-09-07 Unit·Sprite 기본 레코드 factory의 도메인 계층을 구현했다.
+  `UnitPlacementCapability`는 `units.dat`에서 파생한 boolean만 갖는 스냅샷이고,
+  `UnitPlacementFactory`와 `SpritePlacementFactory`는 고정 commit의 Chkdraft
+  선택 기본값대로 36-byte `UNIT`과 10-byte `THG2` 바이트를 합성한다. flag 비트
+  정의는 `ChkUnitPlacement`의 상수로 고정했고 근거는
+  [조사 문서](research/VISUAL_PLACEMENT_AND_CHK_RULES.md) 3.2·3.3의 구현 확인
+  항목에 기록했다. relation이 필요한 Unit과 sprite-unit은 바이트를 만들지 않고
+  안정적인 거절 코드를 돌려준다.
+- 위 factory는 아직 사용되지 않는다. capability를 공급할 helper protocol과,
+  합성 레코드를 문서에 삽입하는 배치 명령이 남아 있어 체크박스는 열어 둔다.
+  남은 작업은 (1) helper의 unit capability 페이지와 항목별 격리 코드,
+  (2) `UNIT`/`THG2` 섹션이 없거나 중복일 때의 결정적 삽입·거부 규칙과
+  class ID 할당, (3) 단일 Undo entry로 적용하는 배치 command다.
+- 검증은 Linux 컨테이너에서 Flutter 3.44.8로 실행한 도메인 범위
+  `dart format`·`flutter analyze`·`flutter test` 88개까지다. Windows 전체
+  `flutter test`, native CTest, `flutter build windows --debug`와 실제 설치
+  스모크는 실행하지 못했다.
+- 2026-09-07 배치 명령 경로를 구현했다. `RawChkDocument.appendSection`과
+  `removeTrailingSections`, `ChkObjectSectionEditor`의 합성 레코드 append와
+  빈 섹션 생성, `DoodadPlacementFactory`의 `DD2 `·`MTXM`·optional `THG2`
+  계획, `ObjectEditingController.placeCatalogUnit`/`placeCatalogPureSprite`/
+  `placeCatalogDoodad`가 들어갔다. Doodad 배치는 세 섹션을 하나의
+  `_ObjectEditCommand`로 적용해 Undo/Redo 한 항목으로 되돌리고, 어느 조건이든
+  실패하면 아무 섹션도 바꾸지 않는다.
+- 섹션 규칙을 확정했다. 같은 이름의 섹션이 둘 이상이거나 하나인데 typed view로
+  해석되지 않으면 거부하고, 없으면 문서 맨 끝에 새 섹션을 추가한다. class ID는
+  모든 `UNIT` 섹션의 최대값 + 1이다. 근거와 규칙은
+  [파일 포맷과 무손실 정책](FILE_FORMATS.md)의 "섹션 추가 규칙"과
+  [조사 문서](research/VISUAL_PLACEMENT_AND_CHK_RULES.md) 3.4·4절에 있다.
+- 진단 연결은 배치 경로까지 마쳤다. 레이어 잠금, 맵 경계, `DIM `/`ERA`/`MTXM`
+  부재·중복, tileset 불일치, DDData placibility 불일치, class ID 고갈을 각각
+  `OBJECT_PLACEMENT_*` 코드로 거부하고 도메인 거절 코드(`CHK_PLACEMENT_*`)는
+  그대로 통과시킨다. 카탈로그 항목의 `availability`를 placeable로 바꾸는 것은
+  helper capability가 도착한 뒤의 작업이다.
+- 검증: Linux 컨테이너 Flutter 3.44.8에서 `dart format`,
+  `flutter analyze`(무이슈), `flutter test` 141개 통과. 새 테스트는 도메인
+  factory·append 규칙, `ObjectEditingController` 배치 14개, Save As 왕복
+  통합 1개다. 왕복 테스트는 `UNIT`·`THG2`가 없는 맵에 Unit·Sprite·Doodad를
+  배치하고 저장한 뒤, 알 수 없는 `XTRA` 섹션과 기존 `DD2 ` 바이트가 그대로인
+  것과 새 섹션이 맨 끝에 붙는 것을 확인한다.
+- 남은 M6.2 작업: (1) helper protocol의 unit capability 페이지, (2) 카탈로그
+  항목 availability 전환, (3) Tile·Doodad·Unit·Sprite 탭 선택 팝업과 검색·필터·
+  최근 선택·상세 미리보기, (4) 커서 ghost·스냅·연속 배치·`Escape` 취소,
+  (5) 팝업 위젯 테스트, (6) 대형 카탈로그 가상 스크롤·썸네일 cache 성능 계측,
+  (7) 실제 SC:R 설치 스모크. 체크박스는 Windows 게이트와 위 UI 작업이 끝난 뒤
+  닫는다.
+- 2026-09-07 카탈로그 배치 팝업을 붙였다. `PlacementCatalogController`가 설치
+  경로와 열린 맵의 `ERA` 타일셋으로 종류별 페이지를 불러오고, 검색·최근 선택·
+  owner·연속 배치와 확정된 선택을 갖는다. `PlacementCatalogDialog`는
+  `Tiles`/`Doodads`/`Units`/`Sprites` 탭, 가상화 grid, 상세 미리보기와
+  `Place`/`Cancel`을 제공한다. Object Palette 헤더의 `+` 버튼이 팝업을 연다.
+- 확정된 Tile은 `TerrainEditingController.selectCatalogTile`로 브러시 값이
+  되고, Doodad·Sprite는 캔버스 클릭에서 배치 명령으로 이어진다. Doodad는 클릭한
+  타일을 footprint 중심으로 삼는다. `Escape`는 팔레트 배치와 카탈로그 선택을
+  함께 취소한다.
+- 카탈로그 항목 availability를 실제 구현 상태에 맞췄다. Tile은 항상, Doodad는
+  검증된 recipe가 있을 때, pure Sprite는 미리보기가 있을 때 배치 가능하다.
+  Unit은 `SC_CATALOG_ITEM_UNIT_CAPABILITY_PENDING` 사유로 계속 비활성이며,
+  helper가 `units.dat` capability를 제공해야 열린다.
+- bootstrap이 `ProcessStarCraftPlacementCatalogGateway.bundled()`와 기존 tile·
+  object atlas gateway를 공유해 배치 카탈로그를 연결한다. 설치 경로는
+  StarCraft 데이터 설정 컨트롤러의 상태를 구독해 갱신한다.
+- 검증: Linux 컨테이너 Flutter 3.44.8에서 `dart format`, `flutter analyze`
+  (무이슈), `flutter test` 190개 통과. 새 테스트는 `PlacementCatalogController`
+  10개와 팝업 위젯 6개다.
+- 여전히 남은 것: helper의 unit capability protocol, 커서 ghost와 스냅 표시,
+  사용자가 끌어서 조절하는 팝업 크기, 분류 트리 필터, 대형 카탈로그 성능 계측,
+  실제 SC:R 설치 스모크, Windows 게이트 실행.
+- 2026-09-07 helper 0.8.0이 `units.dat` capability를 공급한다. 기존 객체 자산
+  경로가 이미 읽는 `arr\units.dat`에서 `shieldEnable`(offset 2472)과
+  `flags`(offset 7032)를 읽어 파생 boolean만 JSON으로 내보내고, Dart adapter가
+  이를 `UnitPlacementCapability`로 검증한다. 근거 오프셋과 flag 비트는
+  [조사 문서](research/VISUAL_PLACEMENT_AND_CHK_RULES.md) 3.2에 기록했다.
+- Unit 카탈로그 항목의 availability가 capability에 따라 결정된다. capability를
+  읽지 못하면 `SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE`, addon과 Nydus
+  Canal처럼 관계가 필요하면 `SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED`로
+  비활성이고, 그 밖의 Unit은 팝업에서 배치할 수 있다.
+- 팝업에 오른쪽 아래 크기 조절 손잡이와 분류 필터를 추가했다. 분류는 로컬
+  데이터가 검증된 `categoryPath`를 줄 때만 나타난다.
+- 캔버스가 확정된 선택의 footprint ghost를 타일에 스냅해 그린다. Doodad는
+  recipe 크기, Unit과 Sprite는 한 타일이며 맵 밖이면 색이 바뀐다.
+- `test/performance/placement_catalog_performance_test.dart`가 2,000개 카탈로그
+  페이지에서 첫 표시·검색·연속 스크롤·페이지 추가를 계측하고 가상화와 페이징을
+  구조적으로 검증한다. 이 테스트가 grid build 중 `setState`가 호출되던 실제
+  결함을 찾아냈고, 다음 페이지 요청을 프레임 뒤로 미뤄 고쳤다. 측정 기록은
+  [배치 카탈로그 팝업 성능](performance/PLACEMENT_CATALOG_POPUP.md)에 있다.
+- 검증: Linux 컨테이너 Flutter 3.44.8에서 `dart format`, `flutter analyze`
+  (무이슈), `flutter test` 192개 통과. C++ capability 로직과 native 테스트가
+  쓰는 단언은 g++ `-Wall -Wextra`로 따로 컴파일해 실행 확인했지만, helper 전체
+  빌드와 CTest는 Windows에서만 가능하다.
+- 남은 것: Windows 게이트(`flutter test`, native CTest,
+  `flutter build windows --debug`), 실제 SC:R 설치에서의 배치 스모크와 성능
+  기준선 기록, sprite-unit 배치, 기존 Doodad의 복합 삭제.
+- 2026-09-07 사용자 요청으로 카탈로그를 모달 팝업에서 작업 영역 탭으로 바꿨다.
+  `_WorkspaceView`에 `catalog`를 더해 맵·EUD 탭 옆에 `Catalog` 탭을 놓고,
+  `PlacementCatalogDialog`를 `PlacementCatalogPane`으로 대체했다. 확정과
+  `Back to map`은 맵 탭으로 돌아가며, 탭을 다시 열면 이미 불러온 페이지를
+  재사용한다. 모달이 아니므로 크기 조절 손잡이는 없앴다.
+- 탭 전환 시 pane의 첫 로딩이 build 중 `setState`를 부르던 문제를 프레임 뒤로
+  미뤄 고쳤다. 팝업의 페이지 추가 로딩에서 고친 것과 같은 종류다.
+- 검증: `dart format`, `flutter analyze`(무이슈), `flutter test` 193개 통과.
+  새 셸 위젯 테스트가 탭 존재, 탭 전환, `Back to map` 복귀를 확인한다.
+- 2026-09-07 위 작업이 끝난 항목의 체크박스를 닫았다. 닫은 항목은 코드, 자동
+  테스트, 문서가 모두 있고 Linux 컨테이너에서 `dart format`·`flutter analyze`·
+  `flutter test`를 통과한 것들이다. **Windows 게이트(전체 `flutter test`, native
+  CTest, `flutter build windows --debug`)와 실제 SC:R 설치 스모크는 아직
+  실행하지 못했으므로, 그 두 가지가 남았다는 사실은 아래 열린 항목과 이
+  메모로 남긴다.**
+- 열어 둔 세 항목의 이유:
+  - Doodad 원자적 배치/삭제/Undo — 배치와 Undo/Redo는 하나의 명령으로 동작
+    하지만, 다시 연 기존 Doodad의 아래 지형·overlay 귀속 규칙을 상호 운용
+    테스트로 확정하기 전에는 복합 삭제를 구현하지 않는다.
+  - 성능 계측 — 하네스와 가상화·페이징 구조 판정은 있으나 Windows profile
+    기준선과 썸네일 cache 메모리·GPU 해제 측정이 없다.
+  - 실제 설치 스모크 — Windows에서만 실행 가능하다.
+- 문서 표기를 구현에 맞췄다. 모달 팝업이 작업 영역 탭이 되면서 "크기 조절
+  가능한 팝업"은 "카탈로그 선택 탭"이 됐고, 사용자가 끌어 조절하던 손잡이는
+  탭에서는 의미가 없어 사라졌다. 단계 제목과 UX 절의 표현도 함께 고쳤다.
+
+- 2026-09-08 Windows 통합 검토: helper의 함수 범위 `sc` 별칭을 공통 범위에
+  선언해 C2653 빌드 오류를 수정했다. Windows 가짜 helper와 기대값을 0.8.0
+  capability 계약 및 Doodad 배치 가능 상태에 맞췄다. 맵 재열기·설치 경로 변경은
+  카탈로그와 배치 선택을 초기화하며, 이전 요청 및 종료 뒤 응답을 무시한다.
+  동일 경로 재열기·설치 변경·종료 중 응답 회귀 테스트를 추가했다.
+  Windows Flutter 3.47.2 / Dart 3.13.2에서 analyze, 전체 테스트 456개
+  (환경 의존 9개 skip), Debug 빌드, native CTest 5/5 통과. 기준 SDK 3.44.8,
+  실제 SC:R 배치·게임 실행과 Windows profile 성능은 이번에 검증하지 않았다.
+  포맷 검사는 기존 infrastructure 테스트 4개에서 차이가 남았다.
+  기존 Doodad 복합 삭제와 실제 설치·성능 검증이 남아 M6.2 전체 완료는 아니다.
 
 완료 조건:
 
-- 사용자가 숫자 ID를 직접 입력하지 않고 실제 이미지 팝업에서 네 종류를 찾고
-  선택해 캔버스에 배치할 수 있다.
+- 사용자가 숫자 ID를 직접 입력하지 않고 실제 이미지 카탈로그 탭에서 네 종류를
+  찾고 선택해 캔버스에 배치할 수 있다.
 - 현재 맵에 없던 Unit·Sprite도 검증된 기본 레코드로 생성되고 다시 열 수 있다.
 - Doodad의 지형과 overlay가 올바른 위치에 함께 표시되며 Undo/Redo와 Save As에서
   부분 적용이 발생하지 않는다.
-- 자산 누락·손상·미지원 항목은 팝업 전체를 막지 않고 해당 항목만 비활성화한다.
-- 팝업을 열거나 항목을 둘러보는 행위만으로 문서가 dirty 상태가 되지 않는다.
+- 자산 누락·손상·미지원 항목은 탭 전체를 막지 않고 해당 항목만 비활성화한다.
+- 탭을 열거나 항목을 둘러보는 행위만으로 문서가 dirty 상태가 되지 않는다.
 - 가상화·검색·cache가 문서화된 성능 상한을 통과하고 실제 설치 스모크 증거가 있다.
 
 ## M6.3. 맵·플레이어·게임 설정

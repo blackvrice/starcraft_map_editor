@@ -12,6 +12,7 @@ import 'package:starcraft_map_editor/application/documents/open_map_controller.d
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
+import 'package:starcraft_map_editor/application/placement/placement_catalog_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_source_controller.dart';
@@ -745,6 +746,66 @@ void main() {
     expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
 
+  testWidgets('opens the placement catalog as a workspace tab', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final settingsStore = InMemorySettingsStore();
+    final recentProjectsService = RecentProjectsService(settingsStore);
+    final progressController = OperationProgressController();
+    final extractedMap = _createExtractedMap();
+    final openMapController = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: extractedMap),
+      ),
+      filePicker: _FakeMapFilePicker(extractedMap.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recentProjectsService,
+      operationProgressController: progressController,
+    );
+    addTearDown(openMapController.dispose);
+    addTearDown(progressController.dispose);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: openMapController,
+        operationProgressController: progressController,
+        recentProjectsService: recentProjectsService,
+        settingsStore: settingsStore,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+
+    // The catalog is a tab beside the map, not a window over it.
+    expect(find.byKey(const Key('placement-catalog-tab')), findsOneWidget);
+    expect(find.byKey(const Key('placement-catalog-pane')), findsNothing);
+    expect(find.byKey(const Key('map-canvas')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('placement-catalog-open')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('placement-catalog-pane')), findsOneWidget);
+    expect(find.byKey(const Key('map-canvas')), findsNothing);
+    expect(find.byKey(const Key('map-document-tab')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('placement-catalog-close')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('placement-catalog-pane')), findsNothing);
+    expect(find.byKey(const Key('map-canvas')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('placement-catalog-tab')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('placement-catalog-pane')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('map-document-tab')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('map-canvas')), findsOneWidget);
+  });
+
   testWidgets('layer controls change selection priority and canvas objects', (
     tester,
   ) async {
@@ -1140,6 +1201,7 @@ Widget _createTestApp({
   MapLayerController? mapLayerController,
   ObjectEditingController? objectEditingController,
   ObjectPaletteController? objectPaletteController,
+  PlacementCatalogController? placementCatalogController,
   TerrainTileTextureController? terrainTileTextureController,
   ObjectSpriteTextureController? objectSpriteTextureController,
 }) {
@@ -1235,6 +1297,13 @@ Widget _createTestApp({
         directoryPicker: const _FakeDirectoryPicker(),
         inspector: const _FakeStarCraftDataAssetInspector(),
       );
+  final resolvedPlacementCatalogController =
+      placementCatalogController ??
+      PlacementCatalogController(
+        openMapController: resolvedOpenMapController,
+        objectEditingController: resolvedObjectEditingController,
+        terrainEditingController: resolvedTerrainEditingController,
+      );
   return StarCraftMapEditorApp(
     dependencies: EditorAppDependencies(
       commandDispatcher: resolvedDispatcher,
@@ -1251,6 +1320,7 @@ Widget _createTestApp({
       mapLayerController: resolvedMapLayerController,
       objectEditingController: resolvedObjectEditingController,
       objectPaletteController: resolvedObjectPaletteController,
+      placementCatalogController: resolvedPlacementCatalogController,
       terrainTileTextureController: resolvedTerrainTileTextureController,
       objectSpriteTextureController: resolvedObjectSpriteTextureController,
     ),

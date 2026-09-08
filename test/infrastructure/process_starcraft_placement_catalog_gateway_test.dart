@@ -67,7 +67,7 @@ void main() {
       expect(page.nextOffset, 3);
       expect(page.storageProduct, 's1');
       expect(page.storageBuildNumber, 13515);
-      expect(page.helperVersion, '0.7.0');
+      expect(page.helperVersion, '0.8.0');
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 
@@ -87,7 +87,7 @@ void main() {
     }, skip: !Platform.isWindows);
 
     test(
-      'lists the complete Unit range as previewable factory-pending items',
+      'isolates unavailable and relation-dependent Unit capabilities',
       () async {
         final gateway = createGateway();
         final first = await gateway.list(
@@ -110,10 +110,18 @@ void main() {
         expect(first.totalEntries, 228);
         expect(first.entries.map((entry) => entry.key.id), [0, 1, 2]);
         expect(first.entries.every((entry) => entry.hasPreview), isTrue);
-        expect(first.entries.every((entry) => !entry.isPlaceable), isTrue);
-        expect(first.entries.map((entry) => entry.issue?.code).toSet(), {
-          'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING',
-        });
+        expect(first.entries.first.isPlaceable, isTrue);
+        expect(first.entries.first.unitCapability, isNotNull);
+        expect(first.entries[1].isPlaceable, isFalse);
+        expect(
+          first.entries[1].issue?.code,
+          'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+        );
+        expect(first.entries[2].isPlaceable, isFalse);
+        expect(
+          first.entries[2].issue?.code,
+          'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED',
+        );
         expect(last.entries.map((entry) => entry.key.id), [226, 227]);
         expect(last.entries.first.hasPreview, isTrue);
         expect(
@@ -164,8 +172,8 @@ void main() {
         expect(page.entries.map((entry) => entry.key.id), [1, 2, 3]);
         final first = page.entries.first;
         expect(first.key.doodadStartTileGroup, 200);
-        expect(first.isPlaceable, isFalse);
-        expect(first.issue?.code, 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING');
+        expect(first.isPlaceable, isTrue);
+        expect(first.issue, isNull);
         expect(first.doodadRecipe!.width, 2);
         expect(first.doodadRecipe!.height, 2);
         expect(first.doodadRecipe!.centerOffsetX, 32);

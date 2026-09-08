@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.7.0"
+    helperVersion = "0.8.0"
     cascLibRevision = $revision
 }
 
@@ -185,6 +185,26 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     else {
       for ($id = $start; $id -lt $end; $id++) {
         $entry = [ordered]@{ id = $id }
+        if ($request.kind -eq "unit") {
+            $entry.capabilityIssueCode = $null
+            $entry.capability = [ordered]@{
+                isSpellcaster = $false
+                hasShields = $false
+                isResourceContainer = $false
+                isGasResourceContainer = $false
+                hasHangar = $false
+                isFlyingBuilding = $false
+                isBurrowable = $false
+                isCloakable = $false
+                isInvincible = $false
+                isBuilding = $false
+                requiresRelationLink = ($id -eq 2)
+            }
+            if ($id -eq 1) {
+                $entry.capabilityIssueCode = "SC_CASC_UNIT_CAPABILITY_UNAVAILABLE"
+                $entry.Remove("capability")
+            }
+        }
         if ($request.kind -eq "unit" -or $request.kind -eq "pureSprite") {
             $previewUnavailable =
                 ($request.kind -eq "unit" -and $id -eq 227) -or

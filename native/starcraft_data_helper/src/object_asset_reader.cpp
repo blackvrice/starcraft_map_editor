@@ -159,6 +159,59 @@ bool AddAssetSize(
   return true;
 }
 
+
+// units.dat is a fixed size file of parallel arrays. The offsets below are the
+// running sum of the array sizes declared in the Chkdraft mapping core at the
+// pinned interoperability commit, and their total matches
+// kClassicUnitsDatBytes exactly.
+constexpr std::size_t kUnitsDatShieldEnableOffset = 2472;
+constexpr std::size_t kUnitsDatFlagsOffset = 7032;
+
+constexpr std::uint32_t kUnitFlagBuilding = 1u << 0;
+constexpr std::uint32_t kUnitFlagAddon = 1u << 1;
+constexpr std::uint32_t kUnitFlagFlyingBuilding = 1u << 5;
+constexpr std::uint32_t kUnitFlagCloakable = 1u << 9;
+constexpr std::uint32_t kUnitFlagResourceContainer = 1u << 13;
+constexpr std::uint32_t kUnitFlagBurrowable = 1u << 20;
+constexpr std::uint32_t kUnitFlagSpellcaster = 1u << 21;
+constexpr std::uint32_t kUnitFlagInvincible = 1u << 29;
+
+constexpr std::uint16_t kTerranRefineryId = 110;
+constexpr std::uint16_t kZergExtractorId = 149;
+constexpr std::uint16_t kProtossAssimilatorId = 157;
+constexpr std::uint16_t kVespeneGeyserId = 188;
+constexpr std::uint16_t kProtossCarrierId = 72;
+constexpr std::uint16_t kHeroWarbringerId = 81;
+constexpr std::uint16_t kHeroGantrithorId = 82;
+constexpr std::uint16_t kProtossReaverId = 83;
+constexpr std::uint16_t kZergNydusCanalId = 134;
+
+bool IsGasResourceContainer(const std::uint16_t unit_id) {
+  return unit_id == kTerranRefineryId || unit_id == kZergExtractorId ||
+         unit_id == kProtossAssimilatorId || unit_id == kVespeneGeyserId;
+}
+
+bool HasHangar(const std::uint16_t unit_id) {
+  return unit_id == kProtossCarrierId || unit_id == kHeroGantrithorId ||
+         unit_id == kProtossReaverId || unit_id == kHeroWarbringerId;
+}
+
+std::uint32_t ReadLittleEndianU32(
+    const std::vector<std::byte>& bytes,
+    const std::size_t offset) {
+  return static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(
+             bytes[offset])) |
+         (static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(
+              bytes[offset + 1]))
+          << 8) |
+         (static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(
+              bytes[offset + 2]))
+          << 16) |
+         (static_cast<std::uint32_t>(std::to_integer<std::uint8_t>(
+              bytes[offset + 3]))
+          << 24);
+}
+
 auto RequestKey(const ObjectRenderRequest& request) {
   return std::tuple{
       static_cast<std::uint8_t>(request.kind),
@@ -168,6 +221,40 @@ auto RequestKey(const ObjectRenderRequest& request) {
 }
 
 }  // namespace
+
+// Fills the verified capability of one unit. Returns false when units.dat is
+// not the classic fixed size, in which case the caller reports the whole page
+// as unavailable instead of guessing any flag.
+bool ReadUnitCapability(
+    const std::vector<std::byte>& units_dat,
+    const std::uint16_t unit_id,
+    UnitCapability* const capability) {
+  if (units_dat.size() != kClassicUnitsDatBytes ||
+      unit_id >= kClassicUnitCount) {
+    return false;
+  }
+  const auto flags =
+      ReadLittleEndianU32(units_dat, kUnitsDatFlagsOffset + unit_id * 4u);
+  const auto shield_enable = std::to_integer<std::uint8_t>(
+      units_dat[kUnitsDatShieldEnableOffset + unit_id]);
+
+  capability->unit_id = unit_id;
+  capability->is_spellcaster = (flags & kUnitFlagSpellcaster) != 0;
+  capability->has_shields = shield_enable != 0;
+  capability->is_resource_container =
+      (flags & kUnitFlagResourceContainer) != 0;
+  capability->is_gas_resource_container =
+      capability->is_resource_container && IsGasResourceContainer(unit_id);
+  capability->has_hangar = HasHangar(unit_id);
+  capability->is_flying_building = (flags & kUnitFlagFlyingBuilding) != 0;
+  capability->is_burrowable = (flags & kUnitFlagBurrowable) != 0;
+  capability->is_cloakable = (flags & kUnitFlagCloakable) != 0;
+  capability->is_invincible = (flags & kUnitFlagInvincible) != 0;
+  capability->is_building = (flags & kUnitFlagBuilding) != 0;
+  capability->requires_relation_link =
+      (flags & kUnitFlagAddon) != 0 || unit_id == kZergNydusCanalId;
+  return true;
+}
 
 bool ValidateObjectRenderRequests(
     const std::vector<ObjectRenderRequest>& requests) {
@@ -292,6 +379,16 @@ ObjectAssetRenderResult RenderObjectAssets(
           "The StarCraft object assets exceed the request byte limit.",
           "read-object-assets",
           ERROR_FILE_TOO_LARGE);
+    }
+  }
+
+  for (const auto& request : requests) {
+    if (request.kind != ObjectGraphicKind::kUnit) {
+      continue;
+    }
+    UnitCapability capability;
+    if (ReadUnitCapability(metadata[0], request.object_id, &capability)) {
+      result.unit_capabilities.push_back(capability);
     }
   }
 

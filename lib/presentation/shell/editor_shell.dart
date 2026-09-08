@@ -20,6 +20,7 @@ import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
 import '../../application/settings/starcraft_data_asset_settings_controller.dart';
+import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
@@ -27,9 +28,10 @@ import '../eud_editor/eud_source_editor.dart';
 import '../map_canvas/map_canvas.dart';
 import '../map_canvas/object_sprite_texture_controller.dart';
 import '../map_canvas/terrain_tile_texture_controller.dart';
+import '../placement/placement_catalog_pane.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
-enum _WorkspaceView { map, eud }
+enum _WorkspaceView { map, eud, catalog }
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
@@ -45,6 +47,7 @@ class EditorShell extends StatefulWidget {
     required this.mapLayerController,
     required this.objectEditingController,
     required this.objectPaletteController,
+    required this.placementCatalogController,
     required this.terrainTileTextureController,
     required this.objectSpriteTextureController,
     super.key,
@@ -63,6 +66,7 @@ class EditorShell extends StatefulWidget {
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
+  final PlacementCatalogController placementCatalogController;
   final TerrainTileTextureController terrainTileTextureController;
   final ObjectSpriteTextureController objectSpriteTextureController;
 
@@ -82,6 +86,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<MapLayerState> _mapLayerSubscription;
   late StreamSubscription<ObjectEditingState> _objectEditingSubscription;
   late StreamSubscription<ObjectPaletteState> _objectPaletteSubscription;
+  late StreamSubscription<PlacementCatalogState> _placementCatalogSubscription;
   late StreamSubscription<TerrainTileTextureState>
   _terrainTileTextureSubscription;
   late StreamSubscription<ObjectSpriteTextureState>
@@ -109,6 +114,9 @@ class _EditorShellState extends State<EditorShell> {
     widget.objectPaletteController.synchronizeSession(
       widget.openMapController.state.session,
     );
+    widget.placementCatalogController.synchronizeSession(
+      widget.openMapController.state.session,
+    );
     _openMapSubscription = _listenForOpenedMaps(widget.openMapController);
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
@@ -126,6 +134,12 @@ class _EditorShellState extends State<EditorShell> {
     _objectPaletteSubscription = _listenForObjectPalette(
       widget.objectPaletteController,
     );
+    _placementCatalogSubscription = widget.placementCatalogController.changes
+        .listen((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
     _terrainTileTextureSubscription = _listenForTerrainTileTextures(
       widget.terrainTileTextureController,
     );
@@ -249,6 +263,7 @@ class _EditorShellState extends State<EditorShell> {
           widget.mapLayerController.synchronizeSession(state.session);
           widget.objectEditingController.synchronizeSession(state.session);
           widget.objectPaletteController.synchronizeSession(state.session);
+          widget.placementCatalogController.synchronizeSession(state.session);
         });
         _synchronizeTerrainTextures();
         _synchronizeObjectTextures();
@@ -411,6 +426,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_mapLayerSubscription.cancel());
     unawaited(_objectEditingSubscription.cancel());
     unawaited(_objectPaletteSubscription.cancel());
+    unawaited(_placementCatalogSubscription.cancel());
     unawaited(_terrainTileTextureSubscription.cancel());
     unawaited(_objectSpriteTextureSubscription.cancel());
     widget.terrainTileTextureController.clear();
@@ -436,6 +452,12 @@ class _EditorShellState extends State<EditorShell> {
   void _showMapWorkspace() {
     setState(() {
       _workspaceView = _WorkspaceView.map;
+    });
+  }
+
+  void _showCatalogWorkspace() {
+    setState(() {
+      _workspaceView = _WorkspaceView.catalog;
     });
   }
 
@@ -509,8 +531,12 @@ class _EditorShellState extends State<EditorShell> {
         : null;
     final cancelObjectPlacement =
         _workspaceView == _WorkspaceView.map &&
-            widget.objectPaletteController.state.isPlacementActive
-        ? widget.objectPaletteController.cancelPlacement
+            (widget.objectPaletteController.state.isPlacementActive ||
+                widget.placementCatalogController.state.isPlacementActive)
+        ? () {
+            widget.objectPaletteController.cancelPlacement();
+            widget.placementCatalogController.cancelSelection();
+          }
         : null;
     final cancelLocationCreation =
         _workspaceView == _WorkspaceView.map &&
@@ -646,11 +672,14 @@ class _EditorShellState extends State<EditorShell> {
                                 widget.objectEditingController,
                             objectPaletteController:
                                 widget.objectPaletteController,
+                            placementCatalogController:
+                                widget.placementCatalogController,
                             terrainTileTextureState: terrainTileTextureState,
                             objectSpriteTextureState: objectSpriteTextureState,
                             workspaceView: _workspaceView,
                             onShowMap: _showMapWorkspace,
                             onShowEud: _showEudWorkspace,
+                            onShowCatalog: _showCatalogWorkspace,
                           );
                         },
                       );
@@ -988,11 +1017,13 @@ class _EditorWorkspace extends StatelessWidget {
     required this.mapLayerController,
     required this.objectEditingController,
     required this.objectPaletteController,
+    required this.placementCatalogController,
     required this.terrainTileTextureState,
     required this.objectSpriteTextureState,
     required this.workspaceView,
     required this.onShowMap,
     required this.onShowEud,
+    required this.onShowCatalog,
   });
 
   final VoidCallback? openMap;
@@ -1007,11 +1038,13 @@ class _EditorWorkspace extends StatelessWidget {
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
+  final PlacementCatalogController placementCatalogController;
   final TerrainTileTextureState terrainTileTextureState;
   final ObjectSpriteTextureState objectSpriteTextureState;
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
+  final VoidCallback onShowCatalog;
 
   @override
   Widget build(BuildContext context) {
@@ -1041,6 +1074,7 @@ class _EditorWorkspace extends StatelessWidget {
                     session: session,
                     layerController: mapLayerController,
                     paletteController: objectPaletteController,
+                    onShowCatalog: onShowCatalog,
                     onLayerActivated: (layer) {
                       objectPaletteController.cancelPlacement();
                       objectEditingController.cancelLocationCreation();
@@ -1065,6 +1099,7 @@ class _EditorWorkspace extends StatelessWidget {
                   workspaceView: workspaceView,
                   onShowMap: onShowMap,
                   onShowEud: onShowEud,
+                  onShowCatalog: onShowCatalog,
                 ),
               Expanded(
                 child: _MapWorkspace(
@@ -1080,9 +1115,11 @@ class _EditorWorkspace extends StatelessWidget {
                   mapLayerController: mapLayerController,
                   objectEditingController: objectEditingController,
                   objectPaletteController: objectPaletteController,
+                  placementCatalogController: placementCatalogController,
                   terrainTileTextureState: terrainTileTextureState,
                   objectSpriteTextureState: objectSpriteTextureState,
                   workspaceView: workspaceView,
+                  onShowMap: onShowMap,
                 ),
               ),
             ],
@@ -1119,6 +1156,7 @@ class _DocumentTabs extends StatelessWidget {
     required this.workspaceView,
     required this.onShowMap,
     required this.onShowEud,
+    required this.onShowCatalog,
   });
 
   final OpenedMapSession? session;
@@ -1126,6 +1164,7 @@ class _DocumentTabs extends StatelessWidget {
   final _WorkspaceView workspaceView;
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
+  final VoidCallback onShowCatalog;
 
   @override
   Widget build(BuildContext context) {
@@ -1145,6 +1184,15 @@ class _DocumentTabs extends StatelessWidget {
                 icon: Icons.map_outlined,
                 selected: workspaceView == _WorkspaceView.map,
                 onPressed: onShowMap,
+              ),
+            if (session != null)
+              _DocumentTab(
+                key: const Key('placement-catalog-tab'),
+                label: 'Catalog',
+                dirty: false,
+                icon: Icons.grid_view_rounded,
+                selected: workspaceView == _WorkspaceView.catalog,
+                onPressed: onShowCatalog,
               ),
             if (document != null)
               _DocumentTab(
@@ -1363,9 +1411,11 @@ class _MapWorkspace extends StatelessWidget {
     required this.mapLayerController,
     required this.objectEditingController,
     required this.objectPaletteController,
+    required this.placementCatalogController,
     required this.terrainTileTextureState,
     required this.objectSpriteTextureState,
     required this.workspaceView,
+    required this.onShowMap,
   });
 
   final VoidCallback? openMap;
@@ -1380,9 +1430,11 @@ class _MapWorkspace extends StatelessWidget {
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
+  final PlacementCatalogController placementCatalogController;
   final TerrainTileTextureState terrainTileTextureState;
   final ObjectSpriteTextureState objectSpriteTextureState;
   final _WorkspaceView workspaceView;
+  final VoidCallback onShowMap;
 
   @override
   Widget build(BuildContext context) {
@@ -1392,6 +1444,13 @@ class _MapWorkspace extends StatelessWidget {
       return EudSourceEditor(
         document: eudDocument,
         sourceController: eudSourceController,
+      );
+    }
+    if (workspaceView == _WorkspaceView.catalog && session != null) {
+      return PlacementCatalogPane(
+        controller: placementCatalogController,
+        onPlacementConfirmed: onShowMap,
+        onClose: onShowMap,
       );
     }
     if (session != null) {
@@ -1406,6 +1465,7 @@ class _MapWorkspace extends StatelessWidget {
         mapLayerController: mapLayerController,
         objectEditingController: objectEditingController,
         objectPaletteController: objectPaletteController,
+        placementCatalogController: placementCatalogController,
         terrainTileTextureState: terrainTileTextureState,
         objectSpriteTextureState: objectSpriteTextureState,
       );
@@ -1501,6 +1561,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.mapLayerController,
     required this.objectEditingController,
     required this.objectPaletteController,
+    required this.placementCatalogController,
     required this.terrainTileTextureState,
     required this.objectSpriteTextureState,
   });
@@ -1511,6 +1572,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
+  final PlacementCatalogController placementCatalogController;
   final TerrainTileTextureState terrainTileTextureState;
   final ObjectSpriteTextureState objectSpriteTextureState;
 
@@ -1741,10 +1803,25 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     layerScene: layerScene,
                     isObjectPlacementActive:
                         paletteState.isPlacementActive ||
+                        placementCatalogController.state.isPlacementActive ||
                         objectEditingController.state.isCreatingLocation,
+                    placementGhost: _placementGhostFor(
+                      placementCatalogController.state.selection,
+                    ),
                     onSelectionRequested:
                         editingState.tool == TerrainEditingTool.select
                         ? (request) {
+                            if (placementCatalogController
+                                .state
+                                .isPlacementActive) {
+                              placementCatalogController.placeAt(
+                                pixelX: request.coordinate.pixelX,
+                                pixelY: request.coordinate.pixelY,
+                                tileX: request.coordinate.tileX,
+                                tileY: request.coordinate.tileY,
+                              );
+                              return;
+                            }
                             if (paletteState.isPlacementActive) {
                               objectPaletteController.placeSelected(
                                 pixelX: request.coordinate.pixelX,
@@ -1777,6 +1854,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         : null,
                     onSelectionRegionRequested:
                         editingState.tool == TerrainEditingTool.select &&
+                            !placementCatalogController
+                                .state
+                                .isPlacementActive &&
                             !paletteState.isPlacementActive
                         ? (request) {
                             if (objectEditingController
@@ -1796,6 +1876,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         : null,
                     onSelectedObjectsMoved:
                         editingState.tool == TerrainEditingTool.select &&
+                            !placementCatalogController
+                                .state
+                                .isPlacementActive &&
                             !paletteState.isPlacementActive &&
                             !objectEditingController.state.isCreatingLocation &&
                             objectEditingController.canEditSelection
@@ -1830,6 +1913,23 @@ class _OpenedMapWorkspace extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The footprint the canvas draws under the cursor for the active catalog
+/// selection. A Doodad uses its recipe footprint; a Unit or Sprite is a single
+/// tile because its record is one point.
+MapCanvasPlacementGhost? _placementGhostFor(PlacementSelection? selection) {
+  if (selection == null || !selection.usesCanvasClick) {
+    return null;
+  }
+  final recipe = selection.doodadRecipe;
+  if (recipe == null) {
+    return const MapCanvasPlacementGhost();
+  }
+  return MapCanvasPlacementGhost(
+    tileWidth: recipe.width,
+    tileHeight: recipe.height,
+  );
 }
 
 class _MapCanvasMetadata extends StatelessWidget {
@@ -2173,12 +2273,14 @@ class _MapLayersAndPalette extends StatelessWidget {
     required this.session,
     required this.layerController,
     required this.paletteController,
+    required this.onShowCatalog,
     required this.onLayerActivated,
   });
 
   final OpenedMapSession session;
   final MapLayerController layerController;
   final ObjectPaletteController paletteController;
+  final VoidCallback onShowCatalog;
   final ValueChanged<MapLayerType> onLayerActivated;
 
   @override
@@ -2197,7 +2299,10 @@ class _MapLayersAndPalette extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           flex: 2,
-          child: _ObjectPalettePanel(controller: paletteController),
+          child: _ObjectPalettePanel(
+            controller: paletteController,
+            onShowCatalog: onShowCatalog,
+          ),
         ),
       ],
     );
@@ -2205,9 +2310,13 @@ class _MapLayersAndPalette extends StatelessWidget {
 }
 
 class _ObjectPalettePanel extends StatelessWidget {
-  const _ObjectPalettePanel({required this.controller});
+  const _ObjectPalettePanel({
+    required this.controller,
+    required this.onShowCatalog,
+  });
 
   final ObjectPaletteController controller;
+  final VoidCallback onShowCatalog;
 
   @override
   Widget build(BuildContext context) {
@@ -2234,6 +2343,17 @@ class _ObjectPalettePanel extends StatelessWidget {
                     'Object Palette',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                   ),
+                ),
+                IconButton(
+                  key: const Key('placement-catalog-open'),
+                  tooltip: 'Place new Tile, Doodad, Unit or Sprite',
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 16,
+                  icon: const Icon(Icons.add_box_outlined),
+                  onPressed: () {
+                    controller.cancelPlacement();
+                    onShowCatalog();
+                  },
                 ),
                 if (selectedEntry != null)
                   IconButton(

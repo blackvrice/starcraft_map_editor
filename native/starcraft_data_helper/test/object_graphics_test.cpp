@@ -17,6 +17,8 @@
 namespace {
 
 using starcraft_map_editor::starcraft_data::ObjectAtlasEntry;
+using starcraft_map_editor::starcraft_data::ReadUnitCapability;
+using starcraft_map_editor::starcraft_data::UnitCapability;
 using starcraft_map_editor::starcraft_data::ObjectGraphicKind;
 using starcraft_map_editor::starcraft_data::ObjectPlayerRgbPalette;
 using starcraft_map_editor::starcraft_data::ObjectRgbPalette;
@@ -416,5 +418,44 @@ int main() {
   }
 
   std::filesystem::remove_all(test_root, filesystem_error);
+
+  constexpr std::size_t kUnitsDatBytes = 19876;
+  constexpr std::size_t kShieldEnableOffset = 2472;
+  constexpr std::size_t kFlagsOffset = 7032;
+  std::vector<std::byte> units_dat(kUnitsDatBytes);
+  units_dat[kShieldEnableOffset + 7] = static_cast<std::byte>(1);
+  PutUint32(&units_dat, kFlagsOffset + 7 * 4, 0x00000001U);
+  PutUint32(&units_dat, kFlagsOffset + 188 * 4, 0x00002000U);
+  PutUint32(&units_dat, kFlagsOffset + 37 * 4, 0x20100200U);
+
+  UnitCapability building;
+  if (!ReadUnitCapability(units_dat, 7, &building) || !building.is_building ||
+      !building.has_shields || building.is_spellcaster ||
+      building.is_resource_container || building.requires_relation_link) {
+    return Fail("A building capability was decoded incorrectly.");
+  }
+
+  UnitCapability geyser;
+  if (!ReadUnitCapability(units_dat, 188, &geyser) ||
+      !geyser.is_resource_container || !geyser.is_gas_resource_container) {
+    return Fail("A gas resource container was decoded incorrectly.");
+  }
+
+  UnitCapability lurker;
+  if (!ReadUnitCapability(units_dat, 37, &lurker) || !lurker.is_burrowable ||
+      !lurker.is_cloakable || !lurker.is_invincible ||
+      lurker.is_building) {
+    return Fail("A ground unit capability was decoded incorrectly.");
+  }
+
+  UnitCapability out_of_range;
+  if (ReadUnitCapability(units_dat, 228, &out_of_range)) {
+    return Fail("An out of range unit id produced a capability.");
+  }
+  std::vector<std::byte> truncated(64);
+  if (ReadUnitCapability(truncated, 0, &out_of_range)) {
+    return Fail("A truncated units.dat produced a capability.");
+  }
+
   return 0;
 }

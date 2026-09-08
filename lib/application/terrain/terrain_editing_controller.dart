@@ -177,6 +177,30 @@ class TerrainEditingController {
     return rawValue;
   }
 
+  /// Selects a raw tile value that does not have to exist in the map yet.
+  ///
+  /// The catalog popup uses this so a tile picked from local game data becomes
+  /// the active brush value without first finding that tile on the canvas.
+  bool selectCatalogTile(int rawTileValue) {
+    RangeError.checkValueInInterval(rawTileValue, 0, 0xffff, 'rawTileValue');
+    if (_activeTerrainView == null) {
+      return false;
+    }
+    _emit(
+      TerrainEditingState(
+        tool: _state.tool == TerrainEditingTool.select
+            ? TerrainEditingTool.brush
+            : _state.tool,
+        selectedRawTileValue: rawTileValue,
+        selectedTile: null,
+        undoDepth: _undoStack.length,
+        redoDepth: _redoStack.length,
+        isBrushStrokeActive: _isBrushStrokeActive,
+      ),
+    );
+    return true;
+  }
+
   bool beginBrushStroke() {
     if (_isBrushStrokeActive ||
         !canEditTerrain ||

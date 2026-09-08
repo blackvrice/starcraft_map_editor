@@ -1,6 +1,7 @@
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/unit_placement_capability.dart';
 
 abstract final class StarCraftPlacementCatalogDiagnosticCodes {
   static const installationPathInvalid = 'SC_CATALOG_INSTALLATION_PATH_INVALID';
@@ -207,6 +208,7 @@ final class StarCraftPlacementCatalogEntry {
     this.previewIssueCode,
     this.doodadRecipe,
     this.doodadRecipeIssueCode,
+    this.unitCapability,
   }) : verifiedName = _safeOptionalDisplayText(verifiedName, maximumNameLength),
        categoryPath = List.unmodifiable(
          categoryPath.map((segment) {
@@ -259,6 +261,15 @@ final class StarCraftPlacementCatalogEntry {
         'Must match the Doodad catalog key.',
       );
     }
+    if (unitCapability != null &&
+        (key.kind != StarCraftPlacementKind.unit ||
+            unitCapability!.unitId != key.id)) {
+      throw ArgumentError.value(
+        unitCapability,
+        'unitCapability',
+        'Only a Unit entry can carry the capability of its own unit.',
+      );
+    }
     if (doodadRecipeIssueCode != null &&
         (!_isSafeIdentifier(
               doodadRecipeIssueCode!,
@@ -290,6 +301,11 @@ final class StarCraftPlacementCatalogEntry {
   final String? previewIssueCode;
   final DoodadPlacementRecipe? doodadRecipe;
   final String? doodadRecipeIssueCode;
+
+  /// The verified `units.dat` capability snapshot a Unit placement needs.
+  /// Only Unit entries can carry one, and an entry without it can never be
+  /// placed because its record flags would have to be guessed.
+  final UnitPlacementCapability? unitCapability;
 
   String get displayName =>
       verifiedName ?? '${key.kind.fallbackLabel} #${key.id}';

@@ -20,6 +20,7 @@
 
 namespace {
 
+namespace sc = starcraft_map_editor::starcraft_data;
 using json = nlohmann::json;
 
 constexpr std::int32_t kProtocolVersion = 3;
@@ -28,7 +29,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.7.0";
+constexpr char kHelperVersion[] = "0.8.0";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -268,6 +269,40 @@ int RenderTileAtlas(
   return 0;
 }
 
+
+// Adds the verified units.dat capability of one unit, or the stable reason it
+// is unavailable. A unit without capability is never placed, so the editor
+// shows it with this code instead of guessing its record flags.
+void AddUnitCapability(
+    const sc::ObjectAssetRenderResult& rendered,
+    const std::uint16_t unit_id,
+    json* const entry) {
+  const auto capability = std::find_if(
+      rendered.unit_capabilities.begin(),
+      rendered.unit_capabilities.end(),
+      [unit_id](const sc::UnitCapability& item) {
+        return item.unit_id == unit_id;
+      });
+  if (capability == rendered.unit_capabilities.end()) {
+    (*entry)["capabilityIssueCode"] = "SC_CASC_UNIT_CAPABILITY_UNAVAILABLE";
+    return;
+  }
+  (*entry)["capabilityIssueCode"] = nullptr;
+  (*entry)["capability"] = {
+      {"isSpellcaster", capability->is_spellcaster},
+      {"hasShields", capability->has_shields},
+      {"isResourceContainer", capability->is_resource_container},
+      {"isGasResourceContainer", capability->is_gas_resource_container},
+      {"hasHangar", capability->has_hangar},
+      {"isFlyingBuilding", capability->is_flying_building},
+      {"isBurrowable", capability->is_burrowable},
+      {"isCloakable", capability->is_cloakable},
+      {"isInvincible", capability->is_invincible},
+      {"isBuilding", capability->is_building},
+      {"requiresRelationLink", capability->requires_relation_link},
+  };
+}
+
 int ListPlacementCatalog(
     const json& request,
     const std::string& request_id,
@@ -493,10 +528,14 @@ int ListPlacementCatalog(
                    entry.object_id == object.object_id;
           });
       if (rendered_entry != rendered.entries.end()) {
-        response["entries"].push_back({
+        json entry = {
             {"id", object.object_id},
             {"previewIssueCode", nullptr},
-        });
+        };
+        if (kind == "unit") {
+          AddUnitCapability(rendered, object.object_id, &entry);
+        }
+        response["entries"].push_back(entry);
         continue;
       }
       const auto unsupported = std::find_if(
@@ -516,10 +555,14 @@ int ListPlacementCatalog(
             ERROR_INVALID_DATA,
             3);
       }
-      response["entries"].push_back({
+      json entry = {
           {"id", object.object_id},
           {"previewIssueCode", unsupported->error_code},
-      });
+      };
+      if (kind == "unit") {
+        AddUnitCapability(rendered, object.object_id, &entry);
+      }
+      response["entries"].push_back(entry);
     }
     std::cout << response.dump() << '\n';
     return 0;

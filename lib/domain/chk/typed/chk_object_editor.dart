@@ -139,6 +139,48 @@ class ChkObjectSectionEditor {
     y: y,
   );
 
+  /// Creates an empty section for a placement kind the document does not
+  /// contain yet.
+  ///
+  /// The section is empty on purpose: the caller appends the synthesized
+  /// record with [appendUnitRecord], [appendDoodadRecord] or
+  /// [appendSpriteRecord] so a rejected record never leaves a stray section
+  /// behind.
+  RawChkSection createEmptySection({
+    required List<int> nameBytes,
+    required int sourceOffset,
+  }) => RawChkSection(
+    nameBytes: nameBytes,
+    declaredLength: 0,
+    payload: const [],
+    sourceOffset: sourceOffset,
+  );
+
+  RawChkSection appendUnitRecord(ChkUnitSectionView view, List<int> record) =>
+      _appendRecord(
+        section: view.rawSection,
+        recordLength: ChkUnitPlacement.recordLength,
+        record: record,
+      );
+
+  RawChkSection appendDoodadRecord(
+    ChkDoodadSectionView view,
+    List<int> record,
+  ) => _appendRecord(
+    section: view.rawSection,
+    recordLength: ChkDoodadPlacement.recordLength,
+    record: record,
+  );
+
+  RawChkSection appendSpriteRecord(
+    ChkSpriteSectionView view,
+    List<int> record,
+  ) => _appendRecord(
+    section: view.rawSection,
+    recordLength: ChkSpritePlacement.recordLength,
+    record: record,
+  );
+
   RawChkSection updateUnitProperties(
     ChkUnitSectionView view, {
     required int recordIndex,
@@ -345,6 +387,26 @@ class ChkObjectSectionEditor {
         );
     }
     return section.withPayload(payload);
+  }
+
+  RawChkSection _appendRecord({
+    required RawChkSection section,
+    required int recordLength,
+    required List<int> record,
+  }) {
+    if (record.length != recordLength) {
+      throw ArgumentError.value(
+        record.length,
+        'record',
+        'A synthesized record must be exactly $recordLength bytes.',
+      );
+    }
+    if (section.payload.length % recordLength != 0) {
+      throw ArgumentError(
+        'The target section does not contain whole $recordLength byte records.',
+      );
+    }
+    return section.withPayload([...section.payload, ...record]);
   }
 
   RawChkSection _appendPointRecord({

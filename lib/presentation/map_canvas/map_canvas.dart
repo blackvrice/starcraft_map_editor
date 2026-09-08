@@ -75,6 +75,7 @@ class MapCanvas extends StatefulWidget {
     this.onRectangleFilled,
     this.onPaintMeasured,
     this.isObjectPlacementActive = false,
+    this.placementGhost,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
     super.key,
@@ -104,6 +105,7 @@ class MapCanvas extends StatefulWidget {
   final ValueChanged<TerrainTileRegion>? onRectangleFilled;
   final MapCanvasPaintObserver? onPaintMeasured;
   final bool isObjectPlacementActive;
+  final MapCanvasPlacementGhost? placementGhost;
   final double contentPadding;
   final double maximumTileExtent;
 
@@ -277,6 +279,13 @@ class _MapCanvasState extends State<MapCanvas> {
                               onPaintMeasured: widget.onPaintMeasured,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
+                              placementGhost: widget.placementGhost,
+                              placementGhostTile: coordinate == null
+                                  ? null
+                                  : TerrainTileCoordinate(
+                                      x: coordinate.tileX,
+                                      y: coordinate.tileY,
+                                    ),
                               layerScene: widget.layerScene,
                               selectionRegionPreview: selectionRegionPreview,
                               selectionMovePreview: selectionMovePreview,
@@ -1036,6 +1045,22 @@ class MapCanvasVisibleTiles {
   bool get isEmpty => left >= rightExclusive || top >= bottomExclusive;
 }
 
+/// The footprint the active catalog placement will cover, drawn under the
+/// cursor so the user sees where a click lands before committing.
+final class MapCanvasPlacementGhost {
+  const MapCanvasPlacementGhost({this.tileWidth = 1, this.tileHeight = 1})
+    : assert(tileWidth > 0),
+      assert(tileHeight > 0);
+
+  final int tileWidth;
+  final int tileHeight;
+
+  /// The footprint origin for a ghost centred on [tileX], [tileY].
+  int originX(int tileX) => tileX - tileWidth ~/ 2;
+
+  int originY(int tileY) => tileY - tileHeight ~/ 2;
+}
+
 class MapCanvasPainter extends CustomPainter {
   MapCanvasPainter({
     required this.layout,
@@ -1046,6 +1071,8 @@ class MapCanvasPainter extends CustomPainter {
     this.onPaintMeasured,
     this.selectedTile,
     this.rectanglePreview,
+    this.placementGhost,
+    this.placementGhostTile,
     this.layerScene,
     this.selectionRegionPreview,
     this.selectionMovePreview,
@@ -1089,6 +1116,8 @@ class MapCanvasPainter extends CustomPainter {
   final MapCanvasPaintObserver? onPaintMeasured;
   final TerrainTileCoordinate? selectedTile;
   final TerrainTileRegion? rectanglePreview;
+  final MapCanvasPlacementGhost? placementGhost;
+  final TerrainTileCoordinate? placementGhostTile;
   final MapLayerScene? layerScene;
   final MapLayerPixelRegion? selectionRegionPreview;
   final MapCanvasMoveRequest? selectionMovePreview;
@@ -1485,6 +1514,44 @@ class MapCanvasPainter extends CustomPainter {
           ..strokeWidth = 2,
       );
     }
+
+    _paintPlacementGhost(canvas);
+  }
+
+  /// Draws the snapped footprint of the active catalog placement. The ghost is
+  /// tile aligned, so what the user sees is exactly the area a click writes.
+  void _paintPlacementGhost(Canvas canvas) {
+    final ghost = placementGhost;
+    final tile = placementGhostTile;
+    if (ghost == null || tile == null) {
+      return;
+    }
+    final originX = ghost.originX(tile.x);
+    final originY = ghost.originY(tile.y);
+    final rect = Rect.fromLTWH(
+      layout.mapRect.left + originX * layout.tileExtent,
+      layout.mapRect.top + originY * layout.tileExtent,
+      ghost.tileWidth * layout.tileExtent,
+      ghost.tileHeight * layout.tileExtent,
+    );
+    final fitsMap =
+        originX >= 0 &&
+        originY >= 0 &&
+        originX + ghost.tileWidth <= layout.mapWidth &&
+        originY + ghost.tileHeight <= layout.mapHeight;
+    canvas
+      ..drawRect(
+        rect,
+        Paint()
+          ..color = fitsMap ? const Color(0x3358E08A) : const Color(0x33F26D6D),
+      )
+      ..drawRect(
+        rect,
+        Paint()
+          ..color = fitsMap ? const Color(0xFF7BE3A6) : const Color(0xFFF48A8A)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2,
+      );
   }
 
   Rect _tileRect(int x, int y) => Rect.fromLTWH(
@@ -1508,6 +1575,9 @@ class MapCanvasPainter extends CustomPainter {
         !identical(oldDelegate.objectTextures, objectTextures) ||
         oldDelegate.onPaintMeasured != onPaintMeasured ||
         oldDelegate.selectedTile != selectedTile ||
+        oldDelegate.placementGhost?.tileWidth != placementGhost?.tileWidth ||
+        oldDelegate.placementGhost?.tileHeight != placementGhost?.tileHeight ||
+        oldDelegate.placementGhostTile != placementGhostTile ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
         oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||

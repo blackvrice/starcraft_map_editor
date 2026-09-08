@@ -6,6 +6,7 @@ import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/unit_placement_capability.dart';
 import 'starcraft_data_helper_protocol.dart';
 
 final class ProcessStarCraftPlacementCatalogGateway
@@ -370,6 +371,31 @@ final class ProcessStarCraftPlacementCatalogGateway
             );
           }
         }
+        UnitPlacementCapability? unitCapability;
+        String? capabilityIssueCode;
+        if (request.kind == StarCraftPlacementKind.unit) {
+          capabilityIssueCode = _jsonNullableString(
+            item,
+            'capabilityIssueCode',
+          );
+          if (capabilityIssueCode != null &&
+              (!capabilityIssueCode.startsWith('SC_CASC_UNIT_') ||
+                  capabilityIssueCode.length >
+                      StarCraftPlacementCatalogIssue.maximumCodeLength)) {
+            throw const FormatException('Unit capability issue is invalid.');
+          }
+          final rawCapability = item['capability'];
+          if (capabilityIssueCode == null) {
+            if (rawCapability is! Map<String, dynamic>) {
+              throw const FormatException('Unit capability is missing.');
+            }
+            unitCapability = _parseUnitCapability(rawCapability, id);
+          } else if (rawCapability != null) {
+            throw const FormatException(
+              'An unsupported unit cannot include a capability.',
+            );
+          }
+        }
         final int? doodadStartTileGroup;
         final String? recipeIssueCode;
         final DoodadPlacementRecipe? doodadRecipe;
@@ -432,34 +458,53 @@ final class ProcessStarCraftPlacementCatalogGateway
         previousKey = key;
         final placementIssue = switch (request.kind) {
           StarCraftPlacementKind.tile => null,
-          StarCraftPlacementKind.doodad => StarCraftPlacementCatalogIssue(
-            code: recipeIssueCode == null
-                ? 'SC_CATALOG_ITEM_DOODAD_COMMAND_PENDING'
-                : 'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID',
-            message: recipeIssueCode == null
-                ? 'Atomic Doodad placement is not implemented yet.'
-                : 'The local Doodad recipe is invalid.',
-          ),
-          _ => StarCraftPlacementCatalogIssue(
-            code: previewIssueCode == null
-                ? 'SC_CATALOG_ITEM_PLACEMENT_FACTORY_PENDING'
-                : 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
-            message: previewIssueCode == null
-                ? 'Placement defaults are not implemented yet.'
-                : 'The local object preview is unavailable.',
-          ),
+          StarCraftPlacementKind.doodad =>
+            recipeIssueCode == null
+                ? null
+                : StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID',
+                    message: 'The local Doodad recipe is invalid.',
+                  ),
+          StarCraftPlacementKind.pureSprite =>
+            previewIssueCode == null
+                ? null
+                : StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+                    message: 'The local object preview is unavailable.',
+                  ),
+          // A Unit record can only be synthesized from verified units.dat
+          // capability, so an entry without one stays visible with its reason
+          // instead of being placed with guessed flags.
+          _ =>
+            previewIssueCode != null
+                ? StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+                    message: 'The local object preview is unavailable.',
+                  )
+                : unitCapability == null
+                ? StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+                    message: 'Verified unit capability data is unavailable.',
+                  )
+                : unitCapability.requiresRelationLink
+                ? StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED',
+                    message: 'This unit needs an addon or Nydus relation.',
+                  )
+                : null,
         };
         entries.add(
           StarCraftPlacementCatalogEntry(
             key: key,
             source: StarCraftPlacementCatalogSource.localData,
-            availability: request.kind == StarCraftPlacementKind.tile
+            availability: placementIssue == null
                 ? StarCraftPlacementAvailability.placeable
                 : StarCraftPlacementAvailability.unsupported,
             issue: placementIssue,
             previewIssueCode: previewIssueCode,
             doodadRecipe: doodadRecipe,
             doodadRecipeIssueCode: recipeIssueCode,
+            unitCapability: unitCapability,
           ),
         );
       }
@@ -487,6 +532,41 @@ final class ProcessStarCraftPlacementCatalogGateway
         ),
       );
     }
+  }
+
+  UnitPlacementCapability _parseUnitCapability(
+    Map<String, dynamic> raw,
+    int unitId,
+  ) {
+    bool flag(String name) {
+      final value = raw[name];
+      if (value is! bool) {
+        throw const FormatException('Unit capability flags must be booleans.');
+      }
+      return value;
+    }
+
+    final isResourceContainer = flag('isResourceContainer');
+    final isGasResourceContainer = flag('isGasResourceContainer');
+    if (isGasResourceContainer && !isResourceContainer) {
+      throw const FormatException(
+        'Gas containers must be resource containers.',
+      );
+    }
+    return UnitPlacementCapability(
+      unitId: unitId,
+      isSpellcaster: flag('isSpellcaster'),
+      hasShields: flag('hasShields'),
+      isResourceContainer: isResourceContainer,
+      isGasResourceContainer: isGasResourceContainer,
+      hasHangar: flag('hasHangar'),
+      isFlyingBuilding: flag('isFlyingBuilding'),
+      isBurrowable: flag('isBurrowable'),
+      isCloakable: flag('isCloakable'),
+      isInvincible: flag('isInvincible'),
+      isBuilding: flag('isBuilding'),
+      requiresRelationLink: flag('requiresRelationLink'),
+    );
   }
 
   DoodadPlacementRecipe _parseDoodadRecipe(

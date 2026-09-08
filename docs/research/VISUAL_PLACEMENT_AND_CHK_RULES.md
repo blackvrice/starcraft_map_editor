@@ -116,6 +116,49 @@ Chkdraft는 Unit 항목을 고를 때 36-byte `UNIT` 레코드를 zero-initializ
 - 기존 맵의 같은 type 레코드 복제는 별도의 `mapTemplate` source로 유지한다.
   합성 factory와 복제 template를 조용히 혼용하지 않는다.
 
+구현 확인(2026-09-07):
+
+- 고정 commit의 `chk.h`에서 `UNIT` 36-byte 필드 순서와 flag 비트를 확인해
+  `ChkUnitPlacement`에 상수로 고정했다. state flag는 `Cloak=BIT_0`,
+  `Burrow=BIT_1`, `InTransit=BIT_2`, `Hallucinated=BIT_3`, `Invincible=BIT_4`이고
+  valid field flag는 `Owner=BIT_0`, `Hitpoints=BIT_1`, `Shields=BIT_2`,
+  `Energy=BIT_3`, `Resources=BIT_4`, `Hangar=BIT_5`다. 같은 비트 정의가 offset 12
+  `validStateFlags`와 offset 26 `stateFlags`에 함께 쓰인다.
+- 같은 commit의 `left_bar.cpp` 선택 기본값에서 위 표를 다음까지 구체화했다.
+  Energy valid는 `Spellcaster`, Shields valid는 `shieldEnable != 0`,
+  Resources valid는 `ResourceContainer`, Hangar valid는 Carrier·Reaver 계열
+  type일 때만 설정한다. valid state는 항상 `Invincible`로 시작해
+  `FlyingBuilding`이면 `InTransit`, `Burrowable`이면 `Burrow`, `Cloakable`이면
+  `Cloak`을 더하고, `Invincible` unit이면 `Invincible` 비트를 제거하며,
+  invincible도 building도 아닐 때만 `Hallucinated`를 더한다. Hitpoints valid
+  비트는 설정하지 않는다.
+- `UnitPlacementCapability`는 위 조건을 재현하는 파생 boolean만 갖는 도메인
+  모델이다. 원시 DAT 바이트는 helper 경계를 넘지 않으며, capability를 읽지
+  못한 항목은 배치 불가로 남기고 값을 추측하지 않는다.
+- `UnitPlacementFactory.create`는 class ID를 입력으로 받아 호출자가 문서에서
+  할당하게 하고, `requiresRelationLink` capability는
+  `CHK_PLACEMENT_UNIT_RELATION_REQUIRED`로 거절한다. 거절 결과는 바이트를
+  전혀 반환하지 않는다.
+- class ID는 열린 문서의 모든 `UNIT` 섹션에서 가장 큰 값 + 1로 할당한다.
+  기존 레코드와 절대 충돌하지 않고, 값이 `uint32`를 넘으면
+  `OBJECT_PLACEMENT_CLASS_ID_EXHAUSTED`로 배치를 거부한다.
+- 2026-09-07 helper 0.8.0이 capability를 공급한다. `units.dat`은 고정 크기
+  19,876바이트의 병렬 배열이고, 고정 commit의 `sc.h` `Sc::Unit::DatFile`
+  선언을 순서대로 더한 오프셋이 `shieldEnable`은 2472, `flags`는 7032이며
+  두 배열 합계가 파일 크기와 정확히 일치한다. flag 비트는 `Building=BIT_0`,
+  `Addon=BIT_1`, `FlyingBuilding=BIT_5`, `Cloakable=BIT_9`,
+  `ResourceContainer=BIT_13`, `Burrowable=BIT_20`, `Spellcaster=BIT_21`,
+  `Invincible=BIT_29`를 쓴다.
+- gas 컨테이너는 Terran Refinery(110), Zerg Extractor(149),
+  Protoss Assimilator(157), Vespene Geyser(188)이고, hangar는
+  Carrier(72)·Warbringer(81)·Gantrithor(82)·Reaver(83)다. 이 ID들은 같은
+  commit의 `Sc::Unit::Type` 열거에서 읽었고 로컬 설치 스모크로 최종 확인한다.
+- `requiresRelationLink`는 `Addon` flag이거나 Zerg Nydus Canal(134)일 때 참이며,
+  해당 Unit은 관계 규칙이 검증될 때까지 배치를 거부한다.
+- `units.dat`이 고정 크기가 아니거나 ID가 범위를 벗어나면 helper는 capability를
+  만들지 않고 `SC_CASC_UNIT_CAPABILITY_UNAVAILABLE`로 그 항목만 격리한다.
+  원시 DAT 바이트는 helper 경계를 넘지 않고 파생 boolean만 나간다.
+
 참조:
 
 - [Unit 선택 기본값](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/chkdraft/ui/main_windows/left_bar.cpp#L53-L123)
@@ -144,6 +187,16 @@ Chkdraft는 Unit 항목을 고를 때 36-byte `UNIT` 레코드를 zero-initializ
 - Doodad overlay용 `THG2`는 일반 Sprite factory가 아니라 Doodad recipe가
   만든다. 사용자가 만든 일반 Sprite와 위치/type이 같다는 이유만으로 Doodad
   삭제에 함께 제거하지 않는다.
+
+구현 확인(2026-09-07):
+
+- `SpritePlacementFactory.createPureSprite`는 10-byte 레코드에 type, 클릭 좌표,
+  owner, `unused=0`과 `flags=DrawAsSprite`(`BIT_12`)만 쓴다. `IsUnit`과
+  `SpriteUnitDisabled` 비트는 설정하지 않는다.
+- Chkdraft의 pure sprite 기본값은 Doodad에서 유래한 flag를 함께 변환하지만,
+  일반 카탈로그 Sprite에는 그런 원천이 없으므로 `DrawAsSprite`만 남긴다.
+- sprite-unit은 `CHK_PLACEMENT_SPRITE_UNIT_UNSUPPORTED`로 거절해 탭에서 보이되
+  배치만 비활성 상태로 둔다.
 
 참조:
 
@@ -214,6 +267,27 @@ recipe 타일과 일치할 때에만 `TILE` editor scope의 underlying tile로 �
   flags 0, 범위 밖 DDData/overlay 등은 `SC_CASC_DOODAD_*`로 해당 항목만
   비활성화하며 값을 추측하지 않는다.
 
+구현 확인(2026-09-07):
+
+- `DoodadPlacementFactory`는 recipe와 배치 원점에서 `DD2 ` 8바이트 레코드,
+  선택적 `THG2` 10바이트 overlay, footprint의 `MTXM` 쓰기 목록을 하나의
+  계획으로 만든다. 중심 좌표는 `originTile * 32 + centerOffset`이고 `uint16`을
+  넘으면 `CHK_PLACEMENT_DOODAD_CENTER_RANGE`로 거절한다.
+- overlay `THG2`는 중심 좌표와 owner를 `DD2 `와 공유하고 `unused`는 0,
+  flags는 recipe overlay의 의미(pure sprite면 `DrawAsSprite`)를 그대로 쓴다.
+- 배치 명령은 `MTXM` 셀의 before/after, `DD2 ` 추가, 선택적 `THG2` 추가를 한
+  `_ObjectEditCommand`로 적용해 Undo/Redo 한 항목으로 되돌린다. 세 섹션 중
+  하나라도 조건을 만족하지 못하면 아무 섹션도 바꾸지 않는다.
+- DDData placibility는 `requiredTileGroup`이 0이 아닐 때만 검사하고, 현재
+  `MTXM` 값의 CV5 group(`raw >> 4`)과 다르면
+  `OBJECT_PLACEMENT_DOODAD_TERRAIN_MISMATCH`로 거절한다.
+- recipe의 tileset이 유일한 `ERA`(0~7)와 다르면
+  `OBJECT_PLACEMENT_DOODAD_TILESET_MISMATCH`, footprint가 맵 밖이면
+  `OBJECT_PLACEMENT_OUT_OF_BOUNDS`로 거절한다. Doodad 배치는 Doodad와 Terrain
+  레이어가 모두 잠겨 있지 않아야 한다.
+- 기존 Doodad의 복합 삭제와 재open 후 overlay 귀속은 여전히 구현하지 않았다.
+  이 단계는 배치, Undo/Redo와 Save As 왕복까지만 다룬다.
+
 참조:
 
 - [CV5 Doodad recipe 구성](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/chkdraft/mapping/clipboard.cpp#L57-L138)
@@ -253,19 +327,30 @@ Popup selection (no document change)
 ```
 
 중복된 `ERA`, `DIM `, `MTXM`, `UNIT`, `DD2 `, `THG2` 중 어느 섹션을 수정할지
-모호하면 active section을 추측하지 않고 배치를 막는다. 섹션이 없는 경우의
-결정적인 삽입 위치와 빈 섹션 생성은 각 factory 구현 전 별도 테스트로 확정한다.
+모호하면 active section을 추측하지 않고 배치를 막는다.
+
+섹션이 없는 경우의 삽입 규칙은 2026-09-07에 확정했다. 새 섹션은 문서 맨 끝에만
+추가하고, 소스 오프셋은 원본 파일 길이로 고정하며, 거부된 배치는 빈 섹션조차
+남기지 않는다. Undo는 그 명령이 추가한 꼬리 섹션만 정확히 제거한다. 자세한
+규칙과 근거는 [파일 포맷과 무손실 정책](../FILE_FORMATS.md)의 "섹션 추가 규칙"에
+있다.
 
 ## 5. 구현 전 해결해야 할 항목
 
-- helper가 CV5/DDData unit capability와 분류 이름을 원시 자산 비노출 계약으로
-  어떻게 반환할지 protocol을 버전 관리한다.
-- Unit addon/Nydus와 sprite-unit의 유효한 합성 범위를 fixture로 확정한다.
-- 기존 Doodad 삭제의 underlying terrain 복원은 `TILE` 유일성·크기·정합성과
-  Chkdraft 왕복을 검증한 뒤 지원 범위를 정한다.
-- Doodad overlay의 재open 후 귀속 판정은 좌표/type 일치만으로 확정하지 않는다.
-- 카탈로그 항목 수, 페이지 상한, 정렬과 thumbnail batching을 성능 기준과 함께
-  고정한다.
+- **미해결** helper가 CV5/DDData unit capability와 분류 이름을 원시 자산 비노출
+  계약으로 어떻게 반환할지 protocol을 버전 관리한다. `UnitPlacementCapability`가
+  요구하는 boolean 집합은 확정됐으므로 남은 것은 helper 쪽 구현이다.
+- **미해결** Unit addon/Nydus와 sprite-unit의 유효한 합성 범위를 fixture로
+  확정한다. 그때까지 두 경우 모두 배치를 거부한다.
+- **미해결** 기존 Doodad 삭제의 underlying terrain 복원은 `TILE` 유일성·크기·
+  정합성과 Chkdraft 왕복을 검증한 뒤 지원 범위를 정한다.
+- **미해결** Doodad overlay의 재open 후 귀속 판정은 좌표/type 일치만으로
+  확정하지 않는다.
+- **미해결** 카탈로그 항목 수, 페이지 상한, 정렬과 thumbnail batching을 성능
+  기준과 함께 고정한다.
+- **해결(2026-09-07)** 섹션이 없거나 중복일 때의 삽입·거부 규칙과 class ID
+  할당. 위 4절과 [파일 포맷과 무손실 정책](../FILE_FORMATS.md)에 기록했고
+  도메인·애플리케이션·통합 테스트로 고정했다.
 
 ## 6. M6.2에 채택할 기준선
 

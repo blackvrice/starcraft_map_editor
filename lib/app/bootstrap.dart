@@ -5,6 +5,7 @@ import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
 import '../application/editing/object_editing_controller.dart';
 import '../application/editing/object_palette_controller.dart';
+import '../application/placement/placement_catalog_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
@@ -18,6 +19,7 @@ import '../application/terrain/terrain_tile_atlas_loader.dart';
 import '../infrastructure/archive/process_map_archive_gateway.dart';
 import '../infrastructure/assets/process_starcraft_data_asset_inspector.dart';
 import '../infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
+import '../infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 import '../infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import '../infrastructure/compiler/local_eud_tool_inspector.dart';
@@ -79,15 +81,24 @@ void bootstrap() {
     objectEditingController: objectEditingController,
     mapLayerController: mapLayerController,
   );
+  final tileAtlasGateway = ProcessStarCraftTileAtlasGateway.bundled();
+  final objectAtlasGateway = ProcessStarCraftObjectAtlasGateway.bundled();
+  final placementCatalogController = PlacementCatalogController(
+    openMapController: openMapController,
+    objectEditingController: objectEditingController,
+    terrainEditingController: terrainEditingController,
+    catalogGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
+    tileAtlasGateway: tileAtlasGateway,
+    objectAtlasGateway: objectAtlasGateway,
+  );
+  starCraftDataAssetSettingsController.changes.listen((state) {
+    placementCatalogController.setInstallationPath(state.configuredPath);
+  });
   final terrainTileTextureController = TerrainTileTextureController(
-    loader: TerrainTileAtlasLoader(
-      gateway: ProcessStarCraftTileAtlasGateway.bundled(),
-    ),
+    loader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
   );
   final objectSpriteTextureController = ObjectSpriteTextureController(
-    loader: ObjectSpriteAtlasLoader(
-      gateway: ProcessStarCraftObjectAtlasGateway.bundled(),
-    ),
+    loader: ObjectSpriteAtlasLoader(gateway: objectAtlasGateway),
   );
   final saveMapController = SaveMapController(
     archiveGateway: archiveGateway,
@@ -129,6 +140,7 @@ void bootstrap() {
     mapLayerController: mapLayerController,
     objectEditingController: objectEditingController,
     objectPaletteController: objectPaletteController,
+    placementCatalogController: placementCatalogController,
     terrainTileTextureController: terrainTileTextureController,
     objectSpriteTextureController: objectSpriteTextureController,
   );

@@ -30,6 +30,19 @@ final class ChkUnitPlacement {
 
   static const recordLength = 36;
 
+  static const stateCloakFlag = 1 << 0;
+  static const stateBurrowFlag = 1 << 1;
+  static const stateInTransitFlag = 1 << 2;
+  static const stateHallucinatedFlag = 1 << 3;
+  static const stateInvincibleFlag = 1 << 4;
+
+  static const validFieldOwnerFlag = 1 << 0;
+  static const validFieldHitpointsFlag = 1 << 1;
+  static const validFieldShieldsFlag = 1 << 2;
+  static const validFieldEnergyFlag = 1 << 3;
+  static const validFieldResourcesFlag = 1 << 4;
+  static const validFieldHangarFlag = 1 << 5;
+
   final int recordIndex;
   final int classId;
   final int x;

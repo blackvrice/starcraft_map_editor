@@ -5,6 +5,7 @@ import '../application/documents/open_map_controller.dart';
 import '../application/documents/save_map_controller.dart';
 import '../application/editing/object_editing_controller.dart';
 import '../application/editing/object_palette_controller.dart';
+import '../application/placement/placement_catalog_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
 import '../application/layers/map_layer_controller.dart';
@@ -32,6 +33,7 @@ class EditorAppDependencies {
     required this.mapLayerController,
     required this.objectEditingController,
     required this.objectPaletteController,
+    required this.placementCatalogController,
     required this.terrainTileTextureController,
     required this.objectSpriteTextureController,
   });
@@ -50,6 +52,7 @@ class EditorAppDependencies {
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
+  final PlacementCatalogController placementCatalogController;
   final TerrainTileTextureController terrainTileTextureController;
   final ObjectSpriteTextureController objectSpriteTextureController;
 }
@@ -89,6 +92,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
         mapLayerController: dependencies.mapLayerController,
         objectEditingController: dependencies.objectEditingController,
         objectPaletteController: dependencies.objectPaletteController,
+        placementCatalogController: dependencies.placementCatalogController,
         terrainTileTextureController: dependencies.terrainTileTextureController,
         objectSpriteTextureController:
             dependencies.objectSpriteTextureController,

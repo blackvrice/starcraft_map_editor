@@ -294,6 +294,96 @@ void main() {
     );
     expect(() => editor.deleteDoodads(view, const [1]), throwsRangeError);
   });
+
+  group('synthesized record appends', () {
+    test('appends whole records and marks the section dirty', () {
+      final document = _document([
+        _section('UNIT', Uint8List(ChkUnitPlacement.recordLength)),
+      ]);
+      final view = decoder.decode(document).unitSections.single;
+      final record = Uint8List.fromList(
+        List<int>.generate(ChkUnitPlacement.recordLength, (index) => index),
+      );
+
+      final replacement = editor.appendUnitRecord(view, record);
+
+      expect(replacement.payload, hasLength(ChkUnitPlacement.recordLength * 2));
+      expect(
+        replacement.payload.sublist(0, ChkUnitPlacement.recordLength),
+        everyElement(0),
+      );
+      expect(
+        replacement.payload.sublist(ChkUnitPlacement.recordLength),
+        orderedEquals(record),
+      );
+      expect(replacement.isDirty, isTrue);
+      expect(view.rawSection.payload, hasLength(ChkUnitPlacement.recordLength));
+    });
+
+    test('rejects a record whose length does not match the kind', () {
+      final document = _document([
+        _section('THG2', Uint8List(ChkSpritePlacement.recordLength)),
+      ]);
+      final view = decoder.decode(document).spriteSections.single;
+
+      expect(
+        () => editor.appendSpriteRecord(view, Uint8List(4)),
+        throwsArgumentError,
+      );
+    });
+
+    test('creates an empty section that carries no payload yet', () {
+      final section = editor.createEmptySection(
+        nameBytes: ChkSectionNames.spritePlacements,
+        sourceOffset: 128,
+      );
+
+      expect(section.name, 'THG2');
+      expect(section.payload, isEmpty);
+      expect(section.declaredLength, 0);
+      expect(section.sourceOffset, 128);
+      expect(section.isDirty, isFalse);
+    });
+  });
+
+  group('document section appends', () {
+    test('appends at the end and keeps every existing index', () {
+      final document = _document([
+        _section('DIM ', const [8, 0, 8, 0]),
+        _section('DD2 ', Uint8List(ChkDoodadPlacement.recordLength)),
+      ]);
+      final appended = document.appendSection(
+        editor
+            .createEmptySection(
+              nameBytes: ChkSectionNames.unitPlacements,
+              sourceOffset: document.sourceLength,
+            )
+            .withPayload(Uint8List(ChkUnitPlacement.recordLength)),
+      );
+
+      expect(appended.sections, hasLength(3));
+      expect(appended.sections[0].name, 'DIM ');
+      expect(appended.sections[1].name, 'DD2 ');
+      expect(appended.sections[2].name, 'UNIT');
+      expect(identical(appended.sections[0], document.sections[0]), isTrue);
+      expect(appended.isDirty, isTrue);
+      expect(document.sections, hasLength(2));
+    });
+
+    test('removes exactly the trailing sections an append added', () {
+      final document = _document([
+        _section('DIM ', const [8, 0, 8, 0]),
+      ]);
+      final appended = document
+          .appendSection(_section('UNIT', const []))
+          .appendSection(_section('THG2', const []));
+
+      expect(appended.removeTrailingSections(2).sections, hasLength(1));
+      expect(appended.removeTrailingSections(0).sections, hasLength(3));
+      expect(() => appended.removeTrailingSections(4), throwsRangeError);
+      expect(() => appended.removeTrailingSections(-1), throwsRangeError);
+    });
+  });
 }
 
 RawChkDocument _document(List<RawChkSection> sections) {
