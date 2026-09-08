@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_player_settings_editor.dart';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -264,6 +265,37 @@ void main() {
       editingController.redo();
       expect(editingController.mapInformation.description, '새 설명');
 
+      final beforePlayers = openController.state.session!.rawDocument;
+      editingController.applyPlayerSettings(
+        expectedDocument: beforePlayers,
+        changes: [
+          const ChkPlayerChange(0, ChkPlayerField.owner, 6),
+          const ChkPlayerChange(0, ChkPlayerField.race, 2),
+          const ChkPlayerChange(0, ChkPlayerField.color, 8),
+        ],
+      );
+      expect(
+        openController.state.session!.diagnostics.any(
+          (d) => d.code == 'CHK_PLAYER_SETTINGS_START_MISSING',
+        ),
+        isTrue,
+      );
+      editingController.undo();
+      expect(
+        openController.state.session!.diagnostics.any(
+          (d) => d.code.startsWith('CHK_PLAYER_SETTINGS_'),
+        ),
+        isFalse,
+      );
+      editingController.redo();
+      expect(
+        () => editingController.applyPlayerSettings(
+          expectedDocument: beforePlayers,
+          changes: [const ChkPlayerChange(0, ChkPlayerField.owner, 5)],
+        ),
+        throwsStateError,
+      );
+
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -363,7 +395,27 @@ void main() {
 
       final reopened = await openController.open(sourcePath: outputPath);
       expect(reopened.status, OpenMapStatus.opened);
-      expect(reopened.diagnostics, isEmpty);
+      expect(reopened.diagnostics.map((d) => d.code), [
+        'CHK_PLAYER_SETTINGS_START_MISSING',
+      ]);
+      expect(_sectionNamed(reopened.session!.rawDocument, 'OWNR').payload, [
+        6,
+        ...List.filled(11, 0),
+      ]);
+      expect(_sectionNamed(reopened.session!.rawDocument, 'SIDE').payload, [
+        2,
+        ...List.filled(11, 1),
+      ]);
+      expect(_sectionNamed(reopened.session!.rawDocument, 'COLR').payload, [
+        8,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+      ]);
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
       expect(editingController.mapInformation.title, '왕복 맵');
@@ -709,6 +761,9 @@ Uint8List _sourceChkBytes() {
     _section('MRGN', locations),
     _section('STR ', _legacyStringTableWithTail()),
     _section('SPRP', [1, 0, 1, 0]),
+    _section('OWNR', List.filled(12, 0)),
+    _section('SIDE', List.filled(12, 1)),
+    _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
   ]);
 }
 

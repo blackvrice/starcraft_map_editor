@@ -47,6 +47,101 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'player settings preserve drafts across slots and undo applied changes',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> showSettings() async {
+        await tester.tap(find.text('File').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Player Settings…'));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> choose(String field, String label) async {
+        await tester.tap(find.byKey(Key('player-settings-$field')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+      }
+
+      await showSettings();
+      await choose('owner', 'Human (6)');
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+      await showSettings();
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('player-settings-owner')),
+            )
+            .value,
+        0,
+      );
+      await choose('owner', 'Human (6)');
+      await choose('player', 'Player 2');
+      await choose('race', 'Protoss (2)');
+      await tester.tap(find.byKey(const Key('player-settings-apply')));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isTrue);
+      expect(
+        find.textContaining('Player 1 has no start location'),
+        findsWidgets,
+      );
+      await tester.tap(find.text('Undo: Edit player settings'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: Edit player settings'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('player-settings-race')),
+            )
+            .value,
+        2,
+      );
+      await choose('player', 'Player 9 (read-only)');
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('player-settings-owner')),
+            )
+            .onChanged,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('map information drafts cancel and applied text supports undo', (
     tester,
   ) async {
@@ -1898,6 +1993,9 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     _section('MRGN', locationPayload),
     _section('STR ', _legacyStringTable(['Existing'])),
     if (includeMapInformation) _section('SPRP', [1, 0, 1, 0]),
+    if (includeMapInformation) _section('OWNR', List.filled(12, 0)),
+    if (includeMapInformation) _section('SIDE', List.filled(12, 1)),
+    if (includeMapInformation) _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
   ]);
   return ExtractedMap(
     sourcePath: r'C:\Maps\Arena.scx',

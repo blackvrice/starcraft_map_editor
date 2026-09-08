@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
 import '../../domain/chk/typed/chk_scenario_text_editor.dart';
+import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
@@ -76,6 +77,44 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  List<ChkPlayerSettingGroup> get playerSettings {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map before changing player settings.');
+    }
+    return const ChkPlayerSettingsEditor().read(session.rawDocument);
+  }
+
+  void applyPlayerSettings({
+    required RawChkDocument expectedDocument,
+    required Iterable<ChkPlayerChange> changes,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError(
+        'The map changed. Reopen Player Settings before applying.',
+      );
+    }
+    final replacements = const ChkPlayerSettingsEditor().edit(
+      session.rawDocument,
+      changes,
+    );
+    if (replacements.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit player settings',
+        beforeSections: {
+          for (final index in replacements.keys)
+            index: session.rawDocument.sections[index],
+        },
+        afterSections: replacements,
+      ),
+      clearSelection: false,
+    );
+  }
 
   ChkScenarioText get mapInformation {
     final session = openMapController.state.session;
@@ -1630,9 +1669,13 @@ class ObjectEditingController {
     final refreshedDiagnostics = [
       ...session.diagnostics.where(
         (diagnostic) =>
-            !ChkObjectReferenceDiagnosticCodes.contains(diagnostic.code),
+            !ChkObjectReferenceDiagnosticCodes.contains(diagnostic.code) &&
+            !diagnostic.code.startsWith(
+              ChkPlayerSettingsEditor.diagnosticPrefix,
+            ),
       ),
       ...objectReferenceDiagnostics,
+      ...const ChkPlayerSettingsEditor().diagnostics(document),
     ];
     final editedSession = OpenedMapSession(
       extractedMap: session.extractedMap,

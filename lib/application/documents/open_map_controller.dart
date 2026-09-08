@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
@@ -255,6 +256,7 @@ class OpenMapController {
         ...terrainViews.diagnostics,
         ...objectViews.diagnostics,
         ...objectReferenceDiagnostics,
+        ...const ChkPlayerSettingsEditor().diagnostics(rawDocument),
       ];
       late final MapFileFingerprint sourceFingerprintAfterOpen;
       try {
