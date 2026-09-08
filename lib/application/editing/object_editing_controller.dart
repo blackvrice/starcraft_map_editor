@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_unit_settings_editor.dart';
 import '../../domain/chk/typed/chk_force_settings_editor.dart';
 import '../../domain/chk/typed/chk_scenario_text_editor.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
@@ -78,6 +79,48 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  ChkUnitSettings get unitSettings {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map before changing unit settings.');
+    }
+    return const ChkUnitSettingsEditor().read(session.rawDocument);
+  }
+
+  void applyUnitSettings({
+    required RawChkDocument expectedDocument,
+    Map<(int, ChkUnitSettingField), int> values = const {},
+    Map<(int, bool), int> damage = const {},
+    Map<int, String> names = const {},
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError(
+        'The map changed. Reopen Unit Settings before applying.',
+      );
+    }
+    final replacements = const ChkUnitSettingsEditor().edit(
+      session.rawDocument,
+      values: values,
+      damage: damage,
+      names: names,
+    );
+    if (replacements.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit unit settings',
+        beforeSections: {
+          for (final index in replacements.keys)
+            index: session.rawDocument.sections[index],
+        },
+        afterSections: replacements,
+      ),
+      clearSelection: false,
+    );
+  }
 
   ChkForceSettings get forceSettings {
     final session = openMapController.state.session;

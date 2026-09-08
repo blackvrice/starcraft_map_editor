@@ -47,6 +47,105 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets('unit settings validate and preserve drafts, defaults and undo', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final settings = InMemorySettingsStore();
+    final recent = RecentProjectsService(settings);
+    final progress = OperationProgressController();
+    final map = _createExtractedMap(includeMapInformation: true);
+    final open = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: map),
+      ),
+      filePicker: _FakeMapFilePicker(map.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recent,
+      operationProgressController: progress,
+    );
+    addTearDown(open.dispose);
+    addTearDown(progress.dispose);
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: open,
+        operationProgressController: progress,
+        recentProjectsService: recent,
+        settingsStore: settings,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+    Future<void> showUnits() async {
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Unit Settings…'));
+      await tester.pumpAndSettle();
+    }
+
+    Finder field(String label) => find.byWidgetPredicate(
+      (w) => w is TextField && w.decoration?.labelText == label,
+    );
+    Future<void> enter(String label, String text) async {
+      final target = field(label);
+      await tester.ensureVisible(target);
+      await tester.enterText(target, text);
+      await tester.pumpAndSettle();
+    }
+
+    await showUnits();
+    await enter('Hit points', '40');
+    await tester.tap(find.text('Cancel').last);
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await showUnits();
+    await enter('Unit name (empty = game name)', 'Custom marine');
+    await enter('Hit points', '0.1');
+    await tester.tap(find.byKey(const Key('unit-settings-apply')));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    expect(find.textContaining('multiple of 1/256'), findsOneWidget);
+    await enter('Hit points', '100.5');
+    await tester.ensureVisible(find.byKey(const Key('unit-settings-unit')));
+    await tester.tap(find.byKey(const Key('unit-settings-unit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unit #1').last);
+    await tester.pumpAndSettle();
+    await enter('Shields', '300');
+    await enter('Base damage', '200');
+    await enter('Damage per upgrade', '15');
+    await tester.tap(find.byKey(const Key('unit-settings-apply')));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isTrue);
+    await tester.tap(find.text('Undo: Edit unit settings'));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await tester.tap(find.text('Redo: Edit unit settings'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(field('Shields'));
+    expect(find.text('300'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('unit-settings-restore')));
+    await tester.tap(find.byKey(const Key('unit-settings-restore')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(field('Shields')).enabled, isFalse);
+    await tester.tap(find.byKey(const Key('unit-settings-apply')));
+    await tester.pumpAndSettle();
+    final payload = open.state.session!.rawDocument.sections
+        .firstWhere((s) => s.name == 'UNIx')
+        .payload;
+    expect(payload[1], 1);
+    expect(
+      ByteData.sublistView(
+        Uint8List.fromList(payload),
+      ).getUint16(1142, Endian.little),
+      300,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('force settings apply drafts atomically and undo', (
     tester,
   ) async {
@@ -2078,6 +2177,7 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     if (includeMapInformation) _section('OWNR', List.filled(12, 0)),
     if (includeMapInformation) _section('SIDE', List.filled(12, 1)),
     if (includeMapInformation) _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
+    if (includeMapInformation) _section('UNIx', List<int>.filled(4168, 0)),
     if (includeMapInformation) _section('FORC', List<int>.filled(20, 0)),
   ]);
   return ExtractedMap(

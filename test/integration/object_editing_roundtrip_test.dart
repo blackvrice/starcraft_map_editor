@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_player_settings_editor.dart';
 import 'dart:typed_data';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_unit_settings_editor.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
@@ -323,6 +324,43 @@ void main() {
         throwsStateError,
       );
 
+      final beforeUnits = openController.state.session!.rawDocument;
+      editingController.applyUnitSettings(
+        expectedDocument: beforeUnits,
+        values: {
+          (0, ChkUnitSettingField.hitpoints): 25728,
+          (0, ChkUnitSettingField.shields): 300,
+          (0, ChkUnitSettingField.armor): 7,
+          (0, ChkUnitSettingField.minerals): 120,
+          (0, ChkUnitSettingField.gas): 80,
+          (0, ChkUnitSettingField.buildTime): 900,
+        },
+        names: {0: '유닛 설정'},
+        damage: {(129, false): 200, (129, true): 15},
+      );
+      final customUnits = openController.state.session!.rawDocument;
+      editingController.applyUnitSettings(
+        expectedDocument: customUnits,
+        values: {(0, ChkUnitSettingField.useDefault): 1},
+      );
+      expect(
+        editingController.unitSettings.value(0, ChkUnitSettingField.hitpoints),
+        25728,
+      );
+      editingController.undo();
+      expect(
+        editingController.unitSettings.value(0, ChkUnitSettingField.useDefault),
+        0,
+      );
+      editingController.redo();
+      expect(
+        () => editingController.applyUnitSettings(
+          expectedDocument: beforeUnits,
+          names: {0: 'stale'},
+        ),
+        throwsStateError,
+      );
+
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -410,13 +448,13 @@ void main() {
           .decode(writtenDocument)
           .legacyTables
           .single;
-      expect(writtenStrings.declaredStringCount, 6);
+      expect(writtenStrings.declaredStringCount, 7);
       expect(writtenStrings.entries[5].rawBytes, utf8.encode('세력 하나'));
       expect(writtenStrings.entries[0].rawBytes, utf8.encode('Existing'));
       expect(writtenStrings.entries[1].rawBytes, utf8.encode('Shared'));
       expect(writtenStrings.entries[2].rawBytes, utf8.encode('왕복 위치'));
       expect(
-        writtenStrings.rawSection.payload.sublist(30, 32),
+        writtenStrings.rawSection.payload.sublist(32, 34),
         const [0xde, 0xad],
         reason: 'Unreferenced string-table tail bytes must survive the append.',
       );
@@ -453,6 +491,28 @@ void main() {
         0xaf,
       );
       expect(editingController.forceSettings.names.first, '세력 하나');
+      final reopenedUnits = editingController.unitSettings;
+      expect(reopenedUnits.name(0), '유닛 설정');
+      expect(reopenedUnits.value(0, ChkUnitSettingField.hitpoints), 25728);
+      expect(reopenedUnits.value(0, ChkUnitSettingField.useDefault), 1);
+      expect(reopenedUnits.damage(129), 200);
+      expect(reopenedUnits.damage(129, bonus: true), 15);
+      final expectedSettings = Uint8List(4168);
+      ByteData.sublistView(expectedSettings)
+        ..setUint8(0, 1)
+        ..setUint32(228, 25728, Endian.little)
+        ..setUint16(1140, 300, Endian.little)
+        ..setUint8(1596, 7)
+        ..setUint16(1824, 900, Endian.little)
+        ..setUint16(2280, 120, Endian.little)
+        ..setUint16(2736, 80, Endian.little)
+        ..setUint16(3192, 7, Endian.little)
+        ..setUint16(3906, 200, Endian.little)
+        ..setUint16(4166, 15, Endian.little);
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'UNIx').payload,
+        expectedSettings,
+      );
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
       expect(editingController.mapInformation.title, '왕복 맵');
@@ -801,6 +861,7 @@ Uint8List _sourceChkBytes() {
     _section('OWNR', List.filled(12, 0)),
     _section('SIDE', List.filled(12, 1)),
     _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
+    _section('UNIx', List<int>.filled(4168, 0)),
     _section('FORC', [
       ...List<int>.filled(8, 0),
       1,
