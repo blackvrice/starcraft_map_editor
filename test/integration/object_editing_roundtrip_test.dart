@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_player_settings_editor.dart';
 import 'dart:typed_data';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_unit_availability_editor.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_unit_settings_editor.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -361,6 +362,27 @@ void main() {
         throwsStateError,
       );
 
+      final beforeAvailability = openController.state.session!.rawDocument;
+      editingController.applyUnitAvailability(
+        expectedDocument: beforeAvailability,
+        changes: {
+          (null, 227, ChkUnitAvailabilityField.global): 1,
+          (7, 227, ChkUnitAvailabilityField.inherit): 1,
+          (0, 0, ChkUnitAvailabilityField.player): 1,
+        },
+      );
+      expect(editingController.unitAvailability.effective(7, 227), isTrue);
+      editingController.undo();
+      expect(editingController.unitAvailability.effective(7, 227), isFalse);
+      editingController.redo();
+      expect(
+        () => editingController.applyUnitAvailability(
+          expectedDocument: beforeAvailability,
+          changes: {},
+        ),
+        throwsStateError,
+      );
+
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -512,6 +534,14 @@ void main() {
       expect(
         _sectionNamed(reopened.session!.rawDocument, 'UNIx').payload,
         expectedSettings,
+      );
+      final expectedAvailability = List<int>.filled(5700, 0)
+        ..[0] = 1
+        ..[2963] = 1
+        ..[4787] = 1;
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'PUNI').payload,
+        expectedAvailability,
       );
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
@@ -862,6 +892,7 @@ Uint8List _sourceChkBytes() {
     _section('SIDE', List.filled(12, 1)),
     _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
     _section('UNIx', List<int>.filled(4168, 0)),
+    _section('PUNI', List<int>.filled(5700, 0)),
     _section('FORC', [
       ...List<int>.filled(8, 0),
       1,

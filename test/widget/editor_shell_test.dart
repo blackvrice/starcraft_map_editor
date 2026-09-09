@@ -47,6 +47,93 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'unit availability preserves drafts and supports inheritance and undo',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> showAvailability() async {
+        await tester.tap(find.text('File').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Unit Availability…'));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> choose(String key, String label) async {
+        await tester.tap(find.byKey(Key('availability-$key')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+      }
+
+      await showAvailability();
+      await choose('global', 'Default: allowed');
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await showAvailability();
+      await choose('global', 'Default: allowed');
+      await choose('inherit', 'Inherit map default');
+      expect(find.text('Effective availability: allowed'), findsOneWidget);
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('availability-player')),
+            )
+            .onChanged,
+        isNull,
+      );
+      await choose('player-selection', 'Player 2');
+      await choose('player', 'Player: allowed');
+      await tester.tap(find.byKey(const Key('availability-apply')));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isTrue);
+      await tester.tap(find.text('Undo: Edit unit availability'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: Edit unit availability'));
+      await tester.pumpAndSettle();
+      expect(find.text('Effective availability: allowed'), findsOneWidget);
+      await choose('player-selection', 'Player 9 (read-only)');
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('availability-inherit')),
+            )
+            .onChanged,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('unit settings validate and preserve drafts, defaults and undo', (
     tester,
   ) async {
@@ -2178,6 +2265,7 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     if (includeMapInformation) _section('SIDE', List.filled(12, 1)),
     if (includeMapInformation) _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
     if (includeMapInformation) _section('UNIx', List<int>.filled(4168, 0)),
+    if (includeMapInformation) _section('PUNI', List<int>.filled(5700, 0)),
     if (includeMapInformation) _section('FORC', List<int>.filled(20, 0)),
   ]);
   return ExtractedMap(

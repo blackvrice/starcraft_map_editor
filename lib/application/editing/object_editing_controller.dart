@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_unit_availability_editor.dart';
 import '../../domain/chk/typed/chk_unit_settings_editor.dart';
 import '../../domain/chk/typed/chk_force_settings_editor.dart';
 import '../../domain/chk/typed/chk_scenario_text_editor.dart';
@@ -79,6 +80,44 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  ChkUnitAvailability get unitAvailability {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map before changing availability.');
+    }
+    return const ChkUnitAvailabilityEditor().read(session.rawDocument);
+  }
+
+  void applyUnitAvailability({
+    required RawChkDocument expectedDocument,
+    required Map<UnitAvailabilityKey, int> changes,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError(
+        'The map changed. Reopen Unit Availability before applying.',
+      );
+    }
+    final replacements = const ChkUnitAvailabilityEditor().edit(
+      session.rawDocument,
+      changes,
+    );
+    if (replacements.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit unit availability',
+        beforeSections: {
+          for (final index in replacements.keys)
+            index: session.rawDocument.sections[index],
+        },
+        afterSections: replacements,
+      ),
+      clearSelection: false,
+    );
+  }
 
   ChkUnitSettings get unitSettings {
     final session = openMapController.state.session;

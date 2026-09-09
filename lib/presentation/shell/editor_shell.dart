@@ -33,6 +33,7 @@ import '../settings/map_information_dialog.dart';
 import '../settings/player_settings_dialog.dart';
 import '../settings/force_settings_dialog.dart';
 import '../settings/unit_settings_dialog.dart';
+import '../settings/unit_availability_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud, catalog }
@@ -620,6 +621,15 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openUnitAvailability:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => UnitAvailabilityDialog(
+                            controller: widget.objectEditingController,
+                          ),
+                        ),
                   openUnitSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -764,6 +774,7 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    required this.openUnitAvailability,
     required this.openUnitSettings,
     required this.openForceSettings,
     required this.openPlayerSettings,
@@ -780,6 +791,7 @@ class _EditorMenuBar extends StatelessWidget {
 
   final VoidCallback? openMap;
   final VoidCallback? openMapInformation;
+  final VoidCallback? openUnitAvailability;
   final VoidCallback? openUnitSettings;
   final VoidCallback? openForceSettings;
   final VoidCallback? openPlayerSettings;
@@ -815,6 +827,10 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               onPressed: openUnitSettings,
               child: const Text('Unit Settings…'),
+            ),
+            MenuItemButton(
+              onPressed: openUnitAvailability,
+              child: const Text('Unit Availability…'),
             ),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],
