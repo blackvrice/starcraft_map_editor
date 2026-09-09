@@ -47,6 +47,126 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets('tech settings preserve drafts defaults unknown flags and undo', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1440, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final settings = InMemorySettingsStore();
+    final recent = RecentProjectsService(settings);
+    final progress = OperationProgressController();
+    final map = _createExtractedMap(includeMapInformation: true);
+    final open = OpenMapController(
+      archiveGateway: _FakeMapArchiveGateway(
+        MapArchiveOpenResult.success(map: map),
+      ),
+      filePicker: _FakeMapFilePicker(map.sourcePath),
+      fingerprintGateway: _FakeMapFileFingerprintGateway(),
+      recentProjectsService: recent,
+      operationProgressController: progress,
+    );
+    addTearDown(open.dispose);
+    addTearDown(progress.dispose);
+    await tester.pumpWidget(
+      _createTestApp(
+        openMapController: open,
+        operationProgressController: progress,
+        recentProjectsService: recent,
+        settingsStore: settings,
+      ),
+    );
+    await tester.tap(find.byKey(const Key('open-map-button')));
+    await tester.pumpAndSettle();
+    Future<void> showTech() async {
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tech Settings…'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> choose(String key, String label) async {
+      final target = find.byKey(Key('tech-$key'));
+      await tester.ensureVisible(target);
+      await tester.tap(target);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(label).last);
+      await tester.pumpAndSettle();
+    }
+
+    Finder field(String label) => find.byWidgetPredicate(
+      (w) => w is TextField && w.decoration?.labelText == label,
+    );
+    Future<void> enter(String label, String value) async {
+      final target = field(label);
+      await tester.ensureVisible(target);
+      await tester.enterText(target, value);
+      await tester.pumpAndSettle();
+    }
+
+    await showTech();
+    await enter('Mineral cost', '100');
+    await tester.tap(find.text('Cancel').last);
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await showTech();
+    await enter('Mineral cost', '100');
+    await choose('selection', 'Tech #1');
+    await enter('Energy cost', '65536');
+    await tester.tap(find.byKey(const Key('tech-apply')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tech-error')), findsOneWidget);
+    expect(open.state.session!.isDirty, isFalse);
+    await enter('Energy cost', '250');
+    await choose('researched', 'Already researched');
+    expect(
+      find.text('Effective state: available no, researched yes'),
+      findsOneWidget,
+    );
+    await choose('player', 'Player 1');
+    await choose('inherit', 'Inherit map settings');
+    expect(
+      find.text('Effective state: available no, researched yes'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<DropdownButton<int>>(find.byKey(const Key('tech-researched')))
+          .onChanged,
+      isNull,
+    );
+    await tester.tap(find.byKey(const Key('tech-apply')));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isTrue);
+    await tester.tap(find.text('Undo: Edit tech settings'));
+    await tester.pumpAndSettle();
+    expect(open.state.session!.isDirty, isFalse);
+    await tester.tap(find.text('Redo: Edit tech settings'));
+    await tester.pumpAndSettle();
+    await choose('selection', 'Tech #0');
+    expect(find.text('100'), findsOneWidget);
+    await choose('useDefault', 'Use game defaults');
+    expect(tester.widget<TextField>(field('Mineral cost')).enabled, isFalse);
+    await tester.tap(find.byKey(const Key('tech-apply')));
+    await tester.pumpAndSettle();
+    expect(find.text('100'), findsOneWidget);
+    await choose('selection', 'Tech #2');
+    expect(
+      find.text('Effective state: unknown (stored flag preserved)'),
+      findsOneWidget,
+    );
+    expect(find.text('Stored flag 7 (preserved)'), findsOneWidget);
+    await choose('player', 'Player 9 (read-only)');
+    expect(
+      tester
+          .widget<DropdownButton<int>>(find.byKey(const Key('tech-inherit')))
+          .onChanged,
+      isNull,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'upgrade settings validate levels and preserve drafts defaults and undo',
     (tester) async {
@@ -2386,6 +2506,14 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     if (includeMapInformation) _section('PUNI', List<int>.filled(5700, 0)),
     if (includeMapInformation) _section('UPGx', List<int>.filled(794, 0)),
     if (includeMapInformation) _section('PUPx', List<int>.filled(2318, 0)),
+    if (includeMapInformation) _section('TECx', List<int>.filled(396, 0)),
+    if (includeMapInformation)
+      _section(
+        'PTEx',
+        List<int>.filled(1672, 0)
+          ..[2] = 7
+          ..[1146] = 9,
+      ),
     if (includeMapInformation) _section('FORC', List<int>.filled(20, 0)),
   ]);
   return ExtractedMap(

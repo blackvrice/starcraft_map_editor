@@ -35,6 +35,7 @@ import '../settings/force_settings_dialog.dart';
 import '../settings/unit_settings_dialog.dart';
 import '../settings/unit_availability_dialog.dart';
 import '../settings/upgrade_settings_dialog.dart';
+import '../settings/tech_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud, catalog }
@@ -622,6 +623,15 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openTechSettings:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => TechSettingsDialog(
+                            controller: widget.objectEditingController,
+                          ),
+                        ),
                   openUpgradeSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -786,6 +796,7 @@ class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
     required this.openUnitAvailability,
     required this.openUpgradeSettings,
+    required this.openTechSettings,
     required this.openUnitSettings,
     required this.openForceSettings,
     required this.openPlayerSettings,
@@ -804,6 +815,7 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? openMapInformation;
   final VoidCallback? openUnitAvailability;
   final VoidCallback? openUpgradeSettings;
+  final VoidCallback? openTechSettings;
   final VoidCallback? openUnitSettings;
   final VoidCallback? openForceSettings;
   final VoidCallback? openPlayerSettings;
@@ -847,6 +859,10 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               onPressed: openUpgradeSettings,
               child: const Text('Upgrade Settings…'),
+            ),
+            MenuItemButton(
+              onPressed: openTechSettings,
+              child: const Text('Tech Settings…'),
             ),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],
