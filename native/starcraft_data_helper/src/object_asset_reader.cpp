@@ -196,6 +196,11 @@ bool HasHangar(const std::uint16_t unit_id) {
          unit_id == kProtossReaverId || unit_id == kHeroWarbringerId;
 }
 
+std::uint16_t ReadLittleEndianU16(const std::vector<std::byte>& bytes, std::size_t offset) {
+  return std::to_integer<std::uint8_t>(bytes[offset]) |
+      (static_cast<std::uint16_t>(std::to_integer<std::uint8_t>(bytes[offset + 1])) << 8);
+}
+
 std::uint32_t ReadLittleEndianU32(
     const std::vector<std::byte>& bytes,
     const std::size_t offset) {
@@ -239,6 +244,13 @@ bool ReadUnitCapability(
       units_dat[kUnitsDatShieldEnableOffset + unit_id]);
 
   capability->unit_id = unit_id;
+  // Chkdraft classic Unit::DatFile parallel arrays (19876 bytes).
+  capability->ground_weapon = std::to_integer<std::uint8_t>(units_dat[5892 + unit_id]);
+  capability->air_weapon = std::to_integer<std::uint8_t>(units_dat[6348 + unit_id]);
+  capability->subunit1 = ReadLittleEndianU16(units_dat, 228 + unit_id * 2u);
+  capability->subunit2 = ReadLittleEndianU16(units_dat, 684 + unit_id * 2u);
+  capability->weapon_references_valid = capability->ground_weapon <= 130 &&
+      capability->air_weapon <= 130 && capability->subunit1 <= 228 && capability->subunit2 <= 228;
   capability->is_spellcaster = (flags & kUnitFlagSpellcaster) != 0;
   capability->has_shields = shield_enable != 0;
   capability->is_resource_container =
@@ -279,7 +291,8 @@ bool ValidateObjectRenderRequests(
 ObjectAssetRenderResult RenderObjectAssets(
     const std::filesystem::path& installation_path,
     const std::uint32_t tileset,
-    const std::vector<ObjectRenderRequest>& requests) {
+    const std::vector<ObjectRenderRequest>& requests,
+    const bool metadata_only) {
   if (tileset >= kTilesetCount) {
     return Failure(
         installation_path,
@@ -358,7 +371,7 @@ ObjectAssetRenderResult RenderObjectAssets(
   result.storage_build_number = product.BuildNumber;
 
   std::array<std::vector<std::byte>, kObjectMetadataAssetCount> metadata{};
-  for (std::size_t index = 0; index < metadata.size(); ++index) {
+  for (std::size_t index = 0; index < (metadata_only ? 1u : metadata.size()); ++index) {
     const auto error =
         ReadAsset(storage.get(), kObjectMetadataPaths[index], &metadata[index]);
     if (error != ERROR_SUCCESS) {
@@ -390,6 +403,14 @@ ObjectAssetRenderResult RenderObjectAssets(
     if (ReadUnitCapability(metadata[0], request.object_id, &capability)) {
       result.unit_capabilities.push_back(capability);
     }
+  }
+
+  if (metadata_only) {
+    result.success = true;
+    for (const auto& request : requests) {
+      result.unsupported_objects.push_back({request, "SC_CASC_OBJECT_PREVIEW_NOT_REQUESTED"});
+    }
+    return result;
   }
 
   std::vector<std::byte> wpe;

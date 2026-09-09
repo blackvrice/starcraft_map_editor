@@ -1,11 +1,18 @@
+import '../../application/placement/placement_catalog_controller.dart';
+import 'weapon_impact_panel.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_unit_settings_editor.dart';
 
 class UnitSettingsDialog extends StatefulWidget {
-  const UnitSettingsDialog({required this.controller, super.key});
+  const UnitSettingsDialog({
+    required this.controller,
+    this.catalogController,
+    super.key,
+  });
   final ObjectEditingController controller;
+  final PlacementCatalogController? catalogController;
   @override
   State<UnitSettingsDialog> createState() => _UnitSettingsDialogState();
 }
@@ -230,7 +237,7 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
               const Divider(),
               const Text('Shared weapon damage'),
               const Text(
-                'A weapon change affects every unit using that weapon. The affected-unit list is unavailable. Restoring a unit does not reset shared weapon damage.',
+                'A weapon change affects every unit using that weapon. Restoring a unit does not reset shared weapon damage.',
               ),
               if (settings != null)
                 DropdownButton<int>(
@@ -244,6 +251,11 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   onChanged: (v) => setState(() {
                     _weapon = v!;
                   }),
+                ),
+              if (widget.catalogController != null)
+                WeaponImpactPanel(
+                  controller: widget.catalogController!,
+                  weapon: _weapon,
                 ),
               for (final bonus in [false, true])
                 TextFormField(

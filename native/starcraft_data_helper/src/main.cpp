@@ -289,6 +289,9 @@ void AddUnitCapability(
   }
   (*entry)["capabilityIssueCode"] = nullptr;
   (*entry)["capability"] = {
+      {"weaponReferences", capability->weapon_references_valid ? json{
+          {"ground", capability->ground_weapon}, {"air", capability->air_weapon},
+          {"subunit1", capability->subunit1}, {"subunit2", capability->subunit2}} : json(nullptr)},
       {"isSpellcaster", capability->is_spellcaster},
       {"hasShields", capability->has_shields},
       {"isResourceContainer", capability->is_resource_container},
@@ -397,6 +400,7 @@ int ListPlacementCatalog(
         {"storageProduct", assets.storage_product},
         {"storageBuildNumber", assets.storage_build_number},
     };
+    response["unitMetadataOnly"] = kind == "unit" && request.value("unitMetadataOnly", false);
     response["kind"] = kind;
     response["tileset"] = tileset;
     response["assets"] = {
@@ -488,7 +492,8 @@ int ListPlacementCatalog(
     const auto rendered = sc::RenderObjectAssets(
         installation_path,
         static_cast<std::uint32_t>(tileset),
-        render_requests);
+        render_requests,
+        kind == "unit" && request.value("unitMetadataOnly", false));
     if (!rendered.success) {
       return WriteError(
           request_id,
@@ -507,6 +512,7 @@ int ListPlacementCatalog(
         {"storageProduct", rendered.storage_product},
         {"storageBuildNumber", rendered.storage_build_number},
     };
+    response["unitMetadataOnly"] = kind == "unit" && request.value("unitMetadataOnly", false);
     response["kind"] = kind;
     response["tileset"] = tileset;
     response["assets"] = {

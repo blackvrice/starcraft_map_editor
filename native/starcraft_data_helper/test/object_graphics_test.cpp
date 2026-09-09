@@ -448,6 +448,26 @@ int main() {
     return Fail("A ground unit capability was decoded incorrectly.");
   }
 
+  units_dat[5892 + 227] = static_cast<std::byte>(129);
+  units_dat[6348 + 227] = static_cast<std::byte>(130);
+  PutUint16(&units_dat, 228 + 227 * 2, 7);
+  PutUint16(&units_dat, 684 + 227 * 2, 228);
+  UnitCapability weapon_unit;
+  if (!ReadUnitCapability(units_dat, 227, &weapon_unit) ||
+      !weapon_unit.weapon_references_valid || weapon_unit.ground_weapon != 129 ||
+      weapon_unit.air_weapon != 130 || weapon_unit.subunit1 != 7 || weapon_unit.subunit2 != 228) {
+    return Fail("Classic unit weapon references decoded incorrectly.");
+  }
+  units_dat[5892 + 227] = static_cast<std::byte>(131);
+  if (!ReadUnitCapability(units_dat, 227, &weapon_unit) || weapon_unit.weapon_references_valid) {
+    return Fail("An invalid weapon ID was accepted or disabled unrelated placement capability.");
+  }
+  units_dat[5892 + 227] = static_cast<std::byte>(130);
+  PutUint16(&units_dat, 684 + 227 * 2, 229);
+  if (!ReadUnitCapability(units_dat, 227, &weapon_unit) || weapon_unit.weapon_references_valid) {
+    return Fail("An invalid subunit ID was accepted.");
+  }
+
   UnitCapability out_of_range;
   if (ReadUnitCapability(units_dat, 228, &out_of_range)) {
     return Fail("An out of range unit id produced a capability.");

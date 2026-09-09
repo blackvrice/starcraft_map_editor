@@ -1,9 +1,11 @@
+import 'unit_weapon_references.dart';
 import 'doodad_placement_recipe.dart';
 
 /// The minimum verified `units.dat` capability snapshot required to synthesize
 /// a default `UNIT` record for a unit that the current map does not contain.
 ///
-/// Every field is a derived boolean. Raw DAT bytes never cross the StarCraft
+/// Placement flags are derived booleans; optional weapon references are validated IDs.
+/// Raw DAT bytes never cross the StarCraft
 /// data helper boundary, and a capability that cannot be read is reported as an
 /// item level issue instead of being guessed.
 ///
@@ -12,6 +14,7 @@ import 'doodad_placement_recipe.dart';
 final class UnitPlacementCapability {
   UnitPlacementCapability({
     required this.unitId,
+    this.weaponReferences,
     required this.isSpellcaster,
     required this.hasShields,
     required this.isResourceContainer,
@@ -46,6 +49,7 @@ final class UnitPlacementCapability {
   static const gasResourceAmount = 5000;
 
   final int unitId;
+  final UnitWeaponReferences? weaponReferences;
 
   /// `Spellcaster` in `units.dat`. Marks the energy field as valid.
   final bool isSpellcaster;

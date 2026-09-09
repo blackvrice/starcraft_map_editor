@@ -924,3 +924,10 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 | MPQ 브리지 구현 방식 | 승인 | [ADR-0004](decisions/0004-stormlib-helper-process.md) |
 | StarCraft 데이터 읽기 방식 | 승인 | [ADR-0005](decisions/0005-casclib-helper-process.md) |
 | 프로젝트 파일 형식 | 검토 필요 | EUD 수직 기능 구현 전 결정 |
+
+## 유닛–무기 참조 목록
+
+기존 placement catalog port의 unitMetadataOnly 요청은 helper가 units.dat 하나만
+읽어 검증된 참조 ID를 반환하게 한다. Application이 전체 228개 커버리지와
+설치·맵 수명 주기를 검증하고 Domain이 직접·서브유닛 참조를 탐색한다.
+UI는 파일이나 프로세스를 직접 읽지 않는다. [계약과 검증](UNIT_WEAPON_REFERENCES.md).

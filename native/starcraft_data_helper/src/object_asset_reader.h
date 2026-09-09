@@ -18,9 +18,14 @@ struct ObjectRenderRequest {
 };
 
 // The verified units.dat facts a CHK UNIT record needs. Only derived
-// booleans leave the helper: raw DAT bytes never cross the process boundary.
+// booleans and validated reference IDs leave the helper; raw DAT bytes stay local.
 struct UnitCapability {
   std::uint16_t unit_id = 0;
+  bool weapon_references_valid = false;
+  std::uint8_t ground_weapon = 130;
+  std::uint8_t air_weapon = 130;
+  std::uint16_t subunit1 = 228;
+  std::uint16_t subunit2 = 228;
   bool is_spellcaster = false;
   bool has_shields = false;
   bool is_resource_container = false;
@@ -69,6 +74,7 @@ bool ValidateObjectRenderRequests(
 ObjectAssetRenderResult RenderObjectAssets(
     const std::filesystem::path& installation_path,
     std::uint32_t tileset,
-    const std::vector<ObjectRenderRequest>& requests);
+    const std::vector<ObjectRenderRequest>& requests,
+    bool metadata_only = false);
 
 }  // namespace starcraft_map_editor::starcraft_data

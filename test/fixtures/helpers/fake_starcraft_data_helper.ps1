@@ -188,6 +188,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
         if ($request.kind -eq "unit") {
             $entry.capabilityIssueCode = $null
             $entry.capability = [ordered]@{
+                weaponReferences = if ($request.unitMetadataOnly) { [ordered]@{ ground = if ($id -eq 0) { 7 } else { 130 }; air = 130; subunit1 = if ($id -eq 1) { 0 } else { 228 }; subunit2 = 228 } } else { $null }
                 isSpellcaster = $false
                 hasShields = $false
                 isResourceContainer = $false
@@ -200,7 +201,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                 isBuilding = $false
                 requiresRelationLink = ($id -eq 2)
             }
-            if ($id -eq 1) {
+            if ($id -eq 1 -and -not $request.unitMetadataOnly) {
                 $entry.capabilityIssueCode = "SC_CASC_UNIT_CAPABILITY_UNAVAILABLE"
                 $entry.Remove("capability")
             }
@@ -234,6 +235,12 @@ elseif ($request.operation -eq "listPlacementCatalog") {
         offset = [int]$request.offset
         limit = [int]$request.limit
         totalEntries = $totalEntries
+    }
+    if ($request.unitMetadataOnly) {
+        $base.unitMetadataOnly = $true
+        $base.assets = [ordered]@{ readCount = 1; totalBytes = 19876 }
+        if ($request.installationPath -like '*weapon-invalid*') { $entries[0].capability.weaponReferences.ground = 131 }
+        if ($request.installationPath -like '*weapon-old-helper*') { $base.unitMetadataOnly = $false }
     }
     $base.entries = $entries
 

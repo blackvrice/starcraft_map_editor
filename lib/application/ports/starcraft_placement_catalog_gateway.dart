@@ -326,6 +326,7 @@ final class StarCraftPlacementCatalogRequest {
     required this.tileset,
     this.offset = 0,
     this.limit = defaultLimit,
+    this.unitMetadataOnly = false,
   }) {
     if (!_isSafeIdentifier(operationId, maximumOperationIdLength)) {
       throw ArgumentError.value(
@@ -360,6 +361,7 @@ final class StarCraftPlacementCatalogRequest {
   final StarCraftTilesetAssetSet tileset;
   final int offset;
   final int limit;
+  final bool unitMetadataOnly;
 }
 
 final class StarCraftPlacementCatalogPage {

@@ -626,6 +626,8 @@ class _EditorShellState extends State<EditorShell> {
                       : () => showDialog<void>(
                           context: context,
                           builder: (_) => UnitSettingsDialog(
+                            catalogController:
+                                widget.placementCatalogController,
                             controller: widget.objectEditingController,
                           ),
                         ),

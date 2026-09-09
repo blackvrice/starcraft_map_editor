@@ -8,6 +8,7 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import 'starcraft_data_helper_protocol.dart';
+import '../../domain/placement/unit_weapon_references.dart';
 
 final class ProcessStarCraftPlacementCatalogGateway
     implements StarCraftPlacementCatalogGateway {
@@ -147,6 +148,7 @@ final class ProcessStarCraftPlacementCatalogGateway
           'tileset': request.tileset.rawValue,
           'offset': request.offset,
           'limit': request.limit,
+          if (request.unitMetadataOnly) 'unitMetadataOnly': true,
         }),
       );
       await process.stdin.flush();
@@ -305,7 +307,12 @@ final class ProcessStarCraftPlacementCatalogGateway
       final assets = _jsonObject(decoded, 'assets');
       final readCount = _jsonInteger(assets, 'readCount');
       final totalBytes = _jsonInteger(assets, 'totalBytes');
-      final validReadCount = request.kind == StarCraftPlacementKind.tile
+      final validReadCount = request.unitMetadataOnly
+          ? request.kind == StarCraftPlacementKind.unit &&
+                decoded['unitMetadataOnly'] == true &&
+                readCount == 1 &&
+                totalBytes == 19876
+          : request.kind == StarCraftPlacementKind.tile
           ? readCount == StarCraftDataAssetManifest.renderAssetKinds.length
           : request.kind == StarCraftPlacementKind.doodad
           ? readCount == 5
@@ -390,6 +397,12 @@ final class ProcessStarCraftPlacementCatalogGateway
               throw const FormatException('Unit capability is missing.');
             }
             unitCapability = _parseUnitCapability(rawCapability, id);
+            if (request.unitMetadataOnly &&
+                unitCapability.weaponReferences == null) {
+              throw const FormatException(
+                'Verified weapon references are missing.',
+              );
+            }
           } else if (rawCapability != null) {
             throw const FormatException(
               'An unsupported unit cannot include a capability.',
@@ -546,6 +559,14 @@ final class ProcessStarCraftPlacementCatalogGateway
       return value;
     }
 
+    int reference(String name, int maximum) {
+      final value = _jsonInteger(_jsonObject(raw, 'weaponReferences'), name);
+      if (value < 0 || value > maximum) {
+        throw const FormatException('Weapon reference ID is invalid.');
+      }
+      return value;
+    }
+
     final isResourceContainer = flag('isResourceContainer');
     final isGasResourceContainer = flag('isGasResourceContainer');
     if (isGasResourceContainer && !isResourceContainer) {
@@ -555,6 +576,14 @@ final class ProcessStarCraftPlacementCatalogGateway
     }
     return UnitPlacementCapability(
       unitId: unitId,
+      weaponReferences: raw['weaponReferences'] == null
+          ? null
+          : UnitWeaponReferences(
+              ground: reference('ground', 130),
+              air: reference('air', 130),
+              subunit1: reference('subunit1', 228),
+              subunit2: reference('subunit2', 228),
+            ),
       isSpellcaster: flag('isSpellcaster'),
       hasShields: flag('hasShields'),
       isResourceContainer: isResourceContainer,

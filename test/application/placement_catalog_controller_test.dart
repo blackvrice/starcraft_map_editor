@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:starcraft_map_editor/presentation/settings/weapon_impact_panel.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_weapon_references.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -26,6 +29,85 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  test(
+    'loads complete local weapon references and rejects missing coverage',
+    () async {
+      final fixture = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      final snapshot = await fixture.controller.loadWeaponReferences();
+      expect(snapshot.index.directUsers(7), [0]);
+      expect(snapshot.index.subunitUsers(7), [1]);
+      expect(snapshot.source, contains('13515'));
+      final absent = await _openFixture();
+      addTearDown(absent.dispose);
+      absent.controller.setInstallationPath(_installationPath);
+      await expectLater(
+        absent.controller.loadWeaponReferences(),
+        throwsStateError,
+      );
+    },
+  );
+  test(
+    'discards weapon references after installation changes or disposal',
+    () async {
+      for (final dispose in [false, true]) {
+        final gateway = _DeferredCatalogGateway();
+        final fixture = await _openFixture(catalogGateway: gateway);
+        fixture.controller.setInstallationPath(_installationPath);
+        final pending = fixture.controller.loadWeaponReferences();
+        final expectation = expectLater(pending, throwsStateError);
+        if (dispose) {
+          await fixture.dispose();
+        } else {
+          fixture.controller.setInstallationPath(r'C:\Other');
+        }
+        gateway.complete();
+        await expectation;
+        if (!dispose) await fixture.dispose();
+      }
+    },
+  );
+  testWidgets(
+    'weapon panel updates selection and invalidates old installation results',
+    (tester) async {
+      final fixture = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      Widget panel(int weapon) => MaterialApp(
+        home: Scaffold(
+          body: WeaponImpactPanel(
+            controller: fixture.controller,
+            weapon: weapon,
+          ),
+        ),
+      );
+      await tester.pumpWidget(panel(7));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('weapon-direct-users'))).data,
+        contains('Unit #0'),
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const Key('weapon-subunit-users'))).data,
+        contains('Unit #1'),
+      );
+      await tester.pumpWidget(panel(8));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('weapon-direct-users'))).data,
+        contains('None in this DAT snapshot'),
+      );
+      fixture.controller.setInstallationPath(null);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('weapon-direct-users')), findsNothing);
+      expect(
+        find.textContaining('Choose a StarCraft installation'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   test('invalidates cached choices when the installation changes', () async {
     final fixture = await _openFixture();
     addTearDown(fixture.dispose);
@@ -495,10 +577,12 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
     StarCraftPlacementCatalogRequest request,
   ) async {
     final entries = <StarCraftPlacementCatalogEntry>[];
-    final total = switch (request.kind) {
-      StarCraftPlacementKind.doodad => doodadTotal,
-      _ => 1,
-    };
+    final total = request.unitMetadataOnly
+        ? 228
+        : switch (request.kind) {
+            StarCraftPlacementKind.doodad => doodadTotal,
+            _ => 1,
+          };
     for (
       var index = request.offset;
       index < total && entries.length < request.limit;
@@ -570,6 +654,12 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
             verifiedName: 'Terran Marine',
             unitCapability: UnitPlacementCapability(
               unitId: index,
+              weaponReferences: UnitWeaponReferences(
+                ground: index == 0 ? 7 : 130,
+                air: 130,
+                subunit1: index == 1 ? 0 : 228,
+                subunit2: 228,
+              ),
               isSpellcaster: false,
               hasShields: false,
               isResourceContainer: false,

@@ -53,6 +53,51 @@ void main() {
       limit: limit,
     );
 
+    test(
+      'reads metadata without previews and rejects invalid or old metadata responses',
+      () async {
+        for (final scenario in [
+          'StarCraft',
+          'weapon-invalid',
+          'weapon-old-helper',
+        ]) {
+          final page = await createGateway().list(
+            StarCraftPlacementCatalogRequest(
+              operationId: 'weapon-test',
+              installationPath: 'C:\\Games\\$scenario',
+              kind: StarCraftPlacementKind.unit,
+              tileset: StarCraftTilesetAssetSet.badlands,
+              limit: 228,
+              unitMetadataOnly: true,
+            ),
+          );
+          expect(
+            page.isSuccess,
+            scenario == 'StarCraft',
+            reason: page.diagnostics
+                .map((d) => '${d.code} ${d.rawDetails}')
+                .join('\n'),
+          );
+          if (page.isSuccess) {
+            expect(page.entries, hasLength(228));
+            expect(
+              page.entries.first.unitCapability!.weaponReferences!.ground,
+              7,
+            );
+            expect(
+              page.entries[1].unitCapability!.weaponReferences!.subunit1,
+              0,
+            );
+            expect(page.totalMetadataBytes, 19876);
+          } else {
+            expect(
+              page.diagnostics.single.code,
+              StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+            );
+          }
+        }
+      },
+    );
     test('lists a validated contiguous Tile page', () async {
       final page = await createGateway().list(requestFor('StarCraft'));
 

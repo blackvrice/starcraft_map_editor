@@ -1,3 +1,4 @@
+import '../../domain/placement/unit_weapon_references.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -173,6 +174,9 @@ class PlacementCatalogController {
   String? _installationPath;
   Object? _mapSnapshot;
   bool _disposed = false;
+  int weaponReferenceEpoch = 0;
+  int _weaponRequest = 0;
+  String? _weaponOperation;
 
   PlacementCatalogState get state => _state;
 
@@ -209,7 +213,69 @@ class PlacementCatalogController {
     _invalidateCatalog();
   }
 
+  Future<WeaponReferenceSnapshot> loadWeaponReferences() async {
+    final gateway = catalogGateway;
+    final path = _installationPath;
+    final epoch = weaponReferenceEpoch;
+    if (_disposed || gateway == null || path == null) {
+      throw StateError(
+        'Choose a StarCraft installation to load weapon references.',
+      );
+    }
+    final operation = 'weapon-references-${++_weaponRequest}';
+    _weaponOperation = operation;
+    try {
+      final page = await gateway.list(
+        StarCraftPlacementCatalogRequest(
+          operationId: operation,
+          installationPath: path,
+          kind: StarCraftPlacementKind.unit,
+          tileset: mapTileset ?? StarCraftTilesetAssetSet.badlands,
+          limit: 228,
+          unitMetadataOnly: true,
+        ),
+      );
+      if (_disposed || epoch != weaponReferenceEpoch) {
+        throw StateError(
+          'The installation or map changed. Reload weapon references.',
+        );
+      }
+      if (!page.isSuccess) {
+        throw StateError(
+          page.diagnostics.map((d) => '${d.code}: ${d.message}').join('\n'),
+        );
+      }
+      if (page.totalEntries != 228 ||
+          page.entries.length != 228 ||
+          page.helperVersion == null ||
+          page.storageBuildNumber == null) {
+        throw StateError(
+          'Incomplete weapon reference coverage or source metadata.',
+        );
+      }
+      final units = <UnitWeaponReferences>[];
+      for (var i = 0; i < 228; i++) {
+        final entry = page.entries[i];
+        final references = entry.unitCapability?.weaponReferences;
+        if (entry.key.id != i || references == null) {
+          throw StateError('Weapon references for Unit #$i are unavailable.');
+        }
+        units.add(references);
+      }
+      return WeaponReferenceSnapshot(
+        UnitWeaponIndex(units),
+        epoch,
+        '${page.storageProduct} build ${page.storageBuildNumber}; helper ${page.helperVersion}',
+      );
+    } finally {
+      if (_weaponOperation == operation) _weaponOperation = null;
+    }
+  }
+
   void _invalidateCatalog() {
+    weaponReferenceEpoch++;
+    final operation = _weaponOperation;
+    if (operation != null) unawaited(catalogGateway?.cancel(operation));
     ++_requestSequence;
     _recentKeys.clear();
     _emit(PlacementCatalogState(kind: _state.kind, owner: _state.owner));
@@ -438,6 +504,11 @@ class PlacementCatalogController {
 
   Future<void> dispose() {
     _disposed = true;
+    weaponReferenceEpoch++;
+    final weaponOperation = _weaponOperation;
+    if (weaponOperation != null) {
+      unawaited(catalogGateway?.cancel(weaponOperation));
+    }
     ++_requestSequence;
     return _changes.close();
   }
@@ -606,4 +677,11 @@ class PlacementCatalogController {
     _state = state;
     _changes.add(state);
   }
+}
+
+final class WeaponReferenceSnapshot {
+  const WeaponReferenceSnapshot(this.index, this.epoch, this.source);
+  final UnitWeaponIndex index;
+  final int epoch;
+  final String source;
 }
