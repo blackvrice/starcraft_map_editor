@@ -475,3 +475,9 @@ Clear는 장기 작업 중 중복 실행되지 않으며 취소는 기존 설정
 File → Unit Availability…에서 맵 기본값과 플레이어별 허용/상속을 편집한다.
 단일 5700바이트 PUNI의 변경 필드만 교체하며 상속 전환 시 개별 값을 보존한다.
 지원 범위와 검증은 [유닛 생산 허용](UNIT_AVAILABILITY.md)을 따른다.
+
+## 업그레이드 설정 (M6.3)
+
+File → Upgrade Settings…에서 비용·시간·증가량과 플레이어별 시작/최대 레벨을 편집한다.
+버전별 UPGS/UPGx와 UPGR/PUPx를 선택하고 비용/레벨 그룹을 독립 검증한다.
+UPGx 오프셋 61의 예약 바이트를 보존한다. [지원·검증 규칙](UPGRADE_SETTINGS.md)을 따른다.

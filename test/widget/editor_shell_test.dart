@@ -48,6 +48,124 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 
 void main() {
   testWidgets(
+    'upgrade settings validate levels and preserve drafts defaults and undo',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> showUpgrades() async {
+        await tester.tap(find.text('File').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Upgrade Settings…'));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> choose(String key, String label) async {
+        final target = find.byKey(Key('upgrade-$key'));
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+      }
+
+      Finder field(String label) => find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == label,
+      );
+      Future<void> enter(String label, String value) async {
+        final target = field(label);
+        await tester.ensureVisible(target);
+        await tester.enterText(target, value);
+        await tester.pumpAndSettle();
+      }
+
+      await showUpgrades();
+      await enter('Base mineral cost', '100');
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await showUpgrades();
+      await enter('Base mineral cost', '100');
+      await choose('selection', 'Upgrade #1');
+      await enter('Base gas cost', '250');
+      await enter('Maximum level', '3');
+      await enter('Starting level', '4');
+      await tester.tap(find.byKey(const Key('upgrade-apply')));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('starting level must not exceed'),
+        findsOneWidget,
+      );
+      expect(open.state.session!.isDirty, isFalse);
+      await enter('Starting level', '2');
+      await choose('player', 'Player 1');
+      await choose('inherit', 'Inherit map levels');
+      expect(
+        find.text('Effective levels: 2 / 3 (start / maximum)'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<TextField>(field('Starting level')).enabled,
+        isFalse,
+      );
+      await tester.tap(find.byKey(const Key('upgrade-apply')));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isTrue);
+      await tester.tap(find.text('Undo: Edit upgrade settings'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: Edit upgrade settings'));
+      await tester.pumpAndSettle();
+      await choose('selection', 'Upgrade #0');
+      expect(find.text('100'), findsOneWidget);
+      await choose('useDefault', 'Use game defaults');
+      expect(
+        tester.widget<TextField>(field('Base mineral cost')).enabled,
+        isFalse,
+      );
+      await tester.tap(find.byKey(const Key('upgrade-apply')));
+      await tester.pumpAndSettle();
+      expect(find.text('100'), findsOneWidget);
+      await choose('player', 'Player 9 (read-only)');
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('upgrade-inherit')),
+            )
+            .onChanged,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'unit availability preserves drafts and supports inheritance and undo',
     (tester) async {
       tester.view.physicalSize = const Size(1440, 1000);
@@ -2266,6 +2384,8 @@ ExtractedMap _createExtractedMap({bool includeMapInformation = false}) {
     if (includeMapInformation) _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
     if (includeMapInformation) _section('UNIx', List<int>.filled(4168, 0)),
     if (includeMapInformation) _section('PUNI', List<int>.filled(5700, 0)),
+    if (includeMapInformation) _section('UPGx', List<int>.filled(794, 0)),
+    if (includeMapInformation) _section('PUPx', List<int>.filled(2318, 0)),
     if (includeMapInformation) _section('FORC', List<int>.filled(20, 0)),
   ]);
   return ExtractedMap(

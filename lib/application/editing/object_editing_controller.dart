@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_upgrade_settings_editor.dart';
 import '../../domain/chk/typed/chk_unit_availability_editor.dart';
 import '../../domain/chk/typed/chk_unit_settings_editor.dart';
 import '../../domain/chk/typed/chk_force_settings_editor.dart';
@@ -80,6 +81,44 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  ChkUpgradeSettings get upgradeSettings {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map before changing upgrades.');
+    }
+    return const ChkUpgradeSettingsEditor().read(session.rawDocument);
+  }
+
+  void applyUpgradeSettings({
+    required RawChkDocument expectedDocument,
+    required Map<UpgradeSettingKey, int> changes,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError(
+        'The map changed. Reopen Upgrade Settings before applying.',
+      );
+    }
+    final replacements = const ChkUpgradeSettingsEditor().edit(
+      session.rawDocument,
+      changes,
+    );
+    if (replacements.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit upgrade settings',
+        beforeSections: {
+          for (final index in replacements.keys)
+            index: session.rawDocument.sections[index],
+        },
+        afterSections: replacements,
+      ),
+      clearSelection: false,
+    );
+  }
 
   ChkUnitAvailability get unitAvailability {
     final session = openMapController.state.session;

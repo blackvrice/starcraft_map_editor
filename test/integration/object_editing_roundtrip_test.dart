@@ -1,3 +1,4 @@
+import 'package:starcraft_map_editor/domain/chk/typed/chk_upgrade_settings_editor.dart';
 import 'dart:convert';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_player_settings_editor.dart';
 import 'dart:typed_data';
@@ -383,6 +384,34 @@ void main() {
         throwsStateError,
       );
 
+      final beforeUpgrades = openController.state.session!.rawDocument;
+      editingController.applyUpgradeSettings(
+        expectedDocument: beforeUpgrades,
+        changes: {
+          (60, null, ChkUpgradeField.minerals): 0x1234,
+          (60, null, ChkUpgradeField.timeFactor): 65535,
+          (60, null, ChkUpgradeField.maximum): 5,
+          (60, null, ChkUpgradeField.start): 2,
+          (60, 7, ChkUpgradeField.inherit): 1,
+        },
+      );
+      editingController.undo();
+      expect(
+        editingController.upgradeSettings.value((
+          60,
+          null,
+          ChkUpgradeField.maximum,
+        )),
+        0,
+      );
+      editingController.redo();
+      expect(
+        () => editingController.applyUpgradeSettings(
+          expectedDocument: beforeUpgrades,
+          changes: {},
+        ),
+        throwsStateError,
+      );
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -542,6 +571,23 @@ void main() {
       expect(
         _sectionNamed(reopened.session!.rawDocument, 'PUNI').payload,
         expectedAvailability,
+      );
+      final expectedUpgradeCosts = List<int>.filled(794, 0)
+        ..[182] = 0x34
+        ..[183] = 0x12
+        ..[792] = 255
+        ..[793] = 255;
+      final expectedUpgradeLevels = List<int>.filled(2318, 0)
+        ..[1524] = 5
+        ..[1585] = 2
+        ..[2073] = 1;
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'UPGx').payload,
+        expectedUpgradeCosts,
+      );
+      expect(
+        _sectionNamed(reopened.session!.rawDocument, 'PUPx').payload,
+        expectedUpgradeLevels,
       );
       expect(reopened.session!.sourcePath, outputPath);
       expect(reopened.session!.isDirty, isFalse);
@@ -893,6 +939,8 @@ Uint8List _sourceChkBytes() {
     _section('COLR', [0, 1, 2, 3, 4, 5, 6, 7]),
     _section('UNIx', List<int>.filled(4168, 0)),
     _section('PUNI', List<int>.filled(5700, 0)),
+    _section('UPGx', List<int>.filled(794, 0)),
+    _section('PUPx', List<int>.filled(2318, 0)),
     _section('FORC', [
       ...List<int>.filled(8, 0),
       1,

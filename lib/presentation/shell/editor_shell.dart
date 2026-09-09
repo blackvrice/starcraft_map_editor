@@ -34,6 +34,7 @@ import '../settings/player_settings_dialog.dart';
 import '../settings/force_settings_dialog.dart';
 import '../settings/unit_settings_dialog.dart';
 import '../settings/unit_availability_dialog.dart';
+import '../settings/upgrade_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
 enum _WorkspaceView { map, eud, catalog }
@@ -621,6 +622,15 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openUpgradeSettings:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => UpgradeSettingsDialog(
+                            controller: widget.objectEditingController,
+                          ),
+                        ),
                   openUnitAvailability:
                       widget.openMapController.state.session == null
                       ? null
@@ -775,6 +785,7 @@ class _EditorShellState extends State<EditorShell> {
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
     required this.openUnitAvailability,
+    required this.openUpgradeSettings,
     required this.openUnitSettings,
     required this.openForceSettings,
     required this.openPlayerSettings,
@@ -792,6 +803,7 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? openMap;
   final VoidCallback? openMapInformation;
   final VoidCallback? openUnitAvailability;
+  final VoidCallback? openUpgradeSettings;
   final VoidCallback? openUnitSettings;
   final VoidCallback? openForceSettings;
   final VoidCallback? openPlayerSettings;
@@ -831,6 +843,10 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               onPressed: openUnitAvailability,
               child: const Text('Unit Availability…'),
+            ),
+            MenuItemButton(
+              onPressed: openUpgradeSettings,
+              child: const Text('Upgrade Settings…'),
             ),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],
