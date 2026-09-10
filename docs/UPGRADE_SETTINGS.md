@@ -65,4 +65,4 @@ u16은 little endian이며 N은 46/61이다. UPGR/PUPx는 모든 배열이 u8이
 
 2026-09-10: [공통 검색·ID 범위 복사](SETTINGS_EDITING_UX.md)를 연결했다.
 현재 ID의 수정 필드만 대상 초안에 복사하며 Apply에서 전체 검증한다.
-통합 설정 탭과 여러 플레이어를 지정하는 범위 복사는 후속 작업이다.
+[통합 설정 탭과 플레이어 범위](MAP_SETTINGS_UI.md)도 지원한다.

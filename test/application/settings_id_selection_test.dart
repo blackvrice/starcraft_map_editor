@@ -49,6 +49,11 @@ void main() {
     },
   );
   test('explicit ID selections deduplicate and bound ranges', () {
+    expect(parseSettingsIds('1, 3-8', 9, minimum: 1), {1, 3, 4, 5, 6, 7, 8});
+    expect(
+      () => parseSettingsIds('0, 1', 9, minimum: 1),
+      throwsFormatException,
+    );
     expect(parseSettingsIds(' 0, 2-4, 3, 227 ', 228), {0, 2, 3, 4, 227});
     expect(parseSettingsIds('0-43', 44).length, 44);
     expect(() => parseSettingsIds('1', 44).add(2), throwsUnsupportedError);

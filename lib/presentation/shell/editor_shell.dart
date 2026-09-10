@@ -1,3 +1,4 @@
+import '../settings/map_settings_dialog.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -623,6 +624,18 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openMapSettings:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => MapSettingsDialog(
+                            controller: widget.objectEditingController,
+                            catalogController:
+                                widget.placementCatalogController,
+                          ),
+                        ),
                   openTechSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -797,6 +810,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openUnitAvailability,
     required this.openUpgradeSettings,
     required this.openTechSettings,
+    required this.openMapSettings,
     required this.openUnitSettings,
     required this.openForceSettings,
     required this.openPlayerSettings,
@@ -816,6 +830,7 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? openUnitAvailability;
   final VoidCallback? openUpgradeSettings;
   final VoidCallback? openTechSettings;
+  final VoidCallback? openMapSettings;
   final VoidCallback? openUnitSettings;
   final VoidCallback? openForceSettings;
   final VoidCallback? openPlayerSettings;
@@ -863,6 +878,10 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               onPressed: openTechSettings,
               child: const Text('Tech Settings…'),
+            ),
+            MenuItemButton(
+              onPressed: openMapSettings,
+              child: const Text('Map Settings…'),
             ),
             const MenuItemButton(onPressed: null, child: Text('Close')),
           ],
@@ -1287,37 +1306,40 @@ class _DocumentTabs extends StatelessWidget {
       height: 40,
       child: ColoredBox(
         color: const Color(0xFF171C24),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (session case final session?)
-              _DocumentTab(
-                key: const Key('map-document-tab'),
-                label: _fileName(session.sourcePath),
-                dirty: session.isDirty,
-                icon: Icons.map_outlined,
-                selected: workspaceView == _WorkspaceView.map,
-                onPressed: onShowMap,
-              ),
-            if (session != null)
-              _DocumentTab(
-                key: const Key('placement-catalog-tab'),
-                label: 'Catalog',
-                dirty: false,
-                icon: Icons.grid_view_rounded,
-                selected: workspaceView == _WorkspaceView.catalog,
-                onPressed: onShowCatalog,
-              ),
-            if (document != null)
-              _DocumentTab(
-                key: const Key('eud-source-tab'),
-                label: document.fileName,
-                dirty: document.isDirty,
-                icon: Icons.code_rounded,
-                selected: workspaceView == _WorkspaceView.eud,
-                onPressed: onShowEud,
-              ),
-          ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (session case final session?)
+                _DocumentTab(
+                  key: const Key('map-document-tab'),
+                  label: _fileName(session.sourcePath),
+                  dirty: session.isDirty,
+                  icon: Icons.map_outlined,
+                  selected: workspaceView == _WorkspaceView.map,
+                  onPressed: onShowMap,
+                ),
+              if (session != null)
+                _DocumentTab(
+                  key: const Key('placement-catalog-tab'),
+                  label: 'Catalog',
+                  dirty: false,
+                  icon: Icons.grid_view_rounded,
+                  selected: workspaceView == _WorkspaceView.catalog,
+                  onPressed: onShowCatalog,
+                ),
+              if (document != null)
+                _DocumentTab(
+                  key: const Key('eud-source-tab'),
+                  label: document.fileName,
+                  dirty: document.isDirty,
+                  icon: Icons.code_rounded,
+                  selected: workspaceView == _WorkspaceView.eud,
+                  onPressed: onShowEud,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2071,9 +2093,11 @@ class _MapCanvasMetadata extends StatelessWidget {
           children: [
             Icon(icon, size: 12, color: const Color(0xFF91ACD8)),
             const SizedBox(width: 5),
-            Text(
-              value,
-              style: const TextStyle(color: Color(0xFFC2CAD8), fontSize: 10),
+            Flexible(
+              child: Text(
+                value,
+                style: const TextStyle(color: Color(0xFFC2CAD8), fontSize: 10),
+              ),
             ),
           ],
         ),
@@ -3028,6 +3052,9 @@ class _ObjectPropertiesInspectorState
         ),
         const SizedBox(height: 12),
         _integerField(ObjectPropertyFields.typeId, 'Type ID', canEdit),
+        const Text(
+          'Placed object only. Use File → Map Settings for map-wide unit types, players and game settings.',
+        ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

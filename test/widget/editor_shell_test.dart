@@ -47,6 +47,335 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  for (final config in [
+    (
+      'Player Settings…',
+      'players',
+      'player-settings-apply',
+      'player-settings-owner',
+      'Human (6)',
+      'OWNR',
+      0,
+      1,
+      6,
+      'Edit player settings',
+    ),
+    (
+      'Force Settings…',
+      'force-players',
+      'force-apply',
+      'force-assignment',
+      'Assign to Force 2',
+      'FORC',
+      0,
+      1,
+      1,
+      'Edit force settings',
+    ),
+    (
+      'Force Settings…',
+      'forces',
+      'force-apply',
+      'force-flag-1',
+      '',
+      'FORC',
+      16,
+      1,
+      1,
+      'Edit force settings',
+    ),
+    (
+      'Unit Availability…',
+      'availability-players',
+      'availability-apply',
+      'availability-player',
+      'Player: allowed',
+      'PUNI',
+      0,
+      228,
+      1,
+      'Edit unit availability',
+    ),
+    (
+      'Upgrade Settings…',
+      'upgrade-players',
+      'upgrade-apply',
+      '',
+      '',
+      'PUPx',
+      0,
+      61,
+      5,
+      'Edit upgrade settings',
+    ),
+    (
+      'Tech Settings…',
+      'tech-players',
+      'tech-apply',
+      'tech-researched',
+      'Already researched',
+      'PTEx',
+      528,
+      44,
+      1,
+      'Edit tech settings',
+    ),
+  ]) {
+    final (
+      menu,
+      prefix,
+      applyKey,
+      fieldKey,
+      option,
+      section,
+      offset,
+      stride,
+      value,
+      undo,
+    ) = config;
+    testWidgets('$prefix copies one-based player or force ranges losslessly', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> choose(String key, String label) async {
+        final target = find.byKey(Key(key));
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(menu));
+      await tester.pumpAndSettle();
+      if (prefix == 'upgrade-players' || prefix == 'tech-players') {
+        await choose(
+          prefix == 'upgrade-players' ? 'upgrade-player' : 'tech-player',
+          'Player 1',
+        );
+      }
+      if (prefix == 'forces') {
+        await tester.ensureVisible(find.byKey(Key(fieldKey)));
+        await tester.tap(find.byKey(Key(fieldKey)));
+      } else if (prefix == 'upgrade-players') {
+        final max = find.byWidgetPredicate(
+          (w) => w is TextField && w.decoration?.labelText == 'Maximum level',
+        );
+        await tester.ensureVisible(max);
+        await tester.enterText(max, '5');
+      } else {
+        await choose(fieldKey, option);
+      }
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(Key('$prefix-bulk')));
+      await tester.tap(find.byKey(Key('$prefix-bulk')));
+      await tester.pumpAndSettle();
+      Future<void> copy(String range) async {
+        await tester.ensureVisible(find.byKey(Key('$prefix-range')));
+        await tester.enterText(find.byKey(Key('$prefix-range')), range);
+        await tester.ensureVisible(find.byKey(Key('$prefix-copy')));
+        await tester.tap(find.byKey(Key('$prefix-copy')));
+        await tester.pumpAndSettle();
+      }
+
+      await copy('0, 2');
+      expect(find.textContaining('IDs must be between 1'), findsOneWidget);
+      await copy('9');
+      expect(find.textContaining('IDs must be between'), findsOneWidget);
+      await copy('2-3');
+      expect(open.state.session!.isDirty, isFalse);
+      final expected = open.state.session!.rawDocument.sections
+          .firstWhere((s) => s.name == section)
+          .payload;
+      for (var i = 0; i < 3; i++) {
+        expected[offset + stride * i] = value;
+      }
+      await tester.tap(find.byKey(Key(applyKey)));
+      await tester.pumpAndSettle();
+      expect(
+        open.state.session!.rawDocument.sections
+            .firstWhere((s) => s.name == section)
+            .payload,
+        expected,
+      );
+      await tester.tap(find.text('Undo: $undo'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: $undo'));
+      await tester.pumpAndSettle();
+      expect(
+        open.state.session!.rawDocument.sections
+            .firstWhere((s) => s.name == section)
+            .payload,
+        expected,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'map settings tabs preserve drafts and guard cross-tab changes and close',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> tab(String name) async {
+        final target = find.widgetWithText(Tab, name);
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+      }
+
+      Finder energy() => find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Energy cost',
+      );
+      Future<void> enterEnergy(String text) async {
+        await tester.ensureVisible(energy());
+        await tester.enterText(energy(), text);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> openSettings() async {
+        await tester.tap(find.text('File').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Map Settings…'));
+        await tester.pumpAndSettle();
+      }
+
+      await openSettings();
+      for (final name in [
+        'Players',
+        'Forces',
+        'Units',
+        'Availability',
+        'Upgrades',
+        'Tech',
+        'Map',
+      ]) {
+        await tab(name);
+      }
+      await tester.enterText(
+        find.byKey(const Key('map-information-title')),
+        'Draft map title',
+      );
+      await tester.pumpAndSettle();
+      await tab('Tech');
+      await enterEnergy('100');
+      await tab('Players');
+      await tab('Tech');
+      expect(tester.widget<TextField>(energy()).controller!.text, '100');
+      await tab('Map');
+      expect(find.text('Draft map title'), findsOneWidget);
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.byKey(const Key('map-information-apply')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Undo: Edit map information'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: Edit map information'));
+      await tester.pumpAndSettle();
+      await tab('Players');
+      expect(find.byKey(const Key('settings-reload')), findsNothing);
+      await tab('Tech');
+      expect(find.byKey(const Key('settings-reload')), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('tech-apply')))
+            .onPressed,
+        isNull,
+      );
+      expect(tester.widget<TextField>(energy()).controller!.text, '100');
+      await tester.tap(find.byKey(const Key('settings-reload')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(energy()).controller!.text, '0');
+      await enterEnergy('200');
+      await tester.tap(find.byKey(const Key('tech-apply')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Undo: Edit tech settings'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(energy()).controller!.text, '0');
+      await tester.tap(find.text('Redo: Edit tech settings'));
+      await tester.pumpAndSettle();
+      await enterEnergy('300');
+      tester.view.physicalSize = const Size(900, 700);
+      await tester.pumpAndSettle();
+      await tab('Map');
+      await tester.tap(find.byKey(const Key('map-settings-close')));
+      await tester.pumpAndSettle();
+      expect(find.text('Discard unapplied settings?'), findsOneWidget);
+      await tester.tap(find.text('Keep editing'));
+      await tester.pumpAndSettle();
+      await tab('Tech');
+      expect(tester.widget<TextField>(energy()).controller!.text, '300');
+      await tester.tap(find.byKey(const Key('map-settings-close')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Discard and close'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('map-settings-close')), findsNothing);
+      final costs = open.state.session!.rawDocument.sections
+          .firstWhere((s) => s.name == 'TECx')
+          .payload;
+      expect(costs[308], 200);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'bulk tech copies keep other player and map state drafts out of scope',
     (tester) async {

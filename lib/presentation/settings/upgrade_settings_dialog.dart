@@ -1,3 +1,4 @@
+import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import 'package:flutter/material.dart';
@@ -142,7 +143,11 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
         settings != null && settings.data.containsKey(settings.costName);
     final levelEnabled =
         settings != null && settings.data.containsKey(settings.levelName);
-    return AlertDialog(
+    return SettingsSurface(
+      controller: widget.controller,
+      snapshot: _snapshot,
+      hasDraft: _draft.isNotEmpty,
+      onReload: () => setState(_reload),
       title: const Text('Upgrade Settings'),
       content: SizedBox(
         width: 640,
@@ -204,24 +209,39 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                   ),
                 ],
                 if (levelEnabled) ...[
-                  DropdownButton<int>(
-                    key: const Key('upgrade-player'),
-                    value: _player,
-                    isExpanded: true,
-                    items: [
-                      const DropdownMenuItem(
-                        value: -1,
-                        child: Text('Map default levels'),
-                      ),
-                      for (var i = 0; i < 12; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text(
-                            'Player ${i + 1}${i >= 8 ? " (read-only)" : ""}',
-                          ),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _player = v!),
+                  SettingsSelection(
+                    prefix: 'upgrade-players',
+                    selectorKey: const Key('upgrade-player'),
+                    count: 12,
+                    copyCount: 8,
+                    idBase: 1,
+                    includeMapDefault: true,
+                    selected: _player,
+                    revision: _snapshot,
+                    label: (id) => id == -1
+                        ? 'Map default levels'
+                        : 'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+                    onSelected: (id) => setState(() => _player = id),
+                    scope:
+                        'Copies only current upgrade #$_upgrade player edits to Players 1–8. Map costs and defaults are excluded.',
+                    onCopy: _player < 0 || _player >= 8
+                        ? null
+                        : (ids) {
+                            final copies = copySettingsDraft(
+                              _draft,
+                              (key) => key.$1 == _upgrade && key.$2 == _player,
+                              (key, id) => (key.$1, id, key.$3),
+                              ids,
+                            );
+                            for (final e in copies.entries) {
+                              e.key.$3.parse(e.value);
+                            }
+                            setState(() {
+                              _draft.addAll(copies);
+                              _generation++;
+                            });
+                            return copies.length;
+                          },
                   ),
                   if (_player >= 0)
                     _flag(

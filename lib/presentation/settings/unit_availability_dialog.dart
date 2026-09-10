@@ -1,3 +1,4 @@
+import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import 'package:flutter/material.dart';
@@ -104,7 +105,11 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
         : inherit == 0
         ? _value(ChkUnitAvailabilityField.player)
         : null;
-    return AlertDialog(
+    return SettingsSurface(
+      controller: widget.controller,
+      snapshot: _snapshot,
+      hasDraft: _draft.isNotEmpty,
+      onReload: () => setState(_reload),
       title: const Text('Unit Availability'),
       content: SizedBox(
         width: 560,
@@ -148,20 +153,31 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                 'Default: prohibited',
                 'Default: allowed',
               ),
-              DropdownButton<int>(
-                key: const Key('availability-player-selection'),
-                value: _player,
-                isExpanded: true,
-                items: [
-                  for (var i = 0; i < 12; i++)
-                    DropdownMenuItem(
-                      value: i,
-                      child: Text(
-                        'Player ${i + 1}${i >= 8 ? " (read-only)" : ""}',
-                      ),
-                    ),
-                ],
-                onChanged: (v) => setState(() => _player = v!),
+              SettingsSelection(
+                prefix: 'availability-players',
+                selectorKey: const Key('availability-player-selection'),
+                count: 12,
+                copyCount: 8,
+                idBase: 1,
+                selected: _player,
+                revision: _snapshot,
+                label: (id) =>
+                    'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+                onSelected: (id) => setState(() => _player = id),
+                scope:
+                    'Copies only current Unit #$_unit player edits to Players 1–8. Map defaults are excluded.',
+                onCopy: _settings == null || _player >= 8
+                    ? null
+                    : (ids) {
+                        final copies = copySettingsDraft(
+                          _draft,
+                          (key) => key.$2 == _unit && key.$1 == _player,
+                          (key, id) => (id, key.$2, key.$3),
+                          ids,
+                        );
+                        setState(() => _draft.addAll(copies));
+                        return copies.length;
+                      },
               ),
               _field(
                 ChkUnitAvailabilityField.inherit,

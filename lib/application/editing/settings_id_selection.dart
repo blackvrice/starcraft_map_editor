@@ -1,6 +1,10 @@
 /// Parses an explicit selection, never interpreting a search as a write scope.
-Set<int> parseSettingsIds(String input, int count) {
-  if (count < 1 || input.trim().isEmpty || input.length > 512) {
+Set<int> parseSettingsIds(String input, int count, {int minimum = 0}) {
+  if (count < 1 ||
+      minimum < 0 ||
+      minimum >= count ||
+      input.trim().isEmpty ||
+      input.length > 512) {
     throw const FormatException('Enter IDs such as 0, 2-5.');
   }
   final ids = <int>{};
@@ -13,9 +17,9 @@ Set<int> parseSettingsIds(String input, int count) {
     }
     final first = int.parse(match[1]!);
     final last = int.parse(match[2] ?? match[1]!);
-    if (first > last || first < 0 || last >= count) {
+    if (first > last || first < minimum || last >= count) {
       throw FormatException(
-        'IDs must be between 0 and ${count - 1}, in ascending ranges.',
+        'IDs must be between $minimum and ${count - 1}, in ascending ranges.',
       );
     }
     for (var id = first; id <= last; id++) {

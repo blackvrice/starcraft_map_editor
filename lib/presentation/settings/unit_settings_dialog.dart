@@ -1,3 +1,4 @@
+import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import '../../application/placement/placement_catalog_controller.dart';
@@ -112,7 +113,11 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
         _defaults.isNotEmpty ||
         _damage.isNotEmpty ||
         _names.isNotEmpty;
-    return AlertDialog(
+    return SettingsSurface(
+      controller: widget.controller,
+      snapshot: _snapshot,
+      hasDraft: dirty,
+      onReload: () => setState(_reload),
       title: const Text('Unit Settings'),
       content: SizedBox(
         width: 680,

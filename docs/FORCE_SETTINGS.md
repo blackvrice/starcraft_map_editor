@@ -40,3 +40,6 @@ File → Force Settings에서 플레이어 1~8의 세력 배정과 세력 1~4의
 
 - [Chkdraft chk.h의 FORC와 ForceFlags](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/chk.h)
 - [Staredit Network Scenario.chk의 FORC 설명](https://wiki.staredit.net/wiki/Scenario.chk#FORC)
+
+File → Map Settings의 통합 탭에서도 편집할 수 있다. 검색과 1번부터 시작하는
+번호 범위 복사는 [통합 설정 UI](MAP_SETTINGS_UI.md)의 초안·적용 규칙을 따른다.

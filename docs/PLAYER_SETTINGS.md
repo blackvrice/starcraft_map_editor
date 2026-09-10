@@ -48,3 +48,6 @@ CRGB 보호, 잘못된 입력의 무변경, 시작 위치 경고를 검증한다
 
 - [Chkdraft chk.h: Race, PlayerColor, OWNR/SIDE/COLR/CRGB](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/chk.h)
 - [Chkdraft sc.h: Player::SlotType, Unit::Type::StartLocation](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.h)
+
+File → Map Settings의 통합 탭에서도 편집할 수 있다. 검색과 1번부터 시작하는
+번호 범위 복사는 [통합 설정 UI](MAP_SETTINGS_UI.md)의 초안·적용 규칙을 따른다.

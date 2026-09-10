@@ -1,3 +1,6 @@
+import '../../application/editing/settings_id_selection.dart';
+import 'settings_selection.dart';
+import 'settings_surface.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -96,7 +99,11 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) => SettingsSurface(
+    controller: widget.controller,
+    snapshot: _snapshot,
+    hasDraft: _draft.isNotEmpty,
+    onReload: () => setState(_reload),
     title: const Text('Player Settings'),
     content: SizedBox(
       width: 520,
@@ -105,22 +112,30 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownButton<int>(
-              key: const Key('player-settings-player'),
-              value: _player,
-              isExpanded: true,
-              items: [
-                for (var i = 0; i < 12; i++)
-                  DropdownMenuItem(
-                    value: i,
-                    child: Text(
-                      'Player ${i + 1}${i >= 8 ? " (read-only)" : ""}',
-                    ),
-                  ),
-              ],
-              onChanged: (value) => setState(() {
-                _player = value!;
-              }),
+            SettingsSelection(
+              prefix: 'players',
+              selectorKey: const Key('player-settings-player'),
+              count: 12,
+              copyCount: 8,
+              idBase: 1,
+              selected: _player,
+              revision: _snapshot,
+              label: (id) => 'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+              onSelected: (id) => setState(() => _player = id),
+              scope:
+                  'Slot type, race and color edits for playable Players 1–8 only.',
+              onCopy: _snapshot == null || _player >= 8
+                  ? null
+                  : (ids) {
+                      final copies = copySettingsDraft(
+                        _draft,
+                        (key) => key.$1 == _player,
+                        (key, id) => (id, key.$2),
+                        ids,
+                      );
+                      setState(() => _draft.addAll(copies));
+                      return copies.length;
+                    },
             ),
             if (_player >= 8)
               const Text(

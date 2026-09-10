@@ -1,3 +1,4 @@
+import 'settings_surface.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/editing/object_editing_controller.dart';
@@ -16,6 +17,8 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
   final _description = TextEditingController();
   RawChkDocument? _snapshot;
   String? _error;
+  String _savedTitle = '';
+  String _savedDescription = '';
 
   @override
   void initState() {
@@ -28,8 +31,8 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
       final info = widget.controller.mapInformation;
       _snapshot =
           widget.controller.openMapController.state.session!.rawDocument;
-      _title.text = info.title;
-      _description.text = info.description;
+      _title.text = _savedTitle = info.title;
+      _description.text = _savedDescription = info.description;
       _error = null;
     } catch (error) {
       _snapshot = null;
@@ -62,7 +65,12 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) => SettingsSurface(
+    controller: widget.controller,
+    snapshot: _snapshot,
+    hasDraft:
+        _title.text != _savedTitle || _description.text != _savedDescription,
+    onReload: () => setState(_reload),
     title: const Text('Map Information'),
     content: SizedBox(
       width: 520,
@@ -74,12 +82,14 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
             TextField(
               key: const Key('map-information-title'),
               controller: _title,
+              onChanged: (_) => setState(() {}),
               enabled: _snapshot != null,
               decoration: const InputDecoration(labelText: 'Map title'),
             ),
             TextField(
               key: const Key('map-information-description'),
               controller: _description,
+              onChanged: (_) => setState(() {}),
               enabled: _snapshot != null,
               minLines: 4,
               maxLines: 8,

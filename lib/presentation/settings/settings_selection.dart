@@ -12,6 +12,9 @@ class SettingsSelection extends StatefulWidget {
     this.onCopy,
     this.revision,
     this.searchText,
+    this.idBase = 0,
+    this.copyCount,
+    this.includeMapDefault = false,
     required this.scope,
     super.key,
   });
@@ -25,6 +28,9 @@ class SettingsSelection extends StatefulWidget {
   final String scope;
   final Object? revision;
   final String Function(int)? searchText;
+  final int idBase;
+  final int? copyCount;
+  final bool includeMapDefault;
   @override
   State<SettingsSelection> createState() => _SettingsSelectionState();
 }
@@ -46,7 +52,12 @@ class _SettingsSelectionState extends State<SettingsSelection> {
 
   void _copy() {
     try {
-      final ids = parseSettingsIds(_range, widget.count);
+      final displayed = parseSettingsIds(
+        _range,
+        (widget.copyCount ?? widget.count) + widget.idBase,
+        minimum: widget.idBase,
+      );
+      final ids = displayed.map((id) => id - widget.idBase).toSet();
       final fields = widget.onCopy!(ids);
       setState(() {
         _failed = false;
@@ -69,10 +80,13 @@ class _SettingsSelectionState extends State<SettingsSelection> {
         ? int.tryParse(query.substring(1))
         : null;
     final filtered = [
+      if (widget.includeMapDefault &&
+          (query.isEmpty || widget.label(-1).toLowerCase().contains(query)))
+        -1,
       for (var id = 0; id < widget.count; id++)
         if (query.isEmpty ||
             (exact != null
-                ? id == exact
+                ? id + widget.idBase == exact
                 : '${widget.label(id)} ${widget.searchText?.call(id) ?? ""}'
                       .toLowerCase()
                       .contains(query)))
@@ -118,8 +132,9 @@ class _SettingsSelectionState extends State<SettingsSelection> {
             TextField(
               key: Key('${widget.prefix}-range'),
               decoration: InputDecoration(
-                labelText: 'Target IDs (0–${widget.count - 1})',
-                hintText: '0, 2-5',
+                labelText:
+                    'Target IDs (${widget.idBase}–${(widget.copyCount ?? widget.count) - 1 + widget.idBase})',
+                hintText: widget.idBase == 0 ? '0, 2-5' : '1, 3-5',
               ),
               onChanged: (v) => setState(() {
                 _range = v;

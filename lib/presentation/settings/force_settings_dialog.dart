@@ -1,3 +1,6 @@
+import '../../application/editing/settings_id_selection.dart';
+import 'settings_selection.dart';
+import 'settings_surface.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -66,7 +69,11 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
     final flags = _flags[_force] ?? ((settings?.flags[_force] ?? 0) & 15);
     final dirty =
         _assignments.isNotEmpty || _flags.isNotEmpty || _names.isNotEmpty;
-    return AlertDialog(
+    return SettingsSurface(
+      controller: widget.controller,
+      snapshot: _snapshot,
+      hasDraft: dirty,
+      onReload: () => setState(_reload),
       title: const Text('Force Settings'),
       content: SizedBox(
         width: 520,
@@ -76,15 +83,29 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text('Player assignment'),
-              DropdownButton<int>(
-                key: const Key('force-player'),
-                value: _player,
-                isExpanded: true,
-                items: [
-                  for (var i = 0; i < 8; i++)
-                    DropdownMenuItem(value: i, child: Text('Player ${i + 1}')),
-                ],
-                onChanged: (v) => setState(() => _player = v!),
+              SettingsSelection(
+                prefix: 'force-players',
+                selectorKey: const Key('force-player'),
+                count: 8,
+                idBase: 1,
+                selected: _player,
+                revision: _snapshot,
+                label: (id) => 'Player ${id + 1}',
+                onSelected: (id) => setState(() => _player = id),
+                scope:
+                    'Copies only the edited force assignment to Players 1–8.',
+                onCopy: settings == null
+                    ? null
+                    : (ids) {
+                        final copies = copySettingsDraft(
+                          _assignments,
+                          (id) => id == _player,
+                          (_, id) => id,
+                          ids,
+                        );
+                        setState(() => _assignments.addAll(copies));
+                        return copies.length;
+                      },
               ),
               DropdownButton<int>(
                 key: const Key('force-assignment'),
@@ -113,18 +134,42 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                       }),
               ),
               const Divider(),
-              DropdownButton<int>(
-                key: const Key('force-selection'),
-                value: _force,
-                isExpanded: true,
-                items: [
-                  for (var i = 0; i < 4; i++)
-                    DropdownMenuItem(value: i, child: Text('Force ${i + 1}')),
-                ],
-                onChanged: (v) => setState(() {
-                  _force = v!;
-                  _name.text = _names[_force] ?? settings?.names[_force] ?? '';
+              SettingsSelection(
+                prefix: 'forces',
+                selectorKey: const Key('force-selection'),
+                count: 4,
+                idBase: 1,
+                selected: _force,
+                revision: _snapshot,
+                label: (id) => 'Force ${id + 1}',
+                searchText: (id) => _names[id] ?? settings?.names[id] ?? '',
+                onSelected: (id) => setState(() {
+                  _force = id;
+                  _name.text = _names[id] ?? settings?.names[id] ?? '';
                 }),
+                scope:
+                    'Copies edited force names and options only. Player assignments are separate.',
+                onCopy: settings == null
+                    ? null
+                    : (ids) {
+                        final names = copySettingsDraft(
+                          _names,
+                          (id) => id == _force,
+                          (_, id) => id,
+                          ids,
+                        );
+                        final flags = copySettingsDraft(
+                          _flags,
+                          (id) => id == _force,
+                          (_, id) => id,
+                          ids,
+                        );
+                        setState(() {
+                          _names.addAll(names);
+                          _flags.addAll(flags);
+                        });
+                        return names.length + flags.length;
+                      },
               ),
               TextField(
                 key: const Key('force-name'),
