@@ -1,3 +1,5 @@
+import '../../application/editing/settings_id_selection.dart';
+import 'settings_selection.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -111,15 +113,34 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButton<int>(
-                key: const Key('availability-unit'),
-                value: _unit,
-                isExpanded: true,
-                items: [
-                  for (var i = 0; i < 228; i++)
-                    DropdownMenuItem(value: i, child: Text('Unit #$i')),
-                ],
-                onChanged: (v) => setState(() => _unit = v!),
+              const Text(
+                'Map-wide unit production settings, separate from placed-unit Inspector properties.',
+              ),
+              SettingsSelection(
+                revision: _snapshot,
+                prefix: 'availability',
+                selectorKey: const Key('availability-unit'),
+                count: 228,
+                selected: _unit,
+                label: (id) => 'Unit #$id',
+                onSelected: (id) => setState(() => _unit = id),
+                scope:
+                    'Map defaults and Player ${_player + 1} only. Inheritance changes only if edited.',
+                onCopy: _settings == null
+                    ? null
+                    : (ids) {
+                        final copies = copySettingsDraft(
+                          _draft,
+                          (key) =>
+                              key.$2 == _unit &&
+                              (key.$3 == ChkUnitAvailabilityField.global ||
+                                  key.$1 == _player),
+                          (key, id) => (key.$1, id, key.$3),
+                          ids,
+                        );
+                        setState(() => _draft.addAll(copies));
+                        return copies.length;
+                      },
               ),
               _field(
                 ChkUnitAvailabilityField.global,

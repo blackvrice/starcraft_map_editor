@@ -1,3 +1,5 @@
+import '../../application/editing/settings_id_selection.dart';
+import 'settings_selection.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import 'weapon_impact_panel.dart';
 import 'package:flutter/material.dart';
@@ -126,17 +128,56 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                 Text(
                   'Editing ${settings.sectionName}${settings.hasAlternate ? '; alternate section preserved without synchronization' : ''}.',
                 ),
-              DropdownButton<int>(
-                key: const Key('unit-settings-unit'),
-                value: _unit,
-                isExpanded: true,
-                items: [
-                  for (var i = 0; i < 228; i++)
-                    DropdownMenuItem(value: i, child: Text('Unit #$i')),
-                ],
-                onChanged: (v) => setState(() {
-                  _unit = v!;
-                }),
+              SettingsSelection(
+                revision: _snapshot,
+                searchText: (id) {
+                  if (_names.containsKey(id)) return _names[id]!;
+                  try {
+                    return settings?.name(id) ?? '';
+                  } catch (_) {
+                    return '';
+                  }
+                },
+                prefix: 'unit-settings',
+                selectorKey: const Key('unit-settings-unit'),
+                count: 228,
+                selected: _unit,
+                label: (id) => 'Unit #$id',
+                onSelected: (id) => setState(() => _unit = id),
+                scope:
+                    'Unit values, names and default flags only. Shared weapon damage uses its own selection below.',
+                onCopy: settings == null
+                    ? null
+                    : (ids) {
+                        final values = copySettingsDraft(
+                          _values,
+                          (key) => key.$1 == _unit,
+                          (key, id) => (id, key.$2),
+                          ids,
+                        );
+                        for (final e in values.entries) {
+                          e.key.$2.parse(e.value);
+                        }
+                        final names = copySettingsDraft(
+                          _names,
+                          (key) => key == _unit,
+                          (key, id) => id,
+                          ids,
+                        );
+                        final defaults = copySettingsDraft(
+                          _defaults,
+                          (key) => key == _unit,
+                          (key, id) => id,
+                          ids,
+                        );
+                        setState(() {
+                          _values.addAll(values);
+                          _names.addAll(names);
+                          _defaults.addAll(defaults);
+                          _generation++;
+                        });
+                        return values.length + names.length + defaults.length;
+                      },
               ),
               DropdownButton<int>(
                 key: const Key('unit-settings-defaults'),
@@ -240,17 +281,32 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                 'A weapon change affects every unit using that weapon. Restoring a unit does not reset shared weapon damage.',
               ),
               if (settings != null)
-                DropdownButton<int>(
-                  key: const Key('unit-settings-weapon'),
-                  value: _weapon,
-                  isExpanded: true,
-                  items: [
-                    for (var i = 0; i < settings.weaponCount; i++)
-                      DropdownMenuItem(value: i, child: Text('Weapon #$i')),
-                  ],
-                  onChanged: (v) => setState(() {
-                    _weapon = v!;
-                  }),
+                SettingsSelection(
+                  revision: _snapshot,
+                  prefix: 'weapon-settings',
+                  selectorKey: const Key('unit-settings-weapon'),
+                  count: settings.weaponCount,
+                  selected: _weapon,
+                  label: (id) => 'Weapon #$id',
+                  onSelected: (id) => setState(() => _weapon = id),
+                  scope:
+                      'Shared weapon damage only. All units referencing target weapons may be affected.',
+                  onCopy: (ids) {
+                    final copies = copySettingsDraft(
+                      _damage,
+                      (key) => key.$1 == _weapon,
+                      (key, id) => (id, key.$2),
+                      ids,
+                    );
+                    for (final value in copies.values) {
+                      ChkUnitSettingField.shields.parse(value);
+                    }
+                    setState(() {
+                      _damage.addAll(copies);
+                      _generation++;
+                    });
+                    return copies.length;
+                  },
                 ),
               if (widget.catalogController != null)
                 WeaponImpactPanel(

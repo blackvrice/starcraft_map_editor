@@ -1,3 +1,5 @@
+import '../../application/editing/settings_id_selection.dart';
+import 'settings_selection.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -153,15 +155,35 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                 Text(
                   'Editing ${settings.costName} / ${settings.levelName}${settings.hasAlternate ? "; alternate sections preserved" : ""}.',
                 ),
-                DropdownButton<int>(
-                  key: const Key('upgrade-selection'),
-                  value: _upgrade,
-                  isExpanded: true,
-                  items: [
-                    for (var i = 0; i < settings.count; i++)
-                      DropdownMenuItem(value: i, child: Text('Upgrade #$i')),
-                  ],
-                  onChanged: (v) => setState(() => _upgrade = v!),
+                SettingsSelection(
+                  revision: _snapshot,
+                  prefix: 'upgrade',
+                  selectorKey: const Key('upgrade-selection'),
+                  count: settings.count,
+                  selected: _upgrade,
+                  label: (id) => 'Upgrade #$id',
+                  onSelected: (id) => setState(() => _upgrade = id),
+                  scope:
+                      'Map costs and ${_player == -1 ? "map defaults" : "Player ${_player + 1}"} only. Inheritance flags change only if edited.',
+                  onCopy: (ids) {
+                    final copies = copySettingsDraft(
+                      _draft,
+                      (key) =>
+                          key.$1 == _upgrade &&
+                          (key.$3.isCost ||
+                              key.$2 == (_player == -1 ? null : _player)),
+                      (key, id) => (id, key.$2, key.$3),
+                      ids,
+                    );
+                    for (final e in copies.entries) {
+                      e.key.$3.parse(e.value);
+                    }
+                    setState(() {
+                      _draft.addAll(copies);
+                      _generation++;
+                    });
+                    return copies.length;
+                  },
                 ),
                 for (final issue in settings.issues.values) Text(issue),
                 if (costEnabled) ...[

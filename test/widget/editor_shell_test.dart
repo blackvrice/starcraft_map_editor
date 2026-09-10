@@ -47,6 +47,272 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'bulk tech copies keep other player and map state drafts out of scope',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> choose(String key, String label) async {
+        final target = find.byKey(Key('tech-$key'));
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+      }
+
+      await tester.tap(find.text('File').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tech Settings…'));
+      await tester.pumpAndSettle();
+      final energy = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Energy cost',
+      );
+      await tester.ensureVisible(energy);
+      await tester.enterText(energy, '100');
+      await choose('researched', 'Already researched');
+      await choose('player', 'Player 1');
+      await choose('available', 'Available');
+      await choose('player', 'Player 2');
+      await choose('researched', 'Already researched');
+      await tester.ensureVisible(find.byKey(const Key('tech-bulk')));
+      await tester.tap(find.byKey(const Key('tech-bulk')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('tech-range')));
+      await tester.enterText(find.byKey(const Key('tech-range')), '1-2');
+      await tester.ensureVisible(find.byKey(const Key('tech-copy')));
+      await tester.tap(find.byKey(const Key('tech-copy')));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      final expected =
+          open.state.session!.rawDocument.sections
+              .firstWhere((s) => s.name == 'PTEx')
+              .payload
+            ..[1100] = 1
+            ..[0] = 1
+            ..[572] = 1
+            ..[573] = 1
+            ..[574] = 1;
+      await tester.tap(find.byKey(const Key('tech-apply')));
+      await tester.pumpAndSettle();
+      expect(
+        open.state.session!.rawDocument.sections
+            .firstWhere((s) => s.name == 'PTEx')
+            .payload,
+        expected,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  for (final config in [
+    (
+      'Unit Settings…',
+      'unit-settings',
+      'unit-settings',
+      'Shields',
+      'UNIx',
+      1140,
+      2,
+      'Edit unit settings',
+    ),
+    (
+      'Unit Settings…',
+      'weapon-settings',
+      'unit-settings',
+      'Base damage',
+      'UNIx',
+      3648,
+      2,
+      'Edit unit settings',
+    ),
+    (
+      'Unit Availability…',
+      'availability',
+      'availability',
+      '',
+      'PUNI',
+      2736,
+      1,
+      'Edit unit availability',
+    ),
+    (
+      'Upgrade Settings…',
+      'upgrade',
+      'upgrade',
+      'Base gas cost',
+      'UPGx',
+      306,
+      2,
+      'Edit upgrade settings',
+    ),
+    (
+      'Tech Settings…',
+      'tech',
+      'tech',
+      'Energy cost',
+      'TECx',
+      308,
+      2,
+      'Edit tech settings',
+    ),
+  ]) {
+    final (
+      menu,
+      prefix,
+      applyPrefix,
+      label,
+      sectionName,
+      offset,
+      width,
+      undoLabel,
+    ) = config;
+    testWidgets('$prefix bulk copies preserve exact bytes cancel and undo', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      Future<void> showSettings() async {
+        await tester.tap(find.text('File').first);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(menu));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> editSource() async {
+        if (prefix == 'availability') {
+          final target = find.byKey(const Key('availability-global'));
+          await tester.ensureVisible(target);
+          await tester.tap(target);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Default: allowed').last);
+        } else {
+          final target = find.byWidgetPredicate(
+            (w) => w is TextField && w.decoration?.labelText == label,
+          );
+          await tester.ensureVisible(target);
+          await tester.enterText(target, '5');
+        }
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> copy(String ids) async {
+        await tester.ensureVisible(find.byKey(Key('$prefix-range')));
+        await tester.enterText(find.byKey(Key('$prefix-range')), ids);
+        await tester.ensureVisible(find.byKey(Key('$prefix-copy')));
+        await tester.tap(find.byKey(Key('$prefix-copy')));
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> prepare() async {
+        await editSource();
+        await tester.ensureVisible(find.byKey(Key('$prefix-bulk')));
+        await tester.tap(find.byKey(Key('$prefix-bulk')));
+        await tester.pumpAndSettle();
+        await copy('1, 9999');
+        expect(find.textContaining('IDs must be between'), findsOneWidget);
+        await copy('1-2');
+        expect(open.state.session!.isDirty, isFalse);
+      }
+
+      await showSettings();
+      await tester.enterText(find.byKey(Key('$prefix-search')), 'not found');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('No matching IDs'), findsOneWidget);
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.enterText(find.byKey(Key('$prefix-search')), '#0');
+      await tester.pumpAndSettle();
+      await prepare();
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await showSettings();
+      await prepare();
+      final source = open.state.session!.rawDocument.sections
+          .firstWhere((s) => s.name == sectionName)
+          .payload;
+      final expected = source.toList();
+      for (var id = 0; id < 3; id++) {
+        expected[offset + id * width] = prefix == 'availability' ? 1 : 5;
+      }
+      await tester.tap(find.byKey(Key('$applyPrefix-apply')));
+      await tester.pumpAndSettle();
+      expect(
+        open.state.session!.rawDocument.sections
+            .firstWhere((s) => s.name == sectionName)
+            .payload,
+        expected,
+      );
+      expect(open.state.session!.isDirty, isTrue);
+      await tester.tap(find.text('Undo: $undoLabel'));
+      await tester.pumpAndSettle();
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.text('Redo: $undoLabel'));
+      await tester.pumpAndSettle();
+      expect(
+        open.state.session!.rawDocument.sections
+            .firstWhere((s) => s.name == sectionName)
+            .payload,
+        expected,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   testWidgets('tech settings preserve drafts defaults unknown flags and undo', (
     tester,
   ) async {

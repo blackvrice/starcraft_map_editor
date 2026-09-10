@@ -58,3 +58,7 @@ EUD의 사거리·공격 타입 등은 M6.3.1에서 진행한다.
 2026-09-09 [Staredit Network의 UNIS/UNIx 구조와 단위 설명](https://wiki.staredit.net/wiki/Scenario.chk#UNIS)을
 확인했으며, 배열 구조는 [Chkdraft 고정 revision의 chk.h](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/chk.h)를
 기준으로 대조했다. 실제 게임 실행 검증을 대신하지 않는다.
+
+2026-09-10: [공통 검색·ID 범위 복사](SETTINGS_EDITING_UX.md)를 연결했다.
+현재 ID의 수정 필드만 대상 초안에 복사하며 Apply에서 전체 검증한다.
+통합 설정 탭과 여러 플레이어를 지정하는 범위 복사는 후속 작업이다.
