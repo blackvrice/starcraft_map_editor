@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_save_file_gateway.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_tech_settings_editor.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_upgrade_settings_editor.dart';
 import 'dart:convert';
@@ -24,27 +28,65 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
-void main() {
+void _registerSettingsRoundtrip(bool realArchive) {
+  final helper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
   test(
-    'edits every M6 object kind and reopens a verified byte-safe Save As',
+    'edits objects and all settings through ${realArchive ? "native MPQ" : "fake archive"} Save As',
     () async {
-      const sourcePath = r'C:\Maps\Object Roundtrip Source.scx';
-      const outputPath = r'C:\Maps\Object Roundtrip Saved.scx';
+      final root = realArchive
+          ? await Directory.systemTemp.createTemp('settings_roundtrip_')
+          : null;
+      if (root != null) {
+        addTearDown(() => root.delete(recursive: true));
+      }
+      final sourcePath = root == null
+          ? r'C:\Maps\Object Roundtrip Source.scx'
+          : '${root.path}/기준 맵.scx';
+      final outputPath = root == null
+          ? r'C:\Maps\Object Roundtrip Saved.scx'
+          : '${root.path}/설정 저장.scx';
       const temporaryPath =
           r'C:\Maps\.starcraft_map_editor_object_roundtrip\temporary.scx';
       final sourceChk = _sourceChkBytes();
       final sourceMap = _extractedMap(sourcePath, sourceChk);
-      final archiveGateway = _RoundtripArchiveGateway(sourceMap);
+      final native = realArchive
+          ? ProcessMapArchiveGateway(helperExecutablePath: helper!)
+          : null;
+      if (native != null) {
+        final prepared = await native.writeTemporary(
+          MapArchiveWriteRequest(
+            operationId: 'prepare-settings-source',
+            sourcePath: File(
+              'test/fixtures/maps/generated/minimal-self-authored.scx',
+            ).absolute.path,
+            temporaryOutputPath: sourcePath,
+            scenarioChkBytes: sourceChk,
+            timeout: const Duration(seconds: 30),
+          ),
+        );
+        expect(prepared.isSuccess, isTrue, reason: '${prepared.diagnostics}');
+      }
+      final originalArchiveBytes = root == null
+          ? null
+          : await File(sourcePath).readAsBytes();
+      final archiveGateway = _RoundtripArchiveGateway(
+        sourceMap,
+        delegate: native,
+      );
       final filePicker = _RoundtripFilePicker(
         openPath: sourcePath,
         savePath: outputPath,
       );
-      final fingerprintGateway = _RoundtripFingerprintGateway(
-        sourcePath: sourcePath,
-        temporaryPath: temporaryPath,
-        outputPath: outputPath,
-      );
-      final saveFileGateway = _RoundtripSaveFileGateway(temporaryPath);
+      final MapFileFingerprintGateway fingerprintGateway = realArchive
+          ? LocalMapFileFingerprintGateway()
+          : _RoundtripFingerprintGateway(
+              sourcePath: sourcePath,
+              temporaryPath: temporaryPath,
+              outputPath: outputPath,
+            );
+      final MapSaveFileGateway saveFileGateway = realArchive
+          ? LocalMapSaveFileGateway()
+          : _RoundtripSaveFileGateway(temporaryPath);
       final progressController = OperationProgressController();
       final recentProjects = RecentProjectsService(InMemorySettingsStore());
       final openController = OpenMapController(
@@ -444,7 +486,9 @@ void main() {
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
       expect(archiveGateway.writeRequests, hasLength(1));
-      expect(saveFileGateway.promotedDestination, outputPath);
+      if (saveFileGateway is _RoundtripSaveFileGateway) {
+        expect(saveFileGateway.promotedDestination, outputPath);
+      }
       expect(openController.state.session!.sourcePath, outputPath);
       expect(openController.state.session!.isDirty, isFalse);
       expect(sourceMap.scenarioChkBytes, sourceChk);
@@ -662,12 +706,28 @@ void main() {
       );
       expect(archiveGateway.openRequests.map((request) => request.sourcePath), [
         sourcePath,
-        temporaryPath,
+        archiveGateway.writeRequests.single.temporaryOutputPath,
         outputPath,
       ]);
+      if (originalArchiveBytes != null) {
+        expect(await File(sourcePath).readAsBytes(), originalArchiveBytes);
+        expect(File(outputPath).existsSync(), isTrue);
+        expect(
+          const RawChkEncoder().encode(reopened.session!.rawDocument),
+          writtenBytes,
+        );
+      }
     },
+    skip:
+        realArchive && (!Platform.isWindows || helper == null || helper.isEmpty)
+        ? 'Set MAP_ARCHIVE_HELPER_PATH on Windows for real MPQ settings Save As.'
+        : false,
   );
+}
 
+void main() {
+  _registerSettingsRoundtrip(false);
+  _registerSettingsRoundtrip(true);
   test(
     'places catalog objects into created sections and saves them byte-safe',
     () async {
@@ -1098,7 +1158,8 @@ ExtractedMap _extractedMap(String sourcePath, Uint8List chkBytes) =>
     );
 
 final class _RoundtripArchiveGateway implements MapArchiveGateway {
-  _RoundtripArchiveGateway(this.sourceMap);
+  _RoundtripArchiveGateway(this.sourceMap, {this.delegate});
+  final MapArchiveGateway? delegate;
 
   final ExtractedMap sourceMap;
   final List<MapArchiveOpenRequest> openRequests = [];
@@ -1107,6 +1168,7 @@ final class _RoundtripArchiveGateway implements MapArchiveGateway {
   @override
   Future<MapArchiveOpenResult> open(MapArchiveOpenRequest request) async {
     openRequests.add(request);
+    if (delegate != null) return delegate!.open(request);
     if (request.sourcePath == sourceMap.sourcePath) {
       return MapArchiveOpenResult.success(map: sourceMap);
     }
@@ -1123,6 +1185,7 @@ final class _RoundtripArchiveGateway implements MapArchiveGateway {
     MapArchiveWriteRequest request,
   ) async {
     writeRequests.add(request);
+    if (delegate != null) return delegate!.writeTemporary(request);
     return MapArchiveWriteResult.success(
       temporaryOutputPath: request.temporaryOutputPath,
     );

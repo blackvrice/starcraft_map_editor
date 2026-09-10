@@ -25,6 +25,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |
 | [EUD 연동](EUD_INTEGRATION.md) | epScript/euddraft 빌드와 보안 경계 | EUD 도구 연동이 바뀔 때 |
 | [유닛–무기 참조 목록](UNIT_WEAPON_REFERENCES.md) | 로컬 DAT의 무기 공유·서브유닛 연결과 읽기 계약 | 무기 영향 목록이 바뀔 때 |
+| [설정 검증 기록](SETTINGS_VERIFICATION.md) | 설정별 바이트 보존·실제 MPQ 저장과 게임 검증 범위 | 설정 검증 증거가 바뀔 때 |
 | [Map Settings 통합 탭](MAP_SETTINGS_UI.md) | 7개 설정 탭·초안 충돌·플레이어/세력 범위와 Inspector 구분 | 통합 설정 흐름이 바뀔 때 |
 | [설정 검색과 범위 복사](SETTINGS_EDITING_UX.md) | 검색·ID 범위 초안 복사와 적용 범위·검증 | 공통 설정 UX가 바뀔 때 |
 | [테크 설정](TECH_SETTINGS.md) | 비용·시간·에너지·플레이어 허용/연구 완료와 상속 | 테크 편집이 바뀔 때 |
