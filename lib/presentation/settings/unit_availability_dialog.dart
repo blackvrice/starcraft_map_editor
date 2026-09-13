@@ -1,3 +1,5 @@
+import 'default_unit_names.dart';
+import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
@@ -20,6 +22,7 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
   int _player = 0;
   int _unit = 0;
   String? _error;
+  final _unitNames = <int, String>{};
   @override
   void initState() {
     super.initState();
@@ -28,6 +31,17 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
 
   void _reload() {
     _draft.clear();
+    _unitNames.clear();
+    try {
+      final units = widget.controller.unitSettings;
+      for (var id = 0; id < 228; id++) {
+        try {
+          _unitNames[id] = units.name(id);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // PUNI remains editable when the independent unit settings are unavailable.
+    }
     try {
       _settings = widget.controller.unitAvailability;
       _snapshot =
@@ -127,7 +141,12 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                 selectorKey: const Key('availability-unit'),
                 count: 228,
                 selected: _unit,
-                label: (id) => 'Unit #$id',
+                label: (id) => settingsName(
+                  'Unit',
+                  id,
+                  defaultUnitNames,
+                  custom: _unitNames[id],
+                ),
                 onSelected: (id) => setState(() => _unit = id),
                 scope:
                     'Map defaults and Player ${_player + 1} only. Inheritance changes only if edited.',

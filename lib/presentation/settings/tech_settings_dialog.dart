@@ -1,3 +1,4 @@
+import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
@@ -169,7 +170,7 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                   selectorKey: const Key('tech-selection'),
                   count: settings.count,
                   selected: _tech,
-                  label: (id) => 'Tech #$id',
+                  label: (id) => settingsName('Tech', id, defaultTechNames),
                   onSelected: (id) => setState(() => _tech = id),
                   scope:
                       'Map costs and ${_player == -1 ? "map defaults" : "Player ${_player + 1}"} only. Inheritance flags change only if edited.',

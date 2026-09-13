@@ -39,7 +39,7 @@ import '../settings/upgrade_settings_dialog.dart';
 import '../settings/tech_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
-enum _WorkspaceView { map, eud, catalog }
+enum _WorkspaceView { map, eud, catalog, settings }
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
@@ -101,6 +101,7 @@ class _EditorShellState extends State<EditorShell> {
   _objectSpriteTextureSubscription;
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
+  bool _settingsVisited = false;
 
   @override
   void initState() {
@@ -259,14 +260,18 @@ class _EditorShellState extends State<EditorShell> {
   StreamSubscription<OpenMapState> _listenForOpenedMaps(
     OpenMapController controller,
   ) {
+    var previousStatus = controller.state.status;
     return controller.changes.listen((state) {
       if (mounted) {
         setState(() {
           _documentDiagnostics = state.diagnostics;
           if (state.status == OpenMapStatus.opened) {
-            _workspaceView = _WorkspaceView.map;
+            if (previousStatus != OpenMapStatus.opened) {
+              _workspaceView = _WorkspaceView.map;
+            }
             _recentProjects = widget.recentProjectsService.load();
           }
+          previousStatus = state.status;
           widget.terrainEditingController.synchronizeSession(state.session);
           widget.mapLayerController.synchronizeSession(state.session);
           widget.objectEditingController.synchronizeSession(state.session);
@@ -463,6 +468,13 @@ class _EditorShellState extends State<EditorShell> {
     });
   }
 
+  void _showSettingsWorkspace() {
+    setState(() {
+      _settingsVisited = true;
+      _workspaceView = _WorkspaceView.settings;
+    });
+  }
+
   void _showCatalogWorkspace() {
     setState(() {
       _workspaceView = _WorkspaceView.catalog;
@@ -627,15 +639,7 @@ class _EditorShellState extends State<EditorShell> {
                   openMapSettings:
                       widget.openMapController.state.session == null
                       ? null
-                      : () => showDialog<void>(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => MapSettingsDialog(
-                            controller: widget.objectEditingController,
-                            catalogController:
-                                widget.placementCatalogController,
-                          ),
-                        ),
+                      : _showSettingsWorkspace,
                   openTechSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -765,6 +769,16 @@ class _EditorShellState extends State<EditorShell> {
                             onShowMap: _showMapWorkspace,
                             onShowEud: _showEudWorkspace,
                             onShowCatalog: _showCatalogWorkspace,
+                            onOpenSettings: _showSettingsWorkspace,
+                            settingsPage: _settingsVisited
+                                ? MapSettingsDialog(
+                                    controller: widget.objectEditingController,
+                                    catalogController:
+                                        widget.placementCatalogController,
+                                    embedded: true,
+                                    onClosed: _showMapWorkspace,
+                                  )
+                                : const SizedBox.shrink(),
                           );
                         },
                       );
@@ -1157,6 +1171,8 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onShowMap,
     required this.onShowEud,
     required this.onShowCatalog,
+    required this.onOpenSettings,
+    required this.settingsPage,
   });
 
   final VoidCallback? openMap;
@@ -1178,6 +1194,8 @@ class _EditorWorkspace extends StatelessWidget {
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
   final VoidCallback onShowCatalog;
+  final VoidCallback onOpenSettings;
+  final Widget settingsPage;
 
   @override
   Widget build(BuildContext context) {
@@ -1189,36 +1207,39 @@ class _EditorWorkspace extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 210,
-          child: _EditorPane(
-            title: showingEud
-                ? 'Project / Sources'
-                : session == null
-                ? 'Project / Layers'
-                : 'Layers / Object Palette',
-            child: showingEud
-                ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
-                : session == null
-                ? const _EmptyPaneMessage(
-                    icon: Icons.layers_outlined,
-                    message: 'No map layers',
-                  )
-                : _MapLayersAndPalette(
-                    session: session,
-                    layerController: mapLayerController,
-                    paletteController: objectPaletteController,
-                    onShowCatalog: onShowCatalog,
-                    onLayerActivated: (layer) {
-                      objectPaletteController.cancelPlacement();
-                      objectEditingController.cancelLocationCreation();
-                      mapLayerController.setActiveLayer(layer);
-                      if (layer != MapLayerType.terrain) {
-                        terrainEditingController.setTool(
-                          TerrainEditingTool.select,
-                        );
-                      }
-                    },
-                  ),
+          width: workspaceView == _WorkspaceView.settings ? 0 : 210,
+          child: Offstage(
+            offstage: workspaceView == _WorkspaceView.settings,
+            child: _EditorPane(
+              title: showingEud
+                  ? 'Project / Sources'
+                  : session == null
+                  ? 'Project / Layers'
+                  : 'Layers / Object Palette',
+              child: showingEud
+                  ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
+                  : session == null
+                  ? const _EmptyPaneMessage(
+                      icon: Icons.layers_outlined,
+                      message: 'No map layers',
+                    )
+                  : _MapLayersAndPalette(
+                      session: session,
+                      layerController: mapLayerController,
+                      paletteController: objectPaletteController,
+                      onShowCatalog: onShowCatalog,
+                      onLayerActivated: (layer) {
+                        objectPaletteController.cancelPlacement();
+                        objectEditingController.cancelLocationCreation();
+                        mapLayerController.setActiveLayer(layer);
+                        if (layer != MapLayerType.terrain) {
+                          terrainEditingController.setTool(
+                            TerrainEditingTool.select,
+                          );
+                        }
+                      },
+                    ),
+            ),
           ),
         ),
         const VerticalDivider(width: 1),
@@ -1233,26 +1254,33 @@ class _EditorWorkspace extends StatelessWidget {
                   onShowMap: onShowMap,
                   onShowEud: onShowEud,
                   onShowCatalog: onShowCatalog,
+                  onOpenSettings: onOpenSettings,
                 ),
               Expanded(
-                child: _MapWorkspace(
-                  openMap: openMap,
-                  openMapState: openMapState,
-                  recentProjects: recentProjects,
-                  recentProjectsError: recentProjectsError,
-                  recentProjectsLoading: recentProjectsLoading,
-                  onOpenRecentProject: onOpenRecentProject,
-                  onRemoveRecentProject: onRemoveRecentProject,
-                  eudSourceController: eudSourceController,
-                  terrainEditingController: terrainEditingController,
-                  mapLayerController: mapLayerController,
-                  objectEditingController: objectEditingController,
-                  objectPaletteController: objectPaletteController,
-                  placementCatalogController: placementCatalogController,
-                  terrainTileTextureState: terrainTileTextureState,
-                  objectSpriteTextureState: objectSpriteTextureState,
-                  workspaceView: workspaceView,
-                  onShowMap: onShowMap,
+                child: IndexedStack(
+                  index: workspaceView == _WorkspaceView.settings ? 1 : 0,
+                  children: [
+                    _MapWorkspace(
+                      openMap: openMap,
+                      openMapState: openMapState,
+                      recentProjects: recentProjects,
+                      recentProjectsError: recentProjectsError,
+                      recentProjectsLoading: recentProjectsLoading,
+                      onOpenRecentProject: onOpenRecentProject,
+                      onRemoveRecentProject: onRemoveRecentProject,
+                      eudSourceController: eudSourceController,
+                      terrainEditingController: terrainEditingController,
+                      mapLayerController: mapLayerController,
+                      objectEditingController: objectEditingController,
+                      objectPaletteController: objectPaletteController,
+                      placementCatalogController: placementCatalogController,
+                      terrainTileTextureState: terrainTileTextureState,
+                      objectSpriteTextureState: objectSpriteTextureState,
+                      workspaceView: workspaceView,
+                      onShowMap: onShowMap,
+                    ),
+                    settingsPage,
+                  ],
                 ),
               ),
             ],
@@ -1260,21 +1288,24 @@ class _EditorWorkspace extends StatelessWidget {
         ),
         const VerticalDivider(width: 1),
         SizedBox(
-          width: 260,
-          child: _EditorPane(
-            title: 'Inspector',
-            child: showingEud
-                ? _EudSourceInspector(document: eudDocument)
-                : session == null
-                ? const _EmptyPaneMessage(
-                    icon: Icons.tune,
-                    message: 'Nothing selected',
-                  )
-                : _MapInspector(
-                    session: session,
-                    mapLayerController: mapLayerController,
-                    objectEditingController: objectEditingController,
-                  ),
+          width: workspaceView == _WorkspaceView.settings ? 0 : 260,
+          child: Offstage(
+            offstage: workspaceView == _WorkspaceView.settings,
+            child: _EditorPane(
+              title: 'Inspector',
+              child: showingEud
+                  ? _EudSourceInspector(document: eudDocument)
+                  : session == null
+                  ? const _EmptyPaneMessage(
+                      icon: Icons.tune,
+                      message: 'Nothing selected',
+                    )
+                  : _MapInspector(
+                      session: session,
+                      mapLayerController: mapLayerController,
+                      objectEditingController: objectEditingController,
+                    ),
+            ),
           ),
         ),
       ],
@@ -1290,6 +1321,7 @@ class _DocumentTabs extends StatelessWidget {
     required this.onShowMap,
     required this.onShowEud,
     required this.onShowCatalog,
+    required this.onOpenSettings,
   });
 
   final OpenedMapSession? session;
@@ -1298,6 +1330,7 @@ class _DocumentTabs extends StatelessWidget {
   final VoidCallback onShowMap;
   final VoidCallback onShowEud;
   final VoidCallback onShowCatalog;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -1328,6 +1361,14 @@ class _DocumentTabs extends StatelessWidget {
                   icon: Icons.grid_view_rounded,
                   selected: workspaceView == _WorkspaceView.catalog,
                   onPressed: onShowCatalog,
+                ),
+              if (session != null)
+                _DocumentTab(
+                  key: const Key('map-settings-tab'),
+                  label: 'Map Settings',
+                  icon: Icons.tune,
+                  selected: workspaceView == _WorkspaceView.settings,
+                  onPressed: onOpenSettings,
                 ),
               if (document != null)
                 _DocumentTab(

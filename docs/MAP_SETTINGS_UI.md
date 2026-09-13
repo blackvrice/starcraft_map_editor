@@ -1,7 +1,7 @@
 # Map Settings 통합 탭
 
-File → Map Settings…에서 Map, Players, Forces, Units, Availability, Upgrades,
-Tech의 7개 탭을 연다. 기존 개별 File 메뉴도 사용할 수 있다.
+맵을 연 뒤 맵·Catalog 옆의 Map Settings 작업 탭에서 Map, Players, Forces, Units, Availability, Upgrades,
+Tech의 7개 설정 영역을 편집한다. File → Map Settings…도 같은 작업 탭을 선택한다. 기존 개별 File 메뉴도 사용할 수 있다.
 Map Settings는 맵 전체 설정이며 캔버스 Inspector는 배치된 객체의 개별 속성이다.
 
 ## 초안과 적용
@@ -53,3 +53,27 @@ Map Settings는 맵 전체 설정이며 캔버스 Inspector는 배치된 객체�
 다음 개발 계획 항목은 설정별 저장 왕복 증거를 정리하고 실제 SC:R 게임 적용을
 검증하는 것이다. 실제 게임 연구·생산·설정 동작은 통합 UI 구현만으로 검증됐다고
 표시하지 않는다.
+
+## 작업 영역과 유닛 이름 (2026-09-13)
+
+설정 작업 탭은 별도 모달 창을 띄우지 않는다. 설정이 활성화되면 좌우 객체 패널을
+숨겨 편집 공간을 확보한다. 맵/Catalog/EUD 작업 탭으로 이동했다 돌아와도 설정
+초안·검색·선택을 유지한다. Apply/Undo/Redo 후에도 설정 작업 탭에 머문다.
+Close는 기존 초안 폐기 확인을 거쳐 설정 상태를 초기화하고 맵 작업 탭으로 돌아간다.
+다른 맵을 열었을 때 남아 있는 초안은 기존 스냅샷 충돌 규칙에 따라 적용을 차단한다.
+
+Units 선택 목록은 사용자 입력 초안 → 맵의 사용자 지정 이름 → 기본 유닛명 순으로
+표시하고 항상 숫자 ID를 함께 표시한다. 기본 유닛명은 BWAPI 공식 UnitType ID 목록의
+0~227 매핑을 대조한 영문 이름이다. 기본명 표시는 CHK에 이름을 새로 저장하지 않는다.
+사용자 이름과 기본 이름 표시를 검색할 수 있으며 #ID 정확 검색도 유지한다.
+
+매핑 출처: https://github.com/bwapi/bwapi/blob/main/bwapi/BWAPILIB/Source/UnitType.cpp
+참고 프로젝트 라이선스: [BWAPI LGPL-3.0](licenses/BWAPI.txt).
+게임 설치의 언어별 번역 이름을 읽는 기능은 이번 범위에 포함하지 않는다.
+
+기본 이름 표시는 Availability의 유닛, Units의 무기, Upgrades·Tech의 종류 목록과
+무기 영향 목록의 유닛에도 적용한다. Availability도 저장된 유닛 사용자 이름을
+우선한다. BWAPI에서 이름이 비어 있는 슬롯은 종류와 숫자 ID로 남긴다.
+무기 130개·업그레이드 61개·테크 44개의 인덱스를 유지하여 빈 항목 때문에 ID가
+당겨지지 않도록 한다. 해당 목록에서도 기본 이름과 #ID 검색을 지원한다.
+매핑 출처는 같은 공식 저장소의 WeaponType.cpp, UpgradeType.cpp, TechType.cpp다.

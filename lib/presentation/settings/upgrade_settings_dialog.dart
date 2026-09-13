@@ -1,3 +1,4 @@
+import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
@@ -166,7 +167,8 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                   selectorKey: const Key('upgrade-selection'),
                   count: settings.count,
                   selected: _upgrade,
-                  label: (id) => 'Upgrade #$id',
+                  label: (id) =>
+                      settingsName('Upgrade', id, defaultUpgradeNames),
                   onSelected: (id) => setState(() => _upgrade = id),
                   scope:
                       'Map costs and ${_player == -1 ? "map defaults" : "Player ${_player + 1}"} only. Inheritance flags change only if edited.',

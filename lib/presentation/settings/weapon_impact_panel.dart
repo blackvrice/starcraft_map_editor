@@ -1,3 +1,5 @@
+import 'default_unit_names.dart';
+import 'default_settings_names.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../application/placement/placement_catalog_controller.dart';
@@ -67,7 +69,9 @@ class _WeaponImpactPanelState extends State<WeaponImpactPanel> {
       }
       String names(List<int> ids) => ids.isEmpty
           ? 'None in this DAT snapshot'
-          : ids.map((id) => 'Unit #$id').join(', ');
+          : ids
+                .map((id) => settingsName('Unit', id, defaultUnitNames))
+                .join(', ');
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

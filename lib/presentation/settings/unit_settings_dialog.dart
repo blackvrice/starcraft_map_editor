@@ -1,3 +1,5 @@
+import 'default_settings_names.dart';
+import 'default_unit_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
@@ -147,7 +149,16 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                 selectorKey: const Key('unit-settings-unit'),
                 count: 228,
                 selected: _unit,
-                label: (id) => 'Unit #$id',
+                label: (id) {
+                  String? custom = _names[id];
+                  try {
+                    custom ??= settings?.name(id);
+                  } catch (_) {}
+                  final name = custom == null || custom.isEmpty
+                      ? defaultUnitNames[id]
+                      : custom;
+                  return '$name (Unit #$id)';
+                },
                 onSelected: (id) => setState(() => _unit = id),
                 scope:
                     'Unit values, names and default flags only. Shared weapon damage uses its own selection below.',
@@ -292,7 +303,7 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   selectorKey: const Key('unit-settings-weapon'),
                   count: settings.weaponCount,
                   selected: _weapon,
-                  label: (id) => 'Weapon #$id',
+                  label: (id) => settingsName('Weapon', id, defaultWeaponNames),
                   onSelected: (id) => setState(() => _weapon = id),
                   scope:
                       'Shared weapon damage only. All units referencing target weapons may be affected.',

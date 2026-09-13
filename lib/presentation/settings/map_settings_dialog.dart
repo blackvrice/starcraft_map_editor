@@ -14,8 +14,12 @@ class MapSettingsDialog extends StatefulWidget {
   const MapSettingsDialog({
     required this.controller,
     required this.catalogController,
+    this.embedded = false,
+    this.onClosed,
     super.key,
   });
+  final bool embedded;
+  final VoidCallback? onClosed;
   final ObjectEditingController controller;
   final PlacementCatalogController catalogController;
   @override
@@ -24,6 +28,7 @@ class MapSettingsDialog extends StatefulWidget {
 
 class _MapSettingsDialogState extends State<MapSettingsDialog> {
   int _tab = 0;
+  int _generation = 0;
   final _visited = <int>{0};
   final _drafts = <int, bool>{};
   bool _closing = false;
@@ -57,6 +62,18 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
         return;
       }
     }
+    if (widget.embedded) {
+      setState(() {
+        _generation++;
+        _visited.clear();
+        _visited.add(0);
+        _drafts.clear();
+        _tab = 0;
+        _closing = false;
+      });
+      widget.onClosed?.call();
+      return;
+    }
     setState(() => _allowClose = true);
     Navigator.of(context).pop();
   }
@@ -74,80 +91,83 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
     _ => TechSettingsDialog(controller: widget.controller),
   };
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: _allowClose,
-    onPopInvokedWithResult: (didPop, _) {
-      if (!didPop) _close();
-    },
-    child: Dialog(
-      child: SizedBox(
-        width: 1000,
-        height: 780,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Map Settings', style: TextStyle(fontSize: 22)),
-                        Text(
-                          'Map-wide settings. The canvas Inspector edits individual placed objects. Apply affects the current tab; Save As writes the map.',
-                        ),
-                      ],
+  Widget build(BuildContext context) => widget.embedded
+      ? _content()
+      : PopScope(
+          canPop: _allowClose,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) _close();
+          },
+          child: Dialog(child: _content()),
+        );
+
+  Widget _content() => SizedBox(
+    width: 1000,
+    height: 780,
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Map Settings', style: TextStyle(fontSize: 22)),
+                    Text(
+                      'Map-wide settings. The canvas Inspector edits individual placed objects. Apply affects the current tab; Save As writes the map.',
                     ),
-                  ),
-                  TextButton(
-                    key: const Key('map-settings-close'),
-                    onPressed: _close,
-                    child: const Text('Close'),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            DefaultTabController(
-              length: 7,
-              child: TabBar(
-                isScrollable: true,
-                onTap: (index) => setState(() {
-                  _tab = index;
-                  _visited.add(index);
-                }),
-                tabs: [
-                  for (final name in [
-                    'Map',
-                    'Players',
-                    'Forces',
-                    'Units',
-                    'Availability',
-                    'Upgrades',
-                    'Tech',
-                  ])
-                    Tab(text: name),
-                ],
+              TextButton(
+                key: const Key('map-settings-close'),
+                onPressed: _close,
+                child: const Text('Close'),
               ),
-            ),
-            Expanded(
-              child: IndexedStack(
-                index: _tab,
-                children: [
-                  for (var i = 0; i < 7; i++)
-                    _visited.contains(i)
-                        ? SettingsPageScope(
-                            key: ValueKey(i),
-                            reportDraft: (dirty) => _drafts[i] = dirty,
-                            child: _page(i),
-                          )
-                        : const SizedBox.shrink(),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        DefaultTabController(
+          key: ValueKey(_generation),
+          length: 7,
+          child: TabBar(
+            isScrollable: true,
+            onTap: (index) => setState(() {
+              _tab = index;
+              _visited.add(index);
+            }),
+            tabs: [
+              for (final name in [
+                'Map',
+                'Players',
+                'Forces',
+                'Units',
+                'Availability',
+                'Upgrades',
+                'Tech',
+              ])
+                Tab(text: name),
+            ],
+          ),
+        ),
+        Expanded(
+          child: IndexedStack(
+            index: _tab,
+            children: [
+              for (var i = 0; i < 7; i++)
+                _visited.contains(i)
+                    ? SettingsPageScope(
+                        key: ValueKey((_generation, i)),
+                        reportDraft: (dirty) => _drafts[i] = dirty,
+                        child: _page(i),
+                      )
+                    : const SizedBox.shrink(),
+            ],
+          ),
+        ),
+      ],
     ),
   );
 }

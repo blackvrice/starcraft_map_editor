@@ -292,9 +292,8 @@ void main() {
       }
 
       Future<void> openSettings() async {
-        await tester.tap(find.text('File').first);
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Map Settings…'));
+        await tester.ensureVisible(find.byKey(const Key('map-settings-tab')));
+        await tester.tap(find.byKey(const Key('map-settings-tab')));
         await tester.pumpAndSettle();
       }
 
@@ -317,6 +316,11 @@ void main() {
       await tester.pumpAndSettle();
       await tab('Tech');
       await enterEnergy('100');
+      await tester.tap(find.byKey(const Key('map-document-tab')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tech-apply')), findsNothing);
+      await openSettings();
+      expect(tester.widget<TextField>(energy()).controller!.text, '100');
       await tab('Players');
       await tab('Tech');
       expect(tester.widget<TextField>(energy()).controller!.text, '100');
@@ -707,7 +711,7 @@ void main() {
     expect(open.state.session!.isDirty, isFalse);
     await showTech();
     await enter('Mineral cost', '100');
-    await choose('selection', 'Tech #1');
+    await choose('selection', 'Lockdown (Tech #1)');
     await enter('Energy cost', '65536');
     await tester.tap(find.byKey(const Key('tech-apply')));
     await tester.pumpAndSettle();
@@ -739,14 +743,14 @@ void main() {
     expect(open.state.session!.isDirty, isFalse);
     await tester.tap(find.text('Redo: Edit tech settings'));
     await tester.pumpAndSettle();
-    await choose('selection', 'Tech #0');
+    await choose('selection', 'Stim Packs (Tech #0)');
     expect(find.text('100'), findsOneWidget);
     await choose('useDefault', 'Use game defaults');
     expect(tester.widget<TextField>(field('Mineral cost')).enabled, isFalse);
     await tester.tap(find.byKey(const Key('tech-apply')));
     await tester.pumpAndSettle();
     expect(find.text('100'), findsOneWidget);
-    await choose('selection', 'Tech #2');
+    await choose('selection', 'EMP Shockwave (Tech #2)');
     expect(
       find.text('Effective state: unknown (stored flag preserved)'),
       findsOneWidget,
@@ -827,7 +831,7 @@ void main() {
       expect(open.state.session!.isDirty, isFalse);
       await showUpgrades();
       await enter('Base mineral cost', '100');
-      await choose('selection', 'Upgrade #1');
+      await choose('selection', 'Terran Vehicle Plating (Upgrade #1)');
       await enter('Base gas cost', '250');
       await enter('Maximum level', '3');
       await enter('Starting level', '4');
@@ -857,7 +861,7 @@ void main() {
       expect(open.state.session!.isDirty, isFalse);
       await tester.tap(find.text('Redo: Edit upgrade settings'));
       await tester.pumpAndSettle();
-      await choose('selection', 'Upgrade #0');
+      await choose('selection', 'Terran Infantry Armor (Upgrade #0)');
       expect(find.text('100'), findsOneWidget);
       await choose('useDefault', 'Use game defaults');
       expect(
@@ -1023,6 +1027,24 @@ void main() {
     expect(open.state.session!.isDirty, isFalse);
     await showUnits();
     await enter('Unit name (empty = game name)', 'Custom marine');
+    final selector = find.byKey(const Key('unit-settings-unit'));
+    expect(tester.widget<DropdownButton<int>>(selector).items, hasLength(228));
+    expect(find.text('Custom marine (Unit #0)'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('unit-settings-search')));
+    await tester.enterText(
+      find.byKey(const Key('unit-settings-search')),
+      'Terran Ghost',
+    );
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<DropdownButton<int>>(selector)
+          .items!
+          .map((item) => item.value),
+      [1],
+    );
+    await tester.enterText(find.byKey(const Key('unit-settings-search')), '');
+    await tester.pumpAndSettle();
     await enter('Hit points', '0.1');
     await tester.tap(find.byKey(const Key('unit-settings-apply')));
     await tester.pumpAndSettle();
@@ -1032,7 +1054,7 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('unit-settings-unit')));
     await tester.tap(find.byKey(const Key('unit-settings-unit')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Unit #1').last);
+    await tester.tap(find.text('Terran Ghost (Unit #1)').last);
     await tester.pumpAndSettle();
     await enter('Shields', '300');
     await enter('Base damage', '200');
