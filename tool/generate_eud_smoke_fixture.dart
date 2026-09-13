@@ -9,7 +9,12 @@ const _mapHeight = 32;
 const _helperVersion = '0.4.0';
 const _stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
 
-Future<void> main(List<String> arguments) async {
+Future<void> main(List<String> arguments) => generateMapFixture(arguments);
+
+Future<void> generateMapFixture(
+  List<String> arguments, {
+  Uint8List Function()? scenarioBuilder,
+}) async {
   final options = _GeneratorOptions.parse(arguments);
   final repositoryRoot = File.fromUri(Platform.script).absolute.parent.parent;
   final templateMap = File(
@@ -40,7 +45,7 @@ Future<void> main(List<String> arguments) async {
     final generatedMap = File(
       '${scratch.path}${Platform.pathSeparator}eud-smoke-self-authored.scx',
     );
-    final scenarioBytes = buildEudSmokeScenarioBytes();
+    final scenarioBytes = (scenarioBuilder ?? buildEudSmokeScenarioBytes)();
     await scenario.writeAsBytes(scenarioBytes, flush: true);
 
     final request = jsonEncode({
