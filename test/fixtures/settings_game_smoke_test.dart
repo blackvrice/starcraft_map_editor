@@ -8,6 +8,61 @@ import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_
 import '../../tool/generate_settings_smoke_fixture.dart';
 
 void main() {
+  test(
+    'combat variants change only damage, starting level and cloak state',
+    () {
+      final before = const RawChkParser()
+          .parse(buildCombatSettingsScenario(modified: false))
+          .document!;
+      final after = const RawChkParser()
+          .parse(buildCombatSettingsScenario(modified: true))
+          .document!;
+      final expected = <String, Map<int, int>>{
+        'UNIx': {3678: 32, 3680: 12, 3938: 4, 3940: 2},
+        'PUPx': {1534: 2},
+        'TECx': {326: 10},
+        'PTEx': {1109: 1},
+      };
+      expect(
+        before.sections.map((s) => s.name),
+        after.sections.map((s) => s.name),
+      );
+      for (var i = 0; i < before.sections.length; i++) {
+        final section = before.sections[i];
+        final bytes = [...section.payload];
+        for (final e in (expected[section.name] ?? <int, int>{}).entries) {
+          bytes[e.key] = e.value;
+        }
+        expect(after.sections[i].payload, bytes, reason: section.name);
+      }
+    },
+  );
+
+  test(
+    'combat controls keep player overrides and old air stats scenario intact',
+    () {
+      final doc = const RawChkParser()
+          .parse(buildCombatSettingsScenario(modified: true))
+          .document!;
+      final levels = doc.sections.singleWhere((s) => s.name == 'PUPx').payload;
+      expect(levels[1473], 3); // Map maximum: 24 * 61 + ship weapons ID 9.
+      expect(levels[1595], 1); // P1 inherits map levels.
+      expect(levels[70], 0); // P2 maximum remains zero.
+      expect(levels[802], 0); // P2 starts at zero.
+      final tech = doc.sections.singleWhere((s) => s.name == 'PTEx').payload;
+      expect(tech[1065], 1); // Map availability.
+      expect(tech[1153], 1); // P1 inherits.
+      expect(tech[53], 0); // P2 remains unavailable.
+      expect(tech[581], 0); // P2 remains unresearched.
+      final old = const RawChkParser()
+          .parse(buildSettingsSmokeScenario(modified: true))
+          .document!;
+      expect(
+        doc.sections.singleWhere((s) => s.name == 'UNIT').payload,
+        old.sections.singleWhere((s) => s.name == 'UNIT').payload,
+      );
+    },
+  );
   test('air stat pair differs only in intended unit settings bytes', () {
     final before = const RawChkParser()
         .parse(buildSettingsSmokeScenario(modified: false))
@@ -90,8 +145,14 @@ void main() {
       ).absolute;
       final before = await source.readAsBytes();
       final gateway = ProcessMapArchiveGateway(helperExecutablePath: helper!);
-      for (final modified in [false, true]) {
-        final bytes = buildSettingsSmokeScenario(modified: modified);
+      for (final scenario in {
+        'stats-baseline': buildSettingsSmokeScenario(modified: false),
+        'stats-modified': buildSettingsSmokeScenario(modified: true),
+        'combat-baseline': buildCombatSettingsScenario(modified: false),
+        'combat-modified': buildCombatSettingsScenario(modified: true),
+      }.entries) {
+        final modified = scenario.key;
+        final bytes = scenario.value;
         final path = '${root.path}/$modified.scx';
         final written = await gateway.writeTemporary(
           MapArchiveWriteRequest(

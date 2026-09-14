@@ -1,16 +1,64 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_unit_settings_editor.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_upgrade_settings_editor.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_tech_settings_editor.dart';
 import 'generate_eud_smoke_fixture.dart';
 import 'settings_validation_code.dart';
 
 Future<void> main(List<String> arguments) async {
   final args = [...arguments];
   final changed = args.remove('--modified');
+  final combat = args.remove('--combat');
   await generateMapFixture(
     args,
-    scenarioBuilder: () => buildSettingsSmokeScenario(modified: changed),
+    scenarioBuilder: () => combat
+        ? buildCombatSettingsScenario(modified: changed)
+        : buildSettingsSmokeScenario(modified: changed),
   );
+}
+
+/// Uses the app's setting editors to prepare explicit damage, level and tech
+/// overrides. Both variants retain the already tested air-unit placements.
+Uint8List buildCombatSettingsScenario({required bool modified}) {
+  var doc = const RawChkParser()
+      .parse(buildSettingsSmokeScenario(modified: true))
+      .document!;
+  void apply(Map<int, RawChkSection> changes) {
+    for (final entry in changes.entries) {
+      doc = doc.replaceSection(entry.key, entry.value);
+    }
+  }
+
+  apply(
+    const ChkUnitSettingsEditor().edit(
+      doc,
+      damage: {
+        (15, false): modified ? 32 : 20,
+        (15, true): modified ? 4 : 2,
+        (16, false): modified ? 12 : 8,
+        (16, true): modified ? 2 : 1,
+      },
+    ),
+  );
+  apply(
+    const ChkUpgradeSettingsEditor().edit(doc, {
+      (9, null, ChkUpgradeField.maximum): 3,
+      (9, null, ChkUpgradeField.start): modified ? 2 : 0,
+      (9, 0, ChkUpgradeField.inherit): 1,
+    }),
+  );
+  apply(
+    const ChkTechSettingsEditor().edit(doc, {
+      (9, null, ChkTechField.useDefault): 0,
+      (9, null, ChkTechField.energy): modified ? 10 : 25,
+      (9, null, ChkTechField.available): 1,
+      (9, null, ChkTechField.researched): modified ? 1 : 0,
+      (9, 0, ChkTechField.inherit): 1,
+    }),
+  );
+  return const RawChkEncoder().encode(doc);
 }
 
 /// First manual gameplay case: selectable flying units over uniform terrain.
