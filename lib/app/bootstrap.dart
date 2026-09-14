@@ -9,6 +9,10 @@ import '../application/placement/placement_catalog_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
+import '../application/eud/eud_project_controller.dart';
+import '../application/eud/eud_project_workspace.dart';
+import '../infrastructure/filesystem/local_eud_project_store.dart';
+import '../infrastructure/filesystem/method_channel_eud_project_picker.dart';
 import '../application/layers/map_layer_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/objects/object_sprite_atlas_loader.dart';
@@ -72,6 +76,11 @@ void bootstrap() {
   final terrainEditingController = TerrainEditingController(
     openMapController: openMapController,
   );
+  final eudProjectWorkspace = EudProjectWorkspace(
+    projects: EudProjectController(LocalEudProjectStore()),
+    maps: openMapController,
+    picker: const MethodChannelEudProjectPicker(),
+  );
   final mapLayerController = MapLayerController();
   final objectEditingController = ObjectEditingController(
     openMapController: openMapController,
@@ -120,6 +129,7 @@ void bootstrap() {
     eudSourceController.createUntitled();
   });
   commandDispatcher.register(EditorCommandId.buildEud, (_) async {
+    if (eudProjectWorkspace.hasUnbuiltOverrides) return;
     await eudBuildController.start();
   });
   commandDispatcher.register(EditorCommandId.cancelEudBuild, (_) async {
@@ -132,6 +142,7 @@ void bootstrap() {
     saveMapController: saveMapController,
     eudBuildController: eudBuildController,
     eudSourceController: eudSourceController,
+    eudProjectWorkspace: eudProjectWorkspace,
     operationProgressController: operationProgressController,
     recentProjectsService: recentProjectsService,
     settingsStore: settingsStore,

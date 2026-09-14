@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../fixtures/eud_project_workspace_fixture.dart';
+import 'package:starcraft_map_editor/application/eud/eud_project_workspace.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -47,6 +49,37 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'EUD project tab retains a dirty project across map tab switches',
+    (tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final fixture = EudWorkspaceFixture();
+      addTearDown(fixture.dispose);
+      await fixture.maps.open();
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: fixture.maps,
+          eudProjectWorkspace: fixture.workspace,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eud-project-tab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eud-project-new')));
+      await tester.pumpAndSettle();
+      expect(fixture.projects.isDirty, isTrue);
+      await tester.tap(find.byKey(const Key('map-document-tab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eud-project-tab')));
+      await tester.pumpAndSettle();
+      expect(find.text('EUD Project • Unsaved'), findsOneWidget);
+      expect(fixture.projects.project, isNotNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
   for (final config in [
     (
       'Player Settings…',
@@ -2486,6 +2519,7 @@ Offset _mapPixelOffset(
 }
 
 Widget _createTestApp({
+  EudProjectWorkspace? eudProjectWorkspace,
   EditorCommandDispatcher? dispatcher,
   OpenMapController? openMapController,
   SaveMapController? saveMapController,
@@ -2609,6 +2643,7 @@ Widget _createTestApp({
       saveMapController: resolvedSaveMapController,
       eudBuildController: resolvedEudBuildController,
       eudSourceController: resolvedEudSourceController,
+      eudProjectWorkspace: eudProjectWorkspace,
       operationProgressController: resolvedProgressController,
       recentProjectsService: resolvedRecentProjectsService,
       settingsStore: resolvedSettingsStore,

@@ -14,6 +14,8 @@ import '../../application/editing/object_properties.dart';
 import '../../application/eud/eud_build_controller.dart';
 import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
+import '../../application/eud/eud_project_workspace.dart';
+import '../eud_editor/eud_project_pane.dart';
 import '../../application/eud/eud_source_document.dart';
 import '../../application/layers/map_layer_controller.dart';
 import '../../application/operations/operation_progress.dart';
@@ -39,7 +41,7 @@ import '../settings/upgrade_settings_dialog.dart';
 import '../settings/tech_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
-enum _WorkspaceView { map, eud, catalog, settings }
+enum _WorkspaceView { map, eud, catalog, settings, project }
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
@@ -48,6 +50,7 @@ class EditorShell extends StatefulWidget {
     required this.saveMapController,
     required this.eudBuildController,
     required this.eudSourceController,
+    this.eudProjectWorkspace,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
@@ -66,6 +69,7 @@ class EditorShell extends StatefulWidget {
   final SaveMapController saveMapController;
   final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
+  final EudProjectWorkspace? eudProjectWorkspace;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final StarCraftDataAssetSettingsController
@@ -88,6 +92,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<SaveMapState> _saveMapSubscription;
   late StreamSubscription<EudBuildState> _eudBuildSubscription;
   late StreamSubscription<EudSourceState> _eudSourceSubscription;
+  StreamSubscription<void>? _projectSubscription;
   late StreamSubscription<StarCraftDataAssetSettingsState>
   _starCraftDataAssetSettingsSubscription;
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
@@ -130,6 +135,9 @@ class _EditorShellState extends State<EditorShell> {
     _saveMapSubscription = _listenForSavedMaps(widget.saveMapController);
     _eudBuildSubscription = _listenForEudBuild(widget.eudBuildController);
     _eudSourceSubscription = _listenForEudSources(widget.eudSourceController);
+    _projectSubscription = widget.eudProjectWorkspace?.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
     _starCraftDataAssetSettingsSubscription = _listenForStarCraftDataAssets(
       widget.starCraftDataAssetSettingsController,
     );
@@ -163,6 +171,12 @@ class _EditorShellState extends State<EditorShell> {
   @override
   void didUpdateWidget(EditorShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.eudProjectWorkspace != widget.eudProjectWorkspace) {
+      _projectSubscription?.cancel();
+      _projectSubscription = widget.eudProjectWorkspace?.changes.listen((_) {
+        if (mounted) setState(() {});
+      });
+    }
     var synchronizeTerrainTextures = false;
     var synchronizeObjectTextures = false;
     if (oldWidget.recentProjectsService != widget.recentProjectsService) {
@@ -434,6 +448,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_saveMapSubscription.cancel());
     unawaited(_eudBuildSubscription.cancel());
     unawaited(_eudSourceSubscription.cancel());
+    _projectSubscription?.cancel();
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     unawaited(_terrainEditingSubscription.cancel());
     unawaited(_mapLayerSubscription.cancel());
@@ -518,7 +533,9 @@ class _EditorShellState extends State<EditorShell> {
         ? null
         : _callbackFor(EditorCommandId.saveAs);
     final eudBuildState = widget.eudBuildController.state;
-    final buildEud = widget.eudBuildController.canStart
+    final buildEud =
+        widget.eudBuildController.canStart &&
+            !(widget.eudProjectWorkspace?.hasUnbuiltOverrides ?? false)
         ? _callbackFor(EditorCommandId.buildEud)
         : null;
     final cancelEudBuild = eudBuildState.canCancel
@@ -754,6 +771,10 @@ class _EditorShellState extends State<EditorShell> {
                                 : null,
                             onRemoveRecentProject: _removeRecentProject,
                             eudSourceController: widget.eudSourceController,
+                            projectWorkspace: widget.eudProjectWorkspace,
+                            onShowProject: () => setState(
+                              () => _workspaceView = _WorkspaceView.project,
+                            ),
                             terrainEditingController:
                                 widget.terrainEditingController,
                             mapLayerController: widget.mapLayerController,
@@ -1173,6 +1194,8 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onShowCatalog,
     required this.onOpenSettings,
     required this.settingsPage,
+    required this.projectWorkspace,
+    required this.onShowProject,
   });
 
   final VoidCallback? openMap;
@@ -1196,20 +1219,25 @@ class _EditorWorkspace extends StatelessWidget {
   final VoidCallback onShowCatalog;
   final VoidCallback onOpenSettings;
   final Widget settingsPage;
+  final EudProjectWorkspace? projectWorkspace;
+  final VoidCallback onShowProject;
 
   @override
   Widget build(BuildContext context) {
     final session = openMapState.session;
     final eudDocument = eudSourceController.state.document;
+    final fullWidth =
+        workspaceView == _WorkspaceView.settings ||
+        workspaceView == _WorkspaceView.project;
     final showingEud =
         workspaceView == _WorkspaceView.eud && eudDocument != null;
 
     return Row(
       children: [
         SizedBox(
-          width: workspaceView == _WorkspaceView.settings ? 0 : 210,
+          width: fullWidth ? 0 : 210,
           child: Offstage(
-            offstage: workspaceView == _WorkspaceView.settings,
+            offstage: fullWidth,
             child: _EditorPane(
               title: showingEud
                   ? 'Project / Sources'
@@ -1246,7 +1274,9 @@ class _EditorWorkspace extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              if (session != null || eudDocument != null)
+              if (session != null ||
+                  eudDocument != null ||
+                  projectWorkspace != null)
                 _DocumentTabs(
                   session: session,
                   eudDocument: eudDocument,
@@ -1255,10 +1285,16 @@ class _EditorWorkspace extends StatelessWidget {
                   onShowEud: onShowEud,
                   onShowCatalog: onShowCatalog,
                   onOpenSettings: onOpenSettings,
+                  projectWorkspace: projectWorkspace,
+                  onShowProject: onShowProject,
                 ),
               Expanded(
                 child: IndexedStack(
-                  index: workspaceView == _WorkspaceView.settings ? 1 : 0,
+                  index: workspaceView == _WorkspaceView.project
+                      ? 2
+                      : workspaceView == _WorkspaceView.settings
+                      ? 1
+                      : 0,
                   children: [
                     _MapWorkspace(
                       openMap: openMap,
@@ -1280,6 +1316,13 @@ class _EditorWorkspace extends StatelessWidget {
                       onShowMap: onShowMap,
                     ),
                     settingsPage,
+                    if (projectWorkspace != null)
+                      EudProjectPane(
+                        key: ObjectKey(projectWorkspace),
+                        workspace: projectWorkspace!,
+                      )
+                    else
+                      const SizedBox.shrink(),
                   ],
                 ),
               ),
@@ -1288,9 +1331,9 @@ class _EditorWorkspace extends StatelessWidget {
         ),
         const VerticalDivider(width: 1),
         SizedBox(
-          width: workspaceView == _WorkspaceView.settings ? 0 : 260,
+          width: fullWidth ? 0 : 260,
           child: Offstage(
-            offstage: workspaceView == _WorkspaceView.settings,
+            offstage: fullWidth,
             child: _EditorPane(
               title: 'Inspector',
               child: showingEud
@@ -1322,6 +1365,8 @@ class _DocumentTabs extends StatelessWidget {
     required this.onShowEud,
     required this.onShowCatalog,
     required this.onOpenSettings,
+    required this.projectWorkspace,
+    required this.onShowProject,
   });
 
   final OpenedMapSession? session;
@@ -1331,6 +1376,8 @@ class _DocumentTabs extends StatelessWidget {
   final VoidCallback onShowEud;
   final VoidCallback onShowCatalog;
   final VoidCallback onOpenSettings;
+  final EudProjectWorkspace? projectWorkspace;
+  final VoidCallback onShowProject;
 
   @override
   Widget build(BuildContext context) {
@@ -1378,6 +1425,15 @@ class _DocumentTabs extends StatelessWidget {
                   icon: Icons.code_rounded,
                   selected: workspaceView == _WorkspaceView.eud,
                   onPressed: onShowEud,
+                ),
+              if (projectWorkspace != null)
+                _DocumentTab(
+                  key: const Key('eud-project-tab'),
+                  label: 'EUD Project',
+                  dirty: projectWorkspace!.projects.isDirty,
+                  icon: Icons.folder_open,
+                  selected: workspaceView == _WorkspaceView.project,
+                  onPressed: onShowProject,
                 ),
             ],
           ),

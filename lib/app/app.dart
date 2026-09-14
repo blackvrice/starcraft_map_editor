@@ -8,6 +8,7 @@ import '../application/editing/object_palette_controller.dart';
 import '../application/placement/placement_catalog_controller.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/eud_source_controller.dart';
+import '../application/eud/eud_project_workspace.dart';
 import '../application/layers/map_layer_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/ports/settings_store.dart';
@@ -25,6 +26,7 @@ class EditorAppDependencies {
     required this.saveMapController,
     required this.eudBuildController,
     required this.eudSourceController,
+    this.eudProjectWorkspace,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.settingsStore,
@@ -43,6 +45,7 @@ class EditorAppDependencies {
   final SaveMapController saveMapController;
   final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
+  final EudProjectWorkspace? eudProjectWorkspace;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final SettingsStore settingsStore;
@@ -84,6 +87,7 @@ class StarCraftMapEditorApp extends StatelessWidget {
         saveMapController: dependencies.saveMapController,
         eudBuildController: dependencies.eudBuildController,
         eudSourceController: dependencies.eudSourceController,
+        eudProjectWorkspace: dependencies.eudProjectWorkspace,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,
         starCraftDataAssetSettingsController:

@@ -182,8 +182,12 @@ bool FlutterWindow::OnCreate() {
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
                  result) {
-        const bool is_open = call.method_name() == "openMap";
-        const bool is_save = call.method_name() == "saveMap";
+        const bool is_project = call.method_name() == "openEudProject" ||
+                                call.method_name() == "saveEudProject";
+        const bool is_open = call.method_name() == "openMap" ||
+                             call.method_name() == "openEudProject";
+        const bool is_save = call.method_name() == "saveMap" ||
+                             call.method_name() == "saveEudProject";
         const bool is_data_directory =
             call.method_name() == "pickStarCraftInstallationDirectory";
         if (!is_open && !is_save && !is_data_directory) {
@@ -234,22 +238,25 @@ bool FlutterWindow::OnCreate() {
         constexpr wchar_t filter[] =
             L"StarCraft maps (*.scm;*.scx)\0*.scm;*.scx\0"
             L"All files (*.*)\0*.*\0";
+        constexpr wchar_t project_filter[] =
+            L"EUD projects (*.eud.json)\0*.eud.json\0";
         OPENFILENAMEW dialog = {};
         dialog.lStructSize = sizeof(dialog);
         dialog.hwndOwner = GetHandle();
         dialog.lpstrFile = selected_path;
         dialog.nMaxFile =
             static_cast<DWORD>(sizeof(selected_path) / sizeof(wchar_t));
-        dialog.lpstrFilter = filter;
+        dialog.lpstrFilter = is_project ? project_filter : filter;
         dialog.nFilterIndex = 1;
-        dialog.lpstrTitle =
-            is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As";
-        dialog.lpstrDefExt = L"scx";
+        dialog.lpstrTitle = is_project
+            ? (is_open ? L"Open EUD Project" : L"Save EUD Project As (new file)")
+            : (is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As");
+        dialog.lpstrDefExt = is_project ? L"eud.json" : L"scx";
         dialog.Flags =
             OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
         if (is_open) {
           dialog.Flags |= OFN_FILEMUSTEXIST;
-        } else {
+        } else if (!is_project) {
           dialog.Flags |= OFN_OVERWRITEPROMPT;
         }
 
