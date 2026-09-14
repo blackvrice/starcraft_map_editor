@@ -1,6 +1,7 @@
 # EUD 확장 설정 설계
 
-이 문서는 미구현 확장 기능의 범위와 인수 기준을 관리한다. 구현 상태는
+이 문서는 확장 기능의 범위와 인수 기준을 관리한다. 후보 필드의 구조 검증 기반만
+구현되었으며 설정 UI·프로젝트 저장·패치 생성·게임 적용은 아직 미구현이다. 구현 상태는
 [개발 계획](DEVELOPMENT_PLAN.md), 현재 빌드 기반과 외부 도구 경계는
 [EUD 연동](EUD_INTEGRATION.md), 사용자 화면 흐름은 [에디터 UX](EDITOR_UX.md)를 따른다.
 
@@ -11,6 +12,47 @@
 | M7.1 | 조건부 실행, 런타임 객체, 동적 텍스트와 로케이션 |
 
 ## 1. 계획된 유닛·무기 EUD 확장 설정
+
+### 2026-09-14 구현: 후보 필드 매니페스트
+
+`lib/domain/eud/eud_field_manifest.dart`에 다음 다섯 필드를 정의했다.
+검증은 외부 도구를 실행하지 않는 순수 도메인 연산이다.
+
+| 키 | 자료형 / 저장 범위 | 주의 사항 |
+| --- | --- | --- |
+| `unit.hasShield` | bool / 논리 비트 1개 | 최대 실드량과 별도 필드 |
+| `unit.maxShield` | unsigned 16-bit / 0~65535 | CHK 중복 표시, 명시적 override 정책은 후속 구현 |
+| `weapon.minRange` | unsigned 32-bit / 0~4294967295 | 원시 거리, 게임 허용 범위·타일 변환 미확정 |
+| `weapon.maxRange` | unsigned 32-bit / 0~4294967295 | 공유 무기 영향 분석 필요 |
+| `weapon.damageType` | 8-bit enum 심볼 | Independent, Explosive, Concussive, Normal, IgnoreArmor |
+
+유닛 대상은 0~227, 무기는 0~129이며 None/그룹 등 가상 대상은 거부한다.
+문자열 숫자·소수·범위 초과·알 수 없는 필드·알 수 없는 enum은 자동 변환하지 않는다.
+enum은 정확한 API 심볼로만 받으며 숫자 매핑을 추측하지 않는다. 위 범위는 **저장
+가능 범위**이고 게임에서 안전하게 동작하는 값의 범위가 아니다. 최소/최대 사거리
+관계, 중복 쓰기, 실드 초기화, CHK override와 공유 영향은 프로젝트 검증 단계에서
+추가해야 한다. 현재 검사 성공만으로 설정을 적용하거나 빌드할 수 없다.
+
+근거는 eudplib 0.80.6 버전 변경 커밋
+[`e04ac54dccbdcda94512214c4730b46f7f13d74f`](https://github.com/armoha/eudplib/tree/e04ac54dccbdcda94512214c4730b46f7f13d74f)의
+`src/eudplib/scdata/unit.py`, `weapon.py`, `offsetmap/member.py`다.
+[euddraft v0.10.2.5 lock 파일](https://github.com/armoha/euddraft/blob/v0.10.2.5/uv.lock)은
+eudplib 0.80.6 배포본을 고정한다. Git 소스 확인과 설치된 배포본의 실행 검증은
+별개이며 배포본과 Git 소스의 동등성까지 확인한 것은 아니다.
+
+매니페스트는 정확한 두 버전이 일치해도 `runtimeUnverified`를 반환하며,
+SC:R 검증 빌드 목록은 비어 있다. 기존 EUD 빌드 allowlist와 파이프라인은 변경하지
+않았다. 신규 도메인 테스트는 경계값·형식·enum·버전 불일치·미검증 상태를 확인한다.
+현재 환경에는 기존 문서의 `C:\Tools\euddraft-0.10.2.5`가 없어 실제 컴파일·게임 검증은
+실행하지 않았다. 다음은 선언적 프로젝트 스키마·저장·Undo 및 조합 검증이다.
+
+검증: Flutter 3.47.2 / Dart 3.13.2에서 `flutter analyze` 통과, 전체 테스트
+537개 통과·선택 스모크 11개 skip. 저장소 기준 SDK 3.44.8 / 3.12와 차이가 있다.
+변경 파일 포맷은 통과했으나 전체 포맷 게이트는 기존 infrastructure 테스트
+4개(`local_map_save_file_gateway`, `process_eud_compiler_gateway`,
+`process_map_archive_gateway`, `process_starcraft_data_asset_inspector`)의 형식 차이로
+실패했다. 해당 파일은 수정하지 않았다. UI·네이티브 변경이 없어 Windows 빌드와
+실행 검사는 이번 작업에서 반복하지 않았다.
 
 2026-09-07 사용자 요청으로 M6.3.1에 추가했다. **미구현 설계**이며 현재 앱이나
 지원 중인 euddraft 0.10.2.5에서 아래 항목을 실제 검증했다는 뜻은 아니다.
