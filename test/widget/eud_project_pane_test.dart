@@ -105,7 +105,7 @@ void main() {
           home: Scaffold(body: EudProjectPane(workspace: fixture.workspace)),
         ),
       );
-      expect(find.textContaining('Terran Marine (#0)'), findsOneWidget);
+      expect(find.text('unit.hasShield — Terran Marine (#0)'), findsOneWidget);
       expect(find.textContaining('EUD Build is disabled'), findsOneWidget);
       final exit = tester.binding.handleRequestAppExit();
       await tester.pumpAndSettle();

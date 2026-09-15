@@ -1320,6 +1320,7 @@ class _EditorWorkspace extends StatelessWidget {
                       EudProjectPane(
                         key: ObjectKey(projectWorkspace),
                         workspace: projectWorkspace!,
+                        catalog: placementCatalogController,
                       )
                     else
                       const SizedBox.shrink(),

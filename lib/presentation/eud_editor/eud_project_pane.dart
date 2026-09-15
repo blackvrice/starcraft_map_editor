@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' show AppExitResponse;
 import '../../application/eud/eud_project_workspace.dart';
+import '../../application/placement/placement_catalog_controller.dart';
+import 'eud_impact_pane.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
 
 class EudProjectPane extends StatefulWidget {
-  const EudProjectPane({required this.workspace, super.key});
+  const EudProjectPane({required this.workspace, this.catalog, super.key});
   final EudProjectWorkspace workspace;
+  final PlacementCatalogController? catalog;
   @override
   State<EudProjectPane> createState() => _EudProjectPaneState();
 }
@@ -210,6 +213,8 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                   '${item.value}${item.overrideChk ? ' • Explicit CHK override' : ''}',
                 ),
               ),
+            if (project.overrides.isNotEmpty)
+              EudImpactPane(project: project, catalog: widget.catalog),
           ],
         ],
       );

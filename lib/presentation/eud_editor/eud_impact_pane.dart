@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+import '../../application/placement/placement_catalog_controller.dart';
+import '../../domain/eud/eud_override_impact.dart';
+import '../../domain/eud/eud_project.dart';
+import '../settings/default_unit_names.dart';
+
+class EudImpactPane extends StatefulWidget {
+  const EudImpactPane({required this.project, this.catalog, super.key});
+  final EudProject project;
+  final PlacementCatalogController? catalog;
+
+  @override
+  State<EudImpactPane> createState() => _EudImpactPaneState();
+}
+
+class _EudImpactPaneState extends State<EudImpactPane> {
+  WeaponReferenceSnapshot? _snapshot;
+  String? _error;
+  int? _errorEpoch;
+  bool _loading = false;
+  int _request = 0;
+
+  @override
+  void didUpdateWidget(EudImpactPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.catalog, widget.catalog)) {
+      _request++;
+      _snapshot = null;
+      _error = null;
+      _loading = false;
+    }
+  }
+
+  Future<void> _load() async {
+    final catalog = widget.catalog!;
+    final request = ++_request;
+    final epoch = catalog.weaponReferenceEpoch;
+    setState(() {
+      _loading = true;
+      _snapshot = null;
+      _error = null;
+    });
+    try {
+      final result = await catalog.loadWeaponReferences();
+      if (!mounted || request != _request) return;
+      if (epoch == catalog.weaponReferenceEpoch && result.epoch == epoch) {
+        setState(() => _snapshot = result);
+      }
+    } catch (error) {
+      if (mounted && request == _request) {
+        setState(() {
+          _error = error.toString();
+          _errorEpoch = epoch;
+        });
+      }
+    } finally {
+      if (mounted && request == _request) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => StreamBuilder<PlacementCatalogState>(
+    stream: widget.catalog?.changes,
+    builder: (context, _) {
+      final epoch = widget.catalog?.weaponReferenceEpoch;
+      final snapshot = _snapshot?.epoch == epoch ? _snapshot : null;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Static unit / weapon impact'),
+          const Text(
+            'DAT references only; spells, runtime changes and actual attack behavior are not verified. All players share these type settings.',
+          ),
+          OutlinedButton(
+            onPressed: widget.catalog == null || _loading ? null : _load,
+            child: const Text('Load weapon impact'),
+          ),
+          if (_loading) const LinearProgressIndicator(),
+          if (snapshot == null)
+            const Text(
+              'Weapon references unavailable. Load or reload to analyze.',
+            )
+          else
+            Text('Reference source: ${snapshot.source}'),
+          if (_error != null && _errorEpoch == epoch) Text(_error!),
+          for (final override in widget.project.overrides)
+            _row(override, snapshot),
+        ],
+      );
+    },
+  );
+
+  Widget _row(EudOverride override, WeaponReferenceSnapshot? snapshot) {
+    final impact = EudOverrideImpact.analyze(
+      override,
+      references: snapshot?.index,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        '${override.identity}\n${impact.error != null
+            ? 'Cannot analyze: ${impact.error!.name}'
+            : impact.directUnits == null
+            ? 'Impact unknown: weapon references unavailable.'
+            : 'Direct units: ${_names(impact.directUnits!)}\nVia subunits: ${_names(impact.subunitUnits!)}'}',
+      ),
+    );
+  }
+
+  String _names(List<int> ids) => ids.isEmpty
+      ? 'None in static references'
+      : ids.map((id) => '${defaultUnitNames[id]} (#$id)').join(', ');
+}
