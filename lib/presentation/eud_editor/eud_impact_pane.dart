@@ -10,11 +10,13 @@ class EudImpactPane extends StatefulWidget {
     required this.project,
     this.catalog,
     this.onEditWeapon,
+    this.onEditShields,
     super.key,
   });
   final EudProject project;
   final PlacementCatalogController? catalog;
   final void Function(int weapon, int epoch)? onEditWeapon;
+  final void Function(int unit)? onEditShields;
 
   @override
   State<EudImpactPane> createState() => _EudImpactPaneState();
@@ -111,6 +113,12 @@ class _EudImpactPaneState extends State<EudImpactPane> {
               ],
               onChanged: (value) => setState(() => _unit = value!),
             ),
+          ),
+          OutlinedButton(
+            onPressed: widget.onEditShields == null
+                ? null
+                : () => widget.onEditShields!(_unit),
+            child: const Text('Edit unit EUD shields'),
           ),
           if (snapshot != null) ...[
             _weaponLink('Ground', snapshot.index.units[_unit].ground, snapshot),

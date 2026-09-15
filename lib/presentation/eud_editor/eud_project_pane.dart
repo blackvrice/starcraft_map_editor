@@ -4,6 +4,7 @@ import '../../application/eud/eud_project_workspace.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import 'eud_impact_pane.dart';
 import 'eud_weapon_editor.dart';
+import 'eud_shield_editor.dart';
 import '../../domain/eud/eud_effective_settings.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
@@ -154,7 +155,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.',
           ),
           const Text(
-            'Weapon EUD settings can be edited below. Generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
+            'Weapon and shield EUD settings can be edited below. Generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
           ),
           if (workspace.isBusy) const LinearProgressIndicator(),
           if (_error != null)
@@ -235,6 +236,15 @@ class _EudProjectPaneState extends State<EudProjectPane> {
               key: const ValueKey('eud-project-impact'),
               project: project,
               catalog: widget.catalog,
+              onEditShields: busy
+                  ? null
+                  : (unit) => _run(
+                      () => showEudShieldEditor(
+                        context,
+                        controller: controller,
+                        unit: unit,
+                      ),
+                    ),
               onEditWeapon: busy
                   ? null
                   : (weapon, epoch) {
