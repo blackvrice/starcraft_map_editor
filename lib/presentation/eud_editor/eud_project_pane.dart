@@ -3,6 +3,7 @@ import 'dart:ui' show AppExitResponse;
 import '../../application/eud/eud_project_workspace.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import 'eud_impact_pane.dart';
+import '../../domain/eud/eud_effective_settings.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
 
@@ -203,6 +204,17 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                 issue,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
+            if (project.overrides.isNotEmpty) ...[
+              const Text('CHK baseline / planned EUD values'),
+              const Text(
+                'Preview only, not applied in game. Verify current map after changes. Project validation errors block all planned values.',
+              ),
+              for (final setting in workspace.effectiveSettings)
+                Text(
+                  '${setting.override.identity} — Baseline: ${_baseline(setting)}\n'
+                  'Requested EUD: ${setting.override.value} • Planned EUD value: ${setting.plannedValue ?? 'Unresolved'}',
+                ),
+            ],
             for (final item in project.overrides)
               ListTile(
                 dense: true,
@@ -246,4 +258,17 @@ class _EudProjectPaneState extends State<EudProjectPane> {
     final name = id >= 0 && id < names.length ? names[id] : '';
     return name.isEmpty ? '#$id' : '$name (#$id)';
   }
+
+  String _baseline(EudEffectiveSetting setting) =>
+      switch (setting.baselineSource) {
+        EudBaselineSource.unverifiedMap => 'Unverified map',
+        EudBaselineSource.chk =>
+          '${setting.baselineValue} (${setting.baselineDetail})',
+        EudBaselineSource.gameDefault =>
+          'Game default (unknown; ${setting.baselineDetail})',
+        EudBaselineSource.unavailable =>
+          'Unavailable (${setting.baselineDetail})',
+        EudBaselineSource.notInChk =>
+          'Not stored in CHK; ${setting.baselineDetail}',
+      };
 }

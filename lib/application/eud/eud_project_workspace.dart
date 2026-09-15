@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../../domain/eud/eud_project.dart';
+import '../../domain/eud/eud_effective_settings.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../ports/eud_project_picker.dart';
@@ -48,6 +49,17 @@ final class EudProjectWorkspace {
   bool get isBusy => _busy || projects.isBusy;
   bool get hasUnbuiltOverrides =>
       projects.project?.overrides.isNotEmpty ?? false;
+  List<EudEffectiveSetting> get effectiveSettings {
+    final project = projects.project;
+    if (project == null) return const [];
+    return EudEffectiveSettings.resolve(
+      project,
+      verifiedDocument: binding == EudMapBinding.matched
+          ? maps.state.session?.rawDocument
+          : null,
+    );
+  }
+
   EudMapBinding get binding {
     final session = maps.state.session;
     if (session == null) return EudMapBinding.noMap;
