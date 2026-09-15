@@ -11,12 +11,19 @@ final class EudProjectController {
   final _redo = <EudProject>[];
   EudProject? _project;
   String? _savedContent;
+  String? _savedRevision;
+  String? _backupPath;
+  String? _saveWarning;
   String? _path;
   bool _busy = false;
   bool _disposed = false;
 
   EudProject? get project => _project;
   String? get path => _path;
+  String? get backupPath => _backupPath;
+  String? get saveWarning => _saveWarning;
+  bool get canSave =>
+      !_busy && _path != null && _savedRevision != null && isDirty;
   bool get isBusy => _busy;
   bool get isDirty => _project != null && _project!.encode() != _savedContent;
   bool get canUndo => _undo.isNotEmpty;
@@ -38,7 +45,8 @@ final class EudProjectController {
     try {
       final loaded = await _store.read(path);
       if (_disposed) return false;
-      _reset(loaded, path, loaded.encode());
+      _reset(loaded.project, path, loaded.project.encode());
+      _savedRevision = loaded.revision;
       return true;
     } finally {
       _busy = false;
@@ -93,7 +101,17 @@ final class EudProjectController {
     return true;
   }
 
-  Future<void> saveAs(String path) async {
+  Future<void> saveAs(String path) => _save(path, replaceExisting: false);
+
+  Future<void> save() async {
+    _requireAlive();
+    if (_path == null || _savedRevision == null) {
+      throw StateError('Use Save Project As for a new project.');
+    }
+    await _save(_path!, replaceExisting: true);
+  }
+
+  Future<void> _save(String path, {required bool replaceExisting}) async {
     _requireAlive();
     final snapshot = _project;
     if (_busy || snapshot == null) {
@@ -102,9 +120,14 @@ final class EudProjectController {
     _busy = true;
     _notify();
     try {
-      await _store.saveAs(path, snapshot);
+      final result = replaceExisting
+          ? await _store.save(path, snapshot, expectedRevision: _savedRevision!)
+          : await _store.saveAs(path, snapshot);
       if (!_disposed) {
         _savedContent = snapshot.encode();
+        _savedRevision = result.revision;
+        _backupPath = result.backupPath;
+        _saveWarning = result.cleanupWarning;
         _path = path;
       }
     } finally {
@@ -124,6 +147,9 @@ final class EudProjectController {
     _project = project;
     _path = path;
     _savedContent = saved;
+    _savedRevision = null;
+    _backupPath = null;
+    _saveWarning = null;
     _undo.clear();
     _redo.clear();
     _notify();

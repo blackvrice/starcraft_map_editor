@@ -113,6 +113,12 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                 child: const Text('Open Project'),
               ),
               OutlinedButton(
+                onPressed: busy || !controller.canSave
+                    ? null
+                    : () => _run(workspace.save),
+                child: const Text('Save Project'),
+              ),
+              OutlinedButton(
                 onPressed: busy || project == null
                     ? null
                     : () => _run(workspace.saveAs),
@@ -143,7 +149,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.',
           ),
           const Text(
-            'EUD field editing and generated builds are not connected yet. Existing project files require a new Save As path.',
+            'EUD field editing and generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
           ),
           if (workspace.isBusy) const LinearProgressIndicator(),
           if (_error != null)
@@ -185,6 +191,10 @@ class _EudProjectPaneState extends State<EudProjectPane> {
               const Text(
                 'EUD Build is disabled while this project has overrides: generated project builds are not connected yet.',
               ),
+            if (controller.backupPath != null)
+              SelectableText('Recovery backup: ${controller.backupPath}'),
+            if (controller.saveWarning != null)
+              SelectableText(controller.saveWarning!),
             for (final issue in project.validationIssues)
               Text(
                 issue,

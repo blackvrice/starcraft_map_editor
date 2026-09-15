@@ -3,6 +3,11 @@
 - Status: Accepted
 - Date: 2026-09-14
 
+2026-09-15 후속 구현: 아래 새 경로 전용 저장은 최초 구현 범위다. 현재는
+`EudProjectFile`의 실제 바이트 revision을 대조하는 기존 파일 Save도 지원한다.
+이전 원문 백업·교체 실패 복원·외부 변경 거부를 추가했으며 자세한 현행 계약과
+검증은 [EUD 확장 설계](../EUD_EXTENSIONS.md)의 기존 프로젝트 Save 절을 따른다.
+
 ## Context
 
 일반 맵 Save As는 CHK 변경만 저장한다. 사거리·실드 활성 같은 EUD 확장 값은

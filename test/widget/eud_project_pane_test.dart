@@ -7,6 +7,48 @@ import '../fixtures/eud_project_workspace_fixture.dart';
 
 void main() {
   testWidgets(
+    'Save Project updates current file and displays external conflict without discarding edits',
+    (tester) async {
+      tester.view.physicalSize = const Size(1300, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final fixture = EudWorkspaceFixture();
+      addTearDown(fixture.dispose);
+      await fixture.maps.open();
+      await fixture.workspace.createFromMap();
+      await fixture.workspace.saveAs();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: EudProjectPane(workspace: fixture.workspace)),
+        ),
+      );
+      final save = find.widgetWithText(OutlinedButton, 'Save Project');
+      expect(tester.widget<OutlinedButton>(save).onPressed, isNull);
+      fixture.projects.replaceOverrides([
+        EudOverride(field: 'unit.hasShield', targetId: 0, value: true),
+      ]);
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(fixture.projects.isDirty, isFalse);
+      expect(fixture.writes, 2);
+      expect(find.textContaining('Recovery backup:'), findsOneWidget);
+      fixture.files[fixture.savePath!] = fixture.projects.project!
+          .withOverrides([]);
+      fixture.projects.replaceOverrides([
+        EudOverride(field: 'unit.hasShield', targetId: 0, value: false),
+      ]);
+      await tester.pumpAndSettle();
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(fixture.projects.isDirty, isTrue);
+      expect(fixture.writes, 2);
+      expect(find.textContaining('changed outside the editor'), findsOneWidget);
+      expect(fixture.files[fixture.savePath!]!.overrides, isEmpty);
+    },
+  );
+  testWidgets(
     'project create save close cancel and reopen never write the map',
     (tester) async {
       final fixture = EudWorkspaceFixture();

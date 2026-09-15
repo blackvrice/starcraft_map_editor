@@ -9,17 +9,40 @@ class MemoryStore implements EudProjectStore {
   bool fail = false;
   Completer<void>? pending;
   @override
-  Future<EudProject> read(String path) async {
+  Future<EudProjectFile> read(String path) async {
     if (fail) throw const FormatException('bad file');
-    return files[path]!;
+    return EudProjectFile(
+      project: files[path]!,
+      revision: files[path]!.encode(),
+    );
   }
 
   @override
-  Future<void> saveAs(String path, EudProject project) async {
+  Future<EudProjectFile> saveAs(String path, EudProject project) async {
     if (pending != null) await pending!.future;
     if (fail) throw StateError('disk failure');
     if (files.containsKey(path)) throw StateError('exists');
     files[path] = project;
+    return EudProjectFile(project: project, revision: project.encode());
+  }
+
+  @override
+  Future<EudProjectFile> save(
+    String path,
+    EudProject project, {
+    required String expectedRevision,
+  }) async {
+    if (pending != null) await pending!.future;
+    if (fail) throw StateError('disk failure');
+    if (files[path]?.encode() != expectedRevision) {
+      throw EudProjectConflict(path);
+    }
+    files[path] = project;
+    return EudProjectFile(
+      project: project,
+      revision: project.encode(),
+      backupPath: '$path.backup.bak',
+    );
   }
 }
 
@@ -36,6 +59,33 @@ void main() {
     controller = EudProjectController(store);
   });
   tearDown(() => controller.dispose());
+
+  test(
+    'Save uses the session revision, retains undo and refuses external changes',
+    () async {
+      controller.create(empty());
+      await expectLater(controller.save(), throwsStateError);
+      await controller.saveAs('project.eud.json');
+      controller.replaceOverrides(edits(100));
+      expect(controller.canSave, isTrue);
+      await controller.save();
+      expect(controller.isDirty, isFalse);
+      expect(controller.backupPath, 'project.eud.json.backup.bak');
+      controller.undo();
+      expect(controller.isDirty, isTrue);
+      controller.redo();
+      expect(controller.isDirty, isFalse);
+      store.files['project.eud.json'] = empty();
+      controller.replaceOverrides(edits(200));
+      await expectLater(controller.save(), throwsA(isA<EudProjectConflict>()));
+      expect(controller.isDirty, isTrue);
+      expect(controller.project!.overrides.single.value, 200);
+      expect(store.files['project.eud.json']!.overrides, isEmpty);
+      await controller.saveAs('copy.eud.json');
+      expect(controller.isDirty, isFalse);
+      expect(controller.backupPath, isNull);
+    },
+  );
 
   test('savepoint follows content across undo redo and reopening', () async {
     controller.create(empty());

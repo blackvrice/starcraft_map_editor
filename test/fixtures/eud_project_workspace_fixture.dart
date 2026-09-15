@@ -61,12 +61,32 @@ class EudWorkspaceFixture
   }
 
   @override
-  Future<EudProject> read(String path) async => files[path]!;
+  Future<EudProjectFile> read(String path) async =>
+      EudProjectFile(project: files[path]!, revision: files[path]!.encode());
   @override
-  Future<void> saveAs(String path, EudProject project) async {
+  Future<EudProjectFile> saveAs(String path, EudProject project) async {
     if (files.containsKey(path)) throw StateError('Choose a new project path.');
     writes++;
     files[path] = project;
+    return EudProjectFile(project: project, revision: project.encode());
+  }
+
+  @override
+  Future<EudProjectFile> save(
+    String path,
+    EudProject project, {
+    required String expectedRevision,
+  }) async {
+    if (files[path]?.encode() != expectedRevision) {
+      throw EudProjectConflict(path);
+    }
+    writes++;
+    files[path] = project;
+    return EudProjectFile(
+      project: project,
+      revision: project.encode(),
+      backupPath: '$path.backup.bak',
+    );
   }
 
   @override

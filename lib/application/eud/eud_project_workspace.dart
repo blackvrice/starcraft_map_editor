@@ -104,6 +104,8 @@ final class EudProjectWorkspace {
     await projects.saveAs(path);
   });
 
+  Future<void> save() => _run(projects.save);
+
   Future<OpenedMapSession> _verifiedMap() async {
     _binding = EudMapBinding.unchecked;
     final session = maps.state.session;

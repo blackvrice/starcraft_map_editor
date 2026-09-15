@@ -4,12 +4,14 @@ import '../../application/ports/map_save_file_gateway.dart';
 
 typedef LocalMapFileMover =
     Future<void> Function(File source, String destinationPath);
+typedef LocalMapBackupValidator = Future<void> Function(File backup);
 
 class LocalMapSaveFileGateway implements MapSaveFileGateway {
-  LocalMapSaveFileGateway({LocalMapFileMover? fileMover})
+  LocalMapSaveFileGateway({LocalMapFileMover? fileMover, this.backupValidator})
     : _fileMover = fileMover ?? _moveFile;
 
   final LocalMapFileMover _fileMover;
+  final LocalMapBackupValidator? backupValidator;
   final Set<String> _ownedWorkspacePaths = {};
 
   @override
@@ -95,6 +97,12 @@ class LocalMapSaveFileGateway implements MapSaveFileGateway {
       followLinks: false,
     );
     if (destinationType == FileSystemEntityType.notFound) {
+      if (backupValidator != null) {
+        throw FileSystemException(
+          'The expected destination disappeared before promotion.',
+          destination.path,
+        );
+      }
       await _fileMover(temporaryOutput, destination.path);
       return MapSavePromotionResult();
     }
@@ -124,6 +132,13 @@ class LocalMapSaveFileGateway implements MapSaveFileGateway {
 
     await _fileMover(destination, backupPath);
     try {
+      await backupValidator?.call(File(backupPath));
+      if (await destinationExists(destination.path)) {
+        throw FileSystemException(
+          'Another file appeared during promotion.',
+          destination.path,
+        );
+      }
       await _fileMover(temporaryOutput, destination.path);
     } on Object catch (promotionError, promotionStackTrace) {
       try {
