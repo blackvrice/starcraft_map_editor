@@ -4,6 +4,21 @@ import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_project.dart';
 import '../settings/default_settings_names.dart';
 
+Future<void> showEudWeaponEditor(
+  BuildContext context, {
+  required EudProjectController controller,
+  required int weapon,
+  bool Function()? referenceIsCurrent,
+}) => showDialog<void>(
+  context: context,
+  barrierDismissible: false,
+  builder: (_) => _WeaponDialog(
+    controller: controller,
+    weapon: weapon,
+    referenceIsCurrent: referenceIsCurrent,
+  ),
+);
+
 class EudWeaponEditor extends StatefulWidget {
   const EudWeaponEditor({
     required this.controller,
@@ -48,13 +63,10 @@ class _EudWeaponEditorState extends State<EudWeaponEditor> {
             ? () async {
                 widget.onEditingChanged(true);
                 try {
-                  await showDialog<void>(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => _WeaponDialog(
-                      controller: widget.controller,
-                      weapon: _weapon,
-                    ),
+                  await showEudWeaponEditor(
+                    context,
+                    controller: widget.controller,
+                    weapon: _weapon,
                   );
                 } finally {
                   if (mounted) widget.onEditingChanged(false);
@@ -68,9 +80,14 @@ class _EudWeaponEditorState extends State<EudWeaponEditor> {
 }
 
 class _WeaponDialog extends StatefulWidget {
-  const _WeaponDialog({required this.controller, required this.weapon});
+  const _WeaponDialog({
+    required this.controller,
+    required this.weapon,
+    this.referenceIsCurrent,
+  });
   final EudProjectController controller;
   final int weapon;
+  final bool Function()? referenceIsCurrent;
   @override
   State<_WeaponDialog> createState() => _WeaponDialogState();
 }
@@ -108,6 +125,11 @@ class _WeaponDialogState extends State<_WeaponDialog> {
 
   void _apply() {
     try {
+      if (widget.referenceIsCurrent?.call() == false) {
+        throw StateError(
+          'Weapon reference source changed. Cancel and reload references.',
+        );
+      }
       if (!identical(_base, widget.controller.project)) {
         throw StateError('Project changed. Cancel and reopen this editor.');
       }

@@ -3,11 +3,18 @@ import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/eud/eud_override_impact.dart';
 import '../../domain/eud/eud_project.dart';
 import '../settings/default_unit_names.dart';
+import '../settings/default_settings_names.dart';
 
 class EudImpactPane extends StatefulWidget {
-  const EudImpactPane({required this.project, this.catalog, super.key});
+  const EudImpactPane({
+    required this.project,
+    this.catalog,
+    this.onEditWeapon,
+    super.key,
+  });
   final EudProject project;
   final PlacementCatalogController? catalog;
+  final void Function(int weapon, int epoch)? onEditWeapon;
 
   @override
   State<EudImpactPane> createState() => _EudImpactPaneState();
@@ -19,6 +26,7 @@ class _EudImpactPaneState extends State<EudImpactPane> {
   int? _errorEpoch;
   bool _loading = false;
   int _request = 0;
+  int _unit = 0;
 
   @override
   void didUpdateWidget(EudImpactPane oldWidget) {
@@ -85,12 +93,57 @@ class _EudImpactPaneState extends State<EudImpactPane> {
           else
             Text('Reference source: ${snapshot.source}'),
           if (_error != null && _errorEpoch == epoch) Text(_error!),
+          const Text(
+            'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.',
+          ),
+          SizedBox(
+            width: 360,
+            child: DropdownButton<int>(
+              key: const Key('eud-reference-unit'),
+              isExpanded: true,
+              value: _unit,
+              items: [
+                for (var i = 0; i < 228; i++)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Text('${defaultUnitNames[i]} (#$i)'),
+                  ),
+              ],
+              onChanged: (value) => setState(() => _unit = value!),
+            ),
+          ),
+          if (snapshot != null) ...[
+            _weaponLink('Ground', snapshot.index.units[_unit].ground, snapshot),
+            _weaponLink('Air', snapshot.index.units[_unit].air, snapshot),
+            Text(
+              'Subunit IDs: ${snapshot.index.units[_unit].subunit1}, ${snapshot.index.units[_unit].subunit2} (228 = None)',
+            ),
+          ],
           for (final override in widget.project.overrides)
             _row(override, snapshot),
         ],
       );
     },
   );
+
+  Widget _weaponLink(
+    String slot,
+    int weapon,
+    WeaponReferenceSnapshot snapshot,
+  ) {
+    if (weapon == 130) return Text('$slot weapon: None (#130)');
+    return OutlinedButton(
+      key: Key('eud-reference-${slot.toLowerCase()}'),
+      onPressed: widget.onEditWeapon == null
+          ? null
+          : () {
+              if (snapshot.epoch == widget.catalog?.weaponReferenceEpoch) {
+                widget.onEditWeapon!(weapon, snapshot.epoch);
+              }
+            },
+      child: Text('$slot: ${defaultWeaponNames[weapon]} (#$weapon) — Edit EUD'),
+    );
+  }
 
   Widget _row(EudOverride override, WeaponReferenceSnapshot? snapshot) {
     final impact = EudOverrideImpact.analyze(

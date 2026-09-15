@@ -231,8 +231,26 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                   '${item.value}${item.overrideChk ? ' • Explicit CHK override' : ''}',
                 ),
               ),
-            if (project.overrides.isNotEmpty)
-              EudImpactPane(project: project, catalog: widget.catalog),
+            EudImpactPane(
+              key: const ValueKey('eud-project-impact'),
+              project: project,
+              catalog: widget.catalog,
+              onEditWeapon: busy
+                  ? null
+                  : (weapon, epoch) {
+                      final catalog = widget.catalog;
+                      _run(
+                        () => showEudWeaponEditor(
+                          context,
+                          controller: controller,
+                          weapon: weapon,
+                          referenceIsCurrent: () =>
+                              identical(catalog, widget.catalog) &&
+                              catalog?.weaponReferenceEpoch == epoch,
+                        ),
+                      );
+                    },
+            ),
           ],
         ],
       );

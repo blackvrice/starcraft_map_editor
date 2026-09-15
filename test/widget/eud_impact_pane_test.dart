@@ -5,6 +5,8 @@ import 'package:starcraft_map_editor/application/placement/placement_catalog_con
 import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
 import 'package:starcraft_map_editor/presentation/eud_editor/eud_impact_pane.dart';
 import '../fixtures/eud_impact_fixture.dart';
+import '../fixtures/eud_project_workspace_fixture.dart';
+import 'package:starcraft_map_editor/presentation/eud_editor/eud_project_pane.dart';
 
 class _Catalog implements PlacementCatalogController {
   final events = StreamController<PlacementCatalogState>.broadcast(sync: true);
@@ -45,6 +47,74 @@ EudProject _project(int weapon) => EudProject(
 
 void main() {
   testWidgets(
+    'empty project follows ground and air references and rejects stale edits',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final fixture = EudWorkspaceFixture();
+      final catalog = _Catalog();
+      addTearDown(fixture.dispose);
+      addTearDown(catalog.events.close);
+      await fixture.maps.open();
+      await fixture.workspace.createFromMap();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: EudProjectPane(
+              workspace: fixture.workspace,
+              catalog: catalog,
+            ),
+          ),
+        ),
+      );
+      expect(find.byKey(const Key('eud-reference-ground')), findsNothing);
+      await tester.tap(find.text('Load weapon impact'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('eud-reference-ground')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('(#5) — EUD'), findsOneWidget);
+      await tester.enterText(find.byKey(const Key('eud-max-range')), '128');
+      await tester.tap(find.text('Apply to project'));
+      await tester.pumpAndSettle();
+      expect(fixture.projects.project!.overrides.single.targetId, 5);
+      await tester.tap(find.byKey(const Key('eud-reference-air')));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('eud-max-range')))
+            .controller!
+            .text,
+        '128',
+      );
+      catalog.invalidate();
+      await tester.enterText(find.byKey(const Key('eud-max-range')), '256');
+      await tester.tap(find.text('Apply to project'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Weapon reference source changed.'),
+        findsOneWidget,
+      );
+      expect(fixture.projects.project!.overrides.single.value, 128);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('eud-reference-air')), findsNothing);
+      await tester.tap(find.text('Load weapon impact'));
+      await tester.pumpAndSettle();
+      tester
+          .widget<DropdownButton<int>>(
+            find.byKey(const Key('eud-reference-unit')),
+          )
+          .onChanged!(1);
+      await tester.pumpAndSettle();
+      expect(find.text('Ground weapon: None (#130)'), findsOneWidget);
+      expect(find.byKey(const Key('eud-reference-ground')), findsNothing);
+      expect(find.byKey(const Key('eud-reference-air')), findsOneWidget);
+      expect(fixture.writes, 0);
+    },
+  );
+  testWidgets(
     'shows names, refreshes override targets and invalidates stale references',
     (tester) async {
       final catalog = _Catalog();
@@ -60,7 +130,10 @@ void main() {
       expect(find.textContaining('Impact unknown:'), findsOneWidget);
       await tester.tap(find.text('Load weapon impact'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Terran Marine (#0)'), findsOneWidget);
+      expect(
+        find.textContaining('Direct units: Terran Marine (#0)'),
+        findsOneWidget,
+      );
       expect(
         find.textContaining('Via subunits: Terran Vulture (#2)'),
         findsOneWidget,
