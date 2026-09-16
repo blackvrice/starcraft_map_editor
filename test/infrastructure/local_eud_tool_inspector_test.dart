@@ -147,7 +147,7 @@ void main() {
           ).absolute.path,
         );
         expect(result.tool?.version.toString(), '0.10.2.5');
-        expect(result.tool?.companionPaths, hasLength(6));
+        expect(result.tool?.companionPaths, hasLength(7));
       },
     );
 
@@ -163,6 +163,33 @@ void main() {
       },
       skip: externalInstallationPath == null || externalInstallationPath.isEmpty
           ? 'Set EUDDRAFT_TEST_INSTALLATION to an extracted official release.'
+          : false,
+    );
+
+    test(
+      'verifies official installation against the audited bundle manifest',
+      () async {
+        final manifest = EudToolManifest.decode(
+          await File(
+            'docs/research/euddraft-0.10.2.5/manifest.json',
+          ).readAsString(),
+        );
+        final result =
+            await LocalEudToolInspector(
+              isWindows: () => true,
+              bundledManifest: manifest,
+            ).inspect(
+              EudToolInspectionRequest(bundledPath: externalInstallationPath),
+            );
+        expect(result.isReady, true, reason: '${result.diagnostics}');
+        expect(result.tool!.pathSource, EudToolPathSource.bundled);
+        expect(
+          result.tool!.companionPaths,
+          contains(endsWith('freezeMpq.pyd')),
+        );
+      },
+      skip: externalInstallationPath == null || externalInstallationPath.isEmpty
+          ? 'Set EUDDRAFT_TEST_INSTALLATION to the unmodified audited release.'
           : false,
     );
 
@@ -356,6 +383,61 @@ void main() {
       expect(result.diagnostics.single.rawDetails, contains('lib/library.zip'));
     });
 
+    for (final source in EudToolPathSource.values) {
+      for (final state in ['missing', 'empty', 'directory']) {
+        test(
+          'rejects $state freezeMpq for ${source.name} before building',
+          () async {
+            final installation = await _createInstallation(
+              temporaryRoot,
+              omittedCompanions: {'lib/freezeMpq.pyd'},
+            );
+            final module = File('${installation.path}/lib/freezeMpq.pyd');
+            if (state == 'empty') {
+              await module.writeAsBytes([]);
+            } else if (state == 'directory') {
+              await Directory(module.path).create();
+            }
+            // Even a bundle inventory matching the incomplete installation must
+            // not replace the runtime's required companion checks.
+            inspector = LocalEudToolInspector(
+              isWindows: () => true,
+              bundledManifest: await inventory(installation),
+            );
+            final result = await inspector.inspect(
+              EudToolInspectionRequest(
+                projectProfilePath: source == EudToolPathSource.projectProfile
+                    ? installation.path
+                    : null,
+                userSettingsPath: source == EudToolPathSource.userSettings
+                    ? installation.path
+                    : null,
+                bundledPath: installation.path,
+              ),
+            );
+            expect(result.isReady, false);
+            expect(result.tool, isNull);
+            expect(
+              result.diagnostics.single.code,
+              EudToolDiagnosticCodes.companionMissing,
+            );
+            expect(
+              result.diagnostics.single.rawDetails,
+              contains('lib/freezeMpq.pyd'),
+            );
+            if (state != 'missing') {
+              expect(
+                await FileSystemEntity.type(module.path),
+                state == 'empty'
+                    ? FileSystemEntityType.file
+                    : FileSystemEntityType.directory,
+              );
+            }
+          },
+        );
+      }
+    }
+
     test('requires a versioned Python runtime DLL', () async {
       final installation = await _createInstallation(
         temporaryRoot,
@@ -418,6 +500,7 @@ Future<Directory> _createInstallation(
     'license.txt': [3],
     'lib/library.zip': [4],
     'lib/eudplib.bindings._rust.pyd': [5],
+    'lib/freezeMpq.pyd': [7],
   };
   for (final entry in companionBytes.entries) {
     if (!omittedCompanions.contains(entry.key)) {

@@ -76,6 +76,12 @@ Freeze 보호를 끈다. Freeze가 적용된 CHK는 의도적으로 일반 섹�
 만족하지 않는다. 보호된 최종 배포 출력은 별도 신뢰·검증 흐름을 설계하기
 전까지 지원하지 않는다.
 
+단, 0.10.2.5의 `applyeuddraft.py`는 설정을 읽기 전에 `freezeMpq`를 import한다.
+따라서 보호 기능을 꺼도 `lib/freezeMpq.pyd`는 필수 동반 파일이다. 설치 검사에서
+누락·빈 파일·디렉터리를 `EUD_TOOL_COMPANION_MISSING`으로 차단하며 프로젝트/
+사용자/동봉 경로 모두 같은 규칙을 적용한다. 파일을 제거해 동봉 범위를 줄이지 않는다.
+근거와 배포 검토 상태는 [동봉 검토 기록](research/euddraft-0.10.2.5/REDISTRIBUTION_REVIEW.md)을 참조한다.
+
 권장 사용자 폴더 예시:
 
 ```text

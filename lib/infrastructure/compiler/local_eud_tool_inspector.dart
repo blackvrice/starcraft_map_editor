@@ -32,6 +32,8 @@ final class LocalEudToolInspector implements EudToolInspector {
     'license.txt',
     'lib/library.zip',
     'lib/eudplib.bindings._rust.pyd',
+    // applyeuddraft imports this even when [freeze] freeze: 0 is configured.
+    'lib/freezeMpq.pyd',
   ];
 
   final Set<EudToolVersion> supportedVersions;
