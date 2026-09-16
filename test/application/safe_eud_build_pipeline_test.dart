@@ -15,7 +15,14 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 void main() {
   group('SafeEudBuildPipeline', () {
     for (final afterCompile in [false, true]) {
-      for (final change in ['version', 'path', 'failure', 'exception']) {
+      for (final change in [
+        'version',
+        'path',
+        'content',
+        'missingHash',
+        'failure',
+        'exception',
+      ]) {
         test(
           'rejects tool $change ${afterCompile ? 'after' : 'before'} compilation',
           () async {
@@ -346,6 +353,7 @@ EudToolInfo _tool([
     versionFilePath: r'C:\Tools\euddraft\VERSION',
     version: EudToolVersion.parse('0.10.2.5'),
     companionPaths: const [r'C:\Tools\euddraft\python3.dll'],
+    contentHashes: {'euddraft.exe': 'a' * 64},
   );
 }
 
@@ -416,6 +424,11 @@ final class _FakeToolInspector implements EudToolInspector {
             ? EudToolVersion.parse('0.11.0.1')
             : original.version,
         companionPaths: original.companionPaths,
+        contentHashes: changed && change == 'missingHash'
+            ? {}
+            : changed && change == 'content'
+            ? {'euddraft.exe': 'b' * 64}
+            : original.contentHashes,
       ),
     );
   }

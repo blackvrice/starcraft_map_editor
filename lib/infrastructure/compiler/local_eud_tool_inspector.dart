@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../filesystem/local_map_file_fingerprint_gateway.dart';
 import '../../domain/eud/eud_tool_manifest.dart';
 import 'local_eud_bundle_verifier.dart';
 
@@ -262,6 +263,17 @@ final class LocalEudToolInspector implements EudToolInspector {
         );
       }
     }
+    final contentHashes = <String, String>{};
+    final fingerprints = LocalMapFileFingerprintGateway();
+    for (final path in [executable.path, versionFile.path, ...companionPaths]) {
+      final relative = path
+          .substring(installation.path.length + 1)
+          .replaceAll('\\', '/')
+          .toLowerCase();
+      contentHashes[relative] = (await fingerprints.fingerprint(
+        path,
+      )).sha256Digest;
+    }
     return EudToolInspectionResult.ready(
       readyTool: EudToolInfo(
         pathSource: candidate.source,
@@ -270,6 +282,7 @@ final class LocalEudToolInspector implements EudToolInspector {
         versionFilePath: versionFile.absolute.path,
         version: version,
         companionPaths: companionPaths,
+        contentHashes: contentHashes,
       ),
     );
   }

@@ -159,13 +159,15 @@ final class EudToolInfo {
     required String versionFilePath,
     required this.version,
     required Iterable<String> companionPaths,
+    Map<String, String> contentHashes = const {},
   }) : installationPath = _requireNonBlank(
          installationPath,
          'installationPath',
        ),
        executablePath = _requireNonBlank(executablePath, 'executablePath'),
        versionFilePath = _requireNonBlank(versionFilePath, 'versionFilePath'),
-       companionPaths = List.unmodifiable(companionPaths);
+       companionPaths = List.unmodifiable(companionPaths),
+       contentHashes = Map.unmodifiable(contentHashes);
 
   final EudToolPathSource pathSource;
   final String installationPath;
@@ -173,6 +175,10 @@ final class EudToolInfo {
   final String versionFilePath;
   final EudToolVersion version;
   final List<String> companionPaths;
+
+  /// SHA-256 by relative path for the executable, VERSION and required files.
+  /// This detects changes to inspected files, not the authenticity of a tool.
+  final Map<String, String> contentHashes;
 }
 
 final class EudToolInspectionResult {

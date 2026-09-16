@@ -539,10 +539,19 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
       );
     }
     final actual = inspected.tool;
+    final changedFiles =
+        {...plan.tool.contentHashes.keys, ...?actual?.contentHashes.keys}
+            .where(
+              (path) =>
+                  plan.tool.contentHashes[path] != actual?.contentHashes[path],
+            )
+            .toList()
+          ..sort();
     if (!inspected.isReady ||
         actual == null ||
         actual.version != plan.tool.version ||
         actual.pathSource != plan.tool.pathSource ||
+        changedFiles.isNotEmpty ||
         actual.executablePath.replaceAll('/', r'\').toLowerCase() !=
             plan.tool.executablePath.replaceAll('/', r'\').toLowerCase()) {
       throw _EudBuildFailure(
@@ -556,7 +565,8 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               'expectedVersion=${plan.tool.version}; '
               'actualVersion=${actual?.version}; '
               'expectedExecutable=${plan.tool.executablePath}; '
-              'actualExecutable=${actual?.executablePath}',
+              'actualExecutable=${actual?.executablePath}; '
+              'changedFiles=${changedFiles.join(',')}',
         ),
         diagnostics: inspected.diagnostics,
         exitCode: processExitCode,

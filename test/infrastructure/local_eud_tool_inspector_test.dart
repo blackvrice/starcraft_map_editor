@@ -52,6 +52,47 @@ void main() {
     }
 
     test(
+      'records immutable core hashes and detects same-size replacement',
+      () async {
+        final root = await _createInstallation(temporaryRoot);
+        final request = EudToolInspectionRequest(userSettingsPath: root.path);
+        final before = (await inspector.inspect(request)).tool!;
+        expect(before.contentHashes.length, 9);
+        expect(
+          before.contentHashes['euddraft.exe'],
+          sha256.convert([0x4d, 0x5a]).toString(),
+        );
+        expect(() => before.contentHashes.clear(), throwsUnsupportedError);
+        expect(
+          (await inspector.inspect(request)).tool!.contentHashes,
+          before.contentHashes,
+        );
+
+        for (final name in [
+          'euddraft.exe',
+          'lib/library.zip',
+          'lib/freezeMpq.pyd',
+          'python313.dll',
+        ]) {
+          final file = File('${root.path}/$name');
+          final bytes = await file.readAsBytes();
+          await file.writeAsBytes(List.filled(bytes.length, 99));
+          final changed = (await inspector.inspect(request)).tool!;
+          expect(changed.version, before.version);
+          expect(
+            changed.contentHashes[name.toLowerCase()],
+            isNot(before.contentHashes[name.toLowerCase()]),
+          );
+          await file.writeAsBytes(bytes);
+        }
+        await _writeBytes(root, 'python314.dll', [8]);
+        final added = (await inspector.inspect(request)).tool!;
+        expect(added.contentHashes.length, before.contentHashes.length + 1);
+        expect(added.contentHashes, contains('python314.dll'));
+      },
+    );
+
+    test(
       'bundled candidate requires app inventory while explicit external remains available',
       () async {
         final root = await _createInstallation(temporaryRoot);
