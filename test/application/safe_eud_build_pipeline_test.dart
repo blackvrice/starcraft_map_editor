@@ -14,6 +14,63 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 
 void main() {
   group('SafeEudBuildPipeline', () {
+    for (final afterCompile in [false, true]) {
+      for (final change in ['version', 'path', 'failure', 'exception']) {
+        test(
+          'rejects tool $change ${afterCompile ? 'after' : 'before'} compilation',
+          () async {
+            final files = _FakeEudBuildFileGateway(
+              destinationStates: [false, false],
+            );
+            final compiler = _FakeCompilerGateway.success();
+            final inspector = _FakeToolInspector()
+              ..changeAtCall = afterCompile ? 2 : 1
+              ..change = change;
+            final events = await _pipeline(
+              files: files,
+              fingerprints: _successFingerprints(),
+              compiler: compiler,
+              toolInspector: inspector,
+            ).build(_plan()).toList();
+
+            expect(events.last.kind, EudBuildEventKind.failed);
+            expect(
+              events.last.diagnostic?.code,
+              EudBuildPipelineDiagnosticCodes.toolChanged,
+            );
+            expect(events.last.exitCode, afterCompile ? 0 : null);
+            expect(compiler.request != null, afterCompile);
+            expect(files.promoteCalls, 0);
+            expect(files.cleanupCalls, afterCompile ? 1 : 0);
+          },
+        );
+      }
+    }
+
+    test('rechecks bundled integrity before promotion', () async {
+      final files = _FakeEudBuildFileGateway(destinationStates: [false, false]);
+      final inspector = _FakeToolInspector()
+        ..changeAtCall = 2
+        ..change = 'failure';
+      final events = await _pipeline(
+        files: files,
+        fingerprints: _successFingerprints(),
+        compiler: _FakeCompilerGateway.success(),
+        toolInspector: inspector,
+      ).build(_plan(source: EudToolPathSource.bundled)).toList();
+      expect(inspector.calls, 2);
+      expect(
+        inspector.request?.selectedCandidate?.source,
+        EudToolPathSource.bundled,
+      );
+      expect(
+        events.last.diagnostic?.code,
+        EudBuildPipelineDiagnosticCodes.toolChanged,
+      );
+      expect(files.promoteCalls, 0);
+      expect(files.cleanupCalls, 1);
+    });
+
     test(
       'reinspection retains bundled source and blocks compilation on integrity failure',
       () async {
@@ -319,13 +376,22 @@ Uint8List _section(String name, List<int> payload) {
 final class _FakeToolInspector implements EudToolInspector {
   EudToolInspectionRequest? request;
   bool rejectBundled = false;
+  int calls = 0;
+  int? changeAtCall;
+  String? change;
   @override
   Future<EudToolInspectionResult> inspect(
     EudToolInspectionRequest request,
   ) async {
     this.request = request;
-    if (rejectBundled &&
-        request.selectedCandidate!.source == EudToolPathSource.bundled) {
+    calls++;
+    final changed = calls == changeAtCall;
+    if (changed && change == 'exception') {
+      throw const FileSystemException('Fixture inspection failure');
+    }
+    if ((changed && change == 'failure') ||
+        (rejectBundled &&
+            request.selectedCandidate!.source == EudToolPathSource.bundled)) {
       return EudToolInspectionResult.failure(
         diagnostics: [
           EditorDiagnostic(
@@ -337,7 +403,21 @@ final class _FakeToolInspector implements EudToolInspector {
         ],
       );
     }
-    return EudToolInspectionResult.ready(readyTool: _tool());
+    final original = _tool(request.selectedCandidate!.source);
+    return EudToolInspectionResult.ready(
+      readyTool: EudToolInfo(
+        pathSource: original.pathSource,
+        installationPath: original.installationPath,
+        executablePath: changed && change == 'path'
+            ? r'C:\Other\euddraft.exe'
+            : original.executablePath,
+        versionFilePath: original.versionFilePath,
+        version: changed && change == 'version'
+            ? EudToolVersion.parse('0.11.0.1')
+            : original.version,
+        companionPaths: original.companionPaths,
+      ),
+    );
   }
 }
 

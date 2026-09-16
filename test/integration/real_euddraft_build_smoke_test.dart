@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_preparation_controller.dart';
 import 'package:starcraft_map_editor/application/settings/eud_tool_settings_controller.dart';
@@ -41,6 +42,15 @@ void main() {
       expect(inspection.isReady, isTrue, reason: '${inspection.diagnostics}');
       expect(inspection.tool?.version.toString(), '0.10.2.5');
       final tool = inspection.tool!;
+      final toolFilesBefore = await _installationHashes(tool.installationPath);
+      addTearDown(() async {
+        expect(
+          await _installationHashes(tool.installationPath),
+          toolFilesBefore,
+          reason:
+              'The compiler installation must not change during the smoke test.',
+        );
+      });
 
       final systemRoot = await Directory.systemTemp.createTemp(
         'starcraft_map_editor_real_euddraft_',
@@ -178,4 +188,21 @@ void main() {
     skip: skipReason,
     timeout: const Timeout(Duration(minutes: 3)),
   );
+}
+
+Future<Map<String, String>> _installationHashes(String path) async {
+  final hashes = <String, String>{};
+  await for (final entity in Directory(
+    path,
+  ).list(recursive: true, followLinks: false)) {
+    if (entity is File) {
+      hashes[entity.path.substring(path.length)] =
+          (await sha256.bind(entity.openRead()).first).toString();
+    } else if (entity is Link) {
+      throw StateError(
+        'Unexpected link in the compiler installation: ${entity.path}',
+      );
+    }
+  }
+  return hashes;
 }

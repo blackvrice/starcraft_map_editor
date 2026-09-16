@@ -85,31 +85,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     EudBuildEvent? terminalEvent;
     final trailingDiagnostics = <EditorDiagnostic>[];
     try {
-      final inspected = await toolInspector.inspect(
-        switch (plan.tool.pathSource) {
-          EudToolPathSource.bundled => EudToolInspectionRequest(
-            bundledPath: plan.tool.executablePath,
-          ),
-          EudToolPathSource.userSettings => EudToolInspectionRequest(
-            userSettingsPath: plan.tool.executablePath,
-          ),
-          EudToolPathSource.projectProfile => EudToolInspectionRequest(
-            projectProfilePath: plan.tool.executablePath,
-          ),
-        },
-      );
-      if (!inspected.isReady) {
-        throw _EudBuildFailure(
-          _diagnostic(
-            code: EudBuildPipelineDiagnosticCodes.toolChanged,
-            message: 'The selected euddraft installation is no longer ready.',
-            filePath: plan.tool.executablePath,
-            remediation:
-                'Inspect the configured euddraft installation and retry.',
-          ),
-          diagnostics: inspected.diagnostics,
-        );
-      }
+      final inspected = await _inspectUnchangedTool(plan);
       for (final diagnostic in inspected.diagnostics) {
         yield EudBuildEvent.diagnostic(
           buildId: plan.buildId,
@@ -405,6 +381,8 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           );
         }
 
+        await _inspectUnchangedTool(plan, processExitCode: 0);
+
         await _verifyDestinationUnchanged(
           plan: plan,
           existedAtStart: destinationExistedAtStart,
@@ -529,6 +507,62 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
       return false;
     }
     return compilerGateway.cancel(buildId);
+  }
+
+  Future<EudToolInspectionResult> _inspectUnchangedTool(
+    EudBuildPlan plan, {
+    int? processExitCode,
+  }) async {
+    late final EudToolInspectionResult inspected;
+    try {
+      inspected = await toolInspector.inspect(switch (plan.tool.pathSource) {
+        EudToolPathSource.bundled => EudToolInspectionRequest(
+          bundledPath: plan.tool.executablePath,
+        ),
+        EudToolPathSource.userSettings => EudToolInspectionRequest(
+          userSettingsPath: plan.tool.executablePath,
+        ),
+        EudToolPathSource.projectProfile => EudToolInspectionRequest(
+          projectProfilePath: plan.tool.executablePath,
+        ),
+      });
+    } on Object catch (error, stackTrace) {
+      throw _EudBuildFailure(
+        _diagnostic(
+          code: EudBuildPipelineDiagnosticCodes.toolChanged,
+          message: 'The selected euddraft installation could not be rechecked.',
+          filePath: plan.tool.executablePath,
+          remediation: 'Inspect the tool and prepare a new build.',
+          rawDetails: '$error\n$stackTrace',
+        ),
+        exitCode: processExitCode,
+      );
+    }
+    final actual = inspected.tool;
+    if (!inspected.isReady ||
+        actual == null ||
+        actual.version != plan.tool.version ||
+        actual.pathSource != plan.tool.pathSource ||
+        actual.executablePath.replaceAll('/', r'\').toLowerCase() !=
+            plan.tool.executablePath.replaceAll('/', r'\').toLowerCase()) {
+      throw _EudBuildFailure(
+        _diagnostic(
+          code: EudBuildPipelineDiagnosticCodes.toolChanged,
+          message:
+              'The selected euddraft installation changed or is not ready.',
+          filePath: plan.tool.executablePath,
+          remediation: 'Inspect the tool and prepare a new build.',
+          rawDetails:
+              'expectedVersion=${plan.tool.version}; '
+              'actualVersion=${actual?.version}; '
+              'expectedExecutable=${plan.tool.executablePath}; '
+              'actualExecutable=${actual?.executablePath}',
+        ),
+        diagnostics: inspected.diagnostics,
+        exitCode: processExitCode,
+      );
+    }
+    return inspected;
   }
 
   Future<MapFileFingerprint> _fingerprint({
