@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../application/settings/eud_tool_settings_controller.dart';
 
 import '../application/commands/editor_command_dispatcher.dart';
 import '../application/documents/open_map_controller.dart';
@@ -42,6 +43,10 @@ void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
 
   final settingsStore = JsonFileSettingsStore.forCurrentUser();
+  final eudToolSettingsController = EudToolSettingsController(
+    store: settingsStore,
+    inspector: LocalEudToolInspector(),
+  );
   final commandDispatcher = EditorCommandDispatcher();
   final operationProgressController = OperationProgressController();
   final recentProjectsService = RecentProjectsService(settingsStore);
@@ -137,6 +142,7 @@ void bootstrap() {
   });
 
   final dependencies = EditorAppDependencies(
+    eudToolSettingsController: eudToolSettingsController,
     commandDispatcher: commandDispatcher,
     openMapController: openMapController,
     saveMapController: saveMapController,

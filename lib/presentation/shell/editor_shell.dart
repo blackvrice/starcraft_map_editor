@@ -1,4 +1,6 @@
+import '../../application/settings/eud_tool_settings_controller.dart';
 import '../settings/map_settings_dialog.dart';
+import '../settings/eud_tool_settings_dialog.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -51,6 +53,7 @@ class EditorShell extends StatefulWidget {
     required this.eudBuildController,
     required this.eudSourceController,
     this.eudProjectWorkspace,
+    this.eudToolSettingsController,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
@@ -70,6 +73,7 @@ class EditorShell extends StatefulWidget {
   final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
   final EudProjectWorkspace? eudProjectWorkspace;
+  final EudToolSettingsController? eudToolSettingsController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final StarCraftDataAssetSettingsController
@@ -653,6 +657,14 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  openEudTools: widget.eudToolSettingsController == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => EudToolSettingsDialog(
+                            controller: widget.eudToolSettingsController!,
+                          ),
+                        ),
                   openMapSettings:
                       widget.openMapController.state.session == null
                       ? null
@@ -842,6 +854,7 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    this.openEudTools,
     required this.openUnitAvailability,
     required this.openUpgradeSettings,
     required this.openTechSettings,
@@ -861,6 +874,7 @@ class _EditorMenuBar extends StatelessWidget {
   });
 
   final VoidCallback? openMap;
+  final VoidCallback? openEudTools;
   final VoidCallback? openMapInformation;
   final VoidCallback? openUnitAvailability;
   final VoidCallback? openUpgradeSettings;
@@ -884,6 +898,10 @@ class _EditorMenuBar extends StatelessWidget {
         SubmenuButton(
           menuChildren: [
             MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
+            MenuItemButton(
+              onPressed: openEudTools,
+              child: const Text('EUD Tools…'),
+            ),
             MenuItemButton(onPressed: saveAs, child: const Text('Save As…')),
             MenuItemButton(
               onPressed: openMapInformation,
