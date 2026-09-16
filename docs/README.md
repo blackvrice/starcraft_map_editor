@@ -24,6 +24,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |
 | [EUD 연동](EUD_INTEGRATION.md) | epScript/euddraft 빌드와 보안 경계 | EUD 도구 연동이 바뀔 때 |
+| [EUD 도구 동봉·언어 확장 계획](EUD_TOOLCHAIN_LANGUAGE_PLAN.md) | euddraft 동봉, epScript/Python·Lua 단계와 인수 조건 | 도구 배포·언어 지원 범위가 바뀔 때 |
 | [유닛–무기 참조 목록](UNIT_WEAPON_REFERENCES.md) | 로컬 DAT의 무기 공유·서브유닛 연결과 읽기 계약 | 무기 영향 목록이 바뀔 때 |
 | [무기·업그레이드·클로킹 비교](SETTINGS_COMBAT_SMOKE.md) | 두 번째 게임 비교 맵·수치·연구 상태 확인 | 전투/테크 검증 사례가 바뀔 때 |
 | [첫 설정 게임 검증 맵](SETTINGS_GAME_SMOKE.md) | 공중 유닛 수치 비교 맵·생성 방법·관찰 기록 | 게임 검증 사례가 바뀔 때 |

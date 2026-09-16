@@ -8,6 +8,10 @@
 선언적 EUD 설정을 만들고 기존 빌드 경계에 연결한다. 시각적 블록 편집,
 메모리 오프셋 탐색기, 런타임 디버거는 계속 장기 후보로 둔다.
 
+2026-09-15 수립한 [도구 동봉·다중 언어 확장 계획](EUD_TOOLCHAIN_LANGUAGE_PLAN.md)은
+검증된 도구의 앱 동봉, Python entry와 후속 Lua 제한 변환기를 다룬다. 현재 지원
+프로필을 변경한 것은 아니며 별도 프로세스 실행·입력 보존 경계를 유지한다.
+
 ## 2. 외부 도구 선택
 
 - [eudplib](https://github.com/armoha/eudplib)은 맵 열기, CHK 추출, EUD 트리거 생성과 epScript를 제공한다.
