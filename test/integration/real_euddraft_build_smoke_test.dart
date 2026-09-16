@@ -1,13 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
+import 'package:starcraft_map_editor/application/eud/eud_build_preparation_controller.dart';
+import 'package:starcraft_map_editor/application/settings/eud_tool_settings_controller.dart';
+import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_record.dart';
 import 'package:starcraft_map_editor/application/eud/safe_eud_build_pipeline.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
-import 'package:starcraft_map_editor/application/ports/eud_build_gateway.dart';
+
 import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart';
@@ -98,21 +100,31 @@ void main() {
       );
       addTearDown(controller.dispose);
       addTearDown(progressController.dispose);
-      controller.prepare(
-        EudBuildPlan(
-          buildId: 'official-euddraft-smoke',
-          configuration: EudBuildConfiguration(
-            baseMapPath: baseMap.path,
-            sourceRootPath: sourceDirectory.path,
-            entrySourcePath: entrySource.path,
-            outputMapPath: outputMap.path,
-            compilerPathOverride: tool.installationPath,
-          ),
-          tool: tool,
-          timeout: const Duration(minutes: 2),
-        ),
+      final toolSettings = EudToolSettingsController(
+        store: InMemorySettingsStore({
+          EudToolSettingsController.settingsKey: tool.installationPath,
+        }),
+        inspector: toolInspector,
       );
-
+      addTearDown(toolSettings.dispose);
+      final preparation = EudBuildPreparationController(
+        tools: toolSettings,
+        builds: controller,
+        files: LocalEudBuildFileGateway(),
+        blockReason: () => null,
+      );
+      final error = await preparation.prepare(
+        baseMap: baseMap.path,
+        sourceRoot: sourceDirectory.path,
+        entrySource: entrySource.path,
+        outputMap: outputMap.path,
+        trustSource: true,
+      );
+      expect(error, isNull);
+      expect(
+        controller.state.plan!.tool.pathSource,
+        EudToolPathSource.userSettings,
+      );
       final succeeded = await controller.start();
       expect(
         succeeded,

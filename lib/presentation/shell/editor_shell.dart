@@ -1,6 +1,8 @@
+import '../../application/eud/eud_build_preparation_controller.dart';
 import '../../application/settings/eud_tool_settings_controller.dart';
 import '../settings/map_settings_dialog.dart';
 import '../settings/eud_tool_settings_dialog.dart';
+import '../settings/eud_build_preparation_dialog.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -54,6 +56,7 @@ class EditorShell extends StatefulWidget {
     required this.eudSourceController,
     this.eudProjectWorkspace,
     this.eudToolSettingsController,
+    this.eudBuildPreparationController,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
@@ -74,6 +77,7 @@ class EditorShell extends StatefulWidget {
   final EudSourceController eudSourceController;
   final EudProjectWorkspace? eudProjectWorkspace;
   final EudToolSettingsController? eudToolSettingsController;
+  final EudBuildPreparationController? eudBuildPreparationController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final StarCraftDataAssetSettingsController
@@ -539,6 +543,8 @@ class _EditorShellState extends State<EditorShell> {
     final eudBuildState = widget.eudBuildController.state;
     final buildEud =
         widget.eudBuildController.canStart &&
+            !(widget.eudBuildPreparationController?.busy ?? false) &&
+            widget.eudBuildPreparationController?.blockReason() == null &&
             !(widget.eudProjectWorkspace?.hasUnbuiltOverrides ?? false)
         ? _callbackFor(EditorCommandId.buildEud)
         : null;
@@ -657,6 +663,31 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  prepareEud:
+                      widget.eudBuildPreparationController == null ||
+                          eudBuildState.isActive
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => EudBuildPreparationDialog(
+                            controller: widget.eudBuildPreparationController!,
+                            baseMap:
+                                widget
+                                    .openMapController
+                                    .state
+                                    .session
+                                    ?.sourcePath ??
+                                '',
+                            entrySource:
+                                widget
+                                    .eudSourceController
+                                    .state
+                                    .document
+                                    ?.sourcePath ??
+                                '',
+                          ),
+                        ),
                   openEudTools: widget.eudToolSettingsController == null
                       ? null
                       : () => showDialog<void>(
@@ -854,6 +885,7 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    this.prepareEud,
     this.openEudTools,
     required this.openUnitAvailability,
     required this.openUpgradeSettings,
@@ -875,6 +907,7 @@ class _EditorMenuBar extends StatelessWidget {
 
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
+  final VoidCallback? prepareEud;
   final VoidCallback? openMapInformation;
   final VoidCallback? openUnitAvailability;
   final VoidCallback? openUpgradeSettings;
@@ -898,6 +931,10 @@ class _EditorMenuBar extends StatelessWidget {
         SubmenuButton(
           menuChildren: [
             MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
+            MenuItemButton(
+              onPressed: prepareEud,
+              child: const Text('Prepare EUD Build…'),
+            ),
             MenuItemButton(
               onPressed: openEudTools,
               child: const Text('EUD Tools…'),

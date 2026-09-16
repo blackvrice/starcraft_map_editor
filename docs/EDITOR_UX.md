@@ -1,5 +1,8 @@
 # 에디터 UX
 
+저장 파일의 epScript 빌드는 `File → Prepare EUD Build…`에서 준비한 뒤 Build로 실행한다.
+입력·보호 규칙은 [빌드 준비 화면](EUD_BUILD_PREPARATION_UI.md)을 참조한다.
+
 EUD 도구의 사용자 경로 설정과 설치 진단은 `File → EUD Tools…`에서 제공한다.
 현재 범위와 빌드 준비 연결의 남은 작업은 [도구 설정 화면](EUD_TOOL_SETTINGS_UI.md)을 참조한다.
 

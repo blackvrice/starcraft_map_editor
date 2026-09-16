@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../application/eud/eud_build_preparation_controller.dart';
 import '../application/settings/eud_tool_settings_controller.dart';
 
 import '../application/commands/editor_command_dispatcher.dart';
@@ -87,6 +88,28 @@ void bootstrap() {
     picker: const MethodChannelEudProjectPicker(),
   );
   final mapLayerController = MapLayerController();
+  String? buildBlockReason() {
+    if (eudProjectWorkspace.hasUnbuiltOverrides) {
+      return 'EUD settings generation is not implemented yet.';
+    }
+    if (openMapController.state.session?.isDirty ?? false) {
+      return 'Save the edited map before building.';
+    }
+    if (eudSourceController.state.document?.isDirty ?? false) {
+      return 'Save or discard source edits before building.';
+    }
+    if (eudSourceController.state.document?.isUntitled ?? false) {
+      return 'Use a saved epScript file before building.';
+    }
+    return null;
+  }
+
+  final eudBuildPreparationController = EudBuildPreparationController(
+    tools: eudToolSettingsController,
+    builds: eudBuildController,
+    files: LocalEudBuildFileGateway(),
+    blockReason: buildBlockReason,
+  );
   final objectEditingController = ObjectEditingController(
     openMapController: openMapController,
     mapLayerController: mapLayerController,
@@ -134,7 +157,9 @@ void bootstrap() {
     eudSourceController.createUntitled();
   });
   commandDispatcher.register(EditorCommandId.buildEud, (_) async {
-    if (eudProjectWorkspace.hasUnbuiltOverrides) return;
+    if (eudBuildPreparationController.busy || buildBlockReason() != null) {
+      return;
+    }
     await eudBuildController.start();
   });
   commandDispatcher.register(EditorCommandId.cancelEudBuild, (_) async {
@@ -142,6 +167,7 @@ void bootstrap() {
   });
 
   final dependencies = EditorAppDependencies(
+    eudBuildPreparationController: eudBuildPreparationController,
     eudToolSettingsController: eudToolSettingsController,
     commandDispatcher: commandDispatcher,
     openMapController: openMapController,

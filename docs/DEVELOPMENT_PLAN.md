@@ -634,6 +634,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
   - 2026-09-16 Python 공식 ZIP·eudplib wheel과 23개 네이티브 파일 해시 일치 확인 및 재현 도구 완료 ([대조 기록](research/euddraft-0.10.2.5/UPSTREAM_COMPARISON.md)). freezeMpq·VC 런타임·전이 의존성 검토는 남음.
   - 2026-09-16 freezeMpq 필수 검사 누락 수정, 외부/동봉 공식 설치 검사 추가 ([검토 기록](research/euddraft-0.10.2.5/REDISTRIBUTION_REVIEW.md)). 재배포 검토와 병행할 다음 구현은 도구 선택·진단 흐름.
   - 2026-09-16 [EUD Tools 화면](EUD_TOOL_SETTINGS_UI.md) 구현: 외부 경로 저장·검사·재검사·기본 복원. 다음은 선택한 도구를 새 빌드 준비 계획으로 연결하는 흐름.
+  - 2026-09-16 [Prepare EUD Build 화면](EUD_BUILD_PREPARATION_UI.md) 구현: 저장 파일·선택 도구 검사 후 기존 Build 연결, 새 출력 전용·취소/변경 방어. 선언적 설정 생성과 도구 동봉은 별도 인수.
 - [ ] X2 선언적 설정의 결정적 생성, 실드 초기화·게임 검증, 안전 빌드 연결 (M6.3.1 공통)
 - [ ] X3 epScript/Python entry·진단·프로젝트 마이그레이션 지원
 - [ ] X4 Lua EUD 제한 문법·변환기·원본 위치 진단·비교 검증

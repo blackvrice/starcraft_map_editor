@@ -1,3 +1,4 @@
+import '../application/eud/eud_build_preparation_controller.dart';
 import '../application/settings/eud_tool_settings_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +30,7 @@ class EditorAppDependencies {
     required this.eudSourceController,
     this.eudProjectWorkspace,
     this.eudToolSettingsController,
+    this.eudBuildPreparationController,
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.settingsStore,
@@ -49,6 +51,7 @@ class EditorAppDependencies {
   final EudSourceController eudSourceController;
   final EudProjectWorkspace? eudProjectWorkspace;
   final EudToolSettingsController? eudToolSettingsController;
+  final EudBuildPreparationController? eudBuildPreparationController;
   final OperationProgressController operationProgressController;
   final RecentProjectsService recentProjectsService;
   final SettingsStore settingsStore;
@@ -92,6 +95,8 @@ class StarCraftMapEditorApp extends StatelessWidget {
         eudSourceController: dependencies.eudSourceController,
         eudProjectWorkspace: dependencies.eudProjectWorkspace,
         eudToolSettingsController: dependencies.eudToolSettingsController,
+        eudBuildPreparationController:
+            dependencies.eudBuildPreparationController,
         operationProgressController: dependencies.operationProgressController,
         recentProjectsService: dependencies.recentProjectsService,
         starCraftDataAssetSettingsController:
