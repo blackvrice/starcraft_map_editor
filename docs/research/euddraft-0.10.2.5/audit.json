@@ -1,0 +1,146 @@
+{
+  "artifactSha256": "87113da1cf8ad48c7ed81ee26a9db47ae236274d74e8f0f24addf0e2ab8280b3",
+  "archiveBytes": 15108674,
+  "fileCount": 77,
+  "unpackedBytes": 28588887,
+  "innerLibraryEntries": 1382,
+  "components": [
+    {
+      "metadataPath": "lib/library.zip!/cx_freeze-8.3.0.dist-info/METADATA",
+      "Name": "cx_Freeze",
+      "Version": "8.3.0",
+      "License-Expression": "PSF-2.0"
+    },
+    {
+      "metadataPath": "lib/library.zip!/et_xmlfile-2.0.0.dist-info/METADATA",
+      "Name": "et_xmlfile",
+      "Version": "2.0.0",
+      "License": "MIT"
+    },
+    {
+      "metadataPath": "lib/library.zip!/euddraft-0.10.2.5.dist-info/METADATA",
+      "Name": "euddraft",
+      "Version": "0.10.2.5",
+      "License": "MIT"
+    },
+    {
+      "metadataPath": "lib/library.zip!/eudplib-0.80.6.dist-info/METADATA",
+      "Name": "eudplib",
+      "Version": "0.80.6",
+      "License": "MIT"
+    },
+    {
+      "metadataPath": "lib/library.zip!/importlib_metadata-8.0.0.dist-info/METADATA",
+      "Name": "importlib_metadata",
+      "Version": "8.0.0"
+    },
+    {
+      "metadataPath": "lib/library.zip!/markdown_it_py-3.0.0.dist-info/METADATA",
+      "Name": "markdown-it-py",
+      "Version": "3.0.0"
+    },
+    {
+      "metadataPath": "lib/library.zip!/mdurl-0.1.2.dist-info/METADATA",
+      "Name": "mdurl",
+      "Version": "0.1.2"
+    },
+    {
+      "metadataPath": "lib/library.zip!/openpyxl-3.1.5.dist-info/METADATA",
+      "Name": "openpyxl",
+      "Version": "3.1.5",
+      "License": "MIT"
+    },
+    {
+      "metadataPath": "lib/library.zip!/pygments-2.19.2.dist-info/METADATA",
+      "Name": "Pygments",
+      "Version": "2.19.2",
+      "License": "BSD-2-Clause"
+    },
+    {
+      "metadataPath": "lib/library.zip!/rich-13.9.4.dist-info/METADATA",
+      "Name": "rich",
+      "Version": "13.9.4",
+      "License": "MIT"
+    },
+    {
+      "metadataPath": "lib/library.zip!/typing_extensions-4.14.1.dist-info/METADATA",
+      "Name": "typing_extensions",
+      "Version": "4.14.1",
+      "License-Expression": "PSF-2.0"
+    },
+    {
+      "metadataPath": "lib/library.zip!/zipp-3.19.2.dist-info/METADATA",
+      "Name": "zipp",
+      "Version": "3.19.2"
+    }
+  ],
+  "notices": [
+    {
+      "path": "frozen_application_license.txt",
+      "size": 3326,
+      "sha256": "96a22b3ae17095fe6bff46e49d1a40f982194d3cbb587d588915bdee807e8811"
+    },
+    {
+      "path": "license.txt",
+      "size": 2480,
+      "sha256": "3ee2edd8c640a1231b083698c4e4ea5fa6898a9ca482d5262bdee2e99d761b54"
+    },
+    {
+      "path": "share/licenses/vc_redist/LICENSE.RTF",
+      "size": 9235,
+      "sha256": "8099dc3cf9502c335da829e5c755948a12e3e6de490eb492a99deb673d883d8b"
+    },
+    {
+      "path": "share/licenses/vc_redist/LICENSE.txt",
+      "size": 6615,
+      "sha256": "de57a078b443b05146c3cfbd39db7127a69f65065bc4289daff63a673af88da0"
+    },
+    {
+      "path": "lib/library.zip!/et_xmlfile-2.0.0.dist-info/LICENCE.python",
+      "size": 14688,
+      "sha256": "4ccdaaebc0f44b83720ec0399bb7ab329adce067dd62f73c5535a2dc05628ab2"
+    },
+    {
+      "path": "lib/library.zip!/et_xmlfile-2.0.0.dist-info/LICENCE.rst",
+      "size": 1131,
+      "sha256": "0c84bb42f5d367e5ebf9fc2dde35b16141df5ee0fdc189250858bc6c5560f69e"
+    },
+    {
+      "path": "lib/library.zip!/importlib_metadata-8.0.0.dist-info/LICENSE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "lib/library.zip!/markdown_it_py-3.0.0.dist-info/LICENSE",
+      "size": 1078,
+      "sha256": "4a2260d6e2cd0f5a151a1e86dbfe7d3ed552b1e2beabf9941c1ba5c49cbce484"
+    },
+    {
+      "path": "lib/library.zip!/markdown_it_py-3.0.0.dist-info/LICENSE.markdown-it",
+      "size": 1073,
+      "sha256": "792c48c5a849a15fdf9e37e8bcf9e6d1dd13b32b46c642a748a0a46a9919d473"
+    },
+    {
+      "path": "lib/library.zip!/mdurl-0.1.2.dist-info/LICENSE",
+      "size": 2338,
+      "sha256": "7c605df6e28667a9603118e98274f64a49ce3eed0d26fccce9534a345e0ef955"
+    },
+    {
+      "path": "lib/library.zip!/openpyxl-3.1.5.dist-info/LICENCE.rst",
+      "size": 1131,
+      "sha256": "0c84bb42f5d367e5ebf9fc2dde35b16141df5ee0fdc189250858bc6c5560f69e"
+    },
+    {
+      "path": "lib/library.zip!/rich-13.9.4.dist-info/LICENSE",
+      "size": 1056,
+      "sha256": "deed7c17a4318158190a3ea239cc879a5a50271cebb98ae7025f48fbe58dca15"
+    },
+    {
+      "path": "lib/library.zip!/zipp-3.19.2.dist-info/LICENSE",
+      "size": 1023,
+      "sha256": "86da0f01aeae46348a3c3d465195dc1ceccde79f79e87769a64b8da04b2a4741"
+    }
+  ],
+  "redistributionReview": "pending",
+  "executableRun": false
+}
