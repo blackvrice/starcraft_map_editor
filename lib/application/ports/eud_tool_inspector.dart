@@ -10,6 +10,8 @@ abstract final class EudToolDiagnosticCodes {
   static const versionUnsupported = 'EUD_TOOL_VERSION_UNSUPPORTED';
   static const companionMissing = 'EUD_TOOL_COMPANION_MISSING';
   static const inspectionFailed = 'EUD_TOOL_INSPECTION_FAILED';
+  static const bundleManifestMissing = 'EUD_TOOL_BUNDLE_MANIFEST_MISSING';
+  static const bundleIntegrityFailed = 'EUD_TOOL_BUNDLE_INTEGRITY_FAILED';
 }
 
 enum EudToolPathSource { projectProfile, userSettings, bundled }

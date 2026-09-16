@@ -14,6 +14,32 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 
 void main() {
   group('SafeEudBuildPipeline', () {
+    test(
+      'reinspection retains bundled source and blocks compilation on integrity failure',
+      () async {
+        final inspector = _FakeToolInspector()..rejectBundled = true;
+        final compiler = _FakeCompilerGateway.success();
+        final files = _FakeEudBuildFileGateway(
+          destinationStates: [false, false],
+        );
+        final pipeline = _pipeline(
+          files: files,
+          fingerprints: _successFingerprints(),
+          compiler: compiler,
+          toolInspector: inspector,
+        );
+        final events = await pipeline
+            .build(_plan(source: EudToolPathSource.bundled))
+            .toList();
+        expect(
+          inspector.request!.selectedCandidate!.source,
+          EudToolPathSource.bundled,
+        );
+        expect(events.last.kind, EudBuildEventKind.failed);
+        expect(compiler.request, isNull);
+        expect(files.promoteCalls, 0);
+      },
+    );
     test('validates and promotes output before reporting success', () async {
       final files = _FakeEudBuildFileGateway(destinationStates: [false, false]);
       final fingerprints = _successFingerprints();
@@ -201,9 +227,10 @@ SafeEudBuildPipeline _pipeline({
   required _FakeFingerprintGateway fingerprints,
   required _FakeCompilerGateway compiler,
   MapArchiveGateway? archiveGateway,
+  EudToolInspector? toolInspector,
 }) {
   return SafeEudBuildPipeline(
-    toolInspector: _FakeToolInspector(),
+    toolInspector: toolInspector ?? _FakeToolInspector(),
     compilerGateway: compiler,
     archiveGateway:
         archiveGateway ?? _FakeMapArchiveGateway.success(_validChk()),
@@ -212,7 +239,10 @@ SafeEudBuildPipeline _pipeline({
   );
 }
 
-EudBuildPlan _plan({bool replaceExistingOutput = false}) {
+EudBuildPlan _plan({
+  bool replaceExistingOutput = false,
+  EudToolPathSource source = EudToolPathSource.projectProfile,
+}) {
   return EudBuildPlan(
     buildId: 'safe-build',
     configuration: EudBuildConfiguration(
@@ -221,7 +251,7 @@ EudBuildPlan _plan({bool replaceExistingOutput = false}) {
       entrySourcePath: _entryPath,
       outputMapPath: _outputPath,
     ),
-    tool: _tool(),
+    tool: _tool(source),
     timeout: const Duration(minutes: 2),
     replaceExistingOutput: replaceExistingOutput,
   );
@@ -249,9 +279,11 @@ final _workspace = EudBuildWorkspace(
   temporaryOutputMapPath: _temporaryOutputPath,
 );
 
-EudToolInfo _tool() {
+EudToolInfo _tool([
+  EudToolPathSource source = EudToolPathSource.projectProfile,
+]) {
   return EudToolInfo(
-    pathSource: EudToolPathSource.projectProfile,
+    pathSource: source,
     installationPath: r'C:\Tools\euddraft',
     executablePath: r'C:\Tools\euddraft\euddraft.exe',
     versionFilePath: r'C:\Tools\euddraft\VERSION',
@@ -285,10 +317,26 @@ Uint8List _section(String name, List<int> payload) {
 }
 
 final class _FakeToolInspector implements EudToolInspector {
+  EudToolInspectionRequest? request;
+  bool rejectBundled = false;
   @override
   Future<EudToolInspectionResult> inspect(
     EudToolInspectionRequest request,
   ) async {
+    this.request = request;
+    if (rejectBundled &&
+        request.selectedCandidate!.source == EudToolPathSource.bundled) {
+      return EudToolInspectionResult.failure(
+        diagnostics: [
+          EditorDiagnostic(
+            code: EudToolDiagnosticCodes.bundleIntegrityFailed,
+            message: 'Fixture integrity failure',
+            severity: DiagnosticSeverity.error,
+            stage: DiagnosticStage.compile,
+          ),
+        ],
+      );
+    }
     return EudToolInspectionResult.ready(readyTool: _tool());
   }
 }

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:crypto/crypto.dart';
+import 'package:starcraft_map_editor/domain/eud/eud_tool_manifest.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
@@ -24,6 +26,106 @@ void main() {
         await temporaryRoot.delete(recursive: true);
       }
     });
+
+    Future<EudToolManifest> inventory(Directory root) async {
+      final files = <String, EudToolFile>{};
+      await for (final entry in root.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entry is File) {
+          final bytes = await entry.readAsBytes();
+          files[entry.path
+              .substring(root.path.length + 1)
+              .replaceAll('\\', '/')] = EudToolFile(
+            size: bytes.length,
+            sha256: sha256.convert(bytes).toString(),
+          );
+        }
+      }
+      return EudToolManifest(
+        version: '0.10.2.5',
+        artifactSha256: 'a' * 64,
+        sourceUrl: 'https://example.test/fixture.zip',
+        files: files,
+      );
+    }
+
+    test(
+      'bundled candidate requires app inventory while explicit external remains available',
+      () async {
+        final root = await _createInstallation(temporaryRoot);
+        final blocked = await inspector.inspect(
+          EudToolInspectionRequest(bundledPath: root.path),
+        );
+        expect(
+          blocked.diagnostics.single.code,
+          EudToolDiagnosticCodes.bundleManifestMissing,
+        );
+        final external = await inspector.inspect(
+          EudToolInspectionRequest(
+            userSettingsPath: root.path,
+            bundledPath: 'missing',
+          ),
+        );
+        expect(external.isReady, isTrue);
+        expect(external.tool!.pathSource, EudToolPathSource.userSettings);
+      },
+    );
+    test(
+      'checks full bundle hashes and rejects extra or missing inventory files',
+      () async {
+        final root = await _createInstallation(temporaryRoot);
+        final extra = File('${root.path}/optional.dat');
+        await extra.writeAsString('abc');
+        inspector = LocalEudToolInspector(
+          isWindows: () => true,
+          bundledManifest: await inventory(root),
+        );
+        final request = EudToolInspectionRequest(bundledPath: root.path);
+        expect((await inspector.inspect(request)).isReady, isTrue);
+        await extra.writeAsString('xyz');
+        expect(
+          (await inspector.inspect(request)).diagnostics.single.code,
+          EudToolDiagnosticCodes.bundleIntegrityFailed,
+        );
+        await extra.writeAsString('abc');
+        final injected = File('${root.path}/injected.py');
+        await injected.writeAsString('not executed');
+        expect(
+          (await inspector.inspect(request)).diagnostics.single.code,
+          EudToolDiagnosticCodes.bundleIntegrityFailed,
+        );
+        await injected.delete();
+        await extra.delete();
+        expect(
+          (await inspector.inspect(request)).diagnostics.single.code,
+          EudToolDiagnosticCodes.bundleIntegrityFailed,
+        );
+      },
+    );
+    test(
+      'bundle version mismatch is rejected without changing allowlist',
+      () async {
+        final root = await _createInstallation(temporaryRoot);
+        final valid = await inventory(root);
+        inspector = LocalEudToolInspector(
+          isWindows: () => true,
+          bundledManifest: EudToolManifest(
+            version: '0.10.2.4',
+            artifactSha256: valid.artifactSha256,
+            sourceUrl: valid.sourceUrl,
+            files: valid.files,
+          ),
+        );
+        expect(
+          (await inspector.inspect(
+            EudToolInspectionRequest(bundledPath: root.path),
+          )).diagnostics.single.code,
+          EudToolDiagnosticCodes.bundleIntegrityFailed,
+        );
+      },
+    );
 
     test(
       'accepts the official release layout without executing the tool',

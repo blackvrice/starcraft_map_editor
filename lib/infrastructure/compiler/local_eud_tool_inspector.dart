@@ -1,4 +1,6 @@
 import 'dart:io';
+import '../../domain/eud/eud_tool_manifest.dart';
+import 'local_eud_bundle_verifier.dart';
 
 import '../../application/ports/eud_tool_inspector.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
@@ -7,6 +9,7 @@ final class LocalEudToolInspector implements EudToolInspector {
   LocalEudToolInspector({
     Iterable<EudToolVersion>? supportedVersions,
     bool Function()? isWindows,
+    this.bundledManifest,
   }) : supportedVersions = Set.unmodifiable(
          supportedVersions ?? [EudToolVersion.parse('0.10.2.5')],
        ),
@@ -32,6 +35,7 @@ final class LocalEudToolInspector implements EudToolInspector {
   ];
 
   final Set<EudToolVersion> supportedVersions;
+  final EudToolManifest? bundledManifest;
   final bool Function() _isWindows;
 
   @override
@@ -230,6 +234,32 @@ final class LocalEudToolInspector implements EudToolInspector {
       );
     }
 
+    if (candidate.source == EudToolPathSource.bundled) {
+      final manifest = bundledManifest;
+      if (manifest == null) {
+        return _failure(
+          code: EudToolDiagnosticCodes.bundleManifestMissing,
+          message: 'The app has no trusted inventory for this bundled tool.',
+          remediation:
+              'Use a verified app package or explicitly select an external installation.',
+        );
+      }
+      try {
+        if (manifest.version != version.toString()) {
+          throw const FormatException('Bundle version differs from manifest.');
+        }
+        await const LocalEudBundleVerifier().verify(installation, manifest);
+      } on Object catch (error) {
+        return _failure(
+          code: EudToolDiagnosticCodes.bundleIntegrityFailed,
+          message: 'Bundled tool integrity verification failed.',
+          remediation:
+              'Repair the bundled installation or explicitly select an external tool.',
+          filePath: installation.path,
+          rawDetails: error.toString(),
+        );
+      }
+    }
     return EudToolInspectionResult.ready(
       readyTool: EudToolInfo(
         pathSource: candidate.source,

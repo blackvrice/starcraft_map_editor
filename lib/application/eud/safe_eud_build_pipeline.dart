@@ -86,7 +86,17 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     final trailingDiagnostics = <EditorDiagnostic>[];
     try {
       final inspected = await toolInspector.inspect(
-        EudToolInspectionRequest(projectProfilePath: plan.tool.executablePath),
+        switch (plan.tool.pathSource) {
+          EudToolPathSource.bundled => EudToolInspectionRequest(
+            bundledPath: plan.tool.executablePath,
+          ),
+          EudToolPathSource.userSettings => EudToolInspectionRequest(
+            userSettingsPath: plan.tool.executablePath,
+          ),
+          EudToolPathSource.projectProfile => EudToolInspectionRequest(
+            projectProfilePath: plan.tool.executablePath,
+          ),
+        },
       );
       if (!inspected.isReady) {
         throw _EudBuildFailure(
