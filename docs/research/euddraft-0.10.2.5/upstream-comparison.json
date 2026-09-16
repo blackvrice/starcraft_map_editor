@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 1,
+  "executableRun": false,
+  "redistributionReview": "pending",
+  "artifacts": [
+    {
+      "id": "euddraft",
+      "url": "https://github.com/armoha/euddraft/releases/download/v0.10.2.5/euddraft0.10.2.5.zip",
+      "sha256": "87113da1cf8ad48c7ed81ee26a9db47ae236274d74e8f0f24addf0e2ab8280b3",
+      "bytes": 15108674,
+      "notices": [
+        {
+          "path": "license.txt",
+          "size": 2480,
+          "sha256": "3ee2edd8c640a1231b083698c4e4ea5fa6898a9ca482d5262bdee2e99d761b54"
+        },
+        {
+          "path": "share/licenses/vc_redist/LICENSE.RTF",
+          "size": 9235,
+          "sha256": "8099dc3cf9502c335da829e5c755948a12e3e6de490eb492a99deb673d883d8b"
+        },
+        {
+          "path": "share/licenses/vc_redist/LICENSE.txt",
+          "size": 6615,
+          "sha256": "de57a078b443b05146c3cfbd39db7127a69f65065bc4289daff63a673af88da0"
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "url": "https://www.python.org/ftp/python/3.13.5/python-3.13.5-embed-amd64.zip",
+      "sha256": "7d2650fd9d1b9d002d4a315d5f354247fd6a44f30517c7ef577b08f57a0fb6d9",
+      "bytes": 10903542,
+      "notices": [
+        {
+          "path": "LICENSE.txt",
+          "size": 33861,
+          "sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120"
+        }
+      ]
+    },
+    {
+      "id": "eudplib",
+      "url": "https://files.pythonhosted.org/packages/61/f4/77841511fd768bc715f1ee0e210535faa37f618f641acc6ed65d1239fc1c/eudplib-0.80.6-cp310-abi3-win_amd64.whl",
+      "sha256": "9248b4ea16b3a61cc3a559e56e0be90422c1a77c5b14006c41353bf3d684a30e",
+      "bytes": 1875060,
+      "notices": [
+        {
+          "path": "eudplib-0.80.6.dist-info/licenses/LICENSE",
+          "size": 1105,
+          "sha256": "4f34aa4c9601f09e6487f4155fca4a62ad40901e098ee32c016192c6fc9ab3ca"
+        },
+        {
+          "path": "eudplib/LICENSE",
+          "size": 1067,
+          "sha256": "efbd995e8e94216e339ae01857038e712d0d2711fe47fdd50bb070a6a4a17df8"
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "artifact": "python",
+      "path": "_asyncio.pyd",
+      "size": 72160,
+      "sha256": "adaaf0c703641f6dbed30d101a5e23c17cc9454c36303394b9e28a52ea457471",
+      "identicalBundlePaths": [
+        "lib/_asyncio.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_bz2.pyd",
+      "size": 85984,
+      "sha256": "965f199679afa9b31d537d98c3ca8403afd6b9e58e1a463ae47697ae4bf12771",
+      "identicalBundlePaths": [
+        "lib/_bz2.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_ctypes.pyd",
+      "size": 133088,
+      "sha256": "697d05cac7c167c00ccf22ea4fdbc7a8db93ab9c6421061191558e42478068c5",
+      "identicalBundlePaths": [
+        "lib/_ctypes.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_decimal.pyd",
+      "size": 280032,
+      "sha256": "90045140e45edcfe4f4859b3190184faff1249220011330a9d01319745766607",
+      "identicalBundlePaths": [
+        "lib/_decimal.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_elementtree.pyd",
+      "size": 136536,
+      "sha256": "6fcc5528ce81f4514fb11cc7248080fd335a3c60d898e845d3341ee589887da1",
+      "identicalBundlePaths": [
+        "lib/_elementtree.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_hashlib.pyd",
+      "size": 69976,
+      "sha256": "1430e4a2ed19eda840668a292c39ff44488b598f53e903a61739a86b779ecbfe",
+      "identicalBundlePaths": [
+        "lib/_hashlib.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_lzma.pyd",
+      "size": 160088,
+      "sha256": "b78f5a8476139ff04731046459efd047bb8f52dc92c5b2082eabf2929c0ca02d",
+      "identicalBundlePaths": [
+        "lib/_lzma.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_multiprocessing.pyd",
+      "size": 37344,
+      "sha256": "7b21c5b0ebee82b0d85724f245857d65e23f82c6aaf392efcd4f800462025d92",
+      "identicalBundlePaths": [
+        "lib/_multiprocessing.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_overlapped.pyd",
+      "size": 57680,
+      "sha256": "fae5e0e822434da7b1707b9ae4c77b8fa7d1d7b810e7e2f5cacf04449c714086",
+      "identicalBundlePaths": [
+        "lib/_overlapped.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_queue.pyd",
+      "size": 34272,
+      "sha256": "08050f94efe7bdd9d7cbe85b1196de391cac1b30f4a4918610cb174ae529a5db",
+      "identicalBundlePaths": [
+        "lib/_queue.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_socket.pyd",
+      "size": 86872,
+      "sha256": "c63e8e6a369cbe86e57c9823fb48bc5d4e7bb18455b9b001986b4768c49007da",
+      "identicalBundlePaths": [
+        "lib/_socket.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_sqlite3.pyd",
+      "size": 130256,
+      "sha256": "443b801d2a372b67155044a928be68af0a677d1302655e5599131180ddd87659",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "_ssl.pyd",
+      "size": 181456,
+      "sha256": "11572f6eb63e43cdc2908812506ffcdab21be2be5931f1e38d856c15f5a79e6c",
+      "identicalBundlePaths": [
+        "lib/_ssl.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_uuid.pyd",
+      "size": 27856,
+      "sha256": "6a3e6d89e71a803609e6e765a592011427a5b6e7a4766bbca7790b601bb66dbe",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "_wmi.pyd",
+      "size": 40144,
+      "sha256": "a7cc096244a497219269a3ee1cf2526a2b613d73fa566749f8f2408f5f4117d4",
+      "identicalBundlePaths": [
+        "lib/_wmi.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "_zoneinfo.pyd",
+      "size": 50520,
+      "sha256": "e11282095ded02ad6a71a08e91add86c2de151553ad51cf1aaea3257b82036b7",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "libcrypto-3.dll",
+      "size": 5231472,
+      "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7",
+      "identicalBundlePaths": [
+        "lib/libcrypto-3.dll"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "libffi-8.dll",
+      "size": 39696,
+      "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+      "identicalBundlePaths": [
+        "lib/libffi-8.dll"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "libssl-3.dll",
+      "size": 794992,
+      "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe",
+      "identicalBundlePaths": [
+        "lib/libssl-3.dll"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "pyexpat.pyd",
+      "size": 204768,
+      "sha256": "567f19a92479e66b652ffaadbddba26b7c5dda43d5e97c67a4a76a076021b736",
+      "identicalBundlePaths": [
+        "lib/pyexpat.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "python.exe",
+      "size": 105816,
+      "sha256": "5341746f92483a93e44c313de830f2fba2956f0759094404a16b2fed06c9a2ed",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "python3.dll",
+      "size": 72536,
+      "sha256": "85d02d4c7e28c0f183415dc2be5fe8e06aa7fa0567673c75c65c0031f59e1e8b",
+      "identicalBundlePaths": [
+        "python3.dll"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "python313.dll",
+      "size": 6110416,
+      "sha256": "0565965617d94274d7f2c2958d0bef33392cd9d2f346f99d8e1bedbdf264ee85",
+      "identicalBundlePaths": [
+        "python313.dll"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "pythonw.exe",
+      "size": 104280,
+      "sha256": "2baee3c6f04a723423eccaadad48507386eb7ac0bdf90928d927f83ec64c4feb",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "select.pyd",
+      "size": 33112,
+      "sha256": "d1e486de9653640be7c3a9bed04aa716b29ea76a69e1de758dd9fa708f2c9d38",
+      "identicalBundlePaths": [
+        "lib/select.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "sqlite3.dll",
+      "size": 1583584,
+      "sha256": "17f4c92427f5c8fd968ffee09b93d7d07c44affe910209342b846be9410d3895",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "unicodedata.pyd",
+      "size": 712024,
+      "sha256": "e7d0375a7064b1c8916cca7cabf7e3df559fc8463dfdf831f403e95c79499121",
+      "identicalBundlePaths": [
+        "lib/unicodedata.pyd"
+      ]
+    },
+    {
+      "artifact": "python",
+      "path": "vcruntime140_1.dll",
+      "size": 49776,
+      "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "vcruntime140.dll",
+      "size": 120400,
+      "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4",
+      "identicalBundlePaths": []
+    },
+    {
+      "artifact": "python",
+      "path": "winsound.pyd",
+      "size": 31200,
+      "sha256": "670c5dc4cf2a8a44f5899f7b4238ec2d40ead833db33c2999e97c6c652bd5c88",
+      "identicalBundlePaths": [
+        "lib/winsound.pyd"
+      ]
+    },
+    {
+      "artifact": "eudplib",
+      "path": "eudplib/bindings/_rust.pyd",
+      "size": 3071488,
+      "sha256": "ea856a1408e2c7b9065ba9c35423ba10edc0ac35bd03b183bc065cba91af8d3b",
+      "identicalBundlePaths": [
+        "lib/eudplib.bindings._rust.pyd"
+      ]
+    },
+    {
+      "artifact": "eudplib",
+      "path": "eudplib/epscript/libepScriptLib.dll",
+      "size": 510976,
+      "sha256": "4db378600a6afeadcbc1642265db0d828a37ff8a4cff6da0a2d3f6aa925492ea",
+      "identicalBundlePaths": []
+    }
+  ]
+}

@@ -631,6 +631,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
   - 2026-09-16 부분 구현: [manifest v1과 동봉 무결성 검사](EUD_TOOL_MANIFEST.md). 실제 패키지 동봉·UI·고지 검토·깨끗한 PC 검증은 미완료.
   - 2026-09-16 공식 ZIP 해시 대조·77개 파일 목록·고지 위치 조사 및 재현 도구 완료 ([조사 기록](research/euddraft-0.10.2.5/README.md)). 전체 재배포 조건 검토와 실제 동봉은 대기.
   - 2026-09-16 네이티브 39개 파일 버전 조사·재현 테스트 완료 ([조사 결과](research/euddraft-0.10.2.5/NATIVE_COMPONENTS.md)). 5개 파일 버전 정보 없음, freezeMpq의 태그/배포본 해시 차이는 추가 확인 필요.
+  - 2026-09-16 Python 공식 ZIP·eudplib wheel과 23개 네이티브 파일 해시 일치 확인 및 재현 도구 완료 ([대조 기록](research/euddraft-0.10.2.5/UPSTREAM_COMPARISON.md)). freezeMpq·VC 런타임·전이 의존성 검토는 남음.
 - [ ] X2 선언적 설정의 결정적 생성, 실드 초기화·게임 검증, 안전 빌드 연결 (M6.3.1 공통)
 - [ ] X3 epScript/Python entry·진단·프로젝트 마이그레이션 지원
 - [ ] X4 Lua EUD 제한 문법·변환기·원본 위치 진단·비교 검증

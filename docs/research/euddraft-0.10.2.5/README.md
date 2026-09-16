@@ -6,6 +6,8 @@
 
 후속 [네이티브 구성요소 조사](NATIVE_COMPONENTS.md)는 파일 39개를 개별 임시 파일에
 복사해 버전 리소스를 읽은 후 삭제했다. 후속 조사에서도 패키지 코드는 실행하지 않았다.
+이어 [공식 배포본 대조](UPSTREAM_COMPARISON.md)에서 Python·OpenSSL·libffi 22개와
+eudplib Rust 확장 1개가 각각 공식 ZIP/wheel의 파일과 동일함을 확인했다.
 
 ## 확인한 아티팩트
 
@@ -44,7 +46,7 @@ License/License-Expression 헤더다. 라이선스 전체 내용이나 재배포
 
 Python 3.13.5는 [릴리스 노트](https://github.com/armoha/euddraft/releases/tag/v0.10.2.5)의
 설명이다. 후속 버전 리소스 조사에서 `python313.dll`의 숫자 버전이 3.13.5 final의
-인코딩과 일치함을 확인했다. 공식 Python 바이너리와 동일한 빌드인지는 미확인이다.
+인코딩과 일치함을 확인했고, 공식 배포본 대조에서 Python DLL과 확장의 해시 일치도 확인했다.
 
 ## 고지와 미완료 검토
 
