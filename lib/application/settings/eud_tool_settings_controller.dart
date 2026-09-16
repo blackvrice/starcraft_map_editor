@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../ports/eud_tool_inspector.dart';
+import '../ports/eud_tool_directory_picker.dart';
 import '../ports/settings_store.dart';
 
 final class EudToolSettingsState {
@@ -21,17 +22,45 @@ final class EudToolSettingsController {
     required this.store,
     required this.inspector,
     this.bundledPath,
+    this.directoryPicker,
   });
   static const settingsKey = 'euddraftInstallationPath';
   final SettingsStore store;
   final EudToolInspector inspector;
   final String? bundledPath;
+  final EudToolDirectoryPicker? directoryPicker;
   final _changes = StreamController<EudToolSettingsState>.broadcast();
   EudToolSettingsState _state = const EudToolSettingsState();
   EudToolSettingsState get state => _state;
   Stream<EudToolSettingsState> get changes => _changes.stream;
   bool _loaded = false;
   bool _disposed = false;
+
+  Future<String?> pickExternalDirectory() async {
+    if (_disposed || state.busy || directoryPicker == null) return null;
+    final previous = state;
+    _set(
+      EudToolSettingsState(
+        path: previous.path,
+        result: previous.result,
+        busy: true,
+      ),
+    );
+    try {
+      final path = await directoryPicker!.pickEudToolDirectory();
+      _set(previous);
+      return _disposed ? null : path;
+    } catch (error) {
+      _set(
+        EudToolSettingsState(
+          path: previous.path,
+          result: previous.result,
+          error: 'The tool directory could not be selected: $error',
+        ),
+      );
+      return null;
+    }
+  }
 
   EudToolInspectionRequest inspectionRequest({String? projectProfilePath}) =>
       EudToolInspectionRequest(

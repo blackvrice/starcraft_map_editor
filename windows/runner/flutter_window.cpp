@@ -90,7 +90,7 @@ class ScopedComInitialization {
   bool should_uninitialize_;
 };
 
-DirectoryDialogSelection PickStarCraftInstallationDirectory(HWND owner) {
+DirectoryDialogSelection PickInstallationDirectory(HWND owner, const wchar_t* title) {
   ScopedComInitialization com;
   if (FAILED(com.result()) && com.result() != RPC_E_CHANGED_MODE) {
     return FailedDirectorySelection(com.result());
@@ -114,7 +114,7 @@ DirectoryDialogSelection PickStarCraftInstallationDirectory(HWND owner) {
         FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR);
   }
   if (SUCCEEDED(result)) {
-    result = dialog->SetTitle(L"Choose StarCraft Installation Directory");
+    result = dialog->SetTitle(title);
   }
   if (SUCCEEDED(result)) {
     result = dialog->Show(owner);
@@ -190,14 +190,17 @@ bool FlutterWindow::OnCreate() {
                              call.method_name() == "saveEudProject";
         const bool is_data_directory =
             call.method_name() == "pickStarCraftInstallationDirectory";
-        if (!is_open && !is_save && !is_data_directory) {
+        const bool is_eud_directory = call.method_name() == "pickEudToolDirectory";
+        if (!is_open && !is_save && !is_data_directory && !is_eud_directory) {
           result->NotImplemented();
           return;
         }
 
-        if (is_data_directory) {
+        if (is_data_directory || is_eud_directory) {
           const DirectoryDialogSelection selection =
-              PickStarCraftInstallationDirectory(GetHandle());
+              PickInstallationDirectory(GetHandle(), is_eud_directory
+                  ? L"Choose euddraft Installation Directory"
+                  : L"Choose StarCraft Installation Directory");
           if (selection.status == DirectoryDialogStatus::accepted) {
             result->Success(flutter::EncodableValue(selection.path));
             return;

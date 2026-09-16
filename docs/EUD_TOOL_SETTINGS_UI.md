@@ -3,6 +3,10 @@
 2026-09-16 X1 부분 구현. `File → EUD Tools…`에서 맵 없이도 접근한다.
 
 - 외부 설치 폴더 또는 euddraft.exe의 절대 경로를 입력하고 `Save and inspect`를 누른다.
+- `Browse installation folder`는 Windows 폴더 선택 창을 열어 입력란만 채운다.
+  선택만으로 저장·설치 검사·컴파일하지 않는다. 이후 `Save and inspect`로 적용한다.
+  선택 취소/실패는 기존 입력·저장 설정을 유지한다. 선택 중 중복 작업은 차단하고,
+  화면을 닫은 뒤 도착한 선택 결과는 입력란에 적용하지 않는다.
 - 사용자 설정 키 `euddraftInstallationPath`에 저장하고 기존 설치 검사기로 검사한다.
   잘못된 설치 경로도 선택값으로 유지하고 실패 이유를 보여 준다. 다른 도구로 자동 전환하지 않는다.
 - 성공 시 버전·실행 파일 경로, 실패 시 진단 코드·복구 안내·원시 상세를 표시한다.
@@ -11,14 +15,14 @@
   외부 설치 안내와 미설정 진단을 표시한다.
 - 저장/검사 중 변경 버튼을 비활성화한다. 저장 실패는 이전 선택을 유지하고 성공 결과를 지운다.
 
-컨트롤러는 SettingsStore와 EudToolInspector 포트를 사용한다. UI는 파일·프로세스를
+컨트롤러는 SettingsStore, EudToolInspector, EudToolDirectoryPicker 포트를 사용한다. UI는 파일·프로세스를
 직접 호출하지 않는다. `inspectionRequest(projectProfilePath: ...)`는 프로젝트 →
 사용자 → 동봉 우선순위를 재사용한다. 화면은 앱 사용자 설정에 대한 검사이며 특정
 프로젝트의 실효 도구를 검사했다고 표시하지 않는다.
 
 이번 구현은 선택·저장·설치 검사까지다. 기존 빌드 계획을 변경하거나 Build를 활성화하지 않는다.
 후속 [빌드 준비 화면](EUD_BUILD_PREPARATION_UI.md)에서 이 선택과 이번 빌드 override를 합쳐 새 계획을 만든다.
-실제 동봉 바이너리·production manifest와 네이티브 폴더 선택 버튼은 아직 제공하지 않는다.
+실제 동봉 바이너리·production manifest는 아직 제공하지 않는다.
 원본 맵·EUD 프로젝트·소스를 수정하지 않는다. 검사 성공은 컴파일·게임 검증과 별개다.
 
 ## 검증
@@ -29,3 +33,14 @@
 Windows 화면 수동 조작과 EUD 컴파일·게임 검증은 수행하지 않았다.
 전체 비쓰기 포맷 검사는 기존 infrastructure 테스트 4개에서 실패했고 해당 파일은 변경하지 않았다.
 실행 SDK는 Flutter 3.47.2 / Dart 3.13.2로 기준 3.44.8 / 3.12와 다르다.
+
+### 폴더 선택 후속 검증
+
+폴더 선택·취소·실패·화면 닫기 및 채널 라우팅 5개 회귀를 추가했다. 집중 10개,
+전체 639개 통과·15개 선택 환경 skip. 최종 정적 분석은 기존 flutter_tools snapshot
+직접 실행으로 통과했고 변경한 `flutter_window.cpp`는 MSBuild ClCompile로 통과했다.
+전체 Windows 빌드는 Flutter SDK의 Git 인덱스 오류/SDK 업데이트 파일 잠금으로 실패했다.
+snapshot 직접 호출도 하위 assemble이 wrapper를 호출해 같은 오류로 실패했다.
+따라서 이번 변경을 포함한 앱 시작 및 실제 Windows 폴더 선택 창 수동 검증은 미완료다.
+SDK를 복구한 뒤 전체 Windows build/run을 다시 수행해야 한다. 기존 SDK 버전 차이와
+포맷 테스트 4개 차이는 유지한다. 선택 UI 변경으로 실제 EUD 컴파일은 재실행하지 않았다.

@@ -1,9 +1,11 @@
 import 'package:flutter/services.dart';
 
 import '../../application/ports/directory_picker.dart';
+import '../../application/ports/eud_tool_directory_picker.dart';
 import 'method_channel_map_file_picker.dart';
 
-final class MethodChannelDirectoryPicker implements DirectoryPicker {
+final class MethodChannelDirectoryPicker
+    implements DirectoryPicker, EudToolDirectoryPicker {
   const MethodChannelDirectoryPicker({
     this.channel = const MethodChannel(MethodChannelMapFilePicker.channelName),
   });
@@ -12,6 +14,10 @@ final class MethodChannelDirectoryPicker implements DirectoryPicker {
       'pickStarCraftInstallationDirectory';
 
   final MethodChannel channel;
+
+  @override
+  Future<String?> pickEudToolDirectory() =>
+      channel.invokeMethod<String>('pickEudToolDirectory');
 
   @override
   Future<String?> pickStarCraftInstallationDirectory() {

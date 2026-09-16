@@ -61,6 +61,23 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                if (widget.controller.directoryPicker != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: state.busy
+                          ? null
+                          : () async {
+                              final selected = await widget.controller
+                                  .pickExternalDirectory();
+                              if (mounted && selected != null) {
+                                _path.text = selected;
+                              }
+                            },
+                      icon: const Icon(Icons.folder_open),
+                      label: const Text('Browse installation folder'),
+                    ),
+                  ),
                 SelectableText(
                   state.path == null
                       ? 'Selection: App default'

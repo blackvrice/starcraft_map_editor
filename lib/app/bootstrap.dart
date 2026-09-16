@@ -47,6 +47,7 @@ void bootstrap() {
   final eudToolSettingsController = EudToolSettingsController(
     store: settingsStore,
     inspector: LocalEudToolInspector(),
+    directoryPicker: const MethodChannelDirectoryPicker(),
   );
   final commandDispatcher = EditorCommandDispatcher();
   final operationProgressController = OperationProgressController();

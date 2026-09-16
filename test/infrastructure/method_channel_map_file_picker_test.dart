@@ -15,6 +15,21 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  test(
+    'EUD directory selection routes separately and preserves cancellation',
+    () async {
+      for (final selected in [r'C:\한글 도구', null]) {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+              expect(call.method, 'pickEudToolDirectory');
+              expect(call.arguments, isNull);
+              return selected;
+            });
+        expect(await directoryPicker.pickEudToolDirectory(), selected);
+      }
+    },
+  );
+
   test('returns the path selected by the native dialog', () async {
     MethodCall? receivedCall;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
