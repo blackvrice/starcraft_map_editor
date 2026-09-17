@@ -32,19 +32,49 @@
 | 날짜 | 환경 | firstPage | search | scroll12 | builtTiles | loadedEntries |
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-09-07 | Linux 컨테이너, Flutter 3.44.8, debug 테스트 바이너리 | 1459ms | 338ms | 1006ms | 29 | 2000 |
+| 2026-09-17 | Windows x64, Flutter 3.47.2 / Dart 3.13.2, debug 테스트 바이너리 | 932ms | 292ms | 751ms | 28 | 2000 |
+
+## 합성 썸네일 자원 수명 (2026-09-17)
+
+`test/performance/placement_catalog_thumbnail_performance_test.dart`는 1000×700,
+배율 1 화면에서 서로 다른 32×32 RGBA 버퍼 2,000개를 가진 합성 controller로
+실제 `PlacementCatalogPane`의 이미지 디코딩·12회 스크롤·검색·닫기를 실행한다.
+앱의 전체 로더나 실제 SC:R 자산의 메모리 상한을 측정한 것은 아니다.
+
+| 지표 | Windows debug 관측값 |
+| --- | --- |
+| 항목 RGBA 버퍼 합계 | 8,192,000 bytes |
+| 첫 화면 이미지 핸들 | 96 |
+| 최대 동시 이미지 핸들 | 132 |
+| 핸들당 픽셀 바이트 합의 최대값 | 540,672 bytes |
+| 누적 생성 핸들(재열기 포함) | 926 |
+| 검색 1개 항목 뒤 핸들 | 2 |
+| 닫기 및 디코딩 도중 닫기 뒤 핸들 | 0 |
+
+`ui.Image.onCreate/onDispose`로 핸들을 추적한다. `RawImage` 렌더 객체가 복제한
+핸들도 포함하므로 픽셀 바이트 합은 중복을 포함한 상계이며 GPU VRAM 실측치가
+아니다. 버퍼·descriptor·codec 또는 드라이버 메모리까지 해제됐다는 판정도 아니다.
+테스트의 전체 소요 시간에는 비동기 디코딩 대기가 포함되어 성능 기준으로 쓰지 않는다.
+
+자동 판정은 최대 핸들 수가 256 미만인지, 스크롤 중 새 이미지가 만들어지는지,
+검색 후 1~2개 핸들만 남는지, 정상 닫기와 늦은 디코딩 완료 후 핸들이 모두
+해제되는지 확인한다. controller의 원본 RGBA 항목은 화면 닫기만으로 지우지 않는다.
+실제 페이지 캐시 상한·반복 재열기·profile/실제 설치 검증은 아래 미완료 범위로 남긴다.
 
 ## 남은 작업
 
 - Windows 10/11 x64에서 profile 빌드로 같은 지표를 재고 이 표에 기록한다.
 - 실제 로컬 SC:R 설치의 Doodad 카탈로그(타일셋당 194~1,217개, 총 6,730개)와
   실제 썸네일로 재측정한다. 위 수치는 썸네일이 없는 합성 항목 기준이다.
-- 썸네일 cache 메모리 상한과 탭을 떠난 뒤 GPU 자원 해제를 계측에 포함한다.
+- 실제 썸네일 cache 메모리 상한과 탭을 떠난 뒤 GPU 자원 해제를 계측한다.
+  합성 화면의 이미지 핸들 해제 회귀는 추가했지만 실제 GPU 메모리는 미측정이다.
 - CI 변동 폭을 확인한 뒤 시간 상한을 확정할지 결정한다.
 
 ## 실행 방법
 
 ```powershell
 flutter test test/performance/placement_catalog_performance_test.dart
+flutter test test/performance/placement_catalog_thumbnail_performance_test.dart
 ```
 
 측정값은 테스트 출력의 `placement-catalog perf` 줄에 나온다.
