@@ -15,10 +15,14 @@ class UnitSettingsDialog extends StatefulWidget {
   const UnitSettingsDialog({
     required this.controller,
     this.catalogController,
+    this.selectedUnit,
+    this.onUnitSelected,
     super.key,
   });
   final ObjectEditingController controller;
   final PlacementCatalogController? catalogController;
+  final int? selectedUnit;
+  final ValueChanged<int>? onUnitSelected;
   @override
   State<UnitSettingsDialog> createState() => _UnitSettingsDialogState();
 }
@@ -37,7 +41,22 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
   @override
   void initState() {
     super.initState();
+    _unit = widget.selectedUnit ?? 0;
     _reload();
+  }
+
+  @override
+  void didUpdateWidget(UnitSettingsDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedUnit != null &&
+        oldWidget.selectedUnit != widget.selectedUnit) {
+      _unit = widget.selectedUnit!;
+    }
+  }
+
+  void _selectUnit(int unit) {
+    setState(() => _unit = unit);
+    widget.onUnitSelected?.call(unit);
   }
 
   void _reload() {
@@ -160,7 +179,7 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                       : custom;
                   return '$name (Unit #$id)';
                 },
-                onSelected: (id) => setState(() => _unit = id),
+                onSelected: _selectUnit,
                 scope:
                     'Unit values, names and default flags only. Shared weapon damage uses its own selection below.',
                 onCopy: settings == null
@@ -199,7 +218,7 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
               UnitContextCard(
                 unit: _unit,
                 catalog: widget.catalogController,
-                onUnit: (unit) => setState(() => _unit = unit),
+                onUnit: _selectUnit,
                 onWeapon: (weapon) {
                   if (settings != null && weapon < settings.weaponCount) {
                     setState(() => _weapon = weapon);

@@ -9,8 +9,15 @@ import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_unit_availability_editor.dart';
 
 class UnitAvailabilityDialog extends StatefulWidget {
-  const UnitAvailabilityDialog({required this.controller, super.key});
+  const UnitAvailabilityDialog({
+    required this.controller,
+    this.selectedUnit,
+    this.onUnitSelected,
+    super.key,
+  });
   final ObjectEditingController controller;
+  final int? selectedUnit;
+  final ValueChanged<int>? onUnitSelected;
   @override
   State<UnitAvailabilityDialog> createState() => _UnitAvailabilityDialogState();
 }
@@ -26,7 +33,22 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
   @override
   void initState() {
     super.initState();
+    _unit = widget.selectedUnit ?? 0;
     _reload();
+  }
+
+  @override
+  void didUpdateWidget(UnitAvailabilityDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedUnit != null &&
+        oldWidget.selectedUnit != widget.selectedUnit) {
+      _unit = widget.selectedUnit!;
+    }
+  }
+
+  void _selectUnit(int unit) {
+    setState(() => _unit = unit);
+    widget.onUnitSelected?.call(unit);
   }
 
   void _reload() {
@@ -147,7 +169,7 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                   defaultUnitNames,
                   custom: _unitNames[id],
                 ),
-                onSelected: (id) => setState(() => _unit = id),
+                onSelected: _selectUnit,
                 scope:
                     'Map defaults and Player ${_player + 1} only. Inheritance changes only if edited.',
                 onCopy: _settings == null

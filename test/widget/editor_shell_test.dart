@@ -277,6 +277,94 @@ void main() {
   }
 
   testWidgets(
+    'Units and Availability share unit selection without losing drafts',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore();
+      final recent = RecentProjectsService(settings);
+      final progress = OperationProgressController();
+      final map = _createExtractedMap(includeMapInformation: true);
+      final open = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: map),
+        ),
+        filePicker: _FakeMapFilePicker(map.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: recent,
+        operationProgressController: progress,
+      );
+      addTearDown(open.dispose);
+      addTearDown(progress.dispose);
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: open,
+          operationProgressController: progress,
+          recentProjectsService: recent,
+          settingsStore: settings,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      final original = open.state.session!.rawDocument;
+      await tester.tap(find.byKey(const Key('map-settings-tab')));
+      await tester.pumpAndSettle();
+      Future<void> tab(String name) async {
+        final target = find.widgetWithText(Tab, name);
+        await tester.ensureVisible(target);
+        await tester.tap(target);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> select(String key, int value) async {
+        tester.widget<DropdownButton<int>>(find.byKey(Key(key))).onChanged!(
+          value,
+        );
+        await tester.pumpAndSettle();
+      }
+
+      int? selected(String key) =>
+          tester.widget<DropdownButton<int>>(find.byKey(Key(key))).value;
+      final hp = find.byWidgetPredicate(
+        (w) => w is TextField && w.decoration?.labelText == 'Hit points',
+      );
+      await tab('Units');
+      await select('unit-settings-unit', 1);
+      await tester.ensureVisible(hp);
+      await tester.enterText(hp, '77');
+      await tester.pumpAndSettle();
+      // First visit must inherit the already-selected unit.
+      await tab('Availability');
+      expect(selected('availability-unit'), 1);
+      await select('availability-player-selection', 2);
+      await select('availability-global', 1);
+      await select('availability-unit', 7);
+      await tab('Units');
+      expect(selected('unit-settings-unit'), 7);
+      await select('unit-settings-unit', 1);
+      expect(tester.widget<TextField>(hp).controller!.text, '77');
+      await tab('Availability');
+      expect(selected('availability-unit'), 1);
+      expect(selected('availability-player-selection'), 2);
+      expect(selected('availability-global'), 1);
+      expect(identical(open.state.session!.rawDocument, original), isTrue);
+      expect(open.state.session!.isDirty, isFalse);
+      await tester.tap(find.byKey(const Key('map-settings-close')));
+      await tester.pumpAndSettle();
+      expect(find.text('Discard unapplied settings?'), findsOneWidget);
+      await tester.tap(find.text('Discard and close'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('map-settings-tab')));
+      await tester.pumpAndSettle();
+      await tab('Availability');
+      expect(selected('availability-unit'), 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'map settings tabs preserve drafts and guard cross-tab changes and close',
     (tester) async {
       tester.view.physicalSize = const Size(1440, 1000);

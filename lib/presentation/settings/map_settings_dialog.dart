@@ -28,6 +28,8 @@ class MapSettingsDialog extends StatefulWidget {
 
 class _MapSettingsDialogState extends State<MapSettingsDialog> {
   int _tab = 0;
+  int _selectedUnit = 0;
+  void _selectUnit(int unit) => setState(() => _selectedUnit = unit);
   int _generation = 0;
   final _visited = <int>{0};
   final _drafts = <int, bool>{};
@@ -69,6 +71,7 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
         _visited.add(0);
         _drafts.clear();
         _tab = 0;
+        _selectedUnit = 0;
         _closing = false;
       });
       widget.onClosed?.call();
@@ -83,10 +86,16 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
     1 => PlayerSettingsDialog(controller: widget.controller),
     2 => ForceSettingsDialog(controller: widget.controller),
     3 => UnitSettingsDialog(
+      selectedUnit: _selectedUnit,
+      onUnitSelected: _selectUnit,
       controller: widget.controller,
       catalogController: widget.catalogController,
     ),
-    4 => UnitAvailabilityDialog(controller: widget.controller),
+    4 => UnitAvailabilityDialog(
+      controller: widget.controller,
+      selectedUnit: _selectedUnit,
+      onUnitSelected: _selectUnit,
+    ),
     5 => UpgradeSettingsDialog(controller: widget.controller),
     _ => TechSettingsDialog(controller: widget.controller),
   };
