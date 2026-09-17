@@ -1,3 +1,5 @@
+typedef UnitWeaponLink = ({int unit, int weapon, bool air});
+
 final class UnitWeaponReferences {
   UnitWeaponReferences({
     required this.ground,
@@ -24,19 +26,32 @@ final class UnitWeaponIndex {
   }
   final List<UnitWeaponReferences> units;
 
-  /// Prefer direct ground/air, then subunits in DAT order; stop on cycles.
-  ({int unit, int weapon})? preferredWeapon(int unit) {
+  /// Direct slots followed by each reachable subunit once, in DAT order.
+  List<UnitWeaponLink> weaponLinks(int unit) {
     RangeError.checkValueInInterval(unit, 0, 227, 'unit');
+    final links = <UnitWeaponLink>[];
     final visited = <int>{};
-    ({int unit, int weapon})? visit(int id) {
-      if (id == 228 || !visited.add(id)) return null;
+    void visit(int id) {
+      if (id == 228 || !visited.add(id)) return;
       final ref = units[id];
-      if (ref.ground < 130) return (unit: id, weapon: ref.ground);
-      if (ref.air < 130) return (unit: id, weapon: ref.air);
-      return visit(ref.subunit1) ?? visit(ref.subunit2);
+      if (ref.ground < 130) {
+        links.add((unit: id, weapon: ref.ground, air: false));
+      }
+      if (ref.air < 130) links.add((unit: id, weapon: ref.air, air: true));
+      visit(ref.subunit1);
+      visit(ref.subunit2);
     }
 
-    return visit(unit);
+    visit(unit);
+    return List.unmodifiable(links);
+  }
+
+  /// Prefer direct ground/air, then subunits in DAT order; stop on cycles.
+  ({int unit, int weapon})? preferredWeapon(int unit) {
+    final links = weaponLinks(unit);
+    return links.isEmpty
+        ? null
+        : (unit: links.first.unit, weapon: links.first.weapon);
   }
 
   List<int> directUsers(int weapon) {

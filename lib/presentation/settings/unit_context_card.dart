@@ -145,6 +145,12 @@ class _UnitContextCardState extends State<UnitContextCard> {
   Widget build(BuildContext context) {
     final ref = _references?.index.units[widget.unit];
     final preferred = _references?.index.preferredWeapon(widget.unit);
+    final subunitWeapons =
+        _references?.index
+            .weaponLinks(widget.unit)
+            .where((link) => link.unit != widget.unit)
+            .toList() ??
+        [];
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -212,6 +218,29 @@ class _UnitContextCardState extends State<UnitContextCard> {
                     ),
                 ],
               ),
+              if (subunitWeapons.isNotEmpty) ...[
+                const Text('Subunit weapons — keeps the selected unit'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    for (final link in subunitWeapons)
+                      ActionChip(
+                        key: ValueKey(
+                          'subunit-weapon-${link.unit}-${link.air ? "air" : "ground"}',
+                        ),
+                        avatar: Icon(
+                          link.air ? Icons.flight : Icons.gps_fixed,
+                          size: 18,
+                        ),
+                        label: Text(
+                          '${defaultUnitNames[link.unit]} (#${link.unit}) · ${link.air ? "Air" : "Ground"}: ${defaultWeaponNames[link.weapon]} (#${link.weapon})',
+                        ),
+                        onPressed: () => widget.onWeapon(link.weapon),
+                      ),
+                  ],
+                ),
+              ],
               Text(
                 preferred == null
                     ? 'No linked weapon. Select a weapon manually.'

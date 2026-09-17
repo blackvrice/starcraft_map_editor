@@ -63,6 +63,11 @@ void main() {
       catalog.complete(2);
       await tester.pumpAndSettle();
       expect(weapons, [5, 5, 5]);
+      await tester.tap(find.byKey(const ValueKey('subunit-weapon-0-air')));
+      await tester.pumpAndSettle();
+      expect(weapons, [5, 5, 5, 5]);
+      expect(units, isEmpty);
+      expect(find.textContaining('Unit #2'), findsOneWidget);
       await tester.tap(
         find.widgetWithText(ActionChip, 'Subunit: Terran Marine (#0)'),
       );
@@ -70,7 +75,7 @@ void main() {
       await tester.pumpWidget(card(4));
       catalog.complete(3);
       await tester.pumpAndSettle();
-      expect(weapons, [5, 5, 5]);
+      expect(weapons, [5, 5, 5, 5]);
       expect(find.textContaining('No linked weapon'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
