@@ -72,6 +72,14 @@ void main() {
       expect(find.byKey(const Key('eud-reference-ground')), findsNothing);
       await tester.tap(find.text('Load weapon impact'));
       await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('eud-weapon-selector')),
+            )
+            .value,
+        5,
+      );
       await tester.tap(find.byKey(const Key('eud-reference-ground')));
       await tester.pumpAndSettle();
       expect(find.textContaining('(#5) — EUD'), findsOneWidget);

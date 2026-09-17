@@ -272,6 +272,48 @@ class PlacementCatalogController {
     }
   }
 
+  /// Reads one preview without changing the placement selection or catalog page.
+  Future<PlacementCatalogItem?> loadUnitPreview(int unit) async {
+    RangeError.checkValueInInterval(unit, 0, 227, 'unit');
+    final path = _installationPath;
+    final epoch = weaponReferenceEpoch;
+    if (_disposed ||
+        path == null ||
+        catalogGateway == null ||
+        objectAtlasGateway == null) {
+      return null;
+    }
+    final batch =
+        await ObjectPlacementCatalogLoader(
+          catalogGateway: catalogGateway!,
+          objectAtlasGateway: objectAtlasGateway!,
+        ).load(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'unit-preview-${++_weaponRequest}',
+            installationPath: path,
+            kind: StarCraftPlacementKind.unit,
+            tileset: mapTileset ?? StarCraftTilesetAssetSet.badlands,
+            offset: unit,
+            limit: 1,
+          ),
+        );
+    if (_disposed ||
+        epoch != weaponReferenceEpoch ||
+        !batch.page.isSuccess ||
+        batch.page.entries.length != 1) {
+      return null;
+    }
+    final entry = batch.page.entries.single;
+    if (entry.key.id != unit) return null;
+    final thumbnail = batch.thumbnails[entry.key];
+    return PlacementCatalogItem(
+      entry: entry,
+      thumbnailRgba: thumbnail?.rgbaBytes,
+      thumbnailWidth: thumbnail?.width ?? 0,
+      thumbnailHeight: thumbnail?.height ?? 0,
+    );
+  }
+
   void _invalidateCatalog() {
     weaponReferenceEpoch++;
     final operation = _weaponOperation;

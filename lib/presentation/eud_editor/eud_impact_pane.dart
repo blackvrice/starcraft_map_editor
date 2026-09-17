@@ -4,6 +4,7 @@ import '../../domain/eud/eud_override_impact.dart';
 import '../../domain/eud/eud_project.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
+import '../settings/unit_context_card.dart';
 
 class EudImpactPane extends StatefulWidget {
   const EudImpactPane({
@@ -11,12 +12,14 @@ class EudImpactPane extends StatefulWidget {
     this.catalog,
     this.onEditWeapon,
     this.onEditShields,
+    this.onSelectWeapon,
     super.key,
   });
   final EudProject project;
   final PlacementCatalogController? catalog;
   final void Function(int weapon, int epoch)? onEditWeapon;
   final void Function(int unit)? onEditShields;
+  final ValueChanged<int>? onSelectWeapon;
 
   @override
   State<EudImpactPane> createState() => _EudImpactPaneState();
@@ -76,60 +79,72 @@ class _EudImpactPaneState extends State<EudImpactPane> {
     builder: (context, _) {
       final epoch = widget.catalog?.weaponReferenceEpoch;
       final snapshot = _snapshot?.epoch == epoch ? _snapshot : null;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Static unit / weapon impact'),
-          const Text(
-            'DAT references only; spells, runtime changes and actual attack behavior are not verified. All players share these type settings.',
-          ),
-          OutlinedButton(
-            onPressed: widget.catalog == null || _loading ? null : _load,
-            child: const Text('Load weapon impact'),
-          ),
-          if (_loading) const LinearProgressIndicator(),
-          if (snapshot == null)
+      return SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Static unit / weapon impact'),
             const Text(
-              'Weapon references unavailable. Load or reload to analyze.',
-            )
-          else
-            Text('Reference source: ${snapshot.source}'),
-          if (_error != null && _errorEpoch == epoch) Text(_error!),
-          const Text(
-            'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.',
-          ),
-          SizedBox(
-            width: 360,
-            child: DropdownButton<int>(
-              key: const Key('eud-reference-unit'),
-              isExpanded: true,
-              value: _unit,
-              items: [
-                for (var i = 0; i < 228; i++)
-                  DropdownMenuItem(
-                    value: i,
-                    child: Text('${defaultUnitNames[i]} (#$i)'),
-                  ),
-              ],
-              onChanged: (value) => setState(() => _unit = value!),
+              'DAT references only; spells, runtime changes and actual attack behavior are not verified. All players share these type settings.',
             ),
-          ),
-          OutlinedButton(
-            onPressed: widget.onEditShields == null
-                ? null
-                : () => widget.onEditShields!(_unit),
-            child: const Text('Edit unit EUD shields'),
-          ),
-          if (snapshot != null) ...[
-            _weaponLink('Ground', snapshot.index.units[_unit].ground, snapshot),
-            _weaponLink('Air', snapshot.index.units[_unit].air, snapshot),
-            Text(
-              'Subunit IDs: ${snapshot.index.units[_unit].subunit1}, ${snapshot.index.units[_unit].subunit2} (228 = None)',
+            OutlinedButton(
+              onPressed: widget.catalog == null || _loading ? null : _load,
+              child: const Text('Load weapon impact'),
             ),
+            if (_loading) const LinearProgressIndicator(),
+            if (snapshot == null)
+              const Text(
+                'Weapon references unavailable. Load or reload to analyze.',
+              )
+            else
+              Text('Reference source: ${snapshot.source}'),
+            if (_error != null && _errorEpoch == epoch) Text(_error!),
+            const Text(
+              'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.',
+            ),
+            SizedBox(
+              width: 360,
+              child: DropdownButton<int>(
+                key: const Key('eud-reference-unit'),
+                isExpanded: true,
+                value: _unit,
+                items: [
+                  for (var i = 0; i < 228; i++)
+                    DropdownMenuItem(
+                      value: i,
+                      child: Text('${defaultUnitNames[i]} (#$i)'),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _unit = value!),
+              ),
+            ),
+            UnitContextCard(
+              unit: _unit,
+              catalog: widget.catalog,
+              onUnit: (unit) => setState(() => _unit = unit),
+              onWeapon: (weapon) => widget.onSelectWeapon?.call(weapon),
+            ),
+            OutlinedButton(
+              onPressed: widget.onEditShields == null
+                  ? null
+                  : () => widget.onEditShields!(_unit),
+              child: const Text('Edit unit EUD shields'),
+            ),
+            if (snapshot != null) ...[
+              _weaponLink(
+                'Ground',
+                snapshot.index.units[_unit].ground,
+                snapshot,
+              ),
+              _weaponLink('Air', snapshot.index.units[_unit].air, snapshot),
+              Text(
+                'Subunit IDs: ${snapshot.index.units[_unit].subunit1}, ${snapshot.index.units[_unit].subunit2} (228 = None)',
+              ),
+            ],
+            for (final override in widget.project.overrides)
+              _row(override, snapshot),
           ],
-          for (final override in widget.project.overrides)
-            _row(override, snapshot),
-        ],
+        ),
       );
     },
   );

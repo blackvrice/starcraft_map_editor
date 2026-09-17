@@ -5,6 +5,7 @@ import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import 'weapon_impact_panel.dart';
+import 'unit_context_card.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -194,6 +195,16 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                         });
                         return values.length + names.length + defaults.length;
                       },
+              ),
+              UnitContextCard(
+                unit: _unit,
+                catalog: widget.catalogController,
+                onUnit: (unit) => setState(() => _unit = unit),
+                onWeapon: (weapon) {
+                  if (settings != null && weapon < settings.weaponCount) {
+                    setState(() => _weapon = weapon);
+                  }
+                },
               ),
               DropdownButton<int>(
                 key: const Key('unit-settings-defaults'),

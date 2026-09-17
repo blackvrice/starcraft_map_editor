@@ -20,6 +20,8 @@ class EudProjectPane extends StatefulWidget {
 class _EudProjectPaneState extends State<EudProjectPane> {
   String? _error;
   bool _acting = false;
+  int _linkedWeapon = 0;
+  int _linkRevision = 0;
   late final AppLifecycleListener _lifecycle;
   @override
   void initState() {
@@ -191,6 +193,8 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             ),
             const SizedBox(height: 12),
             EudWeaponEditor(
+              key: ValueKey(('linked-weapon', _linkRevision)),
+              selectedWeapon: _linkedWeapon,
               controller: controller,
               enabled: !busy,
               onEditingChanged: (editing) => setState(() => _acting = editing),
@@ -233,6 +237,12 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                 ),
               ),
             EudImpactPane(
+              onSelectWeapon: busy
+                  ? null
+                  : (weapon) => setState(() {
+                      _linkedWeapon = weapon;
+                      _linkRevision++;
+                    }),
               key: const ValueKey('eud-project-impact'),
               project: project,
               catalog: widget.catalog,

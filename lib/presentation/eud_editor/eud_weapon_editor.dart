@@ -24,17 +24,33 @@ class EudWeaponEditor extends StatefulWidget {
     required this.controller,
     required this.enabled,
     required this.onEditingChanged,
+    this.selectedWeapon = 0,
     super.key,
   });
   final EudProjectController controller;
   final bool enabled;
   final ValueChanged<bool> onEditingChanged;
+  final int selectedWeapon;
   @override
   State<EudWeaponEditor> createState() => _EudWeaponEditorState();
 }
 
 class _EudWeaponEditorState extends State<EudWeaponEditor> {
   int _weapon = 0;
+  @override
+  void initState() {
+    super.initState();
+    _weapon = widget.selectedWeapon;
+  }
+
+  @override
+  void didUpdateWidget(EudWeaponEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedWeapon != widget.selectedWeapon) {
+      _weapon = widget.selectedWeapon;
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Wrap(
     spacing: 8,

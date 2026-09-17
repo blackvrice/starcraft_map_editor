@@ -139,16 +139,25 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
               _visited.add(index);
             }),
             tabs: [
-              for (final name in [
-                'Map',
-                'Players',
-                'Forces',
-                'Units',
-                'Availability',
-                'Upgrades',
-                'Tech',
+              for (final item in [
+                ('Map', Icons.map_outlined),
+                ('Players', Icons.people_outline),
+                ('Forces', Icons.flag_outlined),
+                ('Units', Icons.person_outline),
+                ('Availability', Icons.checklist),
+                ('Upgrades', Icons.upgrade),
+                ('Tech', Icons.science_outlined),
               ])
-                Tab(text: name),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(item.$2, size: 18),
+                      const SizedBox(width: 6),
+                      Text(item.$1),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

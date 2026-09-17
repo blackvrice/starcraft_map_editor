@@ -43,6 +43,10 @@ void main() {
       expect(index.subunitUsers(5), [8, 9]);
       expect(index.directUsers(129), isEmpty);
       expect(index.subunitUsers(129), isEmpty);
+      expect(index.preferredWeapon(7), (unit: 7, weapon: 5));
+      expect(index.preferredWeapon(9), (unit: 7, weapon: 5));
+      expect(index.preferredWeapon(10), isNull);
+      expect(() => index.preferredWeapon(228), throwsRangeError);
       units.clear();
       expect(index.units, hasLength(228));
     },

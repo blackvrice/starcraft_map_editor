@@ -23,6 +23,22 @@ final class UnitWeaponIndex {
     if (units.length != 228) throw ArgumentError('All 228 units are required.');
   }
   final List<UnitWeaponReferences> units;
+
+  /// Prefer direct ground/air, then subunits in DAT order; stop on cycles.
+  ({int unit, int weapon})? preferredWeapon(int unit) {
+    RangeError.checkValueInInterval(unit, 0, 227, 'unit');
+    final visited = <int>{};
+    ({int unit, int weapon})? visit(int id) {
+      if (id == 228 || !visited.add(id)) return null;
+      final ref = units[id];
+      if (ref.ground < 130) return (unit: id, weapon: ref.ground);
+      if (ref.air < 130) return (unit: id, weapon: ref.air);
+      return visit(ref.subunit1) ?? visit(ref.subunit2);
+    }
+
+    return visit(unit);
+  }
+
   List<int> directUsers(int weapon) {
     RangeError.checkValueInInterval(weapon, 0, 129, 'weapon');
     return [

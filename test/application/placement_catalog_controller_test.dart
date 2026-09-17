@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:starcraft_map_editor/presentation/settings/weapon_impact_panel.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_weapon_references.dart';
 import 'dart:async';
+import 'dart:io';
+import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -29,6 +32,45 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
+  final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
+  test(
+    'local installation supplies a unit preview and linked weapons',
+    () async {
+      final fixture = await _openFixture(
+        catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: realHelper!,
+        ),
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+      );
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(realInstallation);
+      final preview = await fixture.controller.loadUnitPreview(0);
+      expect(preview?.hasThumbnail, isTrue);
+      final references = await fixture.controller.loadWeaponReferences();
+      expect(references.index.preferredWeapon(0), isNotNull);
+    },
+    skip: realInstallation == null || realHelper == null
+        ? 'Set local StarCraft installation and helper paths.'
+        : false,
+  );
+  test(
+    'unit preview does not change the placement catalog selection',
+    () async {
+      final fixture = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      final before = fixture.controller.state;
+      final item = await fixture.controller.loadUnitPreview(0);
+      expect(item?.key.id, 0);
+      expect(item?.hasThumbnail, isTrue);
+      expect(identical(fixture.controller.state, before), isTrue);
+      fixture.controller.setInstallationPath(null);
+      expect(await fixture.controller.loadUnitPreview(0), isNull);
+    },
+  );
   test(
     'loads complete local weapon references and rejects missing coverage',
     () async {
@@ -445,6 +487,7 @@ Future<_Fixture> _openFixture({
   int doodadTotal = 2,
   bool unitCapabilityAvailable = false,
   StarCraftPlacementCatalogGateway? catalogGateway,
+  StarCraftObjectAtlasGateway? objectAtlasGateway,
 }) async {
   final chkBytes = _chkBytes();
   final map = ExtractedMap(
@@ -496,7 +539,7 @@ Future<_Fixture> _openFixture({
     terrainEditingController: terrainEditingController,
     catalogGateway: catalogGateway ?? gateway,
     tileAtlasGateway: const _FakeTileAtlasGateway(),
-    objectAtlasGateway: const _FakeObjectAtlasGateway(),
+    objectAtlasGateway: objectAtlasGateway ?? const _FakeObjectAtlasGateway(),
     pageSize: 2,
   );
   return _Fixture(
