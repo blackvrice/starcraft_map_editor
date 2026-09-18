@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -34,6 +35,123 @@ const _installationPath = r'C:\StarCraft';
 void main() {
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
+  test(
+    'local Tile catalog paints and restores exact CHK bytes',
+    () async {
+      final fixture = await _openFixture(
+        catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: realHelper!,
+        ),
+        tileAtlasGateway: ProcessStarCraftTileAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+      );
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(realInstallation);
+      Uint8List bytes() => const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      final before = bytes();
+      expect(
+        await fixture.controller.load(StarCraftPlacementKind.tile),
+        isTrue,
+      );
+      final item = fixture.controller.state.items.firstWhere(
+        (item) => item.isPlaceable && item.key.id != 0,
+      );
+      expect(item.hasThumbnail, isTrue);
+      expect(fixture.controller.confirm(item.key), isTrue);
+      expect(bytes(), before);
+      final terrain = fixture.terrainEditingController;
+      expect(terrain.state.selectedRawTileValue, item.key.id);
+      expect(terrain.beginBrushStroke(), isTrue);
+      expect(
+        terrain.paintTiles([const TerrainTileCoordinate(x: 3, y: 2)]),
+        isTrue,
+      );
+      expect(terrain.commitBrushStroke(), isTrue);
+      final after = bytes();
+      expect(after, isNot(equals(before)));
+      expect(terrain.undo(), isTrue);
+      expect(bytes(), before);
+      expect(terrain.redo(), isTrue);
+      expect(bytes(), after);
+    },
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null
+        ? 'Set local StarCraft installation and helper paths.'
+        : false,
+  );
+  for (final kind in [
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.pureSprite,
+  ]) {
+    test(
+      'local $kind catalog places and restores exact CHK bytes',
+      () async {
+        final fixture = await _openFixture(
+          catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+            helperExecutablePath: realHelper!,
+          ),
+          objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+            helperExecutablePath: realHelper,
+          ),
+        );
+        addTearDown(fixture.dispose);
+        fixture.controller.setInstallationPath(realInstallation);
+        Uint8List bytes() => const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        );
+        final before = bytes();
+        expect(await fixture.controller.load(kind), isTrue);
+        final item = fixture.controller.state.items.firstWhere(
+          (item) => item.isPlaceable,
+        );
+        expect(item.hasThumbnail, isTrue);
+        expect(
+          item.thumbnailRgba!.length,
+          item.thumbnailWidth * item.thumbnailHeight * 4,
+        );
+        expect(fixture.controller.confirm(item.key), isTrue);
+        expect(
+          bytes(),
+          before,
+          reason: 'catalog browsing must not edit the map',
+        );
+        final placed = fixture.controller.placeAt(
+          pixelX: 96,
+          pixelY: 64,
+          tileX: 3,
+          tileY: 2,
+        );
+        expect(placed.isPlaced, isTrue, reason: placed.issueCode);
+        final session = fixture.openMapController.state.session!;
+        if (kind == StarCraftPlacementKind.unit) {
+          final unit = session.objectViews.unitSections.single.units.single;
+          expect(unit.unitType, item.key.id);
+          expect((unit.x, unit.y), (96, 64));
+          expect(unit.hitpointPercent, 100);
+        } else {
+          final sprite =
+              session.objectViews.spriteSections.single.sprites.single;
+          expect(sprite.spriteType, item.key.id);
+          expect((sprite.x, sprite.y), (96, 64));
+          expect(sprite.drawsAsSprite, isTrue);
+        }
+        final after = bytes();
+        expect(after, isNot(equals(before)));
+        expect(fixture.objectEditingController.undo(), isTrue);
+        expect(bytes(), before);
+        expect(fixture.objectEditingController.redo(), isTrue);
+        expect(bytes(), after);
+        expect(fixture.objectEditingController.undo(), isTrue);
+        expect(bytes(), before);
+      },
+      skip:
+          !Platform.isWindows || realInstallation == null || realHelper == null
+          ? 'Set local StarCraft installation and helper paths.'
+          : false,
+    );
+  }
   test(
     'local installation supplies a unit preview and linked weapons',
     () async {
@@ -488,6 +606,7 @@ Future<_Fixture> _openFixture({
   bool unitCapabilityAvailable = false,
   StarCraftPlacementCatalogGateway? catalogGateway,
   StarCraftObjectAtlasGateway? objectAtlasGateway,
+  StarCraftTileAtlasGateway? tileAtlasGateway,
 }) async {
   final chkBytes = _chkBytes();
   final map = ExtractedMap(
@@ -538,7 +657,7 @@ Future<_Fixture> _openFixture({
     objectEditingController: objectEditingController,
     terrainEditingController: terrainEditingController,
     catalogGateway: catalogGateway ?? gateway,
-    tileAtlasGateway: const _FakeTileAtlasGateway(),
+    tileAtlasGateway: tileAtlasGateway ?? const _FakeTileAtlasGateway(),
     objectAtlasGateway: objectAtlasGateway ?? const _FakeObjectAtlasGateway(),
     pageSize: 2,
   );

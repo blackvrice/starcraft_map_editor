@@ -100,6 +100,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
       (합성 Windows debug 탐색·RGBA/이미지 핸들 수명 계측 완료. 실제 설치/profile 기준선·cache 상한·GPU 메모리는 미검증)
       2026-09-18: 상세 선택 변경 시 이전 썸네일 잔류 수정. 탭/대화상자 공통 디코더, 빠른 전환·종료 자원 해제 회귀 추가.
 - [ ] 로컬 SC:R 설치에서 선택적 Tile·Doodad·Unit·Sprite 배치 스모크 검증
+      2026-09-18: 실제 Tile·Unit·Sprite 카탈로그→배치→바이트 정확 Undo/Redo 검증 완료. Doodad·게임 실행은 남음. [검증 기록](PLACEMENT_INSTALLATION_SMOKE.md)
 
 구현 순서:
 
