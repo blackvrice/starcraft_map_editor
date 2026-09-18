@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
+import 'catalog_thumbnail.dart';
 
 const _kinds = <StarCraftPlacementKind>[
   StarCraftPlacementKind.tile,
@@ -334,7 +333,7 @@ class _PlacementCatalogDialogState extends State<PlacementCatalogDialog> {
               Expanded(
                 child: Center(
                   child: item.hasThumbnail
-                      ? _RgbaThumbnail(
+                      ? CatalogThumbnail(
                           rgbaBytes: item.thumbnailRgba!,
                           width: item.thumbnailWidth,
                           height: item.thumbnailHeight,
@@ -378,7 +377,7 @@ class _PlacementCatalogDialogState extends State<PlacementCatalogDialog> {
           height: 96,
           child: Center(
             child: item.hasThumbnail
-                ? _RgbaThumbnail(
+                ? CatalogThumbnail(
                     rgbaBytes: item.thumbnailRgba!,
                     width: item.thumbnailWidth,
                     height: item.thumbnailHeight,
@@ -501,85 +500,4 @@ class _PlacementCatalogDialogState extends State<PlacementCatalogDialog> {
       ),
     ),
   );
-}
-
-/// Draws one catalog thumbnail from the raw RGBA bytes the loaders returned.
-class _RgbaThumbnail extends StatefulWidget {
-  const _RgbaThumbnail({
-    required this.rgbaBytes,
-    required this.width,
-    required this.height,
-    this.scale = 1,
-  });
-
-  final Uint8List rgbaBytes;
-  final int width;
-  final int height;
-  final double scale;
-
-  @override
-  State<_RgbaThumbnail> createState() => _RgbaThumbnailState();
-}
-
-class _RgbaThumbnailState extends State<_RgbaThumbnail> {
-  ui.Image? _image;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_decode());
-  }
-
-  @override
-  void dispose() {
-    _image?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _decode() async {
-    if (widget.rgbaBytes.length != widget.width * widget.height * 4) {
-      return;
-    }
-    ui.ImmutableBuffer? buffer;
-    ui.ImageDescriptor? descriptor;
-    ui.Codec? codec;
-    try {
-      buffer = await ui.ImmutableBuffer.fromUint8List(widget.rgbaBytes);
-      descriptor = ui.ImageDescriptor.raw(
-        buffer,
-        width: widget.width,
-        height: widget.height,
-        rowBytes: widget.width * 4,
-        pixelFormat: ui.PixelFormat.rgba8888,
-      );
-      codec = await descriptor.instantiateCodec();
-      final frame = await codec.getNextFrame();
-      if (!mounted) {
-        frame.image.dispose();
-        return;
-      }
-      setState(() => _image = frame.image);
-    } finally {
-      codec?.dispose();
-      descriptor?.dispose();
-      buffer?.dispose();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final image = _image;
-    if (image == null) {
-      return SizedBox(
-        width: widget.width * widget.scale,
-        height: widget.height * widget.scale,
-      );
-    }
-    return RawImage(
-      image: image,
-      width: widget.width * widget.scale,
-      height: widget.height * widget.scale,
-      filterQuality: FilterQuality.none,
-    );
-  }
 }
