@@ -36,6 +36,121 @@ void main() {
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   test(
+    'local Doodad recipe updates terrain and overlay atomically',
+    () async {
+      final gateway = ProcessStarCraftPlacementCatalogGateway(
+        helperExecutablePath: realHelper!,
+      );
+      final page = await gateway.list(
+        StarCraftPlacementCatalogRequest(
+          operationId: 'real-doodad-placement',
+          installationPath: realInstallation!,
+          kind: StarCraftPlacementKind.doodad,
+          tileset: StarCraftTilesetAssetSet.jungle,
+          limit: StarCraftPlacementCatalogRequest.maximumLimit,
+        ),
+      );
+      expect(page.isSuccess, isTrue);
+      final entry = page.entries.firstWhere(
+        (entry) => entry.doodadRecipe?.overlay != null,
+      );
+      final recipe = entry.doodadRecipe!;
+      const size = 32;
+      const origin = 2;
+      final terrainBytes = Uint8List(size * size * 2);
+      final terrainData = ByteData.sublistView(terrainBytes);
+      for (final cell in recipe.footprint) {
+        terrainData.setUint16(
+          ((origin + cell.y) * size + origin + cell.x) * 2,
+          cell.requiredTileGroup << 4,
+          Endian.little,
+        );
+      }
+      final fixture = await _openFixture(
+        catalogGateway: gateway,
+        chkBytesOverride: _chkBytes(mapSize: size, terrainBytes: terrainBytes),
+        pageSize: StarCraftPlacementCatalogRequest.maximumLimit,
+      );
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(realInstallation);
+      Uint8List bytes() => const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      final before = bytes();
+      expect(
+        await fixture.controller.load(StarCraftPlacementKind.doodad),
+        isTrue,
+      );
+      expect(fixture.controller.confirm(entry.key), isTrue);
+      expect(bytes(), before);
+      final refused = fixture.controller.placeAt(
+        pixelX: 0,
+        pixelY: 0,
+        tileX: -1,
+        tileY: -1,
+      );
+      expect(refused.isPlaced, isFalse);
+      expect(
+        bytes(),
+        before,
+        reason: 'refused placement must not partially edit any section',
+      );
+      expect(fixture.objectEditingController.state.undoDepth, 0);
+      expect(fixture.controller.confirm(entry.key), isTrue);
+      final placed = fixture.controller.placeAt(
+        pixelX: 0,
+        pixelY: 0,
+        tileX: origin + recipe.width ~/ 2,
+        tileY: origin + recipe.height ~/ 2,
+      );
+      expect(placed.isPlaced, isTrue, reason: placed.issueCode);
+      final session = fixture.openMapController.state.session!;
+      final doodads = session.objectViews.doodadSections.single.doodads;
+      expect(doodads, hasLength(2));
+      final doodad = doodads.last;
+      expect(doodad.doodadType, recipe.doodadType);
+      expect(
+        (doodad.x, doodad.y),
+        (
+          origin * 32 + recipe.centerOffsetX,
+          origin * 32 + recipe.centerOffsetY,
+        ),
+      );
+      final sprite = session.objectViews.spriteSections.single.sprites.single;
+      expect(sprite.spriteType, recipe.overlay!.id);
+      expect((sprite.x, sprite.y), (doodad.x, doodad.y));
+      expect(
+        sprite.drawsAsSprite,
+        recipe.overlay!.semantic == DoodadOverlaySemantic.pureSprite,
+      );
+      final expectedTiles = List<int>.generate(
+        size * size,
+        (i) => terrainData.getUint16(i * 2, Endian.little),
+      );
+      for (final cell in recipe.footprint) {
+        if (cell.writesTerrain) {
+          expectedTiles[(origin + cell.y) * size + origin + cell.x] =
+              cell.rawTileValue!;
+        }
+      }
+      expect(session.terrainViews.tileMaps.single.rawTileValues, expectedTiles);
+      expect(fixture.objectEditingController.state.undoDepth, 1);
+      final after = bytes();
+      expect(after, isNot(equals(before)));
+      expect(fixture.objectEditingController.undo(), isTrue);
+      expect(bytes(), before);
+      expect(
+        fixture.openMapController.state.session!.objectViews.spriteSections,
+        isEmpty,
+      );
+      expect(fixture.objectEditingController.redo(), isTrue);
+      expect(bytes(), after);
+    },
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null
+        ? 'Set local StarCraft installation and helper paths.'
+        : false,
+  );
+  test(
     'local Tile catalog paints and restores exact CHK bytes',
     () async {
       final fixture = await _openFixture(
@@ -607,8 +722,10 @@ Future<_Fixture> _openFixture({
   StarCraftPlacementCatalogGateway? catalogGateway,
   StarCraftObjectAtlasGateway? objectAtlasGateway,
   StarCraftTileAtlasGateway? tileAtlasGateway,
+  Uint8List? chkBytesOverride,
+  int pageSize = 2,
 }) async {
-  final chkBytes = _chkBytes();
+  final chkBytes = chkBytesOverride ?? _chkBytes();
   final map = ExtractedMap(
     sourcePath: r'C:\Maps\Catalog.scx',
     scenarioChkBytes: chkBytes,
@@ -659,7 +776,7 @@ Future<_Fixture> _openFixture({
     catalogGateway: catalogGateway ?? gateway,
     tileAtlasGateway: tileAtlasGateway ?? const _FakeTileAtlasGateway(),
     objectAtlasGateway: objectAtlasGateway ?? const _FakeObjectAtlasGateway(),
-    pageSize: 2,
+    pageSize: pageSize,
   );
   return _Fixture(
     openMapController: openMapController,
@@ -919,7 +1036,7 @@ final class _FakeObjectAtlasGateway implements StarCraftObjectAtlasGateway {
   Future<void> cancel(String operationId) async {}
 }
 
-Uint8List _chkBytes() {
+Uint8List _chkBytes({int mapSize = 8, Uint8List? terrainBytes}) {
   final locations = Uint8List(
     ChkLocationSectionView.originalLocationCount * ChkLocation.recordLength,
   );
@@ -928,9 +1045,9 @@ Uint8List _chkBytes() {
     _section('TYPE', [0x52, 0x41, 0x57, 0x53]),
     _section('VER ', [206, 0]),
     _section('IVER', [10, 0]),
-    _section('DIM ', [8, 0, 8, 0]),
+    _section('DIM ', [mapSize, 0, mapSize, 0]),
     _section('ERA ', [4, 0]),
-    _section('MTXM', Uint8List(8 * 8 * 2)),
+    _section('MTXM', terrainBytes ?? Uint8List(mapSize * mapSize * 2)),
     _section('DD2 ', Uint8List(ChkDoodadPlacement.recordLength)),
     _section('MRGN', locations),
     _section('STR ', _legacyStringTable(['Existing'])),
