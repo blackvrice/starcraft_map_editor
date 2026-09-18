@@ -61,7 +61,42 @@
 해제되는지 확인한다. controller의 원본 RGBA 항목은 화면 닫기만으로 지우지 않는다.
 실제 페이지 캐시 상한·반복 재열기·profile/실제 설치 검증은 아래 미완료 범위로 남긴다.
 
-## 남은 작업
+## 실제 객체 카탈로그 로딩·보유량 (2026-09-18)
+
+Windows x64, Flutter 3.47.2/Dart 3.13.2 debug 테스트에서 로컬 StarCraft 설치와
+실제 catalog/object atlas gateway를 사용했다. Jungle 맵, 페이지 크기 32로
+유닛·pure Sprite를 끝까지 읽는다. 측정 코드는
+`test/application/placement_catalog_controller_test.dart`의
+`profiles complete local object catalogs and clears retained thumbnails`다.
+
+| 종류 | 항목/썸네일 | 페이지 | 보유 RGBA bytes | 최대 한 장 bytes | 첫 페이지 | 전체 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Unit | 228/228 | 8 | 11,406,144 | 262,144 | 457ms | 3,437ms |
+| pure Sprite | 517/517 | 17 | 32,117,728 | 262,144 | 390ms | 6,597ms |
+
+각 페이지의 항목 증가, 전체 ID 중복 없음, 썸네일 크기와 RGBA 길이, 탐색 전후
+CHK 바이트 보존을 검사한다. 설치 경로 해제 후 controller의 항목·총 개수·선택이
+비워지는 것도 확인한다. 이 검사는 원본 버퍼를 참조하는 목록의 초기화를 확인하며
+GC 완료나 GPU 메모리 반환까지 보장하지 않는다.
+
+보유량은 현재 종류의 모든 페이지를 읽은 상태의 RGBA 합계다. 두 종류를 동시에
+보유하는 값도, 강제 메모리 상한도 아니다. 임시 복사·helper 프로세스·Dart 객체·
+GPU 이미지는 포함하지 않는다. 시간은 파일 시스템 캐시 등 실행 환경에 의존하며
+화면 프레임 성능이나 Windows profile 기준선으로 사용하지 않는다.
+
+```powershell
+$env:STARCRAFT_TEST_INSTALLATION = 'C:\Program Files (x86)\StarCraft'
+$env:STARCRAFT_DATA_HELPER_PATH = (Resolve-Path 'build/windows/x64/runner/Debug/starcraft_data_helper.exe').Path
+flutter test test/application/placement_catalog_controller_test.dart --plain-name 'profiles complete local'
+```
+
+환경 변수가 없으면 이 실제 설치 계측 한 건을 skip한다. 이미지 파일은 저장하지 않는다.
+검증: 실제 설치 계측 1개 통과, 기본 전체 647개 통과·21개 skip, 정적 분석 통과.
+변경 파일 포맷은 통과했으며 전체 검사에는 기존 infrastructure 테스트 4개의 차이가
+남아 있다. 기준 SDK 검증은 미실행이며 이번 테스트·문서 변경에는 앱 재빌드와
+화면 실행을 반복하지 않았다.
+
+## 남은 작업과 후속 수정
 
 2026-09-18 후속 수정: 탭·대화상자의 중복 디코더를 `CatalogThumbnail`으로 통합했다.
 기존 구현은 최초 생성 때만 이미지를 읽어 상세 선택 변경 뒤 이전 그림이 남을 수

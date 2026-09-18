@@ -36,6 +36,92 @@ void main() {
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   test(
+    'profiles complete local object catalogs and clears retained thumbnails',
+    () async {
+      final fixture = await _openFixture(
+        catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: realHelper!,
+        ),
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+        pageSize: 32,
+      );
+      addTearDown(fixture.dispose);
+      final controller = fixture.controller;
+      controller.setInstallationPath(realInstallation);
+      final before = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      for (final kind in [
+        StarCraftPlacementKind.unit,
+        StarCraftPlacementKind.pureSprite,
+      ]) {
+        final watch = Stopwatch()..start();
+        expect(
+          await controller.load(kind),
+          isTrue,
+          reason: controller.state.diagnostics.map((d) => d.message).join('; '),
+        );
+        final firstPageMs = watch.elapsedMilliseconds;
+        var pages = 1;
+        while (controller.state.hasMore) {
+          final previousCount = controller.state.items.length;
+          expect(
+            await controller.loadMore(),
+            isTrue,
+            reason: controller.state.diagnostics
+                .map((d) => d.message)
+                .join('; '),
+          );
+          expect(controller.state.items.length, greaterThan(previousCount));
+          pages++;
+        }
+        watch.stop();
+        final state = controller.state;
+        expect(
+          state.items.length,
+          kind == StarCraftPlacementKind.unit ? 228 : 517,
+        );
+        expect(
+          state.items.map((item) => item.key).toSet().length,
+          state.items.length,
+        );
+        final thumbnails = state.items
+            .where((item) => item.hasThumbnail)
+            .toList();
+        expect(thumbnails, isNotEmpty);
+        var retainedBytes = 0;
+        var largestThumbnailBytes = 0;
+        for (final item in thumbnails) {
+          final bytes = item.thumbnailRgba!.lengthInBytes;
+          expect(bytes, item.thumbnailWidth * item.thumbnailHeight * 4);
+          retainedBytes += bytes;
+          if (bytes > largestThumbnailBytes) largestThumbnailBytes = bytes;
+        }
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        debugPrint(
+          'local catalog memory: kind=${kind.wireName} entries=${state.items.length} '
+          'thumbnails=${thumbnails.length} pages=$pages rawBytes=$retainedBytes '
+          'largestThumbnailBytes=$largestThumbnailBytes firstPageMs=$firstPageMs totalMs=${watch.elapsedMilliseconds}',
+        );
+      }
+      controller.setInstallationPath(null);
+      expect(controller.state.items, isEmpty);
+      expect(controller.state.totalEntries, 0);
+      expect(controller.state.selection, isNull);
+    },
+    timeout: const Timeout(Duration(minutes: 3)),
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null
+        ? 'Set local StarCraft installation and helper paths.'
+        : false,
+  );
+  test(
     'local Doodad recipe updates terrain and overlay atomically',
     () async {
       final gateway = ProcessStarCraftPlacementCatalogGateway(

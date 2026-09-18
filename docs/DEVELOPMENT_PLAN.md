@@ -97,7 +97,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 레이어 잠금·맵 경계·미지원 자산·잘못된 카탈로그 항목 진단 연결
 - [x] 합성 카탈로그 단위 테스트, 카탈로그 탭 위젯 테스트와 Save As 왕복 테스트
 - [ ] 대형 카탈로그 가상 스크롤·검색·썸네일 cache 성능 계측
-      (합성 Windows debug 탐색·RGBA/이미지 핸들 수명 계측 완료. 실제 설치/profile 기준선·cache 상한·GPU 메모리는 미검증)
+      (합성 Windows debug 탐색·이미지 핸들 수명 및 실제 Unit/Sprite 전체 페이지 RGBA 보유량·로딩 시간 계측 완료. profile 기준선·강제 cache 상한·GPU 메모리는 미검증)
       2026-09-18: 상세 선택 변경 시 이전 썸네일 잔류 수정. 탭/대화상자 공통 디코더, 빠른 전환·종료 자원 해제 회귀 추가.
 - [x] 로컬 SC:R 설치에서 선택적 Tile·Doodad·Unit·Sprite 배치 스모크 검증
       2026-09-18: 네 종류의 실제 카탈로그→배치→바이트 정확 Undo/Redo 자동 검증 완료. Doodad는 MTXM·DD2·THG2 원자적 배치/거부 확인. 화면 조작·게임 실행은 미검증. [검증 기록](PLACEMENT_INSTALLATION_SMOKE.md)
