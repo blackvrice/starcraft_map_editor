@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:starcraft_map_editor/presentation/settings/weapon_impact_panel.dart';
+import 'package:starcraft_map_editor/application/placement/catalog_thumbnail_pixels.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_weapon_references.dart';
 import 'dart:async';
 import 'dart:io';
@@ -96,6 +97,9 @@ void main() {
         for (final item in thumbnails) {
           final bytes = item.thumbnailRgba!.lengthInBytes;
           expect(bytes, item.thumbnailWidth * item.thumbnailHeight * 4);
+          expect(bytes, lessThanOrEqualTo(CatalogThumbnailPixels.maximumBytes));
+          expect(item.thumbnailWidth, lessThanOrEqualTo(64));
+          expect(item.thumbnailHeight, lessThanOrEqualTo(64));
           retainedBytes += bytes;
           if (bytes > largestThumbnailBytes) largestThumbnailBytes = bytes;
         }

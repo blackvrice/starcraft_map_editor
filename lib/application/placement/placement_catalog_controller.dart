@@ -1,4 +1,5 @@
 import '../../domain/placement/unit_weapon_references.dart';
+import 'catalog_thumbnail_pixels.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -630,12 +631,7 @@ class PlacementCatalogController {
       totalEntries = batch.page.totalEntries;
       loaded = [
         for (final entry in batch.page.entries)
-          PlacementCatalogItem(
-            entry: entry,
-            thumbnailRgba: batch.thumbnails[entry.key]?.rgbaBytes,
-            thumbnailWidth: batch.thumbnails[entry.key]?.width ?? 0,
-            thumbnailHeight: batch.thumbnails[entry.key]?.height ?? 0,
-          ),
+          _objectCatalogItem(entry, batch.thumbnails[entry.key]),
       ];
     }
 
@@ -653,6 +649,24 @@ class PlacementCatalogController {
       ),
     );
     return diagnostics.isEmpty;
+  }
+
+  PlacementCatalogItem _objectCatalogItem(
+    StarCraftPlacementCatalogEntry entry,
+    ObjectPlacementCatalogThumbnail? thumbnail,
+  ) {
+    if (thumbnail == null) return PlacementCatalogItem(entry: entry);
+    final pixels = CatalogThumbnailPixels.fromRgba(
+      thumbnail.rgbaBytes,
+      thumbnail.width,
+      thumbnail.height,
+    );
+    return PlacementCatalogItem(
+      entry: entry,
+      thumbnailRgba: pixels.rgba,
+      thumbnailWidth: pixels.width,
+      thumbnailHeight: pixels.height,
+    );
   }
 
   void _rememberRecent(StarCraftPlacementCatalogKey key) {
