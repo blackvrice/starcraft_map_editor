@@ -513,7 +513,51 @@ void main() {
     await fixture.dispose();
     gateway.complete();
     expect(await pending, isFalse);
+    expect(fixture.controller.state.items, isEmpty);
+    expect(fixture.controller.state.isLoading, isFalse);
   });
+
+  test(
+    'disposal drops thumbnail state and ignores late UI callbacks',
+    () async {
+      final fixture = await _openFixture(unitCapabilityAvailable: true);
+      final controller = fixture.controller;
+      controller.setInstallationPath(_installationPath);
+      expect(await controller.load(StarCraftPlacementKind.unit), isTrue);
+      final item = controller.state.items.single;
+      expect(item.hasThumbnail, isTrue);
+      controller.preview(item.key);
+      expect(controller.confirm(item.key), isTrue);
+      expect(controller.state.selection, isNotNull);
+      expect(controller.state.recentKeys, isNotEmpty);
+      final before = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      await controller.dispose();
+      expect(controller.state.items, isEmpty);
+      expect(controller.state.totalEntries, 0);
+      expect(controller.state.previewKey, isNull);
+      expect(controller.state.selection, isNull);
+      expect(controller.state.recentKeys, isEmpty);
+      final closedState = controller.state;
+      controller.setQuery('late search');
+      controller.setOwner(2);
+      controller.setContinuous(true);
+      controller.preview(item.key);
+      controller.setInstallationPath(r'C:\Other');
+      controller.synchronizeSession(fixture.openMapController.state.session);
+      expect(await controller.load(StarCraftPlacementKind.unit), isFalse);
+      expect(await controller.loadMore(), isFalse);
+      expect(controller.state, same(closedState));
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      await fixture.dispose();
+    },
+  );
 
   test('refuses to browse without an installation path', () async {
     final fixture = await _openFixture();

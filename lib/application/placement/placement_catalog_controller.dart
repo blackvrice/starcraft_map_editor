@@ -200,6 +200,7 @@ class PlacementCatalogController {
   }
 
   void setInstallationPath(String? path) {
+    if (_disposed) return;
     final normalized = (path ?? '').trim();
     final next = normalized.isEmpty ? null : normalized;
     if (next == _installationPath) return;
@@ -208,6 +209,7 @@ class PlacementCatalogController {
   }
 
   void synchronizeSession(OpenedMapSession? session) {
+    if (_disposed) return;
     final snapshot = session?.extractedMap;
     if (identical(snapshot, _mapSnapshot)) return;
     _mapSnapshot = snapshot;
@@ -546,6 +548,7 @@ class PlacementCatalogController {
   }
 
   Future<void> dispose() {
+    if (_disposed) return _changes.close();
     _disposed = true;
     weaponReferenceEpoch++;
     final weaponOperation = _weaponOperation;
@@ -553,6 +556,11 @@ class PlacementCatalogController {
       unawaited(catalogGateway?.cancel(weaponOperation));
     }
     ++_requestSequence;
+    _state = PlacementCatalogState();
+    _recentKeys.clear();
+    _mapSnapshot = null;
+    _installationPath = null;
+    _weaponOperation = null;
     return _changes.close();
   }
 
@@ -730,6 +738,7 @@ class PlacementCatalogController {
   );
 
   void _emit(PlacementCatalogState state) {
+    if (_disposed) return;
     _state = state;
     _changes.add(state);
   }
