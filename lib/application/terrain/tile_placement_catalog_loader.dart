@@ -8,6 +8,7 @@ abstract final class TilePlacementCatalogDiagnosticCodes {
   static const catalogGatewayFailed = 'SC_CATALOG_TILE_GATEWAY_FAILED';
   static const atlasGatewayFailed = 'SC_CATALOG_TILE_ATLAS_GATEWAY_FAILED';
   static const resultMismatch = 'SC_CATALOG_TILE_RESULT_MISMATCH';
+  static const requestCancelled = 'SC_CATALOG_TILE_REQUEST_CANCELLED';
 }
 
 final class TilePlacementCatalogBatch {
@@ -40,12 +41,14 @@ final class TilePlacementCatalogLoader {
   final StarCraftTileAtlasGateway tileAtlasGateway;
 
   Future<TilePlacementCatalogBatch> load(
-    StarCraftPlacementCatalogRequest request,
-  ) async {
+    StarCraftPlacementCatalogRequest request, {
+    bool Function()? isCancelled,
+  }) async {
     if (request.kind != StarCraftPlacementKind.tile) {
       throw ArgumentError.value(request.kind, 'request.kind', 'Must be tile.');
     }
 
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     final StarCraftPlacementCatalogPage page;
     try {
       page = await catalogGateway.list(request);
@@ -65,6 +68,7 @@ final class TilePlacementCatalogLoader {
         diagnostics: [diagnostic],
       );
     }
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     if (!_sameCatalogRequest(page.request, request)) {
       return _mismatch(page, request);
     }
@@ -98,6 +102,7 @@ final class TilePlacementCatalogLoader {
         ],
       );
     }
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     if (!_sameAtlasRequest(atlas.request, atlasRequest) ||
         !atlas.isSuccess ||
         atlas.unsupportedRawValues.isNotEmpty ||
@@ -123,6 +128,24 @@ final class TilePlacementCatalogLoader {
       );
     }
     return TilePlacementCatalogBatch(page: page, thumbnails: thumbnails);
+  }
+
+  TilePlacementCatalogBatch _cancelled(
+    StarCraftPlacementCatalogRequest request,
+  ) {
+    final diagnostic = _diagnostic(
+      code: TilePlacementCatalogDiagnosticCodes.requestCancelled,
+      message: 'The Tile catalog request is no longer current.',
+      filePath: request.installationPath,
+      remediation: 'Load the currently selected catalog.',
+    );
+    return TilePlacementCatalogBatch(
+      page: StarCraftPlacementCatalogPage.failed(
+        request: request,
+        diagnostic: diagnostic,
+      ),
+      diagnostics: [diagnostic],
+    );
   }
 
   TilePlacementCatalogBatch _mismatch(

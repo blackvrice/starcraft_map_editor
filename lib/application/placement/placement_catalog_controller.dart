@@ -606,10 +606,15 @@ class PlacementCatalogController {
     final List<EditorDiagnostic> diagnostics;
     final int totalEntries;
     if (kind == StarCraftPlacementKind.tile) {
-      final batch = await TilePlacementCatalogLoader(
-        catalogGateway: catalogGateway!,
-        tileAtlasGateway: tileAtlasGateway!,
-      ).load(request);
+      final batch =
+          await TilePlacementCatalogLoader(
+            catalogGateway: catalogGateway!,
+            tileAtlasGateway: tileAtlasGateway!,
+          ).load(
+            request,
+            isCancelled: () => _disposed || sequence != _requestSequence,
+          );
+      if (_disposed || sequence != _requestSequence) return false;
       diagnostics = batch.diagnostics;
       totalEntries = batch.page.totalEntries;
       loaded = [

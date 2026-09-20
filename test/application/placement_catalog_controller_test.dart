@@ -517,6 +517,46 @@ void main() {
     expect(fixture.controller.state.isLoading, isFalse);
   });
 
+  test('obsolete Tile catalog never starts atlas work', () async {
+    for (final change in ['installation', 'map', 'dispose']) {
+      final gateway = _DeferredCatalogGateway();
+      final atlas = _CountingTileAtlasGateway();
+      final fixture = await _openFixture(
+        catalogGateway: gateway,
+        tileAtlasGateway: atlas,
+      );
+      fixture.controller.setInstallationPath(_installationPath);
+      final pending = fixture.controller.load(StarCraftPlacementKind.tile);
+      switch (change) {
+        case 'installation':
+          fixture.controller.setInstallationPath(r'C:\Other');
+        case 'map':
+          fixture.controller.synchronizeSession(
+            fixture.openMapController.state.session,
+          );
+        case 'dispose':
+          await fixture.dispose();
+      }
+      gateway.complete(
+        entries: [
+          StarCraftPlacementCatalogEntry(
+            key: StarCraftPlacementCatalogKey.tile(
+              tileset: StarCraftTilesetAssetSet.jungle,
+              rawValue: 1,
+            ),
+            source: StarCraftPlacementCatalogSource.localData,
+            availability: StarCraftPlacementAvailability.placeable,
+          ),
+        ],
+      );
+      expect(await pending, isFalse);
+      expect(atlas.calls, 0);
+      expect(fixture.controller.state.items, isEmpty);
+      expect(fixture.controller.state.diagnostics, isEmpty);
+      if (change != 'dispose') await fixture.dispose();
+    }
+  });
+
   test('obsolete object catalog does not launch thumbnail rendering', () async {
     for (final close in [false, true]) {
       final gateway = _DeferredCatalogGateway();
@@ -1169,6 +1209,15 @@ final class _FakeTileAtlasGateway implements StarCraftTileAtlasGateway {
       helperVersion: '0.7.0',
       cascLibRevision: 'abc',
     );
+  }
+}
+
+final class _CountingTileAtlasGateway implements StarCraftTileAtlasGateway {
+  int calls = 0;
+  @override
+  Future<StarCraftTileAtlasResult> render(StarCraftTileAtlasRequest request) {
+    calls++;
+    return const _FakeTileAtlasGateway().render(request);
   }
 }
 

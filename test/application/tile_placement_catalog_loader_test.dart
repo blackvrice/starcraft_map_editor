@@ -16,6 +16,56 @@ void main() {
     limit: 2,
   );
 
+  test('cancelled request does not start catalog or atlas work', () async {
+    final atlas = _AtlasGateway((_) => throw StateError('must not render'));
+    final result = await TilePlacementCatalogLoader(
+      catalogGateway: _ThrowingCatalogGateway(),
+      tileAtlasGateway: atlas,
+    ).load(request, isCancelled: () => true);
+    expect(
+      result.diagnostics.single.code,
+      TilePlacementCatalogDiagnosticCodes.requestCancelled,
+    );
+    expect(result.thumbnails, isEmpty);
+    expect(atlas.calls, 0);
+  });
+
+  test('invalidation while catalog is pending avoids rendering', () async {
+    var cancelled = false;
+    final atlas = _AtlasGateway((_) => throw StateError('must not render'));
+    final pending = TilePlacementCatalogLoader(
+      catalogGateway: _CatalogGateway(_page(request, [0, 1])),
+      tileAtlasGateway: atlas,
+    ).load(request, isCancelled: () => cancelled);
+    cancelled = true;
+    final result = await pending;
+    expect(
+      result.diagnostics.single.code,
+      TilePlacementCatalogDiagnosticCodes.requestCancelled,
+    );
+    expect(result.thumbnails, isEmpty);
+    expect(atlas.calls, 0);
+  });
+
+  test('invalidation during rendering prevents thumbnail extraction', () async {
+    var cancelled = false;
+    final atlas = _AtlasGateway((request) {
+      cancelled = true;
+      return _atlas(request, values: [0, 1], pixels: List.filled(8192, 22));
+    });
+    final result = await TilePlacementCatalogLoader(
+      catalogGateway: _CatalogGateway(_page(request, [0, 1])),
+      tileAtlasGateway: atlas,
+    ).load(request, isCancelled: () => cancelled);
+    expect(result.isSuccess, isFalse);
+    expect(
+      result.diagnostics.single.code,
+      TilePlacementCatalogDiagnosticCodes.requestCancelled,
+    );
+    expect(result.thumbnails, isEmpty);
+    expect(atlas.calls, 1);
+  });
+
   test('supplies one immutable 32x32 RGBA thumbnail per Tile entry', () async {
     final catalog = _CatalogGateway(_page(request, [0, 1]));
     final atlas = _AtlasGateway(

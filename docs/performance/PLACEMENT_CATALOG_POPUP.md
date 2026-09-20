@@ -98,6 +98,24 @@ flutter test test/application/placement_catalog_controller_test.dart --plain-nam
 
 ## 남은 작업과 후속 수정
 
+### 오래된 Tile 카탈로그 후속 작업 차단 (2026-09-20)
+
+Tile 페이지에도 요청 시작 전, catalog 응답 뒤, atlas 응답 뒤 무효화 확인을
+적용했다. 설치·맵·종류 변경 또는 종료 뒤에는 새 타일 atlas 렌더를 시작하지
+않고, 이미 받은 atlas에서 32×32 썸네일을 추출/복사하거나 목록에 반영하지 않는다.
+로더 진단은 `SC_CATALOG_TILE_REQUEST_CANCELLED`이며 오래된 요청의 진단을
+현재 화면에 반영하지 않는다. 진행 중인 helper 강제 종료나 타일 캐시 전체
+상한을 추가한 것은 아니다.
+
+로더 회귀는 세 무효화 시점을, controller 회귀는 설치 변경·맵 동기화·종료 뒤
+atlas 호출 0회와 빈 상태 유지를 확인한다. 실제 로컬 Tile 브러시 적용과
+바이트 정확 Undo/Redo 검증도 통과했다.
+
+검증: 로더 집중 7개·실제 Tile 1개, 전체 658개 통과·21개 선택 환경 skip.
+정적 분석과 Windows debug 빌드·5초 시작 스모크 통과. Flutter 3.47.2/Dart 3.13.2로
+검증했으며 기준 SDK는 미검증이다. 변경 파일 포맷은 통과했고 전체 검사에는 기존
+infrastructure 테스트 4개의 포맷 차이가 남아 있다.
+
 ### 오래된 객체 카탈로그 후속 작업 차단 (2026-09-20)
 
 Unit/Sprite 페이지 로더는 요청 시작 전, catalog 응답 뒤, atlas 응답 뒤에
