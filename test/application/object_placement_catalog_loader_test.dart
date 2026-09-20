@@ -16,6 +16,71 @@ void main() {
     limit: 3,
   );
 
+  test('cancelled request never starts catalog or atlas work', () async {
+    final loader = ObjectPlacementCatalogLoader(
+      catalogGateway: _ThrowingCatalogGateway(),
+      objectAtlasGateway: _AtlasGateway((_) => throw StateError('unused')),
+    );
+    final result = await loader.load(unitRequest, isCancelled: () => true);
+    expect(result.isSuccess, isFalse);
+    expect(
+      result.diagnostics.single.code,
+      ObjectPlacementCatalogDiagnosticCodes.requestCancelled,
+    );
+    expect(result.thumbnails, isEmpty);
+  });
+
+  test(
+    'invalidation while catalog is pending prevents atlas rendering',
+    () async {
+      var cancelled = false;
+      final atlas = _AtlasGateway((_) => throw StateError('must not render'));
+      final loader = ObjectPlacementCatalogLoader(
+        catalogGateway: _CatalogGateway(
+          _page(
+            unitRequest,
+            entries: [_entry(StarCraftPlacementCatalogKey.unit(0))],
+          ),
+        ),
+        objectAtlasGateway: atlas,
+      );
+      final pending = loader.load(unitRequest, isCancelled: () => cancelled);
+      cancelled = true;
+      final result = await pending;
+      expect(atlas.requests, isEmpty);
+      expect(
+        result.diagnostics.single.code,
+        ObjectPlacementCatalogDiagnosticCodes.requestCancelled,
+      );
+      expect(result.thumbnails, isEmpty);
+    },
+  );
+
+  test('invalidation during atlas rendering drops returned pixels', () async {
+    var cancelled = false;
+    final atlas = _AtlasGateway((request) {
+      cancelled = true;
+      return _atlas(request, entries: [_atlasEntry(request.objects.single)]);
+    });
+    final loader = ObjectPlacementCatalogLoader(
+      catalogGateway: _CatalogGateway(
+        _page(
+          unitRequest,
+          entries: [_entry(StarCraftPlacementCatalogKey.unit(0))],
+        ),
+      ),
+      objectAtlasGateway: atlas,
+    );
+    final result = await loader.load(unitRequest, isCancelled: () => cancelled);
+    expect(atlas.requests, hasLength(1));
+    expect(result.isSuccess, isFalse);
+    expect(result.thumbnails, isEmpty);
+    expect(
+      result.diagnostics.single.code,
+      ObjectPlacementCatalogDiagnosticCodes.requestCancelled,
+    );
+  });
+
   test(
     'supplies variable-size thumbnails only for previewable Units',
     () async {

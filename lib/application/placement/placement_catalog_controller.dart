@@ -631,10 +631,15 @@ class PlacementCatalogController {
         for (final entry in page.entries) PlacementCatalogItem(entry: entry),
       ];
     } else {
-      final batch = await ObjectPlacementCatalogLoader(
-        catalogGateway: catalogGateway!,
-        objectAtlasGateway: objectAtlasGateway!,
-      ).load(request);
+      final batch =
+          await ObjectPlacementCatalogLoader(
+            catalogGateway: catalogGateway!,
+            objectAtlasGateway: objectAtlasGateway!,
+          ).load(
+            request,
+            isCancelled: () => _disposed || sequence != _requestSequence,
+          );
+      if (_disposed || sequence != _requestSequence) return false;
       diagnostics = batch.diagnostics;
       totalEntries = batch.page.totalEntries;
       loaded = [

@@ -8,6 +8,7 @@ abstract final class ObjectPlacementCatalogDiagnosticCodes {
   static const catalogGatewayFailed = 'SC_CATALOG_OBJECT_GATEWAY_FAILED';
   static const atlasGatewayFailed = 'SC_CATALOG_OBJECT_ATLAS_GATEWAY_FAILED';
   static const resultMismatch = 'SC_CATALOG_OBJECT_RESULT_MISMATCH';
+  static const requestCancelled = 'SC_CATALOG_OBJECT_REQUEST_CANCELLED';
 }
 
 final class ObjectPlacementCatalogThumbnail {
@@ -77,8 +78,9 @@ final class ObjectPlacementCatalogLoader {
   final StarCraftObjectAtlasGateway objectAtlasGateway;
 
   Future<ObjectPlacementCatalogBatch> load(
-    StarCraftPlacementCatalogRequest request,
-  ) async {
+    StarCraftPlacementCatalogRequest request, {
+    bool Function()? isCancelled,
+  }) async {
     if (request.kind != StarCraftPlacementKind.unit &&
         request.kind != StarCraftPlacementKind.pureSprite) {
       throw ArgumentError.value(
@@ -88,6 +90,7 @@ final class ObjectPlacementCatalogLoader {
       );
     }
 
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     final StarCraftPlacementCatalogPage page;
     try {
       page = await catalogGateway.list(request);
@@ -107,6 +110,7 @@ final class ObjectPlacementCatalogLoader {
         diagnostics: [diagnostic],
       );
     }
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     if (!_sameCatalogRequest(page.request, request)) {
       return _mismatch(page, request);
     }
@@ -148,6 +152,7 @@ final class ObjectPlacementCatalogLoader {
         ],
       );
     }
+    if (isCancelled?.call() ?? false) return _cancelled(request);
     if (!_sameAtlasRequest(atlas.request, atlasRequest) ||
         !atlas.isSuccess ||
         atlas.unsupportedObjects.isNotEmpty ||
@@ -185,6 +190,24 @@ final class ObjectPlacementCatalogLoader {
   Future<void> cancel(String operationId) async {
     await catalogGateway.cancel(operationId);
     await objectAtlasGateway.cancel(_previewOperationId(operationId));
+  }
+
+  ObjectPlacementCatalogBatch _cancelled(
+    StarCraftPlacementCatalogRequest request,
+  ) {
+    final diagnostic = _diagnostic(
+      code: ObjectPlacementCatalogDiagnosticCodes.requestCancelled,
+      message: 'The object catalog request is no longer current.',
+      filePath: request.installationPath,
+      remediation: 'Load the currently selected catalog.',
+    );
+    return ObjectPlacementCatalogBatch(
+      page: StarCraftPlacementCatalogPage.failed(
+        request: request,
+        diagnostic: diagnostic,
+      ),
+      diagnostics: [diagnostic],
+    );
   }
 
   ObjectPlacementCatalogBatch _mismatch(

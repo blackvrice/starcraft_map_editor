@@ -98,6 +98,25 @@ flutter test test/application/placement_catalog_controller_test.dart --plain-nam
 
 ## 남은 작업과 후속 수정
 
+### 오래된 객체 카탈로그 후속 작업 차단 (2026-09-20)
+
+Unit/Sprite 페이지 로더는 요청 시작 전, catalog 응답 뒤, atlas 응답 뒤에
+무효화 신호를 확인한다. 설치·맵·종류 변경이나 controller 종료로 요청이 오래되면
+새 atlas 렌더를 시작하지 않으며, 이미 받은 atlas에서 썸네일을 복사하지 않는다.
+controller도 오래된 결과를 축소/상태 반영 전에 버린다. 로더의 취소 결과는
+`SC_CATALOG_OBJECT_REQUEST_CANCELLED`이며 오래된 요청의 진단은 현재 화면에
+덮어쓰지 않는다.
+
+진행 중인 외부 프로세스의 강제 종료나 Tile 요청 취소를 추가한 것은 아니다.
+기존 타임아웃·프로세스 정책을 유지하며, 이 변경은 더 이상 필요한 결과가 아닌
+요청의 다음 단계를 차단한다. 회귀는 시작 전 취소, catalog 대기 중 취소,
+atlas 렌더 중 무효화, 설치 변경·종료 시 atlas 호출 0회를 검증한다.
+
+검증: 전체 654개 통과·21개 선택 환경 skip, 실제 설치 관련 7개 별도 통과.
+정적 분석과 Windows debug 빌드·5초 시작 스모크 통과. Flutter 3.47.2/Dart 3.13.2에서
+검증했으며 기준 SDK는 미검증이다. 변경 파일 포맷은 통과했고 전체 검사에는 기존
+infrastructure 테스트 4개의 포맷 차이가 남아 있다.
+
 ### 컨트롤러 종료 시 보유 참조 해제 (2026-09-18)
 
 `PlacementCatalogController.dispose()`는 썸네일 목록·선택·최근 항목·맵 스냅샷과

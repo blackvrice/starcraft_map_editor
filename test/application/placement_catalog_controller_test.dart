@@ -517,6 +517,40 @@ void main() {
     expect(fixture.controller.state.isLoading, isFalse);
   });
 
+  test('obsolete object catalog does not launch thumbnail rendering', () async {
+    for (final close in [false, true]) {
+      final gateway = _DeferredCatalogGateway();
+      final atlas = _CountingAtlasGateway();
+      final fixture = await _openFixture(
+        catalogGateway: gateway,
+        objectAtlasGateway: atlas,
+      );
+      fixture.controller.setInstallationPath(_installationPath);
+      final pending = fixture.controller.load(
+        StarCraftPlacementKind.pureSprite,
+      );
+      if (close) {
+        await fixture.dispose();
+      } else {
+        fixture.controller.setInstallationPath(r'C:\Other');
+      }
+      gateway.complete(
+        entries: [
+          StarCraftPlacementCatalogEntry(
+            key: StarCraftPlacementCatalogKey.pureSprite(0),
+            source: StarCraftPlacementCatalogSource.localData,
+            availability: StarCraftPlacementAvailability.placeable,
+          ),
+        ],
+      );
+      expect(await pending, isFalse);
+      expect(atlas.calls, 0);
+      expect(fixture.controller.state.items, isEmpty);
+      expect(fixture.controller.state.diagnostics, isEmpty);
+      if (!close) await fixture.dispose();
+    }
+  });
+
   test(
     'disposal drops thumbnail state and ignores late UI callbacks',
     () async {
@@ -960,17 +994,18 @@ final class _DeferredCatalogGateway
     return result.future;
   }
 
-  void complete() => result.complete(
-    StarCraftPlacementCatalogPage(
-      request: request,
-      totalEntries: 0,
-      entries: const [],
-      storageProduct: 's1',
-      storageBuildNumber: 13515,
-      helperVersion: '0.8.0',
-      cascLibRevision: 'abc',
-    ),
-  );
+  void complete({List<StarCraftPlacementCatalogEntry> entries = const []}) =>
+      result.complete(
+        StarCraftPlacementCatalogPage(
+          request: request,
+          totalEntries: entries.length,
+          entries: entries,
+          storageProduct: 's1',
+          storageBuildNumber: 13515,
+          helperVersion: '0.8.0',
+          cascLibRevision: 'abc',
+        ),
+      );
 
   @override
   Future<void> cancel(String operationId) async {}
@@ -1135,6 +1170,20 @@ final class _FakeTileAtlasGateway implements StarCraftTileAtlasGateway {
       cascLibRevision: 'abc',
     );
   }
+}
+
+final class _CountingAtlasGateway implements StarCraftObjectAtlasGateway {
+  int calls = 0;
+  @override
+  Future<StarCraftObjectAtlasResult> render(
+    StarCraftObjectAtlasRequest request,
+  ) {
+    calls++;
+    return const _FakeObjectAtlasGateway().render(request);
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {}
 }
 
 final class _FakeObjectAtlasGateway implements StarCraftObjectAtlasGateway {
