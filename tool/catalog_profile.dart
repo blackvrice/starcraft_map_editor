@@ -1,5 +1,5 @@
 // Run only with: flutter build windows --profile --target tool/catalog_profile.dart
-// Pass --dart-define=CATALOG_PROFILE_OUTPUT=<new absolute JSON path>.
+// Set CATALOG_PROFILE_OUTPUT per process, or use the same dart-define.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -14,7 +14,9 @@ import 'package:starcraft_map_editor/presentation/placement/placement_catalog_pa
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const outputPath = String.fromEnvironment('CATALOG_PROFILE_OUTPUT');
+  final outputPath =
+      Platform.environment['CATALOG_PROFILE_OUTPUT'] ??
+      const String.fromEnvironment('CATALOG_PROFILE_OUTPUT');
   if (!kProfileMode ||
       outputPath.isEmpty ||
       !File(outputPath).isAbsolute ||

@@ -3,8 +3,9 @@
 - 측정 대상: `PlacementCatalogPane`의 첫 페이지 표시, 검색 응답, 연속 스크롤과
   페이지 추가 로딩
 - 계측 코드: `test/performance/placement_catalog_performance_test.dart`
-- 상태: 합성 Windows profile 첫 기준선을 추가했다. 반복 실행 변동 폭·실제 자산의
+- 상태: 합성 Windows profile 기준선과 반복 실행 집계를 추가했다. 실제 자산의
   UI profile·GPU 메모리는 미검증이며 아직 릴리스 성능 판정 기준은 아니다.
+  반복 집계 도구는 구현했으나 이번 Windows 실행 차단으로 반복 관측값은 없다.
 
 ## 무엇을 재는가
 
@@ -60,6 +61,58 @@ HEAD `d3b14c876900e553bc736ca19295fc09e3853e8e`와 고정 engine
 `bin/internal/engine.version`을 프로세스 한정 `FLUTTER_PREBUILT_ENGINE_VERSION`으로
 지정했다. 기준 Flutter 3.44.8 검증은 미실행이며 전체 포맷 검사에는 기존
 infrastructure 테스트 4개의 차이가 남아 있다.
+
+### 같은 빌드 반복 계측 (2026-09-22)
+
+계측 진입점은 프로세스 환경 변수 `CATALOG_PROFILE_OUTPUT`을 우선하며, 없을 때
+기존 dart-define을 사용한다. 한 번 빌드한 실행 파일을 새 프로세스로 반복 실행해
+각 결과를 별도 파일에 남길 수 있다. 환경 변수도 절대 경로·기존 파일 거부 규칙을
+따른다. 이 변수는 일반 앱 진입점에는 영향을 주지 않는다.
+
+`tool/summarize_catalog_profile.dart`는 최소 3개 결과의 각 지표에 대해
+최소/중앙/최대값과 원시 실행 목록을 JSON으로 출력한다. 느린 실행이나 첫 실행을
+제외하지 않는다. 실패 결과, 중복 입력 파일, 누락/음수 지표, 남은 이미지 핸들,
+가상화·페이징·프레임 수집 실패와 다른 SDK/OS/fixture/화면 크기/배율은 거부한다.
+`buildP95Us`와 `rasterP95Us`의 집계는 **각 실행 p95의 분포**이며 전체 프레임을
+합친 p95가 아니다. 같은 빌드인지 여부는 호출자가 보장해야 한다.
+
+```powershell
+flutter build windows --profile --target tool/catalog_profile.dart
+if ($LASTEXITCODE -ne 0) { throw 'Profile build failed' }
+$previousOutput = $env:CATALOG_PROFILE_OUTPUT
+$reports = @()
+try {
+  foreach ($i in 1..5) {
+    $report = Join-Path $env:TEMP ('catalog-profile-' + [guid]::NewGuid().ToString('N') + '.json')
+    $env:CATALOG_PROFILE_OUTPUT = $report
+    $app = Start-Process -FilePath 'build/windows/x64/runner/Profile/starcraft_map_editor.exe' -WindowStyle Hidden -PassThru
+    $finished = $false
+    foreach ($attempt in 1..3) {
+      if ($app.WaitForExit(30000)) { $finished = $true; break }
+    }
+    if (!$finished) { $app.Kill(); $app.WaitForExit(); throw 'Profile run timed out' }
+    if ($app.ExitCode -ne 0) { throw "Profile run failed: $report" }
+    $reports += $report
+  }
+  dart run tool/summarize_catalog_profile.dart @reports
+  if ($LASTEXITCODE -ne 0) { throw 'Profile summary failed' }
+} finally {
+  $env:CATALOG_PROFILE_OUTPUT = $previousOutput
+  flutter build windows --profile --target lib/main.dart
+  if ($LASTEXITCODE -ne 0) { throw 'Normal app restore failed' }
+}
+```
+
+2026-09-22 검증: 집계 단위 테스트 15개와 Profile 빌드가 통과했다. 실제 반복 실행은
+Windows 애플리케이션 제어 정책의 실행 파일 차단으로 시작하지 못했다. 따라서
+새 반복 측정 결과 파일이나 변동 폭 수치는 추가하지 않았고 첫 단일 관측값만
+유지한다. 실행이 허용된 환경에서 위 명령으로 반복 계측해야 한다. 테스트의
+수치 검증은 기존 원시 결과를 입력 형태로 사용하며 새 성능 측정을 뜻하지 않는다.
+
+전체 Flutter 테스트 673개 통과·21개 선택 환경 skip, 정적 분석과 CLI 입력/중복
+파일 거부 검사 통과. Flutter 3.47.2/Dart 3.13.2에서 검증했으며 기준 SDK는
+미검증이다. 전체 포맷 검사에는 기존 infrastructure 테스트 4개의 차이가 남아
+있고 변경한 Dart 파일은 포맷 검사를 통과했다.
 
 ### 기존 debug 위젯 계측
 
