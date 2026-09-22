@@ -1,6 +1,9 @@
 #include "doodad_recipe_decoder.h"
 #include "tileset_tile_decoder.h"
 
+#ifdef NDEBUG
+#error Doodad recipe tests require active assertions in every configuration.
+#endif
 #include <cassert>
 #include <cstddef>
 #include <cstdint>

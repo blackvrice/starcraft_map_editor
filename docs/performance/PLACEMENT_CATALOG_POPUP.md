@@ -3,10 +3,65 @@
 - 측정 대상: `PlacementCatalogPane`의 첫 페이지 표시, 검색 응답, 연속 스크롤과
   페이지 추가 로딩
 - 계측 코드: `test/performance/placement_catalog_performance_test.dart`
-- 상태: **기준선 미확정.** 아래 수치는 Linux 컨테이너의 debug 테스트 바이너리에서
-  나온 상대 신호이며 릴리스 기준이 아니다.
+- 상태: 합성 Windows profile 첫 기준선을 추가했다. 반복 실행 변동 폭·실제 자산의
+  UI profile·GPU 메모리는 미검증이며 아직 릴리스 성능 판정 기준은 아니다.
 
 ## 무엇을 재는가
+
+### Windows profile 자동 실행 (2026-09-20)
+
+`tool/catalog_profile.dart`는 실제 `PlacementCatalogPane`를 profile 모드에서
+실행하는 별도 계측 진입점이다. 합성 Doodad 항목 2,000개와 독립적인 32×32 RGBA
+버퍼를 메모리에 준비하고 256개씩 공개한다. 외부 helper·게임 데이터 조회 시간은
+포함하지 않는다. 첫 이미지 표시, 검색 상태 반영, 600px/200ms 스크롤 12회,
+화면 제거 후 이미지 핸들 해제를 자동 실행한다.
+
+원시 기록: [catalog-profile-2026-09-20.json](catalog-profile-2026-09-20.json).
+Flutter 3.47.2/Dart 3.13.2, Windows x64, 실제 view 1264×681·배율 1에서 측정했다.
+
+| 지표 | 첫 관측값 |
+| --- | --- |
+| 첫 이미지 / 검색 | 22ms / 67ms |
+| 스크롤 12회(애니메이션 시간 포함) | 2,724ms |
+| 첫 화면 생성 항목 / 스크롤 후 로딩 항목 | 56 / 1,024 |
+| 수집 프레임 / build p95 / raster p95 | 171 / 1,417µs / 8,261µs |
+| 최대 이미지 핸들 / 닫은 뒤 핸들 | 160 / 0 |
+| 공개된 항목의 RGBA 합계 | 4,194,304 bytes |
+
+전체 합성 버퍼 8,192,000 bytes는 계측 fixture가 미리 보유한다. 공개 항목의 합계는
+전체 프로세스 메모리나 GPU VRAM이 아니다. 핸들은 렌더러의 복제도 포함한다.
+첫 이미지 시간은 프로세스 시작/fixture 준비를 제외하고 첫 이미지 하나가 보일
+때까지다. 검색은 텍스트 입력 대신 controller.setQuery를 호출한다. 위의 시간과
+아래 debug 테스트의 첫 페이지 시간은 서로 다른 지표로 직접 비교하지 않는다.
+
+도구는 프레임 수집, 초기 항목 128개 미만, 추가 페이지 로딩, 종료 후 핸들 0개를
+검사한다. 실패/시간 초과는 JSON에 원인을 남기고 비정상 종료하며 기존 결과 파일은
+덮어쓰지 않는다. 단일 관측이므로 시간에 통과/실패 상한은 두지 않았다.
+
+```powershell
+$report = Join-Path $env:TEMP ('catalog-profile-' + [guid]::NewGuid().ToString('N') + '.json')
+flutter build windows --profile --target tool/catalog_profile.dart "--dart-define=CATALOG_PROFILE_OUTPUT=$report"
+$app = Start-Process -FilePath 'build/windows/x64/runner/Profile/starcraft_map_editor.exe' -WindowStyle Hidden -PassThru
+$app.WaitForExit()
+Get-Content -LiteralPath $report
+# 일반 앱을 profile로 실행할 때는 계측 진입점을 되돌려 빌드한다.
+flutter build windows --profile --target lib/main.dart
+```
+
+profile 빌드 과정에서 발견한 Doodad 네이티브 테스트의 `NDEBUG` 문제도 수정했다.
+테스트 대상에만 `/UNDEBUG`를 적용하고 컴파일 가드로 assert 비활성화를 거부한다.
+제품 바이너리의 최적화 설정은 바꾸지 않는다. Profile CTest 5개가 통과했다.
+
+검증: 전체 Flutter 테스트 658개 통과·21개 선택 환경 skip, 정적 분석 통과.
+Profile/Debug CTest 각 5개, 일반 Debug 앱 빌드·5초 시작 확인 통과.
+Flutter 도구 실행 중 SDK Git 조회 오류로 캐시가 자동 재구성됐고, 이후 깨끗한 SDK
+HEAD `d3b14c876900e553bc736ca19295fc09e3853e8e`와 고정 engine
+`a804b261645ef8c13eb3d5c44a5c2fb0340c5539`를 확인했다. 후속 빌드는 SDK의
+`bin/internal/engine.version`을 프로세스 한정 `FLUTTER_PREBUILT_ENGINE_VERSION`으로
+지정했다. 기준 Flutter 3.44.8 검증은 미실행이며 전체 포맷 검사에는 기존
+infrastructure 테스트 4개의 차이가 남아 있다.
+
+### 기존 debug 위젯 계측
 
 합성 카탈로그 2,000개 항목을 한 종류(Doodad)에 넣고 다음을 잰다.
 
@@ -191,7 +246,8 @@ Tile 카탈로그 전체 캐시의 상한은 아니다. 실제 계측 테스트�
 실제 화면 수동 조작은 미검증이다. 변경 파일 포맷은 통과했고 전체 검사에는 기존
 infrastructure 테스트 4개의 포맷 차이가 남아 있다.
 
-- Windows 10/11 x64에서 profile 빌드로 같은 지표를 재고 이 표에 기록한다.
+- Windows profile 자동 하네스는 추가했다. 반복 측정과 실제 자산으로 확대해
+  변동 폭과 화면 프레임 성능을 확인한다.
 - 실제 로컬 SC:R 설치의 Doodad 카탈로그(타일셋당 194~1,217개, 총 6,730개)와
   실제 썸네일로 재측정한다. 위 수치는 썸네일이 없는 합성 항목 기준이다.
 - 실제 썸네일 cache 메모리 상한과 탭을 떠난 뒤 GPU 자원 해제를 계측한다.

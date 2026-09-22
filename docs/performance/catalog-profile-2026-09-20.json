@@ -1,0 +1,21 @@
+{
+  "mode": "profile",
+  "fixture": "synthetic-2000-rgba-32x32",
+  "os": "\"Windows 10 Pro\" 10.0 (Build 26200)",
+  "dart": "3.13.2 (stable) (Tue Aug 25 01:01:12 2026 -0700) on \"windows_x64\"",
+  "firstImageMs": 22,
+  "builtItems": 56,
+  "physicalWidth": 1264.0,
+  "physicalHeight": 681.0,
+  "devicePixelRatio": 1.0,
+  "searchMs": 67,
+  "scroll12Ms": 2724,
+  "loadedEntries": 1024,
+  "retainedRgbaBytes": 4194304,
+  "peakImageHandles": 160,
+  "liveImageHandlesAfterClose": 0,
+  "frameCount": 171,
+  "buildP95Us": 1417,
+  "rasterP95Us": 8261,
+  "passed": true
+}

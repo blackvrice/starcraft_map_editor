@@ -234,6 +234,7 @@ target_compile_definitions(
 target_compile_options(
   starcraft_doodad_recipe_native_test
   PRIVATE
+    /UNDEBUG
     /W4
     /WX
     /EHsc
