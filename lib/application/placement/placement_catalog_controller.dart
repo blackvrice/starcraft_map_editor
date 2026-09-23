@@ -56,17 +56,19 @@ final class PlacementCatalogItem {
       thumbnailRgba != null && thumbnailWidth > 0 && thumbnailHeight > 0;
 
   bool matches(String normalizedQuery) {
-    if (normalizedQuery.isEmpty) {
-      return true;
-    }
-    final searchable =
-        '$displayName ${entry.key.kind.fallbackLabel} #${entry.key.id} '
-                '${entry.categoryPath.join(' ')}'
-            .toLowerCase();
-    return normalizedQuery
-        .split(RegExp(r'\s+'))
-        .every((term) => term.isEmpty || searchable.contains(term));
+    return _matchesTerms(normalizedQuery.split(_queryWhitespace));
   }
+
+  static final _queryWhitespace = RegExp(r'\s+');
+
+  // Entries are immutable, so every query can reuse this normalized text.
+  late final String _searchable =
+      '$displayName ${entry.key.kind.fallbackLabel} #${entry.key.id} '
+              '${entry.categoryPath.join(' ')}'
+          .toLowerCase();
+
+  bool _matchesTerms(List<String> terms) =>
+      terms.every((term) => term.isEmpty || _searchable.contains(term));
 }
 
 /// What the canvas will place on the next confirmed click.
@@ -123,9 +125,16 @@ final class PlacementCatalogState {
   final List<EditorDiagnostic> diagnostics;
   final List<StarCraftPlacementCatalogKey> recentKeys;
 
-  List<PlacementCatalogItem> get visibleItems {
+  List<PlacementCatalogItem> get visibleItems => _visibleItems;
+
+  // A state is an immutable snapshot. Rebuilds must not refilter the same page.
+  late final List<PlacementCatalogItem> _visibleItems = _filterItems();
+
+  List<PlacementCatalogItem> _filterItems() {
     final normalized = query.trim().toLowerCase();
-    return List.unmodifiable(items.where((item) => item.matches(normalized)));
+    if (normalized.isEmpty) return items;
+    final terms = normalized.split(PlacementCatalogItem._queryWhitespace);
+    return List.unmodifiable(items.where((item) => item._matchesTerms(terms)));
   }
 
   PlacementCatalogItem? get previewItem =>
