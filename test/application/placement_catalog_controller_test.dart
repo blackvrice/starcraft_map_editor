@@ -895,6 +895,102 @@ void main() {
     expect(fixture.controller.state.hasMore, isFalse);
     expect(await fixture.controller.loadMore(), isFalse);
   });
+
+  for (final kind in [
+    StarCraftPlacementKind.tile,
+    StarCraftPlacementKind.doodad,
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.pureSprite,
+  ]) {
+    for (final failure in ['overlap', 'changed-total', 'exhausted']) {
+      test('$kind rejects $failure paging and can reload cleanly', () async {
+        final gateway = _InconsistentPagingGateway(failure);
+        final fixture = await _openFixture(catalogGateway: gateway);
+        addTearDown(fixture.dispose);
+        final controller = fixture.controller;
+        controller.setInstallationPath(_installationPath);
+        final before = const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        );
+        expect(await controller.load(kind), isTrue);
+        final accepted = controller.state.items;
+        controller.preview(accepted.first.key);
+
+        expect(await controller.loadMore(), isFalse);
+        expect(controller.state.items, accepted);
+        expect(controller.state.previewKey, accepted.first.key);
+        expect(controller.state.totalEntries, 4);
+        expect(controller.state.isLoading, isFalse);
+        expect(controller.state.hasMore, isFalse);
+        expect(
+          controller.state.diagnostics.single.code,
+          PlacementCatalogDiagnosticCodes.inconsistentPage,
+        );
+        expect(await controller.loadMore(), isFalse);
+        expect(gateway.calls, 2);
+
+        gateway.failure = null;
+        expect(await controller.load(kind), isTrue);
+        expect(controller.state.diagnostics, isEmpty);
+        expect(controller.state.hasMore, isTrue);
+        expect(await controller.loadMore(), isTrue);
+        expect(controller.state.items, hasLength(4));
+        expect(
+          controller.state.items.map((item) => item.key).toSet(),
+          hasLength(4),
+        );
+        expect(controller.state.hasMore, isFalse);
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+      });
+    }
+  }
+}
+
+final class _InconsistentPagingGateway
+    implements StarCraftPlacementCatalogGateway {
+  _InconsistentPagingGateway(this.failure);
+
+  String? failure;
+  int calls = 0;
+  final _entries = _FakeCatalogGateway(
+    doodadTotal: 4,
+    unitCapabilityAvailable: true,
+  );
+
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async {
+    calls++;
+    final next = request.offset > 0;
+    final start = next && failure == 'overlap' ? 1 : request.offset;
+    return StarCraftPlacementCatalogPage(
+      request: request,
+      totalEntries: next && failure == 'changed-total'
+          ? 5
+          : next && failure == 'exhausted'
+          ? 2
+          : 4,
+      entries: next && failure == 'exhausted'
+          ? []
+          : [
+              for (var i = start; i < start + request.limit; i++)
+                _entries._entry(request.kind, request.tileset, i),
+            ],
+      storageProduct: 's1',
+      storageBuildNumber: 13515,
+      helperVersion: '0.7.0',
+      cascLibRevision: 'abc',
+    );
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {}
 }
 
 final class _Fixture {

@@ -26,6 +26,7 @@ abstract final class PlacementCatalogDiagnosticCodes {
   static const loadersUnavailable = 'PLACEMENT_CATALOG_LOADERS_UNAVAILABLE';
   static const noOpenMap = 'PLACEMENT_CATALOG_NO_OPEN_MAP';
   static const unsupportedSelection = 'PLACEMENT_CATALOG_UNSUPPORTED_SELECTION';
+  static const inconsistentPage = 'PLACEMENT_CATALOG_INCONSISTENT_PAGE';
 }
 
 /// One catalog row with the thumbnail the loaders produced for it.
@@ -140,7 +141,12 @@ final class PlacementCatalogState {
   PlacementCatalogItem? get previewItem =>
       items.where((item) => item.key == previewKey).firstOrNull;
 
-  bool get hasMore => items.length < totalEntries;
+  bool get hasMore =>
+      items.length < totalEntries &&
+      !diagnostics.any(
+        (diagnostic) =>
+            diagnostic.code == PlacementCatalogDiagnosticCodes.inconsistentPage,
+      );
 
   bool get isPlacementActive => selection != null && selection!.usesCanvasClick;
 }
@@ -665,6 +671,23 @@ class PlacementCatalogController {
     if (sequence != _requestSequence) {
       return false;
     }
+    if (offset > 0 &&
+        diagnostics.isEmpty &&
+        (totalEntries != _state.totalEntries ||
+            loaded.isEmpty ||
+            _state.items.last.key.compareTo(loaded.first.key) >= 0)) {
+      // Individually valid pages can still overlap or belong to a changed
+      // catalog. Preserve the accepted snapshot and stop automatic paging.
+      _emit(
+        _copy(
+          isLoading: false,
+          diagnostics: [
+            _diagnostic(PlacementCatalogDiagnosticCodes.inconsistentPage),
+          ],
+        ),
+      );
+      return false;
+    }
     _emit(
       _copy(
         kind: kind,
@@ -718,6 +741,8 @@ class PlacementCatalogController {
         'Set the StarCraft: Remastered data folder in settings first.',
       PlacementCatalogDiagnosticCodes.mapTilesetUnavailable =>
         'The map needs exactly one ERA section with a known tileset.',
+      PlacementCatalogDiagnosticCodes.inconsistentPage =>
+        'The catalog changed or returned overlapping pages. Select the catalog kind again to reload.',
       _ => 'The placement catalog is unavailable in this build.',
     },
     severity: DiagnosticSeverity.warning,
