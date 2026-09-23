@@ -68,8 +68,9 @@ void main() {
 
   test('supplies one immutable 32x32 RGBA thumbnail per Tile entry', () async {
     final catalog = _CatalogGateway(_page(request, [0, 1]));
+    late StarCraftTileAtlasResult renderedAtlas;
     final atlas = _AtlasGateway(
-      (atlasRequest) => _atlas(
+      (atlasRequest) => renderedAtlas = _atlas(
         atlasRequest,
         values: const [0, 1],
         pixels: [...List.filled(4096, 11), ...List.filled(4096, 22)],
@@ -87,7 +88,37 @@ void main() {
     expect(result.thumbnails[0], everyElement(11));
     expect(result.thumbnails[1], everyElement(22));
     expect(result.thumbnails[0], hasLength(32 * 32 * 4));
+    for (final thumbnail in result.thumbnails.values) {
+      expect(thumbnail.offsetInBytes, 0);
+      expect(thumbnail.buffer.lengthInBytes, 4096);
+      expect(
+        identical(thumbnail.buffer, renderedAtlas.rgbaBytes.buffer),
+        isFalse,
+      );
+      expect(() => thumbnail[0] = 99, throwsUnsupportedError);
+      expect(
+        () => thumbnail.buffer.asUint8List()[0] = 99,
+        throwsUnsupportedError,
+      );
+    }
+    expect(() => result.thumbnails.clear(), throwsUnsupportedError);
     expect(atlas.calls, 1);
+  });
+
+  test('batch detaches borrowed slices from mutable caller storage', () {
+    final source = Uint8List(12288)..fillRange(4096, 8192, 27);
+    final input = {7: Uint8List.sublistView(source, 4096, 8192)};
+    final batch = TilePlacementCatalogBatch(
+      page: _page(request, [7]),
+      thumbnails: input,
+    );
+    source.fillRange(4096, 8192, 88);
+    input.clear();
+    final thumbnail = batch.thumbnails[7]!;
+    expect(thumbnail, everyElement(27));
+    expect(thumbnail.buffer.lengthInBytes, 4096);
+    expect(thumbnail.offsetInBytes, 0);
+    expect(() => thumbnail[0] = 99, throwsUnsupportedError);
   });
 
   test('does not request an atlas for an exhausted catalog page', () async {

@@ -9,6 +9,28 @@
 
 ## 무엇을 재는가
 
+### Tile 썸네일 중간 복사 제거 (2026-09-23)
+
+`TilePlacementCatalogLoader`는 atlas의 타일 구간을 임시 `Uint8List.sublistView`로
+참조한 뒤 `TilePlacementCatalogBatch` 생성 시 독립적인 불변 버퍼로 한 번 복사한다.
+기존 `sublist` → `fromList` → batch 방어 복사의 세 번 중 중간 두 번을 제거했다.
+256개 페이지의 썸네일 추출 단계에서 복사하는 픽셀 payload는 코드 경로상 3MiB에서
+1MiB로 줄어든다. atlas 생성·역직렬화·UI 디코딩과 객체 할당은 이 계산에 포함하지
+않으며 실제 peak 메모리 감소량이나 실행 시간 개선을 측정한 값은 아니다.
+
+최종 썸네일은 atlas 전체의 backing buffer를 보유하지 않고 각각 4,096 bytes만
+소유한다. 공개 batch 생성자는 계속 방어 복사하므로 호출자가 원본 버퍼나 입력
+map을 수정해도 결과가 바뀌지 않는다. 불변 버퍼의 `buffer.asUint8List()` 경로도
+쓰기 불가능하다. 회귀 테스트는 타일별 픽셀, offset 0, backing buffer 크기,
+외부 입력 변경과 쓰기 거부를 검증한다. 기존 취소·응답 불일치·진단 테스트도 유지한다.
+전체 카탈로그 캐시 상한과 GPU 메모리 계측은 여전히 별도 미완료 항목이다.
+
+검증: 타일 로더 8개·전체 678개 통과(21개 선택 환경 skip), 실제 로컬 Tile 배치와
+바이트 정확 Undo 별도 1개 통과, 정적 분석·Windows Debug 빌드 통과. Flutter 3.47.2/Dart 3.13.2에서
+검증했고 기준 SDK는 미검증이다. 변경 파일 포맷은 통과했으며 전체 포맷 검사에는
+기존 infrastructure 테스트 4개의 차이가 남아 있다. Profile 반복 측정은 이전
+Windows 앱 제어 정책 차단으로 대기 상태를 유지한다.
+
 ### Windows profile 자동 실행 (2026-09-20)
 
 `tool/catalog_profile.dart`는 실제 `PlacementCatalogPane`를 profile 모드에서

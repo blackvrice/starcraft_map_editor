@@ -123,8 +123,12 @@ final class TilePlacementCatalogLoader {
     final thumbnails = <int, Uint8List>{};
     for (var index = 0; index < atlas.rawValues.length; index++) {
       final start = index * rgbaBytesPerThumbnail;
-      thumbnails[atlas.rawValues[index]] = Uint8List.fromList(
-        atlas.rgbaBytes.sublist(start, start + rgbaBytesPerThumbnail),
+      // Borrow only until the batch constructor makes its detached immutable
+      // copy. Do not retain an atlas-sized backing buffer in each thumbnail.
+      thumbnails[atlas.rawValues[index]] = Uint8List.sublistView(
+        atlas.rgbaBytes,
+        start,
+        start + rgbaBytesPerThumbnail,
       );
     }
     return TilePlacementCatalogBatch(page: page, thumbnails: thumbnails);
