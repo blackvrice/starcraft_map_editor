@@ -75,12 +75,23 @@ void main() {
       addTearDown(fixture.dispose);
       fixture.selectAllObjects();
 
+      final original = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      expect(fixture.objectEditingController.deleteSelection(), isFalse);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        original,
+      );
+      fixture.mapLayerController.setVisible(MapLayerType.doodads, false);
       expect(fixture.objectEditingController.deleteSelection(), isTrue);
 
       var objects = fixture.openMapController.state.session!.objectViews;
       expect(objects.unitSections.single.units, isEmpty);
       expect(objects.spriteSections.single.sprites, isEmpty);
-      expect(objects.doodadSections.single.doodads, isEmpty);
+      expect(objects.doodadSections.single.doodads, hasLength(1));
       expect(objects.locationSections.single.locations.first.isBlank, isTrue);
       expect(objects.locationSections.single.locations, hasLength(64));
       expect(fixture.mapLayerController.state.selections, isEmpty);

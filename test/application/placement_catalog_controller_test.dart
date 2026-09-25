@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:starcraft_map_editor/presentation/placement/placement_catalog_pane.dart';
 import 'package:starcraft_map_editor/presentation/settings/weapon_impact_panel.dart';
 import 'package:starcraft_map_editor/application/placement/catalog_thumbnail_pixels.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_weapon_references.dart';
@@ -250,6 +251,7 @@ void main() {
         tileAtlasGateway: ProcessStarCraftTileAtlasGateway(
           helperExecutablePath: realHelper,
         ),
+        tileThumbnailBudgetBytes: 4096,
       );
       addTearDown(fixture.dispose);
       fixture.controller.setInstallationPath(realInstallation);
@@ -265,6 +267,18 @@ void main() {
         (item) => item.isPlaceable && item.key.id != 0,
       );
       expect(item.hasThumbnail, isTrue);
+      final evicted = fixture.controller.state.items.firstWhere(
+        (entry) => entry.thumbnailEvicted,
+      );
+      final ready = fixture.controller.changes.firstWhere(
+        (state) => state.items.any(
+          (entry) => entry.key == evicted.key && entry.hasThumbnail,
+        ),
+      );
+      fixture.controller.requestThumbnail(evicted.key);
+      await ready.timeout(const Duration(seconds: 30));
+      await Future<void>.delayed(Duration.zero);
+      expect(fixture.controller.retainedThumbnailBytes, 4096);
       expect(fixture.controller.confirm(item.key), isTrue);
       expect(bytes(), before);
       final terrain = fixture.terrainEditingController;
@@ -286,6 +300,42 @@ void main() {
         ? 'Set local StarCraft installation and helper paths.'
         : false,
   );
+  for (final invalidate in [false, true]) {
+    test(
+      'tile rehydration ${invalidate ? 'discards stale replies' : 'does not retry failures endlessly'}',
+      () async {
+        final atlas = _ReloadTileAtlas(fail: !invalidate);
+        final fixture = await _openFixture(
+          catalogGateway: _InconsistentPagingGateway(null),
+          tileAtlasGateway: atlas,
+          tileThumbnailBudgetBytes: 8192,
+        );
+        addTearDown(fixture.dispose);
+        final controller = fixture.controller
+          ..setInstallationPath(_installationPath);
+        await controller.load(StarCraftPlacementKind.tile);
+        await controller.loadMore();
+        final key = controller.state.items.first.key;
+        controller.requestThumbnail(key);
+        await atlas.started.future;
+        if (invalidate) controller.setInstallationPath(null);
+        atlas.release.complete();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+        controller.requestThumbnail(key);
+        await Future<void>.delayed(Duration.zero);
+        expect(atlas.calls, 3);
+        if (invalidate) {
+          expect(controller.state.items, isEmpty);
+          expect(controller.retainedThumbnailBytes, 0);
+        } else {
+          expect(controller.retainedThumbnailBytes, 8192);
+          expect(controller.state.items.first.thumbnailEvicted, isTrue);
+        }
+      },
+    );
+  }
+
   for (final kind in [
     StarCraftPlacementKind.unit,
     StarCraftPlacementKind.pureSprite,
@@ -896,6 +946,87 @@ void main() {
     expect(await fixture.controller.loadMore(), isFalse);
   });
 
+  testWidgets('visible evicted Tile is requested by the catalog pane', (
+    tester,
+  ) async {
+    final fixture = await _openFixture(
+      catalogGateway: _InconsistentPagingGateway(null),
+      tileThumbnailBudgetBytes: 8192,
+    );
+    addTearDown(fixture.dispose);
+    final controller = fixture.controller
+      ..setInstallationPath(_installationPath);
+    await controller.load(StarCraftPlacementKind.tile);
+    await controller.loadMore();
+    expect(controller.state.items.first.thumbnailEvicted, isTrue);
+    controller.setQuery('#3200');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: PlacementCatalogPane(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(controller.state.items.first.hasThumbnail, isTrue);
+    expect(controller.retainedThumbnailBytes, lessThanOrEqualTo(8192));
+    expect(find.byType(RawImage), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test(
+    'recently visible Tile survives the next page budget eviction',
+    () async {
+      final fixture = await _openFixture(
+        catalogGateway: _InconsistentPagingGateway(null),
+        tileThumbnailBudgetBytes: 12288,
+      );
+      addTearDown(fixture.dispose);
+      final controller = fixture.controller
+        ..setInstallationPath(_installationPath);
+      await controller.load(StarCraftPlacementKind.tile);
+      controller.requestThumbnail(controller.state.items.first.key);
+      await controller.loadMore();
+      expect(controller.state.items.first.hasThumbnail, isTrue);
+      expect(controller.state.items[1].thumbnailEvicted, isTrue);
+      expect(controller.retainedThumbnailBytes, 12288);
+    },
+  );
+
+  test(
+    'tile budget evicts pixels only and rehydrates a requested tile',
+    () async {
+      final atlas = _CountingTileAtlasGateway();
+      final fixture = await _openFixture(
+        catalogGateway: _InconsistentPagingGateway(null),
+        tileAtlasGateway: atlas,
+        tileThumbnailBudgetBytes: 8192,
+      );
+      addTearDown(fixture.dispose);
+      final controller = fixture.controller
+        ..setInstallationPath(_installationPath);
+      await controller.load(StarCraftPlacementKind.tile);
+      final key = controller.state.items.first.key;
+      await controller.loadMore();
+      expect(controller.state.items, hasLength(4));
+      expect(controller.retainedThumbnailBytes, 8192);
+      expect(controller.state.items.first.thumbnailEvicted, isTrue);
+      final ready = controller.changes.firstWhere(
+        (s) => s.items.first.hasThumbnail,
+      );
+      controller.requestThumbnail(key);
+      controller.requestThumbnail(key);
+      await ready.timeout(const Duration(seconds: 5));
+      await Future<void>.delayed(Duration.zero);
+      expect(atlas.calls, 3);
+      expect(controller.retainedThumbnailBytes, 8192);
+      expect(controller.state.items.first.isPlaceable, isTrue);
+      expect(controller.confirm(key), isTrue);
+      await controller.dispose();
+      expect(controller.retainedThumbnailBytes, 0);
+      controller.requestThumbnail(key);
+      expect(atlas.calls, 3);
+    },
+  );
+
   for (final kind in [
     StarCraftPlacementKind.tile,
     StarCraftPlacementKind.doodad,
@@ -1028,6 +1159,7 @@ Future<_Fixture> _openFixture({
   StarCraftTileAtlasGateway? tileAtlasGateway,
   Uint8List? chkBytesOverride,
   int pageSize = 2,
+  int tileThumbnailBudgetBytes = 16 * 1024 * 1024,
 }) async {
   final chkBytes = chkBytesOverride ?? _chkBytes();
   final map = ExtractedMap(
@@ -1081,6 +1213,7 @@ Future<_Fixture> _openFixture({
     tileAtlasGateway: tileAtlasGateway ?? const _FakeTileAtlasGateway(),
     objectAtlasGateway: objectAtlasGateway ?? const _FakeObjectAtlasGateway(),
     pageSize: pageSize,
+    tileThumbnailBudgetBytes: tileThumbnailBudgetBytes,
   );
   return _Fixture(
     openMapController: openMapController,
@@ -1313,6 +1446,25 @@ final class _CountingTileAtlasGateway implements StarCraftTileAtlasGateway {
   @override
   Future<StarCraftTileAtlasResult> render(StarCraftTileAtlasRequest request) {
     calls++;
+    return const _FakeTileAtlasGateway().render(request);
+  }
+}
+
+final class _ReloadTileAtlas implements StarCraftTileAtlasGateway {
+  _ReloadTileAtlas({required this.fail});
+  final bool fail;
+  int calls = 0;
+  final started = Completer<void>();
+  final release = Completer<void>();
+  @override
+  Future<StarCraftTileAtlasResult> render(
+    StarCraftTileAtlasRequest request,
+  ) async {
+    if (++calls == 3) {
+      started.complete();
+      await release.future;
+      if (fail) throw StateError('Synthetic reload failure');
+    }
     return const _FakeTileAtlasGateway().render(request);
   }
 }

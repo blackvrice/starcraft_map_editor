@@ -6,6 +6,7 @@ import 'eud_impact_pane.dart';
 import 'eud_weapon_editor.dart';
 import 'eud_shield_editor.dart';
 import '../../domain/eud/eud_effective_settings.dart';
+import '../../domain/eud/eud_generation_preview.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
 
@@ -135,6 +136,46 @@ class _EudProjectPaneState extends State<EudProjectPane> {
               TextButton(
                 onPressed: busy || !controller.canUndo ? null : controller.undo,
                 child: const Text('Undo project'),
+              ),
+              OutlinedButton(
+                key: const Key('eud-generation-preview'),
+                onPressed: busy || project == null
+                    ? null
+                    : () => _run(() async {
+                        final preview = EudGenerationPreview(project);
+                        await showDialog<void>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('EUD generation preview'),
+                            content: SizedBox(
+                              width: 720,
+                              height: 480,
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Declarative preview only. Compilation, game compatibility and hook order are not verified. No files or user scripts are changed.',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SelectableText(
+                                      preview.manifest,
+                                      key: const Key('eud-generation-manifest'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Close'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                child: const Text('Generation preview'),
               ),
               TextButton(
                 onPressed: busy || !controller.canRedo ? null : controller.redo,

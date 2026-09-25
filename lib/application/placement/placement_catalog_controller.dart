@@ -36,12 +36,14 @@ final class PlacementCatalogItem {
     this.thumbnailRgba,
     this.thumbnailWidth = 0,
     this.thumbnailHeight = 0,
+    this.thumbnailEvicted = false,
   });
 
   final StarCraftPlacementCatalogEntry entry;
   final Uint8List? thumbnailRgba;
   final int thumbnailWidth;
   final int thumbnailHeight;
+  final bool thumbnailEvicted;
 
   StarCraftPlacementCatalogKey get key => entry.key;
 
@@ -138,8 +140,9 @@ final class PlacementCatalogState {
     return List.unmodifiable(items.where((item) => item._matchesTerms(terms)));
   }
 
-  PlacementCatalogItem? get previewItem =>
-      items.where((item) => item.key == previewKey).firstOrNull;
+  late final Map<StarCraftPlacementCatalogKey, PlacementCatalogItem>
+  _itemsByKey = {for (final item in items) item.key: item};
+  PlacementCatalogItem? get previewItem => _itemsByKey[previewKey];
 
   bool get hasMore =>
       items.length < totalEntries &&
@@ -167,7 +170,15 @@ class PlacementCatalogController {
     this.objectAtlasGateway,
     this.pageSize = StarCraftPlacementCatalogRequest.defaultLimit,
     this.recentLimit = 12,
-  });
+    this.tileThumbnailBudgetBytes = 16 * 1024 * 1024,
+  }) {
+    if (tileThumbnailBudgetBytes < 4096) {
+      throw ArgumentError.value(
+        tileThumbnailBudgetBytes,
+        'tileThumbnailBudgetBytes',
+      );
+    }
+  }
 
   static const maximumRecentPerKind = 12;
 
@@ -179,6 +190,150 @@ class PlacementCatalogController {
   final StarCraftObjectAtlasGateway? objectAtlasGateway;
   final int pageSize;
   final int recentLimit;
+  final int tileThumbnailBudgetBytes;
+  final Map<StarCraftPlacementCatalogKey, int> _thumbnailUse = {};
+  final Set<StarCraftPlacementCatalogKey> _thumbnailQueue = {};
+  final Set<StarCraftPlacementCatalogKey> _thumbnailFailures = {};
+  int _thumbnailClock = 0;
+  int _thumbnailEpoch = 0;
+  bool _hydratingThumbnails = false;
+  (String?, int?, String?, String?)? _tileAtlasIdentity;
+
+  int get retainedThumbnailBytes => _state.items.fold(
+    0,
+    (sum, item) => sum + (item.thumbnailRgba?.lengthInBytes ?? 0),
+  );
+
+  /// Called for grid/prefetch entries and the detail preview. No synchronous
+  /// state notification: Flutter may call this while building a frame.
+  void requestThumbnail(StarCraftPlacementCatalogKey key) {
+    if (_disposed || key.kind != StarCraftPlacementKind.tile) return;
+    final item = _state._itemsByKey[key];
+    if (item == null) return;
+    _thumbnailUse[key] = ++_thumbnailClock;
+    if (!item.thumbnailEvicted || _thumbnailFailures.contains(key)) return;
+    _thumbnailQueue.add(key);
+    if (!_hydratingThumbnails) unawaited(_hydrateThumbnails());
+  }
+
+  void _resetThumbnails() {
+    _tileAtlasIdentity = null;
+    _thumbnailEpoch++;
+    _thumbnailUse.clear();
+    _thumbnailQueue.clear();
+    _thumbnailFailures.clear();
+  }
+
+  List<PlacementCatalogItem> _boundTileThumbnails(
+    List<PlacementCatalogItem> items,
+  ) {
+    if (items.isEmpty || items.first.key.kind != StarCraftPlacementKind.tile) {
+      return items;
+    }
+    var bytes = 0;
+    final candidates = <PlacementCatalogItem>[];
+    for (final item in items) {
+      if (!item.hasThumbnail) continue;
+      bytes += item.thumbnailRgba!.lengthInBytes;
+      _thumbnailUse.putIfAbsent(item.key, () => ++_thumbnailClock);
+      candidates.add(item);
+    }
+    if (bytes <= tileThumbnailBudgetBytes) return items;
+    candidates.sort(
+      (a, b) => _thumbnailUse[a.key]!.compareTo(_thumbnailUse[b.key]!),
+    );
+    final evict = <StarCraftPlacementCatalogKey>{};
+    for (final item in candidates) {
+      if (bytes <= tileThumbnailBudgetBytes) break;
+      evict.add(item.key);
+      bytes -= item.thumbnailRgba!.lengthInBytes;
+    }
+    return [
+      for (final item in items)
+        if (evict.contains(item.key))
+          PlacementCatalogItem(entry: item.entry, thumbnailEvicted: true)
+        else
+          item,
+    ];
+  }
+
+  Future<void> _hydrateThumbnails() async {
+    _hydratingThumbnails = true;
+    try {
+      // Coalesce all cells requested during one grid build into a batch.
+      await Future<void>.delayed(Duration.zero);
+      while (!_disposed && _thumbnailQueue.isNotEmpty) {
+        _thumbnailQueue.removeWhere(
+          (key) => _state._itemsByKey[key]?.thumbnailEvicted != true,
+        );
+        if (_thumbnailQueue.isEmpty) break;
+        final epoch = _thumbnailEpoch;
+        final keys = _thumbnailQueue.take(128).toList()..sort();
+        _thumbnailQueue.removeAll(keys);
+        final path = _installationPath;
+        final tileset = mapTileset;
+        final gateway = tileAtlasGateway;
+        if (path == null || tileset == null || gateway == null) break;
+        try {
+          final request = StarCraftTileAtlasRequest(
+            installationPath: path,
+            tileset: tileset,
+            rawValues: [for (final key in keys) key.id],
+          );
+          final result = await gateway.render(request);
+          if (_disposed || epoch != _thumbnailEpoch) continue;
+          if (!result.isSuccess ||
+              _tileAtlasIdentity !=
+                  (
+                    result.storageProduct,
+                    result.storageBuildNumber,
+                    result.helperVersion,
+                    result.cascLibRevision,
+                  ) ||
+              result.unsupportedRawValues.isNotEmpty ||
+              result.request.installationPath != request.installationPath ||
+              result.request.tileset != request.tileset ||
+              result.rawValues.length != keys.length ||
+              !List.generate(
+                keys.length,
+                (i) => result.rawValues[i] == keys[i].id,
+              ).every((v) => v)) {
+            _thumbnailFailures.addAll(keys);
+            continue;
+          }
+          final pixels = <StarCraftPlacementCatalogKey, Uint8List>{};
+          for (var i = 0; i < keys.length; i++) {
+            pixels[keys[i]] = Uint8List.fromList(
+              Uint8List.sublistView(result.rgbaBytes, i * 4096, (i + 1) * 4096),
+            ).asUnmodifiableView();
+            _thumbnailUse[keys[i]] = ++_thumbnailClock;
+          }
+          _emit(
+            _copy(
+              items: _boundTileThumbnails([
+                for (final item in _state.items)
+                  if (pixels.containsKey(item.key))
+                    PlacementCatalogItem(
+                      entry: item.entry,
+                      thumbnailRgba: pixels[item.key],
+                      thumbnailWidth: 32,
+                      thumbnailHeight: 32,
+                    )
+                  else
+                    item,
+              ]),
+            ),
+          );
+        } catch (_) {
+          if (!_disposed && epoch == _thumbnailEpoch) {
+            _thumbnailFailures.addAll(keys);
+          }
+        }
+      }
+    } finally {
+      _hydratingThumbnails = false;
+    }
+  }
 
   final StreamController<PlacementCatalogState> _changes =
       StreamController<PlacementCatalogState>.broadcast(sync: true);
@@ -197,6 +352,50 @@ class PlacementCatalogController {
   PlacementCatalogState get state => _state;
 
   Stream<PlacementCatalogState> get changes => _changes.stream;
+
+  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async {
+    final path = _installationPath;
+    final tileset = mapTileset;
+    final gateway = catalogGateway;
+    final epoch = _thumbnailEpoch;
+    if (_disposed || path == null || tileset == null || gateway == null) {
+      throw StateError('Choose a StarCraft installation and open a map.');
+    }
+    final recipes = <DoodadPlacementRecipe>[];
+    var offset = 0;
+    do {
+      final page = await gateway.list(
+        StarCraftPlacementCatalogRequest(
+          operationId: 'doodad-delete-$epoch-$offset',
+          installationPath: path,
+          kind: StarCraftPlacementKind.doodad,
+          tileset: tileset,
+          offset: offset,
+          limit: 256,
+        ),
+      );
+      if (_disposed || epoch != _thumbnailEpoch) {
+        throw StateError('Map or installation changed.');
+      }
+      if (!page.isSuccess ||
+          page.request.offset != offset ||
+          page.request.tileset != tileset ||
+          page.request.kind != StarCraftPlacementKind.doodad) {
+        throw StateError('Doodad catalog could not be verified.');
+      }
+      recipes.addAll(
+        page.entries
+            .where((e) => e.key.id == type)
+            .map((e) => e.doodadRecipe)
+            .whereType<DoodadPlacementRecipe>(),
+      );
+      final next = page.nextOffset;
+      if (next == null) break;
+      if (next <= offset) throw StateError('Doodad catalog made no progress.');
+      offset = next;
+    } while (offset < StarCraftPlacementCatalogPage.maximumTotalEntries);
+    return recipes;
+  }
 
   /// The tileset every tileset-scoped catalog page uses, taken from the single
   /// `ERA` section of the open map.
@@ -333,6 +532,7 @@ class PlacementCatalogController {
   }
 
   void _invalidateCatalog() {
+    _resetThumbnails();
     weaponReferenceEpoch++;
     final operation = _weaponOperation;
     if (operation != null) unawaited(catalogGateway?.cancel(operation));
@@ -345,6 +545,7 @@ class PlacementCatalogController {
   /// browsed and records why in the state diagnostics.
   Future<bool> load(StarCraftPlacementKind kind) async {
     if (_disposed) return false;
+    _resetThumbnails();
     final sequence = ++_requestSequence;
     final blocked = _blockingCode(kind);
     if (blocked != null) {
@@ -564,6 +765,7 @@ class PlacementCatalogController {
 
   Future<void> dispose() {
     if (_disposed) return _changes.close();
+    _resetThumbnails();
     _disposed = true;
     weaponReferenceEpoch++;
     final weaponOperation = _weaponOperation;
@@ -632,6 +834,14 @@ class PlacementCatalogController {
       if (_disposed || sequence != _requestSequence) return false;
       diagnostics = batch.diagnostics;
       totalEntries = batch.page.totalEntries;
+      if (offset == 0 && batch.isSuccess) {
+        _tileAtlasIdentity = (
+          batch.page.storageProduct,
+          batch.page.storageBuildNumber,
+          batch.page.helperVersion,
+          batch.page.cascLibRevision,
+        );
+      }
       loaded = [
         for (final entry in batch.page.entries)
           PlacementCatalogItem(
@@ -691,7 +901,9 @@ class PlacementCatalogController {
     _emit(
       _copy(
         kind: kind,
-        items: offset == 0 ? loaded : [..._state.items, ...loaded],
+        items: _boundTileThumbnails(
+          offset == 0 ? loaded : [..._state.items, ...loaded],
+        ),
         totalEntries: totalEntries,
         isLoading: false,
         diagnostics: diagnostics,

@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:starcraft_map_editor/application/placement/placement_catalog_controller.dart';
+import 'package:starcraft_map_editor/presentation/placement/doodad_delete_dialog.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
@@ -14,11 +17,267 @@ import 'package:starcraft_map_editor/application/recent_projects/recent_projects
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
+import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  testWidgets(
+    'Doodad delete dialog requires overlay confirmation and cancellation preserves map',
+    (tester) async {
+      final fixture = await _openFixture(
+        includeDoodads: false,
+        includeUnderlying: true,
+      );
+      addTearDown(fixture.dispose);
+      final recipe = _recipe(overlay: true);
+      fixture.controller.placeCatalogDoodad(
+        recipe: recipe,
+        owner: 0,
+        originTileX: 2,
+        originTileY: 3,
+      );
+      final before = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => deleteObjectsWithDoodadReview(
+                  context,
+                  fixture.controller,
+                  _DeletionCatalog(recipe),
+                ),
+                child: const Text('Delete selection'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Delete selection'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Delete together'),
+            )
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      await tester.tap(find.text('Delete selection'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('THG2 record #1 · type 42').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete together'));
+      await tester.pumpAndSettle();
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .doodadSections
+            .single
+            .doodads,
+        isEmpty,
+      );
+      expect(tester.takeException(), isNull);
+      fixture.controller.undo();
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+    },
+  );
+  test(
+    'reopened Doodad deletion restores TILE and explicitly selected overlay atomically',
+    () async {
+      final initial = await _openFixture(
+        includeDoodads: false,
+        includeUnderlying: true,
+      );
+      addTearDown(initial.dispose);
+      final recipe = _recipe(overlay: true);
+      expect(
+        initial.controller
+            .placeCatalogDoodad(
+              recipe: recipe,
+              owner: 0,
+              originTileX: 2,
+              originTileY: 3,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      final before = const RawChkEncoder().encode(
+        initial.openMapController.state.session!.rawDocument,
+      );
+      final fixture = await _openFixture(mapBytes: before);
+      addTearDown(fixture.dispose);
+      final controller = fixture.controller;
+      expect(
+        () => controller.prepareDoodadDeletion(recipe: recipe, recordIndex: 0),
+        throwsStateError,
+      );
+      final plan = controller.prepareDoodadDeletion(
+        recipe: recipe,
+        recordIndex: 0,
+        overlayRecordIndex: 1,
+      );
+      expect(
+        () => controller.prepareDoodadDeletion(
+          recipe: recipe,
+          recordIndex: 0,
+          overlayRecordIndex: 0,
+        ),
+        throwsStateError,
+      );
+      final document = plan.document;
+      final tileIndex = document.sections.indexWhere(
+        (s) => s.hasNameBytes('TILE'.codeUnits),
+      );
+      final terrainIndex = document.sections.indexWhere(
+        (s) => s.hasNameBytes('MTXM'.codeUnits),
+      );
+      for (final invalid in [
+        document.appendSection(document.sections[tileIndex]),
+        document.replaceSection(
+          tileIndex,
+          document.sections[tileIndex].withPayload([0]),
+        ),
+        document.replaceSection(
+          tileIndex,
+          document.sections[tileIndex].withPayload(
+            document.sections[terrainIndex].payload,
+          ),
+        ),
+        document.replaceSection(
+          terrainIndex,
+          document.sections[terrainIndex].withPayload(Uint8List(128)),
+        ),
+      ]) {
+        expect(
+          () => DoodadDeletionPlan.create(
+            document: invalid,
+            recipe: recipe,
+            recordIndex: 0,
+            confirmedOverlayRecordIndex: 1,
+          ),
+          throwsStateError,
+        );
+      }
+      fixture.mapLayerController.setLocked(MapLayerType.sprites, true);
+      expect(() => controller.deleteDoodad(plan), throwsStateError);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      fixture.mapLayerController.setLocked(MapLayerType.sprites, false);
+      controller.deleteDoodad(plan);
+      final after = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .doodadSections
+            .single
+            .doodads,
+        isEmpty,
+      );
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .spriteSections
+            .single
+            .sprites,
+        hasLength(1),
+      );
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .terrainViews
+            .tileMaps
+            .single
+            .rawTileValues,
+        everyElement(0),
+      );
+      expect(controller.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(controller.redo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        after,
+      );
+      expect(() => controller.deleteDoodad(plan), throwsStateError);
+    },
+  );
+
+  test(
+    'Doodad composite deletion refuses absent TILE without partial edits',
+    () async {
+      final fixture = await _openFixture(includeDoodads: false);
+      addTearDown(fixture.dispose);
+      final recipe = _recipe(overlay: true);
+      fixture.controller.placeCatalogDoodad(
+        recipe: recipe,
+        owner: 0,
+        originTileX: 2,
+        originTileY: 3,
+      );
+      final before = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      expect(
+        () => fixture.controller.prepareDoodadDeletion(
+          recipe: recipe,
+          recordIndex: 0,
+          overlayRecordIndex: 1,
+        ),
+        throwsStateError,
+      );
+      expect(fixture.controller.deleteSelection(), isFalse);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+    },
+  );
+
   group('catalog Unit placement', () {
     test(
       'appends into the single UNIT section and allocates a class id',
@@ -527,18 +786,35 @@ final class _Fixture {
   }
 }
 
+class _DeletionCatalog implements PlacementCatalogController {
+  _DeletionCatalog(this.recipe);
+  final DoodadPlacementRecipe recipe;
+  @override
+  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async => [recipe];
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 Future<_Fixture> _openFixture({
   bool includeUnits = true,
   bool includeSprites = true,
   bool includeDoodads = true,
   bool duplicateUnits = false,
+  bool includeUnderlying = false,
+  Uint8List? mapBytes,
 }) async {
-  final chkBytes = _chkBytes(
+  final base = _chkBytes(
     includeUnits: includeUnits,
     includeSprites: includeSprites,
     includeDoodads: includeDoodads,
     duplicateUnits: duplicateUnits,
   );
+  final chkBytes =
+      mapBytes ??
+      Uint8List.fromList([
+        ...base,
+        if (includeUnderlying) ..._section('TILE', Uint8List(8 * 8 * 2)),
+      ]);
   final map = ExtractedMap(
     sourcePath: r'C:\Maps\Placement.scx',
     scenarioChkBytes: chkBytes,

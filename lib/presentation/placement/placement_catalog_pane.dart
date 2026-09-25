@@ -275,6 +275,9 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
   }
 
   Widget _tile(PlacementCatalogState state, PlacementCatalogItem item) {
+    if (item.key.kind == StarCraftPlacementKind.tile) {
+      widget.controller.requestThumbnail(item.key);
+    }
     final isPreviewed = state.previewKey == item.key;
     return InkWell(
       key: Key('placement-catalog-item-${item.key.stableId}'),
@@ -327,6 +330,9 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
 
   Widget _detail(PlacementCatalogState state) {
     final item = state.previewItem;
+    if (item?.key.kind == StarCraftPlacementKind.tile) {
+      widget.controller.requestThumbnail(item!.key);
+    }
     if (item == null) {
       return _message(
         key: const Key('placement-catalog-detail-empty'),

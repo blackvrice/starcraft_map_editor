@@ -4,6 +4,7 @@ import '../settings/map_settings_dialog.dart';
 import '../settings/eud_tool_settings_dialog.dart';
 import '../settings/eud_build_preparation_dialog.dart';
 import 'dart:async';
+import '../placement/doodad_delete_dialog.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -574,7 +575,11 @@ class _EditorShellState extends State<EditorShell> {
     final deleteObjects =
         _workspaceView == _WorkspaceView.map &&
             widget.objectEditingController.canEditSelection
-        ? widget.objectEditingController.deleteSelection
+        ? () => deleteObjectsWithDoodadReview(
+            context,
+            widget.objectEditingController,
+            widget.placementCatalogController,
+          )
         : null;
     final cancelObjectPlacement =
         _workspaceView == _WorkspaceView.map &&
@@ -2045,7 +2050,11 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     undoLabel: objectEditingController.undoLabel,
                     redoLabel: objectEditingController.redoLabel,
                     onDelete: objectEditingController.canEditSelection
-                        ? objectEditingController.deleteSelection
+                        ? () => deleteObjectsWithDoodadReview(
+                            context,
+                            objectEditingController,
+                            placementCatalogController,
+                          )
                         : null,
                     onUndo: objectEditingController.canUndo
                         ? objectEditingController.undo

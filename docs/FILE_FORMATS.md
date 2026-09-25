@@ -513,3 +513,10 @@ UPGx 오프셋 61의 예약 바이트를 보존한다. [지원·검증 규칙](U
 File → Tech Settings…에서 비용·연구 시간·에너지와 플레이어별 허용·연구 완료를 편집한다.
 TECS/TECx와 PTEC/PTEx를 버전별로 선택하며 기본값 상속은 저장 값을 보존한다.
 [지원 범위와 검증](TECH_SETTINGS.md)을 따른다.
+
+## 기존 Doodad 복합 삭제 (2026-09-25)
+
+[ADR-0010](decisions/0010-reviewed-doodad-deletion.md)의 단일 Doodad 검증을 통과한
+경우에만 기존 TILE을 원본 복원 정보로 읽고 MTXM의 recipe 쓰기 셀을 복원한다.
+DD2와 명시적으로 확인한 THG2 삭제는 같은 명령에 포함하며 TILE 자체는 바꾸지 않는다.
+누락/중복/잘린 복원 정보는 자동 보정하지 않고 전체 삭제를 거부한다.

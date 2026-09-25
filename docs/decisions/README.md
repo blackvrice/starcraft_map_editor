@@ -22,6 +22,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0007](0007-object-sprite-atlas-protocol.md) | Accepted | 요청별 객체 스프라이트 아틀라스 프로토콜 |
 | [0008](0008-validated-visual-placement-catalog.md) | Accepted | 검증된 로컬 카탈로그와 종류별 배치 recipe |
 | [0009](0009-declarative-eud-project.md) | Accepted | 별도 JSON 프로젝트의 EUD 선언적 설정·저장·Undo 경계 |
+| [0010](0010-reviewed-doodad-deletion.md) | Accepted | 복원 정보와 명시적 overlay 확인에 따른 단일 Doodad 복합 삭제 |
 
 ## 새 ADR 형식
 

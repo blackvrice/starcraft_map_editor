@@ -7,6 +7,44 @@ import '../fixtures/eud_project_workspace_fixture.dart';
 
 void main() {
   testWidgets(
+    'generation preview shows deterministic declarations without saving',
+    (tester) async {
+      tester.view.physicalSize = const Size(1300, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final fixture = EudWorkspaceFixture();
+      addTearDown(fixture.dispose);
+      await fixture.maps.open();
+      await fixture.workspace.createFromMap();
+      fixture.projects.replaceOverrides([
+        EudOverride(field: 'unit.hasShield', targetId: 0, value: true),
+      ]);
+      final before = fixture.projects.project!.encode();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: EudProjectPane(workspace: fixture.workspace)),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('eud-generation-preview')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('eud-generation-manifest')), findsOneWidget);
+      expect(
+        tester
+            .widget<SelectableText>(
+              find.byKey(const Key('eud-generation-manifest')),
+            )
+            .data,
+        contains('"executable": false'),
+      );
+      expect(fixture.writes, 0);
+      expect(fixture.projects.project!.encode(), before);
+      await tester.tap(find.widgetWithText(TextButton, 'Close'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'Save Project updates current file and displays external conflict without discarding edits',
     (tester) async {
       tester.view.physicalSize = const Size(1300, 1000);

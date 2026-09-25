@@ -10,6 +10,7 @@ import '../../domain/chk/typed/chk_force_settings_editor.dart';
 import '../../domain/chk/typed/chk_scenario_text_editor.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../documents/open_map_controller.dart';
@@ -1001,6 +1002,9 @@ class ObjectEditingController {
     }
     final session = openMapController.state.session!;
     final selections = _editableSelections;
+    if (selections.any((s) => s.object.layer == MapLayerType.doodads)) {
+      return false;
+    }
     final grouped = _groupSelections(selections);
     final before = <int, RawChkSection>{};
     final after = <int, RawChkSection>{};
@@ -1044,6 +1048,55 @@ class ObjectEditingController {
       clearSelection: true,
     );
     return true;
+  }
+
+  DoodadDeletionPlan prepareDoodadDeletion({
+    required DoodadPlacementRecipe recipe,
+    required int recordIndex,
+    int? overlayRecordIndex,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map.');
+    }
+    return DoodadDeletionPlan.create(
+      document: session.rawDocument,
+      recipe: recipe,
+      recordIndex: recordIndex,
+      confirmedOverlayRecordIndex: overlayRecordIndex,
+    );
+  }
+
+  void deleteDoodad(DoodadDeletionPlan plan) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, plan.document)) {
+      throw StateError('The map changed. Prepare the deletion again.');
+    }
+    for (final layer in [
+      MapLayerType.doodads,
+      MapLayerType.terrain,
+      if (plan.replacements.values.any(
+        (s) => s.hasNameBytes(ChkSectionNames.spritePlacements),
+      ))
+        MapLayerType.sprites,
+    ]) {
+      if (!mapLayerController.state.statusOf(layer).isSelectable) {
+        throw StateError('A required layer is locked.');
+      }
+    }
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Delete Doodad and restore terrain',
+        beforeSections: {
+          for (final index in plan.replacements.keys)
+            index: plan.document.sections[index],
+        },
+        afterSections: plan.replacements,
+      ),
+      clearSelection: true,
+    );
   }
 
   bool undo() {
