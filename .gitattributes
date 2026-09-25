@@ -1,0 +1,2 @@
+# Preserve whitespace in the unmodified upstream Python license notice.
+tool/eud_bundle/licenses/Python-3.13.5.txt whitespace=-blank-at-eol,-blank-at-eof

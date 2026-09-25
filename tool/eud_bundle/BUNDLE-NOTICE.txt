@@ -1,0 +1,25 @@
+StarCraft Map Editor managed euddraft bundle, revision editor.1
+
+Upstream: euddraft 0.10.2.5, eudplib 0.80.6, Python 3.13.5 (Windows x64)
+https://github.com/armoha/euddraft/releases/tag/v0.10.2.5
+Original ZIP SHA-256:
+87113da1cf8ad48c7ed81ee26a9db47ae236274d74e8f0f24addf0e2ab8280b3
+
+Modification: lib/library.zip's autoupdate.pyc is replaced with the readable
+autoupdate.py source shipped in this application's repository. Its sole public
+entry point issueAutoUpdate prints an informational message and returns.
+There is no update check, download, update prompt, worker thread or exit hook.
+All other upstream files and library entries retain their original contents.
+The library ZIP container is repacked deterministically without compression.
+This is an editor-managed derivative, not an unmodified official distribution.
+
+Original license.txt, frozen_application_license.txt, share/licenses and all
+library ZIP license/metadata entries are preserved. Consult these notices for
+the licenses of euddraft, Python, cx_Freeze and the included dependencies.
+Additional Python, eudplib, Pygments, OpenSSL, libffi, StormLib and Rust notices
+are in editor-licenses. SOURCES.md records their provenance and review limits.
+The application is not affiliated with the upstream authors.
+
+User Python/plugins remain executable code. Disabling the built-in updater
+does not sandbox arbitrary plugins or prevent their network/filesystem access.
+An explicitly selected external tool retains its own update behavior.

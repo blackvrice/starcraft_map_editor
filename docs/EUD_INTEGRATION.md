@@ -1,5 +1,8 @@
 # EUD 연동
 
+2026-09-25: Windows 빌드에 [관리형 euddraft](EUD_BUNDLED_TOOL.md)를 동봉한다.
+기본 도구 선택·실제 epScript 빌드는 연결했으며 선언적 EUD 설정 생성은 별도 X2 범위다.
+
 ## 1. 목표
 
 앱 안에서 epScript를 편집하고 euddraft/eudplib를 이용해 StarCraft: Remastered용 EUD 맵을 빌드한다. 컴파일러 자체를 재구현하지 않고 안정적인 어댑터를 제공한다.

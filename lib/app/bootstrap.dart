@@ -28,7 +28,7 @@ import '../infrastructure/assets/process_starcraft_object_atlas_gateway.dart';
 import '../infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 import '../infrastructure/assets/process_starcraft_tile_atlas_gateway.dart';
 import '../infrastructure/compiler/euddraft_diagnostic_parser.dart';
-import '../infrastructure/compiler/local_eud_tool_inspector.dart';
+import '../infrastructure/compiler/bundled_eud_tool.dart';
 import '../infrastructure/compiler/process_eud_compiler_gateway.dart';
 import '../infrastructure/filesystem/local_eud_build_file_gateway.dart';
 import '../infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
@@ -44,9 +44,11 @@ void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
 
   final settingsStore = JsonFileSettingsStore.forCurrentUser();
+  final eudToolInspector = BundledEudTool.inspector();
   final eudToolSettingsController = EudToolSettingsController(
     store: settingsStore,
-    inspector: LocalEudToolInspector(),
+    inspector: eudToolInspector,
+    bundledPath: BundledEudTool.installationPath,
     directoryPicker: const MethodChannelDirectoryPicker(),
   );
   final commandDispatcher = EditorCommandDispatcher();
@@ -62,7 +64,7 @@ void bootstrap() {
   final fingerprintGateway = LocalMapFileFingerprintGateway();
   final eudBuildController = EudBuildController(
     buildGateway: SafeEudBuildPipeline(
-      toolInspector: LocalEudToolInspector(),
+      toolInspector: eudToolInspector,
       compilerGateway: ProcessEudCompilerGateway(),
       archiveGateway: archiveGateway,
       fingerprintGateway: fingerprintGateway,

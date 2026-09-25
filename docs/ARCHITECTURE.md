@@ -916,6 +916,10 @@ UI 메시지와 개발자 로그를 분리한다. 사용자 메시지는 해결 
 
 ## 12. 기술 결정 상태
 
+Windows는 [관리형 euddraft](EUD_BUNDLED_TOOL.md)를 실행 파일 옆 버전별 경로에
+동봉한다. `BundledEudTool`은 컴파일된 신뢰 목록과 경로를 공급하고 bootstrap은
+설정 검사와 안전 빌드 pipeline에 같은 inspector를 주입한다. UI는 파일을 읽지 않는다.
+
 | 결정 | 상태 | 기록 |
 | --- | --- | --- |
 | Windows/SC:R 우선 | 승인 | [ADR-0001](decisions/0001-windows-remastered-first.md) |

@@ -1,5 +1,9 @@
 # EUD 도구 선택·진단 화면
 
+**2026-09-25:** `Use app default`는 실제 동봉 0.10.2.5-editor.1을 선택한다.
+버전·Python 별도 설치 불필요·고지 위치를 표시한다. [최신 기록](EUD_BUNDLED_TOOL.md).
+아래 동봉 미제공·빌드 실패 설명은 당시 이력이며 최신 Windows 빌드는 통과했다.
+
 2026-09-16 X1 부분 구현. `File → EUD Tools…`에서 맵 없이도 접근한다.
 
 - 외부 설치 폴더 또는 euddraft.exe의 절대 경로를 입력하고 `Save and inspect`를 누른다.

@@ -87,6 +87,13 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
                   const Text(
                     'No bundled tool is included in this app yet. Select an external installation.',
                   ),
+                if (state.path == null && widget.controller.bundledPath != null)
+                  SelectableText(
+                    'Bundled euddraft 0.10.2.5 (editor.1)\n'
+                    'No separate Python installation is required. Updates are managed with the app.\n'
+                    '${widget.controller.bundledPath}\n'
+                    'Licenses and modification details: BUNDLE-NOTICE.txt in this folder.',
+                  ),
                 if (state.busy) const LinearProgressIndicator(),
                 if (tool != null)
                   SelectableText(

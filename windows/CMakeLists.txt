@@ -86,6 +86,35 @@ add_subdirectory(
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# Build-time only download, pinned SHA-256; runtime never downloads tools.
+# The packager verifies every output against the inventory compiled into Dart.
+set(EUD_BUNDLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/eud_bundle/0.10.2.5-editor.1")
+find_program(EUD_POWERSHELL NAMES pwsh REQUIRED)
+execute_process(
+  COMMAND "${EUD_POWERSHELL}" -NoProfile -File
+    "${CMAKE_CURRENT_SOURCE_DIR}/../tool/prepare_eud_bundle.ps1"
+    -OutputDirectory "${EUD_BUNDLE_DIR}"
+  RESULT_VARIABLE EUD_BUNDLE_RESULT
+)
+if(NOT EUD_BUNDLE_RESULT EQUAL 0)
+  message(FATAL_ERROR "Managed EUD bundle preparation failed. See packager diagnostics.")
+endif()
+install(DIRECTORY "${EUD_BUNDLE_DIR}/"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/tools/euddraft/0.10.2.5-editor.1"
+  COMPONENT Runtime)
+# Check the installed tree on every build, including stale/extra files left by
+# an earlier package. Never ship an installation that runtime would reject.
+install(CODE "
+  execute_process(
+    COMMAND \"${EUD_POWERSHELL}\" -NoProfile -File
+      \"${CMAKE_CURRENT_SOURCE_DIR}/../tool/prepare_eud_bundle.ps1\"
+      -OutputDirectory \"${CMAKE_INSTALL_PREFIX}/tools/euddraft/0.10.2.5-editor.1\"
+    RESULT_VARIABLE EUD_INSTALLED_CHECK)
+  if(NOT EUD_INSTALLED_CHECK EQUAL 0)
+    message(FATAL_ERROR \"Installed EUD bundle failed integrity verification.\")
+  endif()
+" COMPONENT Runtime)
+
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 

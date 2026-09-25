@@ -1,5 +1,8 @@
 # 동봉 EUD 도구 manifest와 무결성 검사
 
+**현재 상태(2026-09-25):** 관리형 패키지·production 신뢰 목록·bootstrap·CMake 동봉을
+연결했다. [최신 기록](EUD_BUNDLED_TOOL.md)을 따른다. 아래 미연결 설명은 당시 이력이다.
+
 2026-09-16 X1 첫 구현. 관련: [확장 계획](EUD_TOOLCHAIN_LANGUAGE_PLAN.md).
 실제 도구 ZIP 또는 실행 파일을 저장소/앱에 추가하지 않았다. 앱 bootstrap의 동봉 경로와
 신뢰 manifest 주입, 도구 선택 UI 및 실제 배포 검증은 후속 작업이다.

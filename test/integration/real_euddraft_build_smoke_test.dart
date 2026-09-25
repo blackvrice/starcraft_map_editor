@@ -17,12 +17,14 @@ import 'package:starcraft_map_editor/application/ports/map_archive_gateway.dart'
 import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/local_eud_tool_inspector.dart';
+import 'package:starcraft_map_editor/infrastructure/compiler/bundled_eud_tool.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/process_eud_compiler_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_eud_build_file_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 
 void main() {
   final installationPath = Platform.environment['EUDDRAFT_TEST_INSTALLATION'];
+  final bundled = Platform.environment['EUDDRAFT_TEST_BUNDLED'] == '1';
   final archiveHelperPath = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
   final skipReason = !Platform.isWindows
       ? 'The official euddraft smoke test requires Windows.'
@@ -33,11 +35,16 @@ void main() {
       : false;
 
   test(
-    'official euddraft builds and promotes the self-authored map',
+    'verified euddraft builds and promotes the self-authored map',
     () async {
-      final toolInspector = LocalEudToolInspector();
+      final toolInspector = bundled
+          ? BundledEudTool.inspector()
+          : LocalEudToolInspector();
       final inspection = await toolInspector.inspect(
-        EudToolInspectionRequest(projectProfilePath: installationPath),
+        EudToolInspectionRequest(
+          projectProfilePath: bundled ? null : installationPath,
+          bundledPath: bundled ? installationPath : null,
+        ),
       );
       expect(inspection.isReady, isTrue, reason: '${inspection.diagnostics}');
       expect(inspection.tool?.version.toString(), '0.10.2.5');
@@ -99,7 +106,17 @@ void main() {
       final controller = EudBuildController(
         buildGateway: SafeEudBuildPipeline(
           toolInspector: toolInspector,
-          compilerGateway: ProcessEudCompilerGateway(),
+          compilerGateway: ProcessEudCompilerGateway(
+            parentEnvironment: bundled
+                ? {
+                    'SYSTEMROOT': Platform.environment['SYSTEMROOT']!,
+                    'WINDIR': Platform.environment['SYSTEMROOT']!,
+                    'TEMP': systemRoot.path,
+                    'TMP': systemRoot.path,
+                    'PATH': '',
+                  }
+                : null,
+          ),
           archiveGateway: archiveGateway,
           fingerprintGateway: LocalMapFileFingerprintGateway(),
           buildFileGateway: LocalEudBuildFileGateway(),
@@ -112,8 +129,10 @@ void main() {
       addTearDown(progressController.dispose);
       final toolSettings = EudToolSettingsController(
         store: InMemorySettingsStore({
-          EudToolSettingsController.settingsKey: tool.installationPath,
+          if (!bundled)
+            EudToolSettingsController.settingsKey: tool.installationPath,
         }),
+        bundledPath: bundled ? tool.installationPath : null,
         inspector: toolInspector,
       );
       addTearDown(toolSettings.dispose);
@@ -133,7 +152,7 @@ void main() {
       expect(error, isNull);
       expect(
         controller.state.plan!.tool.pathSource,
-        EudToolPathSource.userSettings,
+        bundled ? EudToolPathSource.bundled : EudToolPathSource.userSettings,
       );
       final succeeded = await controller.start();
       expect(
@@ -146,6 +165,12 @@ void main() {
             'stderr=${controller.state.latestRecord?.stderrLines}',
       );
       expect(controller.state.status, EudBuildStatus.succeeded);
+      if (bundled) {
+        expect(
+          controller.state.latestRecord!.stdoutLines.join('\n'),
+          contains('Bundled tool updates are managed by the application'),
+        );
+      }
       expect(
         controller.state.latestRecord?.status,
         EudBuildRecordStatus.succeeded,

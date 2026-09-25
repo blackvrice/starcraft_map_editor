@@ -23,6 +23,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0008](0008-validated-visual-placement-catalog.md) | Accepted | 검증된 로컬 카탈로그와 종류별 배치 recipe |
 | [0009](0009-declarative-eud-project.md) | Accepted | 별도 JSON 프로젝트의 EUD 선언적 설정·저장·Undo 경계 |
 | [0010](0010-reviewed-doodad-deletion.md) | Accepted | 복원 정보와 명시적 overlay 확인에 따른 단일 Doodad 복합 삭제 |
+| [0011](0011-managed-euddraft-bundle.md) | Accepted | updater 대체 소스와 신뢰 목록을 포함한 관리형 euddraft 동봉 |
 
 ## 새 ADR 형식
 

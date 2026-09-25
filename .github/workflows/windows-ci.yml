@@ -53,6 +53,15 @@ jobs:
           -C Debug
           --output-on-failure
 
+      - name: Verify managed EUD bundle and build without Python on PATH
+        shell: pwsh
+        run: |
+          $env:EUDDRAFT_AUDIT_ZIP = (Resolve-Path 'build/eud-downloads/euddraft0.10.2.5.zip').Path
+          $env:EUDDRAFT_TEST_INSTALLATION = (Resolve-Path 'build/windows/x64/runner/Debug/tools/euddraft/0.10.2.5-editor.1').Path
+          $env:EUDDRAFT_TEST_BUNDLED = '1'
+          $env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path 'build/windows/x64/runner/Debug/map_archive_helper.exe').Path
+          flutter test test/infrastructure/bundled_eud_tool_test.dart test/integration/real_euddraft_build_smoke_test.dart test/integration/bundled_euddraft_process_control_test.dart --concurrency=1
+
       - name: Smoke test bundled map archive helper
         shell: pwsh
         run: |

@@ -9,6 +9,32 @@ import '../application/eud_tool_settings_controller_test.dart'
     show TestInspector;
 
 void main() {
+  testWidgets('bundled default shows managed runtime and license location', (
+    tester,
+  ) async {
+    final controller = EudToolSettingsController(
+      store: InMemorySettingsStore(),
+      inspector: TestInspector(),
+      bundledPath: r'C:\app\tools\euddraft\0.10.2.5-editor.1',
+    );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: EudToolSettingsDialog(controller: controller)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No separate Python'), findsOneWidget);
+    expect(find.textContaining('BUNDLE-NOTICE.txt'), findsOneWidget);
+    expect(find.textContaining('No bundled tool'), findsNothing);
+    await tester.enterText(find.byType(TextField), r'C:\external');
+    await tester.tap(find.text('Save and inspect'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No separate Python'), findsNothing);
+    await tester.tap(find.text('Use app default'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('No separate Python'), findsOneWidget);
+  });
   for (final outcome in ['selected', 'cancelled', 'failed', 'closed']) {
     testWidgets(
       'directory browsing $outcome preserves saved choice until Save',
