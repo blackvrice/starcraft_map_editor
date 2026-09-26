@@ -1,5 +1,7 @@
 import '../chk/raw_chk_document.dart';
 import '../chk/typed/chk_unit_settings_editor.dart';
+import '../chk/typed/chk_upgrade_settings_editor.dart';
+import '../chk/typed/chk_tech_settings_editor.dart';
 import 'eud_field_manifest.dart';
 import 'eud_project.dart';
 
@@ -57,8 +59,15 @@ abstract final class EudEffectiveSettings {
             source = EudBaselineSource.unavailable;
             detail = 'Invalid or unsupported field / target / value';
           } else if (item.field != 'unit.maxShield') {
-            source = EudBaselineSource.notInChk;
-            detail = 'Game DAT value has not been loaded';
+            source = field.overlapsChk
+                ? EudBaselineSource.unavailable
+                : EudBaselineSource.notInChk;
+            detail = field.overlapsChk
+                ? 'CHK baseline reader is not connected for this field'
+                : 'Game DAT value has not been loaded';
+            if (field.overlapsChk) {
+              (source, value, detail) = _costBaseline(item, verifiedDocument);
+            }
           } else if (units == null) {
             source = EudBaselineSource.unavailable;
             detail = readError;
@@ -93,5 +102,64 @@ abstract final class EudEffectiveSettings {
         );
       }),
     );
+  }
+
+  static (EudBaselineSource, int?, String) _costBaseline(
+    EudOverride item,
+    RawChkDocument document,
+  ) {
+    const upgrades = {
+      'upgrade.mineralCostBase': ChkUpgradeField.minerals,
+      'upgrade.mineralCostFactor': ChkUpgradeField.mineralFactor,
+      'upgrade.gasCostBase': ChkUpgradeField.gas,
+      'upgrade.gasCostFactor': ChkUpgradeField.gasFactor,
+      'upgrade.timeCostBase': ChkUpgradeField.time,
+      'upgrade.timeCostFactor': ChkUpgradeField.timeFactor,
+    };
+    const techs = {
+      'tech.mineralCost': ChkTechField.minerals,
+      'tech.gasCost': ChkTechField.gas,
+      'tech.timeCost': ChkTechField.time,
+      'tech.energyCost': ChkTechField.energy,
+    };
+    try {
+      int flag;
+      int cost;
+      String section;
+      if (upgrades.containsKey(item.field)) {
+        final settings = const ChkUpgradeSettingsEditor().read(document);
+        flag = settings.value((
+          item.targetId,
+          null,
+          ChkUpgradeField.useDefault,
+        ));
+        cost = settings.value((item.targetId, null, upgrades[item.field]!));
+        section = settings.costName;
+      } else if (techs.containsKey(item.field)) {
+        final settings = const ChkTechSettingsEditor().read(document);
+        flag = settings.value((item.targetId, null, ChkTechField.useDefault));
+        cost = settings.value((item.targetId, null, techs[item.field]!));
+        section = settings.costName;
+      } else {
+        return (
+          EudBaselineSource.unavailable,
+          null,
+          'Global DAT maximum differs from CHK map/player research limits; no single baseline',
+        );
+      }
+      return (
+        switch (flag) {
+          0 => EudBaselineSource.chk,
+          1 => EudBaselineSource.gameDefault,
+          _ => EudBaselineSource.unavailable,
+        },
+        flag == 0 ? cost : null,
+        '$section, useDefault=$flag',
+      );
+    } on StateError catch (error) {
+      return (EudBaselineSource.unavailable, null, error.toString());
+    } on RangeError catch (error) {
+      return (EudBaselineSource.unavailable, null, error.toString());
+    }
   }
 }

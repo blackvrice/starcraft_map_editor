@@ -5,10 +5,10 @@ import '../../application/placement/placement_catalog_controller.dart';
 import 'eud_impact_pane.dart';
 import 'eud_weapon_editor.dart';
 import 'eud_shield_editor.dart';
+import 'eud_field_editor.dart';
+import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_effective_settings.dart';
 import '../../domain/eud/eud_generation_preview.dart';
-import '../settings/default_unit_names.dart';
-import '../settings/default_settings_names.dart';
 
 class EudProjectPane extends StatefulWidget {
   const EudProjectPane({required this.workspace, this.catalog, super.key});
@@ -198,7 +198,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.',
           ),
           const Text(
-            'Weapon and shield EUD settings can be edited below. Generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
+            'All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
           ),
           if (workspace.isBusy) const LinearProgressIndicator(),
           if (_error != null)
@@ -222,6 +222,19 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             Wrap(
               spacing: 8,
               children: [
+                OutlinedButton.icon(
+                  key: const Key('eud-all-fields'),
+                  icon: const Icon(Icons.tune),
+                  onPressed: busy
+                      ? null
+                      : () => _run(
+                          () => showEudFieldEditor(
+                            context,
+                            controller: controller,
+                          ),
+                        ),
+                  label: const Text('All EUD field extensions'),
+                ),
                 OutlinedButton(
                   onPressed: busy ? null : () => _run(workspace.verify),
                   child: const Text('Verify current map'),
@@ -335,13 +348,8 @@ class _EudProjectPaneState extends State<EudProjectPane> {
   };
 
   String _targetName(String field, int id) {
-    final names = field.startsWith('unit.')
-        ? defaultUnitNames
-        : field.startsWith('weapon.')
-        ? defaultWeaponNames
-        : const <String>[];
-    final name = id >= 0 && id < names.length ? names[id] : '';
-    return name.isEmpty ? '#$id' : '$name (#$id)';
+    final table = EudFieldManifest.find(field)?.table;
+    return table == null ? '#$id' : eudTargetName(table, id);
   }
 
   String _baseline(EudEffectiveSetting setting) =>

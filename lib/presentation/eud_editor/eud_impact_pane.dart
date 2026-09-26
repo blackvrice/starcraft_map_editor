@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/eud/eud_override_impact.dart';
+import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_project.dart';
 import '../settings/default_unit_names.dart';
 import '../settings/default_settings_names.dart';
@@ -85,7 +86,7 @@ class _EudImpactPaneState extends State<EudImpactPane> {
           children: [
             const Text('Static unit / weapon impact'),
             const Text(
-              'DAT references only; spells, runtime changes and actual attack behavior are not verified. All players share these type settings.',
+              'Base DAT references only; proposed reference changes, spells and actual attack behavior are not resolved. Type settings are global; player fields affect the selected slot.',
             ),
             OutlinedButton(
               onPressed: widget.catalog == null || _loading ? null : _load,
@@ -179,7 +180,11 @@ class _EudImpactPaneState extends State<EudImpactPane> {
         '${override.identity}\n${impact.error != null
             ? 'Cannot analyze: ${impact.error!.name}'
             : impact.directUnits == null
-            ? 'Impact unknown: weapon references unavailable.'
+            ? EudFieldManifest.find(override.field)?.table == EudTable.weapon
+                  ? 'Impact unknown: weapon references unavailable.'
+                  : EudFieldManifest.find(override.field)?.table == EudTable.player
+                  ? 'Player ${override.targetId + 1} only; runtime behavior unverified.'
+                  : 'Impact unknown: shared references for this table are unavailable.'
             : 'Direct units: ${_names(impact.directUnits!)}\nVia subunits: ${_names(impact.subunitUnits!)}'}',
       ),
     );

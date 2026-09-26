@@ -92,6 +92,22 @@ final class EudProject {
           issues.add('${item.identity}:minimumExceedsMaximum');
         }
       }
+      const orderedPairs = {
+        'weapon.splashInnerRadius': [
+          'weapon.splashMiddleRadius',
+          'weapon.splashOuterRadius',
+        ],
+        'weapon.splashMiddleRadius': ['weapon.splashOuterRadius'],
+        'unit.whatSoundStart': ['unit.whatSoundEnd'],
+        'unit.pissedSoundStart': ['unit.pissedSoundEnd'],
+        'unit.yesSoundStart': ['unit.yesSoundEnd'],
+      };
+      for (final upperField in orderedPairs[item.field] ?? const <String>[]) {
+        final upper = values['$upperField:${item.targetId}']?.value;
+        if (upper is int && item.value is int && (item.value as int) > upper) {
+          issues.add('${item.identity}:exceeds:$upperField');
+        }
+      }
     }
     return List.unmodifiable(issues);
   }

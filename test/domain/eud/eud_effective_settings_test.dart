@@ -49,6 +49,67 @@ EudProject _project({bool explicit = true, List<EudOverride>? overrides}) =>
 
 void main() {
   test(
+    'upgrade and technology baselines honor CHK defaults and malformed data',
+    () {
+      for (final (key, section, length, count) in [
+        ('upgrade.mineralCostBase', 'UPGx', 794, 62),
+        ('tech.mineralCost', 'TECx', 396, 44),
+      ]) {
+        for (final flag in [0, 1, 2]) {
+          final bytes = Uint8List(length)..[0] = flag;
+          ByteData.sublistView(bytes).setUint16(count, 123, Endian.little);
+          final doc = RawChkDocument(
+            sourceLength: 0,
+            sections: [
+              ..._map().sections,
+              RawChkSection(
+                nameBytes: section.codeUnits,
+                declaredLength: length,
+                payload: bytes,
+                sourceOffset: 0,
+              ),
+            ],
+          );
+          final result = EudEffectiveSettings.resolve(
+            _project(
+              overrides: [
+                EudOverride(
+                  field: key,
+                  targetId: 0,
+                  value: 456,
+                  overrideChk: true,
+                ),
+              ],
+            ),
+            verifiedDocument: doc,
+          ).single;
+          expect(
+            result.baselineSource,
+            flag == 0
+                ? EudBaselineSource.chk
+                : flag == 1
+                ? EudBaselineSource.gameDefault
+                : EudBaselineSource.unavailable,
+          );
+          expect(result.baselineValue, flag == 0 ? 123 : null);
+          expect(result.plannedValue, flag == 2 ? null : 456);
+        }
+      }
+      for (final key in ['upgrade.maxLevel', 'tech.energyCost']) {
+        final result = EudEffectiveSettings.resolve(
+          _project(
+            overrides: [
+              EudOverride(field: key, targetId: 0, value: 1, overrideChk: true),
+            ],
+          ),
+          verifiedDocument: _map(),
+        ).single;
+        expect(result.baselineSource, EudBaselineSource.unavailable);
+        expect(result.plannedValue, isNull);
+      }
+    },
+  );
+  test(
     'selects active CHK version, preserves baseline and explicit EUD intent',
     () {
       for (final expanded in [false, true]) {

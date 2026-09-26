@@ -27,6 +27,9 @@ final class EudOverrideImpact {
     if (field.table == EudTable.unit) {
       return EudOverrideImpact._(null, [override.targetId], []);
     }
+    if (field.table != EudTable.weapon) {
+      return EudOverrideImpact._(null, null, null);
+    }
     return EudOverrideImpact._(
       null,
       references?.directUsers(override.targetId),
