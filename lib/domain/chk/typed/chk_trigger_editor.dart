@@ -35,13 +35,105 @@ abstract final class TriggerOpcodes {
     5: 'Player 6',
     6: 'Player 7',
     7: 'Player 8',
+    8: 'Player 9',
+    9: 'Player 10',
+    10: 'Player 11',
+    11: 'Player 12',
     13: 'Current player',
+    14: 'Foes',
+    15: 'Allies',
+    16: 'Neutral players',
+    17: 'All players',
+    18: 'Force 1',
+    19: 'Force 2',
+    20: 'Force 3',
+    21: 'Force 4',
+    26: 'Non-allied victory players',
+  };
+  static const owners = {
+    0: 'Player 1',
+    1: 'Player 2',
+    2: 'Player 3',
+    3: 'Player 4',
+    4: 'Player 5',
+    5: 'Player 6',
+    6: 'Player 7',
+    7: 'Player 8',
+    8: 'Player 9',
+    9: 'Player 10',
+    10: 'Player 11',
+    11: 'Player 12',
     17: 'All players',
     18: 'Force 1',
     19: 'Force 2',
     20: 'Force 3',
     21: 'Force 4',
   };
+  static const scores = {
+    0: 'Total',
+    1: 'Units',
+    2: 'Buildings',
+    3: 'Units and buildings',
+    4: 'Kills',
+    5: 'Razings',
+    6: 'Kills and razings',
+    7: 'Custom',
+  };
+  static const modifier = TriggerArgument(
+    'Modifier',
+    27,
+    1,
+    choices: {7: 'Set to', 8: 'Add', 9: 'Subtract'},
+  );
+  static const state = TriggerArgument(
+    'State',
+    27,
+    1,
+    choices: {4: 'Enable', 5: 'Disable', 6: 'Toggle'},
+  );
+  static const count = TriggerArgument('Count (0 = All)', 27, 1, max: 255);
+  static const value = TriggerArgument('Amount', 20, 4);
+  static const duration = TriggerArgument('Duration', 12, 4);
+  static const dest = TriggerArgument(
+    'Destination location ID',
+    20,
+    4,
+    max: 255,
+    reference: 'location',
+  );
+  static const score = TriggerArgument('Score', 24, 2, choices: scores);
+  static const resource = TriggerArgument(
+    'Resource',
+    24,
+    2,
+    choices: resources,
+  );
+  static const cu = TriggerArgument(
+    'Unit ID',
+    12,
+    2,
+    max: 232,
+    reference: 'unitGroup',
+  );
+  static const gu = TriggerArgument(
+    'Unit ID',
+    24,
+    2,
+    max: 232,
+    reference: 'unitGroup',
+  );
+  static const sound = TriggerArgument(
+    'Sound string ID',
+    8,
+    4,
+    reference: 'string',
+  );
+  static const script = TriggerArgument(
+    'AI script (4 characters)',
+    20,
+    4,
+    reference: 'script',
+  );
   static const resources = {0: 'Minerals', 1: 'Gas', 2: 'Minerals and gas'};
   static const cp = TriggerArgument('Player', 4, 4, choices: players);
   static const comparison = TriggerArgument(
@@ -79,8 +171,8 @@ abstract final class TriggerOpcodes {
     TriggerOpcode(23, 'Never', []),
     TriggerOpcode(12, 'Elapsed time', [comparison, amount]),
     TriggerOpcode(1, 'Countdown timer', [comparison, amount]),
-    TriggerOpcode(2, 'Command', [cp, comparison, amount, unit]),
-    TriggerOpcode(3, 'Bring', [cp, comparison, amount, unit, location]),
+    TriggerOpcode(2, 'Command', [cp, comparison, amount, cu]),
+    TriggerOpcode(3, 'Bring', [cp, comparison, amount, cu, location]),
     TriggerOpcode(4, 'Accumulate', [
       cp,
       comparison,
@@ -88,8 +180,41 @@ abstract final class TriggerOpcodes {
       TriggerArgument('Resource', 16, 1, choices: resources),
     ]),
     TriggerOpcode(11, 'Switch', [
-      TriggerArgument('Switch ID (0–255)', 16, 1, max: 255),
+      TriggerArgument(
+        'Switch ID (0–255)',
+        16,
+        1,
+        max: 255,
+        reference: 'switch',
+      ),
       TriggerArgument('State', 14, 1, choices: {2: 'Set', 3: 'Cleared'}),
+    ]),
+    TriggerOpcode(5, 'Kills', [cp, comparison, amount, cu]),
+    TriggerOpcode(6, 'Command most', [cu]),
+    TriggerOpcode(7, 'Command most at', [cu, location]),
+    TriggerOpcode(8, 'Most kills', [cu]),
+    TriggerOpcode(9, 'Highest score', [
+      TriggerArgument('Score', 16, 1, choices: scores),
+    ]),
+    TriggerOpcode(10, 'Most resources', [
+      TriggerArgument('Resource', 16, 1, choices: resources),
+    ]),
+    TriggerOpcode(14, 'Opponents', [cp, comparison, amount]),
+    TriggerOpcode(15, 'Deaths', [cp, comparison, amount, unit]),
+    TriggerOpcode(16, 'Command least', [cu]),
+    TriggerOpcode(17, 'Command least at', [cu, location]),
+    TriggerOpcode(18, 'Least kills', [cu]),
+    TriggerOpcode(19, 'Lowest score', [
+      TriggerArgument('Score', 16, 1, choices: scores),
+    ]),
+    TriggerOpcode(20, 'Least resources', [
+      TriggerArgument('Resource', 16, 1, choices: resources),
+    ]),
+    TriggerOpcode(21, 'Score', [
+      cp,
+      comparison,
+      amount,
+      TriggerArgument('Score', 16, 1, choices: scores),
     ]),
   ];
   static const actions = [
@@ -102,7 +227,13 @@ abstract final class TriggerOpcodes {
     TriggerOpcode(9, 'Display text', [text], flags: 4),
     TriggerOpcode(10, 'Center view', [location], flags: 4),
     TriggerOpcode(13, 'Set switch', [
-      TriggerArgument('Switch ID (0–255)', 20, 4, max: 255),
+      TriggerArgument(
+        'Switch ID (0–255)',
+        20,
+        4,
+        max: 255,
+        reference: 'switch',
+      ),
       TriggerArgument(
         'State',
         27,
@@ -110,8 +241,8 @@ abstract final class TriggerOpcodes {
         choices: {4: 'Set', 5: 'Clear', 6: 'Toggle', 11: 'Randomize'},
       ),
     ], flags: 4),
-    TriggerOpcode(22, 'Kill unit', [ap, au], flags: 20),
-    TriggerOpcode(24, 'Remove unit', [ap, au], flags: 20),
+    TriggerOpcode(22, 'Kill unit', [ap, gu], flags: 20),
+    TriggerOpcode(24, 'Remove unit', [ap, gu], flags: 20),
     TriggerOpcode(26, 'Set resources', [
       ap,
       TriggerArgument(
@@ -130,6 +261,159 @@ abstract final class TriggerOpcodes {
       TriggerArgument('Count', 27, 1, max: 255),
     ], flags: 20),
     TriggerOpcode(47, 'Comment', [text], flags: 4),
+    TriggerOpcode(5, 'Pause game', [], flags: 4),
+    TriggerOpcode(6, 'Unpause game', [], flags: 4),
+    TriggerOpcode(7, 'Transmission', [
+      au,
+      location,
+      sound,
+      duration,
+      modifier,
+      text,
+    ], flags: 4),
+    TriggerOpcode(8, 'Play WAV', [sound], flags: 4),
+    TriggerOpcode(11, 'Create unit with properties', [
+      ap,
+      au,
+      location,
+      TriggerArgument('Count', 27, 1, max: 255),
+      TriggerArgument(
+        'Property slot ID',
+        20,
+        4,
+        max: 64,
+        reference: 'property',
+      ),
+    ], flags: 28),
+    TriggerOpcode(12, 'Set mission objectives', [text], flags: 4),
+    TriggerOpcode(14, 'Set countdown timer', [modifier, duration], flags: 4),
+    TriggerOpcode(15, 'Run AI script', [script], flags: 4),
+    TriggerOpcode(16, 'Run AI script at', [script, location], flags: 4),
+    TriggerOpcode(17, 'Leaderboard control', [gu, text], flags: 20),
+    TriggerOpcode(18, 'Leaderboard control at', [
+      gu,
+      location,
+      text,
+    ], flags: 20),
+    TriggerOpcode(19, 'Leaderboard resources', [resource, text], flags: 4),
+    TriggerOpcode(20, 'Leaderboard kills', [gu, text], flags: 20),
+    TriggerOpcode(21, 'Leaderboard score', [score, text], flags: 4),
+    TriggerOpcode(23, 'Kill unit at', [ap, gu, location, count], flags: 20),
+    TriggerOpcode(25, 'Remove unit at', [ap, gu, location, count], flags: 20),
+    TriggerOpcode(27, 'Set score', [ap, modifier, value, score], flags: 4),
+    TriggerOpcode(28, 'Minimap ping', [location], flags: 4),
+    TriggerOpcode(29, 'Talking portrait', [au, duration], flags: 20),
+    TriggerOpcode(30, 'Mute unit speech', [], flags: 4),
+    TriggerOpcode(31, 'Unmute unit speech', [], flags: 4),
+    TriggerOpcode(32, 'Leaderboard computer players', [state], flags: 4),
+    TriggerOpcode(33, 'Leaderboard goal control', [value, gu, text], flags: 20),
+    TriggerOpcode(34, 'Leaderboard goal control at', [
+      value,
+      gu,
+      location,
+      text,
+    ], flags: 20),
+    TriggerOpcode(35, 'Leaderboard goal resources', [
+      value,
+      resource,
+      text,
+    ], flags: 4),
+    TriggerOpcode(36, 'Leaderboard goal kills', [value, gu, text], flags: 20),
+    TriggerOpcode(37, 'Leaderboard goal score', [value, score, text], flags: 4),
+    TriggerOpcode(38, 'Move location', [
+      TriggerArgument(
+        'Location to move ID',
+        0,
+        4,
+        max: 255,
+        reference: 'location',
+      ),
+      ap,
+      gu,
+      TriggerArgument(
+        'Search location ID',
+        20,
+        4,
+        max: 255,
+        reference: 'location',
+      ),
+    ], flags: 20),
+    TriggerOpcode(39, 'Move unit', [ap, gu, location, dest, count], flags: 20),
+    TriggerOpcode(40, 'Leaderboard greed', [value], flags: 4),
+    TriggerOpcode(41, 'Set next scenario', [text], flags: 4),
+    TriggerOpcode(42, 'Set doodad state', [state, ap, gu, location], flags: 20),
+    TriggerOpcode(43, 'Set invincibility', [
+      state,
+      ap,
+      gu,
+      location,
+    ], flags: 20),
+    TriggerOpcode(45, 'Set deaths', [ap, modifier, value, au], flags: 20),
+    TriggerOpcode(46, 'Order', [
+      ap,
+      gu,
+      location,
+      dest,
+      TriggerArgument(
+        'Order',
+        27,
+        1,
+        choices: {0: 'Move', 1: 'Patrol', 2: 'Attack'},
+      ),
+    ], flags: 20),
+    TriggerOpcode(48, 'Give units', [
+      ap,
+      gu,
+      location,
+      count,
+      TriggerArgument('New owner', 20, 4, choices: players),
+    ], flags: 20),
+    TriggerOpcode(49, 'Modify hitpoints', [
+      ap,
+      gu,
+      location,
+      count,
+      TriggerArgument('Percent', 20, 4, max: 100),
+    ], flags: 20),
+    TriggerOpcode(50, 'Modify energy', [
+      ap,
+      gu,
+      location,
+      count,
+      TriggerArgument('Percent', 20, 4, max: 100),
+    ], flags: 20),
+    TriggerOpcode(51, 'Modify shields', [
+      ap,
+      gu,
+      location,
+      count,
+      TriggerArgument('Percent', 20, 4, max: 100),
+    ], flags: 20),
+    TriggerOpcode(52, 'Modify resources', [
+      ap,
+      location,
+      count,
+      value,
+    ], flags: 4),
+    TriggerOpcode(53, 'Modify hangar count', [
+      ap,
+      gu,
+      location,
+      count,
+      value,
+    ], flags: 20),
+    TriggerOpcode(54, 'Pause timer', [], flags: 4),
+    TriggerOpcode(55, 'Unpause timer', [], flags: 4),
+    TriggerOpcode(56, 'Draw', [], flags: 4),
+    TriggerOpcode(57, 'Set alliance status', [
+      ap,
+      TriggerArgument(
+        'Alliance',
+        24,
+        2,
+        choices: {0: 'Enemy', 1: 'Ally', 2: 'Allied victory'},
+      ),
+    ], flags: 4),
   ];
   static TriggerOpcode? find(bool action, int id) {
     for (final opcode in action ? actions : conditions) {
@@ -163,9 +447,40 @@ final class ChkTrigger {
   static bool editable(bool action, List<int> slot) =>
       TriggerOpcodes.find(action, type(action, slot)) != null &&
       slot[action ? 30 : 18] == 0 &&
-      slot[action ? 31 : 19] == 0;
+      slot[action ? 31 : 19] == 0 &&
+      (!(type(action, slot) == (action ? 45 : 15)) ||
+          (TriggerOpcodes.players.containsKey(
+                ByteData.sublistView(
+                  Uint8List.fromList(slot),
+                ).getUint32(action ? 16 : 4, Endian.little),
+              ) &&
+              ByteData.sublistView(
+                    Uint8List.fromList(slot),
+                  ).getUint16(action ? 24 : 12, Endian.little) <
+                  228));
+  bool get enabled => bytes[2368] & 8 == 0;
+  ChkTrigger withEnabled(bool enabled) => ChkTrigger(
+    [...bytes]..[2368] = enabled ? bytes[2368] & ~8 : bytes[2368] | 8,
+  );
+  ChkTrigger withSlotEnabled(bool action, int index, bool enabled) {
+    final next = slot(action, index);
+    if (!editable(action, next)) {
+      throw const FormatException('Unsupported slot is read-only.');
+    }
+    final offset = action ? 28 : 17;
+    next[offset] = enabled ? next[offset] & ~2 : next[offset] | 2;
+    return withSlot(action, index, next);
+  }
+
+  ChkTrigger moveSlot(bool action, int from, int to) {
+    final a = slot(action, from), b = slot(action, to);
+    return withSlot(action, from, b).withSlot(action, to, a);
+  }
+
   ChkTrigger withOwner(int player, bool enabled) {
-    RangeError.checkValueInInterval(player, 0, 7);
+    if (!TriggerOpcodes.owners.containsKey(player)) {
+      throw RangeError.value(player);
+    }
     final next = Uint8List.fromList(bytes)..[2372 + player] = enabled ? 1 : 0;
     return ChkTrigger(next);
   }
@@ -225,6 +540,28 @@ final class ChkTrigger {
           throw const FormatException('Location ID is unavailable.');
         }
       }
+      if (arg.reference == 'unitGroup' && value == 228) {
+        throw const FormatException('None is not a unit group.');
+      }
+      if (arg.reference == 'script' &&
+          List.generate(
+            4,
+            (i) => (value >> (8 * i)) & 255,
+          ).any((b) => b < 32 || b > 126)) {
+        throw const FormatException(
+          'AI script ID requires four printable ASCII characters.',
+        );
+      }
+      if (arg.reference == 'property') {
+        final sections = document.sections
+            .where((s) => s.name == 'UPRP')
+            .toList();
+        if (value < 1 ||
+            sections.length != 1 ||
+            sections.single.payload.length != 1280) {
+          throw const FormatException('Property slot is unavailable.');
+        }
+      }
       if (arg.reference == 'string') {
         final views = const ChkStringViewDecoder().decode(document);
         final hasExtended = document.sections.any((s) => s.name == 'STRx');
@@ -261,6 +598,40 @@ final class ChkTrigger {
 }
 
 final class ChkTriggers {
+  static List<String> validationIssues(RawChkDocument document) {
+    final issues = <String>[];
+    final records = read(document).records;
+    for (var r = 0; r < records.length; r++) {
+      for (final action in [false, true]) {
+        for (var s = 0; s < (action ? 64 : 16); s++) {
+          final slot = records[r].slot(action, s);
+          if (!ChkTrigger.editable(action, slot)) continue;
+          final opcode = TriggerOpcodes.find(
+            action,
+            ChkTrigger.type(action, slot),
+          )!;
+          try {
+            ChkTrigger.makeSlot(
+              action,
+              opcode,
+              {
+                for (final arg in opcode.arguments)
+                  arg.name: ChkTrigger.argument(slot, arg),
+              },
+              document,
+              original: slot,
+            );
+          } catch (e) {
+            issues.add(
+              'Trigger ${r + 1}, ${action ? 'action' : 'condition'} ${s + 1} (${opcode.name}): $e',
+            );
+          }
+        }
+      }
+    }
+    return issues;
+  }
+
   ChkTriggers(this.sectionIndex, List<ChkTrigger> records)
     : records = List.unmodifiable(records);
   final int sectionIndex;

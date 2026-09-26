@@ -93,6 +93,52 @@ class ObjectEditingController {
     return ChkTriggers.read(session.rawDocument);
   }
 
+  void applyTriggerResources({
+    required RawChkDocument expectedDocument,
+    required RawChkDocument updatedDocument,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError('Map changed. Reopen trigger resources.');
+    }
+    const allowed = {'STR ', 'STRx', 'SWNM', 'UPRP', 'UPUS'};
+    if (updatedDocument.sections.length < expectedDocument.sections.length) {
+      throw StateError('Resource edits cannot remove sections.');
+    }
+    final before = <int, RawChkSection>{}, after = <int, RawChkSection>{};
+    final appended = <RawChkSection>[];
+    for (var i = 0; i < updatedDocument.sections.length; i++) {
+      final next = updatedDocument.sections[i];
+      if (i >= expectedDocument.sections.length) {
+        if (!{'SWNM', 'UPRP', 'UPUS'}.contains(next.name) ||
+            updatedDocument.sections.where((s) => s.name == next.name).length !=
+                1) {
+          throw StateError('Unsupported appended resource.');
+        }
+        appended.add(next);
+      } else if (!identical(next, expectedDocument.sections[i])) {
+        if (!allowed.contains(next.name) ||
+            next.name != expectedDocument.sections[i].name) {
+          throw StateError('Unsupported resource change.');
+        }
+        before[i] = expectedDocument.sections[i];
+        after[i] = next;
+      }
+    }
+    if (after.isEmpty && appended.isEmpty) return;
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit trigger resources',
+        beforeSections: before,
+        afterSections: after,
+        appendedSections: appended,
+      ),
+      clearSelection: false,
+    );
+  }
+
   void applyTriggers({
     required RawChkDocument expectedDocument,
     required List<ChkTrigger> records,

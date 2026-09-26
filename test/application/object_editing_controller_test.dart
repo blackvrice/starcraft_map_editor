@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_resources.dart';
 import 'package:starcraft_map_editor/presentation/triggers/trigger_pane.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
@@ -19,6 +20,104 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  test(
+    'trigger resources append atomically and undo with stale draft protection',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final before = fixture.openMapController.state.session!.rawDocument;
+      final updated = ChkTriggerResources.renameSwitch(
+        ChkTriggerResources.editProperty(before, 1, {
+          'Hitpoints %': 25,
+        }, List.filled(5, null)),
+        3,
+        'Spawn enabled',
+      );
+      fixture.objectEditingController.applyTriggerResources(
+        expectedDocument: before,
+        updatedDocument: updated,
+      );
+      expect(
+        ChkTriggerResources.switchName(
+          fixture.openMapController.state.session!.rawDocument,
+          3,
+        ),
+        'Spawn enabled',
+      );
+      expect(
+        () => fixture.objectEditingController.applyTriggerResources(
+          expectedDocument: before,
+          updatedDocument: updated,
+        ),
+        throwsStateError,
+      );
+      fixture.objectEditingController.undo();
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        const RawChkEncoder().encode(before),
+      );
+      fixture.objectEditingController.redo();
+      expect(
+        ChkTriggerResources.propertyValues(
+          fixture.openMapController.state.session!.rawDocument,
+          1,
+        )['Hitpoints %'],
+        25,
+      );
+    },
+  );
+  testWidgets('switch names prepare apply and undo plus bulk disable', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TriggerPane(controller: fixture.objectEditingController),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Switch names…'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Start');
+    await tester.tap(find.byKey(const Key('trigger-resource-prepare')));
+    await tester.pumpAndSettle();
+    expect(fixture.openMapController.state.session!.isDirty, isFalse);
+    await tester.tap(find.byKey(const Key('trigger-resource-apply')));
+    await tester.pumpAndSettle();
+    expect(
+      ChkTriggerResources.switchName(
+        fixture.openMapController.state.session!.rawDocument,
+        0,
+      ),
+      'Start',
+    );
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(
+      fixture.openMapController.state.session!.rawDocument.sections.any(
+        (s) => s.name == 'SWNM',
+      ),
+      isFalse,
+    );
+    await tester.tap(find.byKey(const Key('trigger-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Select all / none'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Disable selected'));
+    await tester.pumpAndSettle();
+    expect(
+      fixture.objectEditingController.triggers.records.single.enabled,
+      isFalse,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
   test(
     'trigger changes preserve sections and reject stale drafts with undo redo',
     () async {

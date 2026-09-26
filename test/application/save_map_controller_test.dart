@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
+import 'package:starcraft_map_editor/application/documents/opened_map_session.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
@@ -69,6 +71,43 @@ void main() {
       await openMapController.dispose();
       await progressController.dispose();
     });
+    test(
+      'invalid edited trigger references stop before archive writes',
+      () async {
+        final before = openMapController.state.session!;
+        final bytes = ChkTrigger.create().bytes.toList()
+          ..[346] = 9
+          ..[324] = 255;
+        final doc = before.rawDocument.appendSection(
+          RawChkSection(
+            nameBytes: 'TRIG'.codeUnits,
+            declaredLength: 2400,
+            payload: bytes,
+            sourceOffset: 0,
+            isDirty: true,
+          ),
+        );
+        openMapController.adoptEditedSession(
+          OpenedMapSession(
+            extractedMap: before.extractedMap,
+            rawDocument: doc,
+            metadataViews: before.metadataViews,
+            stringViews: before.stringViews,
+            terrainViews: before.terrainViews,
+            objectViews: before.objectViews,
+            sourceFingerprint: before.sourceFingerprint,
+            diagnostics: before.diagnostics,
+          ),
+        );
+        final result = await saveMapController.saveAs();
+        expect(result.status, SaveMapStatus.failed);
+        expect(
+          result.diagnostics.single.code,
+          SaveMapDiagnosticCodes.invalidTriggers,
+        );
+        expect(archiveGateway.writeRequests, isEmpty);
+      },
+    );
 
     test(
       'writes, reopens, verifies, promotes, and adopts the saved map',

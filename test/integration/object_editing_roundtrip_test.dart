@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_resources.dart';
 import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_save_file_gateway.dart';
@@ -484,19 +485,35 @@ void _registerSettingsRoundtrip(bool realArchive) {
         throwsStateError,
       );
       final beforeTriggers = openController.state.session!.rawDocument;
+      final resourceDoc = ChkTriggerResources.renameSwitch(
+        ChkTriggerResources.editProperty(
+          beforeTriggers,
+          64,
+          {'Hitpoints %': 50, 'Energy %': 100},
+          [null, null, null, null, true],
+        ),
+        5,
+        'Spawn switch',
+      );
+      editingController.applyTriggerResources(
+        expectedDocument: beforeTriggers,
+        updatedDocument: resourceDoc,
+      );
+      final triggerDoc = openController.state.session!.rawDocument;
       final trigger = ChkTrigger.create().withSlot(
         true,
         0,
-        ChkTrigger.makeSlot(true, TriggerOpcodes.find(true, 44)!, {
+        ChkTrigger.makeSlot(true, TriggerOpcodes.find(true, 11)!, {
           'Player': 0,
           'Unit ID': 0,
           'Location ID': 1,
           'Count': 2,
-        }, beforeTriggers),
+          'Property slot ID': 64,
+        }, triggerDoc),
       );
       final preserved = ChkTrigger(List.generate(2400, (i) => i % 256));
       editingController.applyTriggers(
-        expectedDocument: beforeTriggers,
+        expectedDocument: triggerDoc,
         records: [trigger, preserved],
       );
       final saved = await saveController.saveAs();
@@ -516,10 +533,12 @@ void _registerSettingsRoundtrip(bool realArchive) {
       final writtenDocument = const RawChkParser()
           .parse(writtenBytes)
           .document!;
-      expect(
-        writtenDocument.sections.map((section) => section.name),
-        originalSectionNames,
-      );
+      expect(writtenDocument.sections.map((section) => section.name), [
+        ...originalSectionNames,
+        'UPRP',
+        'UPUS',
+        'SWNM',
+      ]);
       expect(
         _sectionNamed(writtenDocument, 'XTRA').payload,
         originalUnknownPayload,
@@ -588,19 +607,30 @@ void _registerSettingsRoundtrip(bool realArchive) {
           .decode(writtenDocument)
           .legacyTables
           .single;
-      expect(writtenStrings.declaredStringCount, 7);
+      expect(writtenStrings.declaredStringCount, 8);
       expect(writtenStrings.entries[5].rawBytes, utf8.encode('세력 하나'));
       expect(writtenStrings.entries[0].rawBytes, utf8.encode('Existing'));
       expect(writtenStrings.entries[1].rawBytes, utf8.encode('Shared'));
       expect(writtenStrings.entries[2].rawBytes, utf8.encode('왕복 위치'));
       expect(
-        writtenStrings.rawSection.payload.sublist(32, 34),
+        writtenStrings.rawSection.payload.sublist(34, 36),
         const [0xde, 0xad],
         reason: 'Unreferenced string-table tail bytes must survive the append.',
       );
 
       final reopened = await openController.open(sourcePath: outputPath);
       expect(reopened.status, OpenMapStatus.opened);
+      expect(
+        ChkTriggerResources.switchName(reopened.session!.rawDocument, 5),
+        'Spawn switch',
+      );
+      expect(
+        ChkTriggerResources.propertyValues(
+          reopened.session!.rawDocument,
+          64,
+        )['Hitpoints %'],
+        50,
+      );
       expect(
         ChkTriggers.encode(
           ChkTriggers.read(reopened.session!.rawDocument).records,

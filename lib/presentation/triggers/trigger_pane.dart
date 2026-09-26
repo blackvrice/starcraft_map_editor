@@ -3,6 +3,8 @@ import 'dart:ui' show AppExitResponse;
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_trigger_editor.dart';
+import '../../domain/chk/typed/chk_trigger_resources.dart';
+import 'trigger_resource_dialog.dart';
 import '../settings/default_unit_names.dart';
 
 class TriggerPane extends StatefulWidget {
@@ -14,6 +16,83 @@ class TriggerPane extends StatefulWidget {
 
 class _TriggerPaneState extends State<TriggerPane> {
   String? _error;
+  final _selected = <int>{};
+  RawChkDocument? _selectionDocument;
+  Future<void> _owners(ChkTriggers data, RawChkDocument snapshot) async {
+    final changes = <int, bool>{};
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, set) => AlertDialog(
+          title: const Text('Owners for selected triggers'),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Unchanged preserves each trigger’s owner. Choose Add or Remove to apply.',
+                  ),
+                  for (final owner in TriggerOpcodes.owners.entries)
+                    DropdownButton<int>(
+                      isExpanded: true,
+                      value: changes[owner.key] == null
+                          ? 0
+                          : changes[owner.key]!
+                          ? 1
+                          : 2,
+                      items: [
+                        for (final e in {
+                          0: 'Unchanged',
+                          1: 'Add',
+                          2: 'Remove',
+                        }.entries)
+                          DropdownMenuItem(
+                            value: e.key,
+                            child: Text('${owner.value}: ${e.value}'),
+                          ),
+                      ],
+                      onChanged: (v) => set(
+                        () => v == 0
+                            ? changes.remove(owner.key)
+                            : changes[owner.key] = v == 1,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Apply owners'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (accepted != true || !mounted) return;
+    _run(
+      () => widget.controller.applyTriggers(
+        expectedDocument: snapshot,
+        records: [
+          for (var i = 0; i < data.records.length; i++)
+            _selected.contains(i)
+                ? changes.entries.fold(
+                    data.records[i],
+                    (r, e) => r.withOwner(e.key, e.value),
+                  )
+                : data.records[i],
+        ],
+      ),
+    );
+  }
+
   void _run(VoidCallback action) {
     try {
       action();
@@ -57,6 +136,10 @@ class _TriggerPaneState extends State<TriggerPane> {
       final data = triggers;
       final snapshot =
           widget.controller.openMapController.state.session?.rawDocument;
+      if (!identical(snapshot, _selectionDocument)) {
+        _selected.clear();
+        _selectionDocument = snapshot;
+      }
       void apply(List<ChkTrigger> records) => _run(
         () => widget.controller.applyTriggers(
           expectedDocument: snapshot!,
@@ -74,6 +157,93 @@ class _TriggerPaneState extends State<TriggerPane> {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 const Text('Triggers', style: TextStyle(fontSize: 22)),
+                if (data != null)
+                  TextButton(
+                    onPressed: () {
+                      final issues = ChkTriggers.validationIssues(snapshot!);
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Trigger validation'),
+                          content: SizedBox(
+                            width: 640,
+                            child: SingleChildScrollView(
+                              child: SelectableText(
+                                issues.isEmpty
+                                    ? 'Supported slots have valid field values and references. Raw/EUD slots are not interpreted.'
+                                    : issues.join('\n'),
+                              ),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: const Text('Validate references'),
+                  ),
+                if (data != null) ...[
+                  TextButton(
+                    onPressed: () => setState(
+                      () => _selected.length == data.records.length
+                          ? _selected.clear()
+                          : _selected.addAll(
+                              List.generate(data.records.length, (i) => i),
+                            ),
+                    ),
+                    child: const Text('Select all / none'),
+                  ),
+                  TextButton(
+                    onPressed: _selected.isEmpty
+                        ? null
+                        : () => _owners(data, snapshot!),
+                    child: const Text('Owners…'),
+                  ),
+                  for (final enabled in [true, false])
+                    TextButton(
+                      onPressed: _selected.isEmpty
+                          ? null
+                          : () => apply([
+                              for (var i = 0; i < data.records.length; i++)
+                                _selected.contains(i)
+                                    ? data.records[i].withEnabled(enabled)
+                                    : data.records[i],
+                            ]),
+                      child: Text(
+                        enabled ? 'Enable selected' : 'Disable selected',
+                      ),
+                    ),
+                  for (final kind in TriggerResourceKind.values)
+                    TextButton(
+                      onPressed: () async {
+                        final result = await showDialog<RawChkDocument>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => TriggerResourceDialog(
+                            document: snapshot!,
+                            kind: kind,
+                          ),
+                        );
+                        if (result != null && mounted) {
+                          _run(
+                            () => widget.controller.applyTriggerResources(
+                              expectedDocument: snapshot!,
+                              updatedDocument: result,
+                            ),
+                          );
+                        }
+                      },
+                      child: Text(switch (kind) {
+                        TriggerResourceKind.text => 'Add text…',
+                        TriggerResourceKind.switchName => 'Switch names…',
+                        TriggerResourceKind.property => 'Unit properties…',
+                      }),
+                    ),
+                ],
                 FilledButton(
                   key: const Key('trigger-add'),
                   onPressed: data == null
@@ -99,7 +269,7 @@ class _TriggerPaneState extends State<TriggerPane> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              'Ordinary TRIG editor • 8 condition types / 12 action types. Unsupported and EUD slots remain raw. New triggers start with Never. Save As writes applied changes.',
+              'Ordinary TRIG editor • 22 condition types / 57 action types. Unsupported and EUD slots remain raw. New triggers start with Never. Save As writes applied changes.',
             ),
           ),
           if (readError != null || _error != null)
@@ -114,13 +284,20 @@ class _TriggerPaneState extends State<TriggerPane> {
                 itemBuilder: (context, index) {
                   final record = data.records[index];
                   final owners = [
-                    for (var p = 0; p < 8; p++)
-                      if (record.bytes[2372 + p] != 0) 'P${p + 1}',
+                    for (final e in TriggerOpcodes.owners.entries)
+                      if (record.bytes[2372 + e.key] != 0) e.value,
                   ];
                   return ListTile(
                     key: ValueKey(('trigger', index)),
+                    leading: Checkbox(
+                      value: _selected.contains(index),
+                      onChanged: (v) => setState(
+                        () =>
+                            v! ? _selected.add(index) : _selected.remove(index),
+                      ),
+                    ),
                     title: Text(
-                      'Trigger ${index + 1} — ${owners.isEmpty ? 'No P1–P8 owner' : owners.join(', ')}',
+                      'Trigger ${index + 1}${record.enabled ? '' : ' (disabled)'} — ${owners.isEmpty ? 'No owner' : owners.join(', ')}',
                     ),
                     subtitle: Text(
                       '${_summary(record, false)} → ${_summary(record, true)}',
@@ -311,16 +488,75 @@ class _RecordDialogState extends State<_RecordDialog> {
                 ),
                 onTap: editable ? () => _slot(action, index) : null,
                 trailing: editable
-                    ? IconButton(
-                        tooltip: 'Remove slot',
-                        onPressed: () => setState(
-                          () => _draft = _draft.withSlot(
-                            action,
-                            index,
-                            List.filled(action ? 32 : 20, 0),
+                    ? Wrap(
+                        children: [
+                          IconButton(
+                            tooltip:
+                                '${action ? 'Action' : 'Condition'} enabled',
+                            icon: Icon(
+                              slot[action ? 28 : 17] & 2 == 0
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                            ),
+                            onPressed: () => setState(
+                              () => _draft = _draft.withSlotEnabled(
+                                action,
+                                index,
+                                slot[action ? 28 : 17] & 2 != 0,
+                              ),
+                            ),
                           ),
-                        ),
-                        icon: const Icon(Icons.remove_circle_outline),
+                          IconButton(
+                            tooltip: 'Move slot up',
+                            icon: const Icon(Icons.arrow_upward),
+                            onPressed: index == 0
+                                ? null
+                                : () => setState(
+                                    () => _draft = _draft.moveSlot(
+                                      action,
+                                      index,
+                                      index - 1,
+                                    ),
+                                  ),
+                          ),
+                          IconButton(
+                            tooltip: 'Move slot down',
+                            icon: const Icon(Icons.arrow_downward),
+                            onPressed: index == count - 1
+                                ? null
+                                : () => setState(
+                                    () => _draft = _draft.moveSlot(
+                                      action,
+                                      index,
+                                      index + 1,
+                                    ),
+                                  ),
+                          ),
+                          IconButton(
+                            tooltip: 'Duplicate slot',
+                            icon: const Icon(Icons.copy),
+                            onPressed: available.isEmpty
+                                ? null
+                                : () => setState(
+                                    () => _draft = _draft.withSlot(
+                                      action,
+                                      available.first,
+                                      slot,
+                                    ),
+                                  ),
+                          ),
+                          IconButton(
+                            tooltip: 'Remove slot',
+                            onPressed: () => setState(
+                              () => _draft = _draft.withSlot(
+                                action,
+                                index,
+                                List.filled(action ? 32 : 20, 0),
+                              ),
+                            ),
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                        ],
                       )
                     : null,
               );
@@ -345,12 +581,18 @@ class _RecordDialogState extends State<_RecordDialog> {
             ),
             Wrap(
               children: [
-                for (var p = 0; p < 8; p++)
+                FilterChip(
+                  label: const Text('Trigger enabled'),
+                  selected: _draft.enabled,
+                  onSelected: (v) =>
+                      setState(() => _draft = _draft.withEnabled(v)),
+                ),
+                for (final entry in TriggerOpcodes.owners.entries)
                   FilterChip(
-                    label: Text('Player ${p + 1}'),
-                    selected: _draft.bytes[2372 + p] != 0,
+                    label: Text(entry.value),
+                    selected: _draft.bytes[2372 + entry.key] != 0,
                     onSelected: (v) =>
-                        setState(() => _draft = _draft.withOwner(p, v)),
+                        setState(() => _draft = _draft.withOwner(entry.key, v)),
                   ),
               ],
             ),
@@ -399,6 +641,95 @@ class _SlotDialog extends StatefulWidget {
 }
 
 class _SlotDialogState extends State<_SlotDialog> {
+  Widget _argumentWidget(TriggerArgument arg) {
+    final units = arg.reference == 'unit' || arg.reference == 'unitGroup';
+    final choices = <int, String>{...arg.choices};
+    if (units) {
+      for (var i = 0; i < 228; i++) {
+        choices[i] = '${defaultUnitNames[i]} (#$i)';
+      }
+    }
+    if (arg.reference == 'unitGroup') {
+      choices.addAll({
+        229: 'Any unit',
+        230: 'Men',
+        231: 'Buildings',
+        232: 'Factories',
+      });
+    }
+    if (choices.isNotEmpty) {
+      choices.putIfAbsent(
+        _values[arg.name]!,
+        () => 'Stored ${_values[arg.name]}',
+      );
+      return DropdownButton<int>(
+        key: ValueKey(('trigger-argument', arg.name)),
+        isExpanded: true,
+        value: _values[arg.name],
+        items: [
+          for (final e in choices.entries)
+            DropdownMenuItem(
+              value: e.key,
+              child: Text(
+                '${arg.name}: ${e.value}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+        onChanged: (v) => setState(() => _values[arg.name] = v!),
+      );
+    }
+    if (arg.reference == 'script') {
+      return TextFormField(
+        key: ValueKey(('trigger-script', _generation)),
+        initialValue: _values[arg.name] == 0
+            ? ''
+            : String.fromCharCodes(
+                List.generate(4, (i) => (_values[arg.name]! >> (8 * i)) & 255),
+              ),
+        decoration: InputDecoration(labelText: arg.name),
+        maxLength: 4,
+        onChanged: (s) {
+          _values[arg.name] =
+              s.length == 4 && s.codeUnits.every((c) => c >= 32 && c <= 126)
+              ? s.codeUnits.asMap().entries.fold<int>(
+                  0,
+                  (n, e) => n | (e.value << (8 * e.key)),
+                )
+              : -1;
+        },
+      );
+    }
+    String? hint;
+    try {
+      if (arg.reference == 'switch') {
+        hint = ChkTriggerResources.switchName(
+          widget.document,
+          (_values[arg.name] ?? 0).clamp(0, 255),
+        );
+      }
+      if (arg.reference == 'string') {
+        hint = ChkTriggerResources.stringLabel(
+          widget.document,
+          _values[arg.name] ?? 0,
+        );
+      }
+    } catch (e) {
+      hint = e.toString();
+    }
+    return TextFormField(
+      key: ValueKey(('trigger-number', _generation, arg.name)),
+      initialValue: '${_values[arg.name]}',
+      decoration: InputDecoration(
+        labelText: arg.name,
+        helperText: hint,
+        helperMaxLines: 2,
+      ),
+      onChanged: (s) =>
+          setState(() => _values[arg.name] = int.tryParse(s) ?? -1),
+    );
+  }
+
   late TriggerOpcode _opcode = widget.original == null
       ? (widget.action
             ? TriggerOpcodes.actions.firstWhere((op) => op.id == 3)
@@ -408,6 +739,8 @@ class _SlotDialogState extends State<_SlotDialog> {
           ChkTrigger.type(widget.action, widget.original!),
         )!;
   final _values = <String, int>{};
+  late bool _alwaysDisplay =
+      widget.original == null || widget.original![28] & 4 != 0;
   String? _error;
   int _generation = 0;
   @override
@@ -427,6 +760,7 @@ class _SlotDialogState extends State<_SlotDialog> {
           ? arg.choices.keys.first
           : arg.reference == 'location' ||
                 arg.reference == 'string' ||
+                arg.reference == 'property' ||
                 arg.name == 'Count'
           ? 1
           : 0;
@@ -454,56 +788,22 @@ class _SlotDialogState extends State<_SlotDialog> {
                         : TriggerOpcodes.conditions)
                   DropdownMenuItem(value: op, child: Text(op.name)),
               ],
-              onChanged: widget.original != null
-                  ? null
-                  : (op) => setState(() {
-                      _opcode = op!;
-                      _reset();
-                    }),
+              onChanged: (op) => setState(() {
+                _opcode = op!;
+                _reset();
+              }),
             ),
             if (widget.original != null)
-              const Text('Remove and add a slot to change its type.'),
-            for (final arg in _opcode.arguments)
-              if (arg.choices.isNotEmpty || arg.reference == 'unit')
-                DropdownButton<int>(
-                  key: ValueKey(('trigger-argument', arg.name)),
-                  isExpanded: true,
-                  value: _values[arg.name],
-                  items: [
-                    if (arg.reference == 'unit')
-                      for (var i = 0; i < 228; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          child: Text('${defaultUnitNames[i]} (#$i)'),
-                        )
-                    else
-                      for (final choice in arg.choices.entries)
-                        DropdownMenuItem(
-                          value: choice.key,
-                          child: Text('${arg.name}: ${choice.value}'),
-                        ),
-                    if (arg.reference != 'unit' &&
-                        !arg.choices.containsKey(_values[arg.name]))
-                      DropdownMenuItem(
-                        value: _values[arg.name],
-                        child: Text('Stored ${_values[arg.name]}'),
-                      ),
-                    if (arg.reference == 'unit' && _values[arg.name]! > 227)
-                      DropdownMenuItem(
-                        value: _values[arg.name],
-                        child: Text('Stored unit ${_values[arg.name]}'),
-                      ),
-                  ],
-                  onChanged: (v) => setState(() => _values[arg.name] = v!),
-                )
-              else
-                TextFormField(
-                  key: ValueKey(('trigger-number', _generation, arg.name)),
-                  initialValue: '${_values[arg.name]}',
-                  decoration: InputDecoration(labelText: arg.name),
-                  onChanged: (text) =>
-                      _values[arg.name] = int.tryParse(text) ?? -1,
-                ),
+              const Text(
+                'Changing type replaces this slot’s arguments when applied.',
+              ),
+            if (widget.action && {7, 9}.contains(_opcode.id))
+              CheckboxListTile(
+                title: const Text('Always display text'),
+                value: _alwaysDisplay,
+                onChanged: (v) => setState(() => _alwaysDisplay = v!),
+              ),
+            for (final arg in _opcode.arguments) _argumentWidget(arg),
             if (_error != null) Text(_error!),
           ],
         ),
@@ -523,8 +823,16 @@ class _SlotDialogState extends State<_SlotDialog> {
               _opcode,
               _values,
               widget.document,
-              original: widget.original,
+              original:
+                  widget.original != null &&
+                      ChkTrigger.type(widget.action, widget.original!) ==
+                          _opcode.id
+                  ? widget.original
+                  : null,
             );
+            if (widget.action && {7, 9}.contains(_opcode.id)) {
+              slot[28] = _alwaysDisplay ? slot[28] | 4 : slot[28] & ~4;
+            }
             Navigator.pop(context, slot);
           } catch (e) {
             setState(() => _error = e.toString());

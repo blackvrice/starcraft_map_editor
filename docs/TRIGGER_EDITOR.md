@@ -1,65 +1,100 @@
-# 일반 트리거 편집기 — 첫 구현
+# 일반 트리거 편집기
 
-2026-09-27 사용자 우선순위에 따라 M7을 먼저 진행했다. EUD 게임 관찰 중
-미확인 항목은 검증 완료로 바꾸지 않는다.
+2026-09-27 일반 조건 22종과 액션 57종의 구조 편집을 구현했다. M7의 미션
+브리핑, M6.5의 사운드 파일 관리, M7.1의 EUD 실행 규칙은 별도 개발 범위다.
 
-## 사용 방법
+## 사용 순서
 
-맵을 열고 **Triggers** 탭을 선택한다. 탭이 화면 밖이면 탭 표시줄을 가로로
-스크롤한다. Add trigger로 만든 레코드는 Player 1 / Never 조건으로 시작한다.
-실행하려면 Never를 제거하고 필요한 조건을 추가한다. 레코드를 누르면 실행
-플레이어(P1~P8), 조건 16개와 액션 64개 슬롯을 편집할 수 있다.
+1. 맵을 열고 **Triggers** 탭을 선택한다. 탭이 안 보이면 가로 스크롤한다.
+2. **Add trigger**는 Player 1 / Never로 시작한다. 레코드를 열고 Never를
+   클릭하여 Always 또는 필요한 조건으로 변경한다.
+3. 조건·액션을 추가하고 **Use slot → Apply to map → Save As**로 저장한다.
+   일반 트리거에는 euddraft 빌드가 필요 없다. EUD 설정 반영에는 기존 빌드가 필요하다.
+4. 체크박스로 여러 트리거를 선택하고 **Owners…**, **Enable/Disable selected**를
+   사용한다. 소유자는 Unchanged/Add/Remove로 지정하여 다른 소유자를 보존한다.
+5. **Validate references**에서 알려진 슬롯의 수치·참조 오류를 확인한다.
+   수정된 TRIG의 오류가 남으면 Save As는 아카이브 쓰기 전에 차단한다.
 
-슬롯의 Use slot은 초안만 바꾼다. **Apply to map**으로 적용하고 **Save As**로
-저장한다. Cancel은 초안을 버린다. 추가·복제·삭제·레코드 순서 변경과 적용은
-기존 맵 Undo/Redo를 공유한다. 편집 중 맵이 변경되면 오래된 초안 적용을 거부한다.
-일반 TRIG 변경에는 euddraft 빌드가 필요하지 않다. 선언적 EUD 설정을 게임에
-반영하는 과정은 기존 EUD 빌드 흐름을 따른다.
+레코드·슬롯 복제, 레코드·슬롯 순서 변경, 조건·액션·레코드 활성/비활성과
+P1~P12/All Players/Force 1~4 소유자를 지원한다. 선택은 맵 변경 시 초기화한다.
+슬롯 유형 변경은 해당 슬롯의 인자를 새로 만든다. 같은 유형 편집은 인자 외
+플래그·패딩을 보존한다. Display Text/Transmission의 Always display도 편집한다.
+초안 취소·오래된 초안 거부, 문서 Undo/Redo를 지원한다.
 
-## 지원 범위
+## 일반 opcode 지원표
 
-| 구분 | 편집 가능한 유형(ID) |
+| 조건 ID | 유형 |
 | --- | --- |
-| 조건 8종 | Always(22), Never(23), Elapsed Time(12), Countdown Timer(1), Command(2), Bring(3), Accumulate(4), Switch(11) |
-| 액션 12종 | Victory(1), Defeat(2), Preserve Trigger(3), Wait(4), Display Text(9), Center View(10), Set Switch(13), Kill Unit(22), Remove Unit(24), Set Resources(26), Create Unit(44), Comment(47) |
+| 1–5 | Countdown Timer, Command, Bring, Accumulate, Kills |
+| 6–10 | Command Most, Command Most At, Most Kills, Highest Score, Most Resources |
+| 11–12 | Switch, Elapsed Time |
+| 14–18 | Opponents, Deaths, Command Least, Command Least At, Least Kills |
+| 19–23 | Lowest Score, Least Resources, Score, Always, Never |
 
-유닛은 기본 이름과 ID로 선택한다. 로케이션과 문자열은 기존 ID를 입력하며
-사용 가능한 단일 테이블의 범위를 검사한다. 문자열을 새로 만들거나 자원 삭제의
-사용처를 추적하는 기능은 아직 없다. 스위치 인덱스는 0~255다.
-수치 폭, 비교 연산, 자원 종류와 수정 연산을 적용 전에 검사한다.
+| 액션 ID | 유형 |
+| --- | --- |
+| 1–6 | Victory, Defeat, Preserve Trigger, Wait, Pause Game, Unpause Game |
+| 7–12 | Transmission, Play WAV, Display Text, Center View, Create Unit with Properties, Set Mission Objectives |
+| 13–16 | Set Switch, Set Countdown Timer, Run AI Script, Run AI Script At |
+| 17–21 | Leaderboard Control, Control At, Resources, Kills, Score |
+| 22–29 | Kill Unit, Kill Unit At, Remove Unit, Remove Unit At, Set Resources, Set Score, Minimap Ping, Talking Portrait |
+| 30–37 | Mute/Unmute Unit Speech, Leaderboard Computer Players, Leaderboard Goal Control/Control At/Resources/Kills/Score |
+| 38–44 | Move Location, Move Unit, Leaderboard Greed, Set Next Scenario, Set Doodad State, Set Invincibility, Create Unit |
+| 45–51 | Set Deaths, Order, Comment, Give Units, Modify Hitpoints/Energy/Shields |
+| 52–57 | Modify Resources, Modify Hangar Count, Pause Timer, Unpause Timer, Draw, Set Alliance Status |
 
-## 보존과 경계
+조건 0/액션 0은 빈 슬롯, 조건 13은 브리핑 전용이며 일반 목록에서 제외한다.
+비일반·확장 opcode는 읽기 전용이다. Deaths/Set Deaths의 범위 밖 플레이어·유닛,
+EUDX 표식은 일반 인자로 재해석하지 않는다. 인자용 플레이어 그룹과 소유자는 구분한다.
+유닛 이름·숫자 ID, 해당 액션의 Any Unit/Men/Buildings/Factories, 점수·자원·명령·
+동맹·비교·수정 연산을 선택한다. AI 스크립트는 4문자 ASCII ID를 입력한다.
+ID 형식 검사는 게임 설치에 해당 스크립트가 존재하거나 해당 상황에서 작동함을 보증하지 않는다.
 
-- 단일 TRIG의 2400바이트 레코드만 편집한다. 누락·중복·잘린 TRIG는 자동으로
-  생성·병합·복구하지 않고 편집을 차단한다.
-- 지원하지 않는 opcode와 EUDX 표식이 있는 슬롯은 읽기 전용이다. 알려진
-  슬롯을 바꿀 때도 인자 외의 바이트, 플래그, 패딩, 다른 소유자 바이트는 보존한다.
-- 슬롯 제거는 선택한 슬롯만 비우고 다른 슬롯의 번호를 유지한다. 레코드 전체
-  삭제는 미지원 슬롯도 삭제한다는 확인 창을 거치며 Undo로 원상 복구한다.
-- 원시 레코드는 읽기 전용 16진수로 확인한다. EUD 컴파일 결과를 일반 트리거로
-  역변환하거나 생성된 코드의 의미를 추정하지 않는다.
-- 기존의 잘못된 참조를 일괄 수정하지 않는다. 현재 편집하는 슬롯의 참조만
-  검사하며 전체 맵 참조 무결성 검증 완료를 뜻하지 않는다.
+## 문자열·스위치·유닛 속성
 
-레이아웃과 opcode는 eudplib 0.80.6 공식 소스의 rawtrigger
-[condition.py](https://github.com/armoha/eudplib/blob/e04ac54dccbdcda94512214c4730b46f7f13d74f/src/eudplib/core/rawtrigger/condition.py),
-[action.py](https://github.com/armoha/eudplib/blob/e04ac54dccbdcda94512214c4730b46f7f13d74f/src/eudplib/core/rawtrigger/action.py),
-stockcond.py / stockact.py를 대조했다.
+- **Add text…**에서 새 문자열과 할당 ID를 준비하고 적용한다. 그 ID를 액션에서
+  입력하면 텍스트를 확인할 수 있다. 기존 문자열·공유 참조는 덮어쓰지 않는다.
+- **Switch names…**는 0~255 스위치의 이름을 새 문자열로 연결한다. 빈 이름은
+  기본 이름으로 복원한다. STR/STRx는 안전하게 추가 가능한 단일 테이블이 필요하다.
+- **Unit properties…**는 UPRP 1~64 슬롯의 HP/실드/에너지 비율, 자원·행거 수량,
+  클로킹·버로우·공중·환상·무적의 상속/활성/비활성을 편집한다. 참조 액션 수를
+  표시하며 공유 슬롯 수정은 모든 사용처에 적용된다. 다른 슬롯·예약 바이트와
+  비활성 인자의 기존 값을 보존하고 UPUS 사용 표시에 연결한다.
+- 필요한 SWNM/UPRP/UPUS가 없으면 명시적 리소스 적용에서 뒤에 추가한다.
+  추가 섹션과 문자열 변경을 한 Undo 명령으로 되돌린다. 중복·잘린 테이블은 거부한다.
+- 사운드 액션은 기존 문자열 ID를 사용한다. MPQ 사운드 가져오기/삭제/미리듣기,
+  전체 문자열 사용처·삭제 관리와 WAV 파일 존재 검사는 M6.5 범위다.
 
-## 검증과 후속 작업
+## 데이터 보존·검증 경계
 
-바이너리 배치, 원시 바이트 보존, 잘못된 참조·EUDX 편집 차단, 초안 취소,
-Undo/Redo, 탭 전환 및 실제 native MPQ Save As → 재열기 테스트를 추가했다.
-게임에서 새 일반 트리거를 실행하는 확인은 별도로 남아 있다.
+단일 TRIG의 2400바이트 레코드(조건 16개/액션 64개)만 구조 편집한다. 누락·중복·
+잘린 TRIG는 자동 복구하지 않는다. 원시 레코드는 읽기 전용 16진수로 확인한다.
+슬롯 삭제는 그 슬롯만 비우며, 이동은 명시적으로 선택한 슬롯을 교환한다.
+전체 레코드 삭제는 미지원 데이터까지 삭제함을 확인하며 Undo로 복원한다.
 
-검증 환경은 Flutter 3.47.2 / Dart 3.13.2로 저장소 기준 3.44.8 / 3.12와
-다르다. flutter analyze 통과, 전체 테스트 726개 통과·26개 환경 조건부 skip,
-native MPQ 포함 왕복 테스트 3개 통과, Windows debug 빌드·프로세스 시작을 확인했다.
-이번 변경 파일의 format 검사는 통과했다. 전체 format 검사는 기존의
-local_map_save_file_gateway_test.dart, process_eud_compiler_gateway_test.dart,
-process_map_archive_gateway_test.dart, process_starcraft_data_asset_inspector_test.dart
-4개 파일의 서식 차이로 실패했으며 이 파일들은 변경하지 않았다.
+알려진 슬롯의 수치·enum·문자열·로케이션·속성 슬롯 범위를 검사한다. 수정하지
+않은 TRIG를 임의로 정규화하지 않는다. Raw/EUD 슬롯의 의미·전체 게임 동작은
+검증하지 않는다. 새 동작의 실제 SC:R 실행과 멀티플레이는 별도 관찰이 필요하다.
 
-다음 범위는 나머지 기본 조건·액션, 슬롯 순서 변경·활성/비활성, 일괄 소유자,
-문자열·사운드 사용처, UPRP 속성 슬롯과 미션 브리핑(MBRF)이다.
-기본 트리거 전체 지원이나 M7 완료를 의미하지 않는다.
+## 자동 검증 근거
+
+독립 기준 데이터 `test/fixtures/trigger_opcode_layouts.json`은 로컬 eudplib 0.80.6
+sdist의 stockcond.py/stockact.py에서 일반 생성자 숫자 필드를 대조하여 작성한
+자체 테스트 입력이다. 22개 조건·57개 액션의 전체 바이트 배치를 비교한다.
+원본 패키지 SHA-256: `5be90f655d29198ef9ab6b4f59c51b1fad62b504752fcf51c1c05461fab71da2`.
+속성 필드는 같은 패키지의 unitprp.py, 활성 비트는 Chkdraft chk.h와 대조했다.
+
+공식 소스: [eudplib](https://github.com/armoha/eudplib/tree/e04ac54dccbdcda94512214c4730b46f7f13d74f/src/eudplib/core),
+[Chkdraft](https://github.com/TheNitesWhoSay/Chkdraft/blob/master/src/mapping_core/chk.h).
+참고 코드를 게임 실행 증거로 대신하지 않는다.
+
+검증 환경은 Flutter 3.47.2 / Dart 3.13.2로 저장소 기준 3.44.8 / 3.12와 다르다.
+검증 결과는 아래 완료 기록에 남긴다.
+
+완료 기록: flutter analyze 통과, 전체 735개 테스트 통과·23개 환경 조건부 skip,
+native MPQ 포함 왕복 테스트 3개 통과, Windows debug 빌드·프로세스 시작 확인.
+전체 테스트의 첫 실행은 선택 스모크용 맵 경로가 상대 경로라 실패했으며,
+MAP_ARCHIVE_TEST_MAP을 자체 제작 맵의 절대 경로로 설정해 재실행·통과했다.
+작업 대상 파일 format 검사는 통과했다. 저장소 전체 format 검사 명령은 자동 승인
+검토가 기존 사용자 파일 덮어쓰기 위험을 이유로 거부하여 이번 실행에서는 미실행이다.
+이전에 알려진 다른 테스트 파일 4개의 서식 차이는 수정하지 않았다.

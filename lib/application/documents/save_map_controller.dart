@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_trigger_editor.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
@@ -13,6 +14,7 @@ import 'open_map_controller.dart';
 import 'opened_map_session.dart';
 
 abstract final class SaveMapDiagnosticCodes {
+  static const invalidTriggers = 'SAVE_MAP_INVALID_TRIGGERS';
   static const noMapOpen = 'SAVE_MAP_NO_OPEN_DOCUMENT';
   static const fileSelectionFailed = 'SAVE_MAP_FILE_SELECTION_FAILED';
   static const invalidDestinationPath = 'SAVE_MAP_DESTINATION_NOT_ABSOLUTE';
@@ -157,6 +159,23 @@ class SaveMapController {
     MapSaveWorkspace? workspace;
     String? operationId;
     try {
+      if (sourceSession.rawDocument.sections.any(
+        (s) => s.name == 'TRIG' && s.isDirty,
+      )) {
+        final issues = ChkTriggers.validationIssues(sourceSession.rawDocument);
+        if (issues.isNotEmpty) {
+          return _emitFailure(
+            _diagnostic(
+              code: SaveMapDiagnosticCodes.invalidTriggers,
+              message:
+                  'Edited triggers contain invalid field values or references.',
+              remediation:
+                  'Open Triggers → Validate references and correct the reported slots.',
+              rawDetails: issues.join('\n'),
+            ),
+          );
+        }
+      }
       final selectedFromPicker = destinationPath == null;
       final selectedPath =
           destinationPath ??
