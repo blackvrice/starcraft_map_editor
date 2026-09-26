@@ -546,7 +546,7 @@ class _EditorShellState extends State<EditorShell> {
         widget.eudBuildController.canStart &&
             !(widget.eudBuildPreparationController?.busy ?? false) &&
             widget.eudBuildPreparationController?.blockReason() == null &&
-            !(widget.eudProjectWorkspace?.hasUnbuiltOverrides ?? false)
+            (eudBuildState.plan?.contextIsCurrent?.call() ?? true)
         ? _callbackFor(EditorCommandId.buildEud)
         : null;
     final cancelEudBuild = eudBuildState.canCancel

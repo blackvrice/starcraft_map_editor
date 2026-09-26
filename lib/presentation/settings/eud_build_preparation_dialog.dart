@@ -20,6 +20,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
   late final List<TextEditingController> _fields;
   bool _busy = false;
   bool _trusted = false;
+  bool _allowUnverified = false;
   String? _message;
   @override
   void initState() {
@@ -57,6 +58,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
       outputMap: _fields[3].text,
       projectToolPath: _fields[4].text,
       trustSource: _trusted,
+      allowUnverifiedSettings: _allowUnverified,
     );
     if (!mounted) return;
     setState(() {
@@ -77,7 +79,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Build saved files on disk. Save map and source edits first. Output must be a new .scx outside the source folder.',
+              'Build saved files on disk. Save map and source edits first. With project settings, leave source folder and entry blank for a settings-only build. Output must be a new .scx.',
             ),
             for (var i = 0; i < _fields.length; i++)
               Padding(
@@ -109,6 +111,21 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
               ),
             ),
             if (_busy) const LinearProgressIndicator(),
+            if (widget.controller.hasProjectSettings)
+              CheckboxListTile(
+                key: const Key('eud-test-settings'),
+                value: _allowUnverified,
+                onChanged: _busy
+                    ? null
+                    : (value) =>
+                          setState(() => _allowUnverified = value ?? false),
+                title: const Text(
+                  'Include project settings in an unverified test build',
+                ),
+                subtitle: const Text(
+                  'Type settings run once before user initialization. Existing units are not refilled or clamped. Game and multiplayer behavior still require testing.',
+                ),
+              ),
             if (_message != null) SelectableText(_message!),
           ],
         ),

@@ -3,6 +3,8 @@ import '../ports/eud_build_gateway.dart';
 import '../settings/eud_tool_settings_controller.dart';
 import 'eud_build_configuration.dart';
 import 'eud_build_controller.dart';
+import 'eud_project_workspace.dart';
+import '../../domain/eud/eud_generated_settings.dart';
 
 final class EudBuildPreparationController {
   EudBuildPreparationController({
@@ -10,11 +12,14 @@ final class EudBuildPreparationController {
     required this.builds,
     required this.files,
     required this.blockReason,
+    this.projects,
   });
   final EudToolSettingsController tools;
   final EudBuildController builds;
   final EudBuildFileGateway files;
   final String? Function() blockReason;
+  final EudProjectWorkspace? projects;
+  bool get hasProjectSettings => projects?.hasUnbuiltOverrides ?? false;
   bool busy = false;
   int _revision = 0;
   int _sequence = 0;
@@ -29,6 +34,7 @@ final class EudBuildPreparationController {
     required String outputMap,
     String? projectToolPath,
     required bool trustSource,
+    bool allowUnverifiedSettings = false,
   }) async {
     if (busy || builds.state.isActive) {
       return 'A build or preparation is already running.';
@@ -42,11 +48,34 @@ final class EudBuildPreparationController {
       }
       final blocked = blockReason();
       if (blocked != null) return blocked;
+      final project = projects?.projects.project;
+      final mapSession = projects?.maps.state.session;
+      bool contextIsCurrent() =>
+          identical(projects?.projects.project, project) &&
+          identical(projects?.maps.state.session, mapSession) &&
+          !(projects?.isBusy ?? false) &&
+          blockReason() == null;
+      EudGeneratedSettings? generated;
+      if (project != null && project.overrides.isNotEmpty) {
+        if (!allowUnverifiedSettings) {
+          return 'Enable the unverified settings test build to compile project settings.';
+        }
+        await projects!.verify();
+        if (projects!.binding != EudMapBinding.matched || !contextIsCurrent()) {
+          return 'Verify the saved map and EUD project binding before building.';
+        }
+        if (!await files.refersToSameLocation(project.mapPath, baseMap)) {
+          return 'The build base must be the map bound to this EUD project.';
+        }
+        generated = EudGeneratedSettings(project);
+      }
       final configuration = EudBuildConfiguration(
         baseMapPath: baseMap,
         sourceRootPath: sourceRoot,
         entrySourcePath: entrySource,
         outputMapPath: outputMap,
+        generatedSettings: generated,
+        settingsOnly: generated != null && entrySource.trim().isEmpty,
         compilerPathOverride:
             projectToolPath == null || projectToolPath.trim().isEmpty
             ? null
@@ -88,6 +117,7 @@ final class EudBuildPreparationController {
       }
       final currentBlock = blockReason();
       if (currentBlock != null) return currentBlock;
+      if (!contextIsCurrent()) return 'Project or map changed. Prepare again.';
       builds.prepare(
         EudBuildPlan(
           buildId:
@@ -95,6 +125,7 @@ final class EudBuildPreparationController {
           configuration: configuration,
           tool: inspected.tool!,
           timeout: const Duration(minutes: 5),
+          contextIsCurrent: contextIsCurrent,
         ),
       );
       return null;

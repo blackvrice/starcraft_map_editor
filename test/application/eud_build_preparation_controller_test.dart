@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../fixtures/eud_project_workspace_fixture.dart';
+import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_preparation_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
@@ -13,6 +15,55 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 import 'eud_tool_settings_controller_test.dart' show TestInspector;
 
 void main() {
+  test(
+    'project test builds require opt-in, verified binding and a current snapshot',
+    () async {
+      final h = PreparationHarness();
+      final f = EudWorkspaceFixture();
+      addTearDown(h.dispose);
+      addTearDown(f.dispose);
+      await f.maps.open();
+      await f.workspace.createFromMap();
+      f.projects.replaceOverrides([
+        EudOverride(
+          field: 'unit.maxShield',
+          targetId: 70,
+          value: 300,
+          overrideChk: true,
+        ),
+      ]);
+      final controller = EudBuildPreparationController(
+        tools: h.tools,
+        builds: h.builds,
+        files: ProjectPreparationFiles(),
+        blockReason: () => null,
+        projects: f.workspace,
+      );
+      Future<String?> prepare(bool allow) => controller.prepare(
+        baseMap: f.projects.project!.mapPath,
+        sourceRoot: '',
+        entrySource: '',
+        outputMap: r'C:\out\test.scx',
+        trustSource: true,
+        allowUnverifiedSettings: allow,
+      );
+      expect(await prepare(false), contains('unverified'));
+      expect(await prepare(true), isNull);
+      final plan = h.builds.state.plan!;
+      expect(plan.configuration.settingsOnly, isTrue);
+      expect(
+        plan.configuration.generatedSettings!.source,
+        contains('TrgUnit(70).maxShield = 300'),
+      );
+      expect(plan.contextIsCurrent!(), isTrue);
+      f.projects.replaceOverrides([]);
+      expect(plan.contextIsCurrent!(), isFalse);
+      f.projects.undo();
+      f.hash = 'b' * 64;
+      expect(await prepare(true), isNotNull);
+      expect(h.builds.canStart, isFalse);
+    },
+  );
   late PreparationHarness h;
   setUp(() {
     h = PreparationHarness();
@@ -187,6 +238,12 @@ class PreparationFiles implements EudBuildFileGateway {
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw StateError('Preparation must not write files: $invocation');
+}
+
+class ProjectPreparationFiles extends PreparationFiles {
+  @override
+  Future<bool> refersToSameLocation(String leftPath, String rightPath) async =>
+      leftPath == rightPath;
 }
 
 class NoBuildGateway implements EudBuildGateway {

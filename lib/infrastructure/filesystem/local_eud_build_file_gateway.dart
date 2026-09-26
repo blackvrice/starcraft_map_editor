@@ -22,16 +22,18 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
       FileSystemEntityType.file,
       'The EUD base map must be a regular file.',
     );
-    await _requireType(
-      configuration.sourceRootPath,
-      FileSystemEntityType.directory,
-      'The EUD source root must be a regular directory.',
-    );
-    await _requireType(
-      configuration.entrySourcePath,
-      FileSystemEntityType.file,
-      'The EUD entry source must be a regular file.',
-    );
+    if (!configuration.settingsOnly) {
+      await _requireType(
+        configuration.sourceRootPath,
+        FileSystemEntityType.directory,
+        'The EUD source root must be a regular directory.',
+      );
+      await _requireType(
+        configuration.entrySourcePath,
+        FileSystemEntityType.file,
+        'The EUD entry source must be a regular file.',
+      );
+    }
 
     final destination = File(configuration.outputMapPath).absolute;
     await _requireType(
@@ -51,6 +53,7 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
       );
     }
 
+    if (configuration.settingsOnly) return;
     final canonicalSourceRoot = _normalize(
       await Directory(configuration.sourceRootPath).resolveSymbolicLinks(),
     );
@@ -112,6 +115,15 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
           '$directoryPath${Platform.pathSeparator}temporary-output.scx',
     );
     try {
+      final generated = configuration.generatedSettings;
+      if (generated != null) {
+        await File(
+          '$directoryPath${Platform.pathSeparator}editor-settings.py',
+        ).writeAsString(generated.source, flush: true);
+        await File(
+          '$directoryPath${Platform.pathSeparator}editor-settings.json',
+        ).writeAsString(generated.manifest, flush: true);
+      }
       await File(workspace.settingsFilePath).writeAsString(
         _serializeSettings(configuration, workspace),
         flush: true,
@@ -282,7 +294,10 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
       '[freeze]',
       'freeze: 0',
       '',
-      '[${configuration.entrySourcePath}]',
+      if (configuration.generatedSettings != null)
+        '[${workspace.directoryPath}${Platform.pathSeparator}editor-settings.py]',
+      if (configuration.generatedSettings != null) '',
+      if (!configuration.settingsOnly) '[${configuration.entrySourcePath}]',
       '',
     ];
     return lines.join('\r\n');

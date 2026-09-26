@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:starcraft_map_editor/domain/eud/eud_generated_settings.dart';
+import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
@@ -80,6 +82,62 @@ void main() {
 
         await gateway.cleanup(workspace);
         expect(await Directory(workspace.directoryPath).exists(), isFalse);
+      },
+    );
+
+    test(
+      'generated plugin precedes user entry and settings-only requires no source files',
+      () async {
+        for (final only in [false, true]) {
+          final generated = EudGeneratedSettings(
+            EudProject(
+              mapPath: baseMap.path,
+              mapSha256: 'a' * 64,
+              overrides: [
+                EudOverride(field: 'unit.hasShield', targetId: 8, value: true),
+              ],
+            ),
+          );
+          final config = EudBuildConfiguration(
+            baseMapPath: baseMap.path,
+            sourceRootPath: only ? '' : sourceRoot.path,
+            entrySourcePath: only ? '' : entrySource.path,
+            outputMapPath: '${outputRoot.path}/result.scx',
+            generatedSettings: generated,
+            settingsOnly: only,
+          );
+          await gateway.validateInputs(config);
+          final workspace = await gateway.createWorkspace(config);
+          final settings = await File(
+            workspace.settingsFilePath,
+          ).readAsString();
+          expect(
+            await File(
+              '${workspace.directoryPath}/editor-settings.py',
+            ).readAsString(),
+            generated.source,
+          );
+          expect(
+            await File(
+              '${workspace.directoryPath}/editor-settings.json',
+            ).readAsString(),
+            generated.manifest,
+          );
+          if (!only) {
+            expect(
+              settings.indexOf('editor-settings.py'),
+              lessThan(settings.indexOf(entrySource.path)),
+            );
+          } else {
+            expect(settings, isNot(contains(entrySource.path)));
+          }
+          expect(
+            await entrySource.readAsString(),
+            'function onPluginStart() {}',
+          );
+          await gateway.cleanup(workspace);
+          expect(await Directory(workspace.directoryPath).exists(), isFalse);
+        }
       },
     );
 

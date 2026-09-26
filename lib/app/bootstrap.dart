@@ -92,9 +92,6 @@ void bootstrap() {
   );
   final mapLayerController = MapLayerController();
   String? buildBlockReason() {
-    if (eudProjectWorkspace.hasUnbuiltOverrides) {
-      return 'EUD settings generation is not implemented yet.';
-    }
     if (openMapController.state.session?.isDirty ?? false) {
       return 'Save the edited map before building.';
     }
@@ -112,6 +109,7 @@ void bootstrap() {
     builds: eudBuildController,
     files: LocalEudBuildFileGateway(),
     blockReason: buildBlockReason,
+    projects: eudProjectWorkspace,
   );
   final objectEditingController = ObjectEditingController(
     openMapController: openMapController,

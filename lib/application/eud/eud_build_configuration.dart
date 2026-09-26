@@ -1,6 +1,7 @@
 import '../ports/eud_compiler_gateway.dart';
 import '../ports/eud_tool_inspector.dart';
 import 'eud_environment.dart';
+import '../../domain/eud/eud_generated_settings.dart';
 
 enum EudCompilerProfile {
   starcraftRemastered(
@@ -33,15 +34,15 @@ final class EudBuildConfiguration {
     String? compilerPathOverride,
     Map<String, String> compilerOptions = const {},
     Map<String, String> environmentOverrides = const {},
+    this.generatedSettings,
+    this.settingsOnly = false,
   }) : baseMapPath = _requireAbsoluteWindowsPath(baseMapPath, 'baseMapPath'),
-       sourceRootPath = _requireAbsoluteWindowsPath(
-         sourceRootPath,
-         'sourceRootPath',
-       ),
-       entrySourcePath = _requireAbsoluteWindowsPath(
-         entrySourcePath,
-         'entrySourcePath',
-       ),
+       sourceRootPath = settingsOnly
+           ? ''
+           : _requireAbsoluteWindowsPath(sourceRootPath, 'sourceRootPath'),
+       entrySourcePath = settingsOnly
+           ? ''
+           : _requireAbsoluteWindowsPath(entrySourcePath, 'entrySourcePath'),
        outputMapPath = _requireAbsoluteWindowsPath(
          outputMapPath,
          'outputMapPath',
@@ -57,11 +58,16 @@ final class EudBuildConfiguration {
     const mapExtensions = {'.scm', '.scx'};
     const sourceExtensions = {'.eps'};
     _requireExtension(this.baseMapPath, mapExtensions, 'baseMapPath');
-    _requireExtension(
-      this.entrySourcePath,
-      sourceExtensions,
-      'entrySourcePath',
-    );
+    if (settingsOnly && generatedSettings == null) {
+      throw ArgumentError('Settings-only builds require generated settings.');
+    }
+    if (!settingsOnly) {
+      _requireExtension(
+        this.entrySourcePath,
+        sourceExtensions,
+        'entrySourcePath',
+      );
+    }
     _requireExtension(this.outputMapPath, {
       compilerProfile.outputExtension,
     }, 'outputMapPath');
@@ -77,14 +83,15 @@ final class EudBuildConfiguration {
         'The EUD output must not overwrite the base map.',
       );
     }
-    if (!_isWithin(normalizedSourceRoot, normalizedEntry)) {
+    if (!settingsOnly && !_isWithin(normalizedSourceRoot, normalizedEntry)) {
       throw ArgumentError.value(
         entrySourcePath,
         'entrySourcePath',
         'The entry source must be inside the configured source root.',
       );
     }
-    if (_isSameOrWithin(normalizedSourceRoot, normalizedOutput)) {
+    if (!settingsOnly &&
+        _isSameOrWithin(normalizedSourceRoot, normalizedOutput)) {
       throw ArgumentError.value(
         outputMapPath,
         'outputMapPath',
@@ -101,6 +108,8 @@ final class EudBuildConfiguration {
   final String? compilerPathOverride;
   final Map<String, String> compilerOptions;
   final Map<String, String> environmentOverrides;
+  final EudGeneratedSettings? generatedSettings;
+  final bool settingsOnly;
 
   EudToolInspectionRequest createToolInspectionRequest({
     String? userSettingsPath,

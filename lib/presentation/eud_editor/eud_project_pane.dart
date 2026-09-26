@@ -8,7 +8,7 @@ import 'eud_shield_editor.dart';
 import 'eud_field_editor.dart';
 import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_effective_settings.dart';
-import '../../domain/eud/eud_generation_preview.dart';
+import '../../domain/eud/eud_generated_settings.dart';
 
 class EudProjectPane extends StatefulWidget {
   const EudProjectPane({required this.workspace, this.catalog, super.key});
@@ -142,7 +142,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                 onPressed: busy || project == null
                     ? null
                     : () => _run(() async {
-                        final preview = EudGenerationPreview(project);
+                        final preview = EudGeneratedSettings(project);
                         await showDialog<void>(
                           context: context,
                           builder: (context) => AlertDialog(
@@ -155,12 +155,17 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Declarative preview only. Compilation, game compatibility and hook order are not verified. No files or user scripts are changed.',
+                                      'Generated settings run once before user initialization in an opt-in test build. Game compatibility is unverified; current unit shields are not rewritten.',
                                     ),
                                     const SizedBox(height: 12),
                                     SelectableText(
                                       preview.manifest,
                                       key: const Key('eud-generation-manifest'),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SelectableText(
+                                      preview.source,
+                                      key: const Key('eud-generated-source'),
                                     ),
                                   ],
                                 ),
@@ -198,7 +203,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.',
           ),
           const Text(
-            'All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Generated builds are not connected yet. Save Project checks for external changes and keeps a recovery backup.',
+            'All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Prepare EUD Build can include these settings in an unverified test build. Save Project keeps a recovery backup.',
           ),
           if (workspace.isBusy) const LinearProgressIndicator(),
           if (_error != null)
@@ -258,7 +263,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             ),
             if (workspace.hasUnbuiltOverrides)
               const Text(
-                'EUD Build is disabled while this project has overrides: generated project builds are not connected yet.',
+                'To test these settings, save and verify the map, then use Prepare EUD Build and enable the project settings test build.',
               ),
             if (controller.backupPath != null)
               SelectableText('Recovery backup: ${controller.backupPath}'),

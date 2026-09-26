@@ -33,6 +33,7 @@ abstract final class EudBuildPipelineDiagnosticCodes {
   static const backupCreated = 'EUD_BUILD_BACKUP_CREATED';
   static const cleanupFailed = 'EUD_BUILD_CLEANUP_FAILED';
   static const unexpectedFailure = 'EUD_BUILD_UNEXPECTED_FAILURE';
+  static const projectChanged = 'EUD_BUILD_PROJECT_CHANGED';
 }
 
 final class SafeEudBuildPipeline implements EudBuildGateway {
@@ -85,6 +86,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     EudBuildEvent? terminalEvent;
     final trailingDiagnostics = <EditorDiagnostic>[];
     try {
+      _requireCurrentContext(plan);
       final inspected = await _inspectUnchangedTool(plan);
       for (final diagnostic in inspected.diagnostics) {
         yield EudBuildEvent.diagnostic(
@@ -129,12 +131,33 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         code: EudBuildPipelineDiagnosticCodes.inputFingerprintFailed,
         message: 'The EUD base map fingerprint could not be calculated.',
       );
-      final sourceFingerprintAtStart = await _fingerprint(
-        path: plan.configuration.entrySourcePath,
-        code: EudBuildPipelineDiagnosticCodes.sourceFingerprintFailed,
-        message:
-            'The epScript entry source fingerprint could not be calculated.',
-      );
+      final generated = plan.configuration.generatedSettings;
+      if (generated != null) {
+        yield EudBuildEvent.stdoutLine(
+          buildId: plan.buildId,
+          text:
+              'Generated settings manifest (runtime unverified):\n${generated.manifest}',
+        );
+      }
+      if (generated != null &&
+          inputFingerprintAtStart.sha256Digest != generated.mapSha256) {
+        throw _EudBuildFailure(
+          _diagnostic(
+            code: EudBuildPipelineDiagnosticCodes.projectChanged,
+            message: 'The base map does not match the EUD project binding.',
+            filePath: plan.configuration.baseMapPath,
+            remediation: 'Open and verify the bound map, then prepare again.',
+          ),
+        );
+      }
+      final sourceFingerprintAtStart = plan.configuration.settingsOnly
+          ? null
+          : await _fingerprint(
+              path: plan.configuration.entrySourcePath,
+              code: EudBuildPipelineDiagnosticCodes.sourceFingerprintFailed,
+              message:
+                  'The epScript entry source fingerprint could not be calculated.',
+            );
 
       final destinationExistedAtStart = await buildFileGateway
           .destinationExists(plan.configuration.outputMapPath);
@@ -358,12 +381,15 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           );
         }
 
-        final sourceFingerprintBeforePromotion = await _fingerprint(
-          path: plan.configuration.entrySourcePath,
-          code: EudBuildPipelineDiagnosticCodes.sourceFingerprintFailed,
-          message: 'The epScript entry fingerprint could not be rechecked.',
-          processExitCode: 0,
-        );
+        final sourceFingerprintBeforePromotion = plan.configuration.settingsOnly
+            ? null
+            : await _fingerprint(
+                path: plan.configuration.entrySourcePath,
+                code: EudBuildPipelineDiagnosticCodes.sourceFingerprintFailed,
+                message:
+                    'The epScript entry fingerprint could not be rechecked.',
+                processExitCode: 0,
+              );
         if (sourceFingerprintBeforePromotion != sourceFingerprintAtStart) {
           throw _EudBuildFailure(
             _diagnostic(
@@ -390,6 +416,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         );
 
         late final EudBuildPromotionResult promotion;
+        _requireCurrentContext(plan);
         try {
           promotion = await buildFileGateway.promote(
             workspace: workspace,
@@ -498,6 +525,21 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     }
     if (terminalEvent != null) {
       yield terminalEvent;
+    }
+  }
+
+  void _requireCurrentContext(EudBuildPlan plan) {
+    if (plan.contextIsCurrent?.call() == false) {
+      throw _EudBuildFailure(
+        _diagnostic(
+          code: EudBuildPipelineDiagnosticCodes.projectChanged,
+          message:
+              'Map, source or EUD project changed. Prepare the build again.',
+          filePath: plan.configuration.baseMapPath,
+          remediation:
+              'Save and verify the current inputs, then prepare again.',
+        ),
+      );
     }
   }
 

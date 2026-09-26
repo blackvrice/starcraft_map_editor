@@ -35,7 +35,15 @@ void main() {
               find.byKey(const Key('eud-generation-manifest')),
             )
             .data,
-        contains('"executable": false'),
+        contains('"runtimeStatus": "unverified"'),
+      );
+      expect(
+        tester
+            .widget<SelectableText>(
+              find.byKey(const Key('eud-generated-source')),
+            )
+            .data,
+        contains('TrgUnit(0).hasShield = True'),
       );
       expect(fixture.writes, 0);
       expect(fixture.projects.project!.encode(), before);
@@ -144,7 +152,10 @@ void main() {
         ),
       );
       expect(find.text('unit.hasShield — Terran Marine (#0)'), findsOneWidget);
-      expect(find.textContaining('EUD Build is disabled'), findsOneWidget);
+      expect(
+        find.textContaining('enable the project settings test build'),
+        findsOneWidget,
+      );
       final exit = tester.binding.handleRequestAppExit();
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));

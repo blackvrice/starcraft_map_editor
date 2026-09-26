@@ -27,6 +27,8 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 
 ## 새 ADR 형식
 
+추가 결정: [0012 — 선언적 EUD 테스트 빌드](0012-generated-eud-test-builds.md) (Accepted).
+
 ```markdown
 # ADR-NNNN: 제목
 

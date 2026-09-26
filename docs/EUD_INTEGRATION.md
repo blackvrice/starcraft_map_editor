@@ -1,7 +1,9 @@
 # EUD 연동
 
 2026-09-25: Windows 빌드에 [관리형 euddraft](EUD_BUNDLED_TOOL.md)를 동봉한다.
-기본 도구 선택·실제 epScript 빌드는 연결했으며 선언적 EUD 설정 생성은 별도 X2 범위다.
+기본 도구 선택·실제 epScript 빌드를 연결했다. 2026-09-26에는
+[선언적 설정 테스트 빌드](EUD_GENERATED_BUILD_VALIDATION.md)를 연결했다.
+설정 전용 또는 사용자 epScript 앞에 생성 시작 플러그인을 등록하며 게임 호환성은 미검증이다.
 
 ## 1. 목표
 

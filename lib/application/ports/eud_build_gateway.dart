@@ -9,6 +9,7 @@ final class EudBuildPlan {
     required this.tool,
     required this.timeout,
     this.replaceExistingOutput = false,
+    this.contextIsCurrent,
   }) : buildId = _requireNonBlank(buildId, 'buildId') {
     if (timeout <= Duration.zero) {
       throw ArgumentError.value(
@@ -24,6 +25,9 @@ final class EudBuildPlan {
   final EudToolInfo tool;
   final Duration timeout;
   final bool replaceExistingOutput;
+
+  /// Reject edits/rebinding after preparation, including during compilation.
+  final bool Function()? contextIsCurrent;
 }
 
 abstract interface class EudBuildGateway {

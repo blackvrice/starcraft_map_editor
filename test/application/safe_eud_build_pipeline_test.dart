@@ -15,6 +15,36 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 void main() {
   group('SafeEudBuildPipeline', () {
     for (final afterCompile in [false, true]) {
+      test(
+        'rejects stale project ${afterCompile ? 'before promotion' : 'before execution'}',
+        () async {
+          final files = _FakeEudBuildFileGateway(
+            destinationStates: [false, false],
+          );
+          final compiler = _FakeCompilerGateway.success();
+          var checks = 0;
+          final events =
+              await _pipeline(
+                    files: files,
+                    fingerprints: _successFingerprints(),
+                    compiler: compiler,
+                  )
+                  .build(
+                    _plan(
+                      contextIsCurrent: () => afterCompile && ++checks == 1,
+                    ),
+                  )
+                  .toList();
+          expect(
+            events.last.diagnostic?.code,
+            EudBuildPipelineDiagnosticCodes.projectChanged,
+          );
+          expect(files.promoteCalls, 0);
+          expect(compiler.request != null, afterCompile);
+        },
+      );
+    }
+    for (final afterCompile in [false, true]) {
       for (final change in [
         'version',
         'path',
@@ -304,6 +334,7 @@ SafeEudBuildPipeline _pipeline({
 }
 
 EudBuildPlan _plan({
+  bool Function()? contextIsCurrent,
   bool replaceExistingOutput = false,
   EudToolPathSource source = EudToolPathSource.projectProfile,
 }) {
@@ -318,6 +349,7 @@ EudBuildPlan _plan({
     tool: _tool(source),
     timeout: const Duration(minutes: 2),
     replaceExistingOutput: replaceExistingOutput,
+    contextIsCurrent: contextIsCurrent,
   );
 }
 

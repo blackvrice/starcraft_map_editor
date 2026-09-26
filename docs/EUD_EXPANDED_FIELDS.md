@@ -2,8 +2,9 @@
 
 2026-09-26. 기존 5개에서 **8개 분류, 61개 필드**로 선언적 편집 범위를 확대했다.
 완료 범위는 편집·구조 검증·저장·Undo/Redo·미리보기와 실제 도구 API 컴파일 검사다.
-**SC:R 게임/멀티플레이 지원 완료가 아니다.** override가 있는 프로젝트의 앱 EUD
-Build는 생성기 연결 전까지 차단한다. Save Project/맵 Save As는 게임 효과를 적용하지 않는다.
+**SC:R 게임/멀티플레이 지원 완료가 아니다.** 2026-09-26 후속 작업으로 명시적
+[생성 설정 테스트 빌드](EUD_GENERATED_BUILD_VALIDATION.md)를 연결했다.
+Save Project/맵 Save As는 게임 효과를 적용하지 않는다.
 
 ## 사용 방법
 
@@ -86,7 +87,8 @@ Registry는 `lib/domain/eud/eud_field_manifest.dart`에 있다. 스키마 v1의 
 3.47.2 / Dart 3.13.2로 저장소 기준 3.44.8 / 3.12와 다르다. Windows 빌드에는 기존
 CascLib CMake 최소 버전 경고가 남아 있다.
 
-결정적 실행 소스 생성기·사용자 hook 순서·SafeEudBuildPipeline 연결, 배치/생성 유닛
-실드 초기화 정책, 공유 그래픽 영향 조회와 실제 SC:R/멀티플레이 검증이 남아 있다.
+결정적 실행 소스 생성기·사용자 hook 순서·SafeEudBuildPipeline의 테스트 빌드는 연결했다.
+타입만 한 번 변경하는 실드 정책의 배치/생성 유닛 관찰, 공유 그래픽 영향 조회와
+실제 SC:R/멀티플레이 검증이 남아 있다.
 컴파일 성공만으로 M6.3.1/M6.3.2 전체를 완료 처리하지 않는다.
 관련: [개발 계획](DEVELOPMENT_PLAN.md), [실드 빌드 준비](EUD_SHIELD_BUILD_PREPARATION.md).
