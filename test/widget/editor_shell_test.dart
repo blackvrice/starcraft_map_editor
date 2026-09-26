@@ -66,13 +66,20 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('triggers-tab')));
+      await tester.tap(find.byKey(const Key('triggers-tab')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('trigger-add')), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('eud-project-tab')));
       await tester.tap(find.byKey(const Key('eud-project-tab')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('eud-project-new')));
       await tester.pumpAndSettle();
       expect(fixture.projects.isDirty, isTrue);
+      await tester.ensureVisible(find.byKey(const Key('map-document-tab')));
       await tester.tap(find.byKey(const Key('map-document-tab')));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('eud-project-tab')));
       await tester.tap(find.byKey(const Key('eud-project-tab')));
       await tester.pumpAndSettle();
       expect(find.text('EUD Project • Unsaved'), findsOneWidget);

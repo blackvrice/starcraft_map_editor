@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_save_file_gateway.dart';
@@ -482,6 +483,22 @@ void _registerSettingsRoundtrip(bool realArchive) {
         ),
         throwsStateError,
       );
+      final beforeTriggers = openController.state.session!.rawDocument;
+      final trigger = ChkTrigger.create().withSlot(
+        true,
+        0,
+        ChkTrigger.makeSlot(true, TriggerOpcodes.find(true, 44)!, {
+          'Player': 0,
+          'Unit ID': 0,
+          'Location ID': 1,
+          'Count': 2,
+        }, beforeTriggers),
+      );
+      final preserved = ChkTrigger(List.generate(2400, (i) => i % 256));
+      editingController.applyTriggers(
+        expectedDocument: beforeTriggers,
+        records: [trigger, preserved],
+      );
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -584,6 +601,12 @@ void _registerSettingsRoundtrip(bool realArchive) {
 
       final reopened = await openController.open(sourcePath: outputPath);
       expect(reopened.status, OpenMapStatus.opened);
+      expect(
+        ChkTriggers.encode(
+          ChkTriggers.read(reopened.session!.rawDocument).records,
+        ),
+        [...trigger.bytes, ...preserved.bytes],
+      );
       expect(reopened.diagnostics.map((d) => d.code), [
         'CHK_PLAYER_SETTINGS_START_MISSING',
       ]);
@@ -1047,6 +1070,7 @@ Uint8List _sourceChkBytes() {
     _section('PUPx', List<int>.filled(2318, 0)),
     _section('TECx', List<int>.filled(396, 0)),
     _section('PTEx', List<int>.filled(1672, 0)),
+    _section('TRIG', []),
     _section('FORC', [
       ...List<int>.filled(8, 0),
       1,

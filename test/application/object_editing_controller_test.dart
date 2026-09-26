@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
+import 'package:starcraft_map_editor/presentation/triggers/trigger_pane.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
@@ -16,6 +19,81 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  test(
+    'trigger changes preserve sections and reject stale drafts with undo redo',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final controller = fixture.objectEditingController;
+      final before = fixture.openMapController.state.session!.rawDocument;
+      final encoded = const RawChkEncoder().encode(before);
+      controller.applyTriggers(
+        expectedDocument: before,
+        records: [ChkTrigger.create()],
+      );
+      expect(controller.triggers.records.single.bytes[15], 23);
+      expect(fixture.openMapController.state.session!.isDirty, isTrue);
+      expect(
+        () => controller.applyTriggers(expectedDocument: before, records: []),
+        throwsStateError,
+      );
+      expect(controller.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        encoded,
+      );
+      expect(controller.redo(), isTrue);
+      expect(controller.triggers.records, hasLength(1));
+      final after = fixture.openMapController.state.session!.rawDocument;
+      for (var i = 0; i < before.sections.length - 1; i++) {
+        expect(after.sections[i].payload, before.sections[i].payload);
+      }
+    },
+  );
+
+  testWidgets('trigger draft cancel, apply, duplicate and undo', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    final controller = fixture.objectEditingController;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: TriggerPane(controller: controller)),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('trigger-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey(('trigger', 0))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'Player 2'));
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(controller.triggers.records.single.bytes[2373], 0);
+    await tester.tap(find.byKey(const ValueKey(('trigger', 0))));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'Player 2'));
+    await tester.tap(find.byKey(const Key('trigger-add-action')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trigger-slot-apply')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trigger-apply')));
+    await tester.pumpAndSettle();
+    expect(controller.triggers.records.single.bytes[2373], 1);
+    expect(controller.triggers.records.single.slot(true, 0)[26], 3);
+    await tester.tap(find.byTooltip('Duplicate trigger'));
+    await tester.pumpAndSettle();
+    expect(controller.triggers.records, hasLength(2));
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(controller.triggers.records, hasLength(1));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
   test('moves a multi-layer selection and supports undo and redo', () async {
     final fixture = await _openFixture();
     addTearDown(fixture.dispose);
@@ -690,6 +768,7 @@ Uint8List _chkBytes() {
     _section('THG2', _sprite(64, 64)),
     _section('MRGN', locations),
     _section('STR ', _legacyStringTable(['Existing', 'Other'])),
+    _section('TRIG', []),
   ]) {
     builder.add(section);
   }

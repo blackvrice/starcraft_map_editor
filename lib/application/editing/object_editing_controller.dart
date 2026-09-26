@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
+import '../../domain/chk/typed/chk_trigger_editor.dart';
 import '../../domain/chk/typed/chk_tech_settings_editor.dart';
 import '../../domain/chk/typed/chk_upgrade_settings_editor.dart';
 import '../../domain/chk/typed/chk_unit_availability_editor.dart';
@@ -83,6 +84,44 @@ class ObjectEditingController {
   bool get canRedo => _redoStack.isNotEmpty;
   String? get undoLabel => canUndo ? _undoStack.last.label : null;
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
+
+  ChkTriggers get triggers {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map.');
+    }
+    return ChkTriggers.read(session.rawDocument);
+  }
+
+  void applyTriggers({
+    required RawChkDocument expectedDocument,
+    required List<ChkTrigger> records,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        !identical(session.rawDocument, expectedDocument)) {
+      throw StateError('Map changed. Reopen the trigger editor.');
+    }
+    final index = ChkTriggers.read(expectedDocument).sectionIndex;
+    final before = expectedDocument.sections[index];
+    final bytes = ChkTriggers.encode(records);
+    final original = before.payload;
+    if (bytes.length == original.length &&
+        Iterable<int>.generate(
+          bytes.length,
+        ).every((i) => bytes[i] == original[i])) {
+      return;
+    }
+    _applyAndRecord(
+      _ObjectEditCommand(
+        label: 'Edit triggers',
+        beforeSections: {index: before},
+        afterSections: {index: before.withPayload(bytes)},
+      ),
+      clearSelection: false,
+    );
+  }
 
   ChkTechSettings get techSettings {
     final session = openMapController.state.session;
