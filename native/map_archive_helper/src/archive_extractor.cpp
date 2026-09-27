@@ -1,11 +1,11 @@
 #include "archive_extractor.h"
 
+#include <StormLib.h>
 #include <Windows.h>
 
-#include <StormLib.h>
-
-#include <iomanip>
+#include <cctype>
 #include <filesystem>
+#include <iomanip>
 #include <sstream>
 #include <string_view>
 #include <unordered_set>
@@ -512,10 +512,32 @@ ExtractResult ExtractScenario(
   return result;
 }
 
-ReplaceResult ReplaceScenario(
-    const std::filesystem::path& source_archive_path,
-    const std::filesystem::path& scenario_input_path,
-    const std::filesystem::path& archive_output_path) {
+ReplaceResult ReplaceScenario(const std::filesystem::path& source_archive_path,
+                              const std::filesystem::path& scenario_input_path,
+                              const std::filesystem::path& archive_output_path,
+                              const std::vector<ResourceChange>& resources) {
+  if (resources.size() > 64)
+    return ReplaceFailure("ARCHIVE_RESOURCE_LIMIT",
+                          "Too many resource changes.", "validate",
+                          ERROR_INVALID_PARAMETER);
+  std::unordered_set<std::string> names;
+  for (const auto& resource : resources) {
+    auto key = resource.path;
+    for (auto& c : key)
+      c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+    if (!IsSoundPath(resource.path) || !names.insert(key).second)
+      return ReplaceFailure("ARCHIVE_RESOURCE_PATH",
+                            "Invalid or duplicate sound path.", "validate",
+                            ERROR_INVALID_NAME);
+    if (!resource.remove) {
+      std::error_code e;
+      auto n = std::filesystem::file_size(resource.input, e);
+      if (e || n > 16 * 1024 * 1024 || n < 44)
+        return ReplaceFailure("ARCHIVE_RESOURCE_SIZE",
+                              "Sound input is unavailable or too large.",
+                              "validate", ERROR_INVALID_DATA);
+    }
+  }
   if (!source_archive_path.is_absolute() ||
       !scenario_input_path.is_absolute() ||
       !archive_output_path.is_absolute()) {
@@ -656,6 +678,31 @@ ReplaceResult ReplaceScenario(
         native_error);
   }
 
+  for (const auto& resource : resources) {
+    bool ok = false;
+    if (resource.remove) {
+      LCID locales[16]{};
+      DWORD count = 16;
+      const auto status = SFileEnumLocales(archive.get(), resource.path.c_str(),
+                                           locales, &count, 0);
+      ok = status == ERROR_SUCCESS && count == 1 && locales[0] == 0 &&
+           SFileRemoveFile(archive.get(), resource.path.c_str(),
+                           SFILE_OPEN_FROM_MPQ);
+    } else if (!SFileHasFile(archive.get(), resource.path.c_str())) {
+      ok = SFileAddFileEx(archive.get(), resource.input.c_str(),
+                          resource.path.c_str(), MPQ_FILE_COMPRESS,
+                          MPQ_COMPRESSION_ZLIB, MPQ_COMPRESSION_ZLIB);
+    }
+    if (!ok) {
+      const auto error = GetLastError();
+      archive.Close();
+      RemovePartialOutput(archive_output_path);
+      return ReplaceFailure(
+          "ARCHIVE_RESOURCE_WRITE_FAILED",
+          "Sound collision, localized entry, or resource write failure.",
+          "resources", error);
+    }
+  }
   if (!archive.Close()) {
     const DWORD native_error = GetLastError();
     RemovePartialOutput(archive_output_path);
@@ -682,6 +729,77 @@ ReplaceResult ReplaceScenario(
   result.success = true;
   result.archive_size_bytes = archive_size;
   result.scenario_size_bytes = scenario_size;
+  return result;
+}
+
+bool IsSoundPath(const std::string& path) {
+  if (path.size() < 5 || path.size() > 240 || path.front() == '\\')
+    return false;
+  auto lower = path;
+  for (auto& c : lower)
+    c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+  if (lower.substr(lower.size() - 4) != ".wav") return false;
+  std::string segment;
+  for (char c : path) {
+    if (c == '\\') {
+      if (segment.empty() || segment == "." || segment == ".." ||
+          segment.back() == ' ' || segment.back() == '.')
+        return false;
+      segment.clear();
+    } else {
+      if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+            (c >= '0' && c <= '9') || c == '_' || c == ' ' || c == '.' ||
+            c == '-'))
+        return false;
+      segment += c;
+    }
+  }
+  return !segment.empty();
+}
+
+ReplaceResult ExtractSound(const std::filesystem::path& source,
+                           const std::string& name,
+                           const std::filesystem::path& output) {
+  if (!IsSoundPath(name) || !source.is_absolute() || !output.is_absolute() ||
+      std::filesystem::exists(output))
+    return ReplaceFailure("ARCHIVE_RESOURCE_PATH",
+                          "Invalid resource/output path.", "validate",
+                          ERROR_INVALID_PARAMETER);
+  HANDLE raw = nullptr;
+  if (!SFileOpenArchive(source.c_str(), 0, MPQ_OPEN_READ_ONLY, &raw))
+    return ReplaceFailure("ARCHIVE_RESOURCE_OPEN", "Cannot open archive.",
+                          "open", GetLastError());
+  ArchiveHandle archive(raw);
+  if (!SFileHasFile(raw, name.c_str()))
+    return ReplaceFailure("ARCHIVE_RESOURCE_NOT_FOUND", "Resource not found.",
+                          "read", ERROR_FILE_NOT_FOUND);
+  LCID locales[16]{};
+  DWORD count = 16;
+  if (SFileEnumLocales(raw, name.c_str(), locales, &count, 0) !=
+          ERROR_SUCCESS ||
+      count != 1 || locales[0] != 0)
+    return ReplaceFailure("ARCHIVE_RESOURCE_LOCALE",
+                          "Ambiguous or localized sound.", "read",
+                          ERROR_INVALID_DATA);
+  HANDLE file = nullptr;
+  if (!SFileOpenFileEx(raw, name.c_str(), SFILE_OPEN_FROM_MPQ, &file))
+    return ReplaceFailure("ARCHIVE_RESOURCE_READ", "Cannot open sound.", "read",
+                          GetLastError());
+  FileHandle handle(file);
+  DWORD high = 0;
+  const DWORD size = SFileGetFileSize(file, &high);
+  if (high != 0 || size > 16 * 1024 * 1024)
+    return ReplaceFailure("ARCHIVE_RESOURCE_SIZE", "Sound exceeds 16 MiB.",
+                          "read", ERROR_FILE_TOO_LARGE);
+  if (!SFileExtractFile(raw, name.c_str(), output.c_str(),
+                        SFILE_OPEN_FROM_MPQ)) {
+    RemovePartialOutput(output);
+    return ReplaceFailure("ARCHIVE_RESOURCE_READ", "Cannot extract sound.",
+                          "read", GetLastError());
+  }
+  ReplaceResult result;
+  result.success = true;
+  result.scenario_size_bytes = size;
   return result;
 }
 

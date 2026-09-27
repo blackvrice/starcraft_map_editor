@@ -7,6 +7,7 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../operations/operation_progress.dart';
 import '../operations/operation_progress_controller.dart';
 import '../ports/map_archive_gateway.dart';
+import '../ports/map_resource_gateway.dart';
 import '../ports/map_file_picker.dart';
 import '../ports/map_file_fingerprint_gateway.dart';
 import '../ports/map_save_file_gateway.dart';
@@ -349,6 +350,7 @@ class SaveMapController {
           sourcePath: sourceSession.sourcePath,
           temporaryOutputPath: workspace.temporaryOutputPath,
           scenarioChkBytes: encodedChk,
+          resourceEdits: sourceSession.resourceEdits,
           timeout: archiveTimeout,
         ),
       );
@@ -418,6 +420,26 @@ class SaveMapController {
         stringViews: stringViews,
         objectViews: objectViews,
       );
+      if (sourceSession.resourceEdits.isNotEmpty) {
+        final reader = archiveGateway;
+        if (reader is! MapArchiveResourceReader) {
+          throw StateError('Archive gateway cannot verify resource changes.');
+        }
+        for (final change in sourceSession.resourceEdits.entries) {
+          final actual = await (reader as MapArchiveResourceReader)
+              .readResource(workspace.temporaryOutputPath, change.key);
+          final expected = change.value;
+          if (expected == null
+              ? actual != null
+              : actual == null ||
+                    actual.length != expected.length ||
+                    Iterable<int>.generate(
+                      expected.length,
+                    ).any((i) => expected[i] != actual[i])) {
+            throw StateError('Resource verification failed: ${change.key}');
+          }
+        }
+      }
       final verifiedDiagnostics = [
         ...writeResult.diagnostics,
         ...reopenResult.diagnostics,
@@ -553,6 +575,11 @@ class SaveMapController {
         );
       }
 
+      if (!identical(sourceSession, openMapController.state.session)) {
+        throw StateError(
+          'The document changed during Save As. Retry to include the latest edits.',
+        );
+      }
       operationProgressController.update(
         operationId: operationId,
         phase: OperationPhase.writing,

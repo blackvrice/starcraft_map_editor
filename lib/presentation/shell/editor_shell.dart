@@ -1,3 +1,4 @@
+import '../resources/resources_pane.dart';
 import '../../application/eud/eud_build_preparation_controller.dart';
 import '../../application/settings/eud_tool_settings_controller.dart';
 import '../settings/map_settings_dialog.dart';
@@ -47,7 +48,15 @@ import '../settings/upgrade_settings_dialog.dart';
 import '../settings/tech_settings_dialog.dart';
 import '../settings/starcraft_asset_settings_dialog.dart';
 
-enum _WorkspaceView { map, eud, catalog, settings, project, triggers }
+enum _WorkspaceView {
+  map,
+  eud,
+  catalog,
+  settings,
+  project,
+  triggers,
+  resources,
+}
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
@@ -840,6 +849,9 @@ class _EditorShellState extends State<EditorShell> {
                             onShowEud: _showEudWorkspace,
                             onShowCatalog: _showCatalogWorkspace,
                             onOpenSettings: _showSettingsWorkspace,
+                            onShowResources: () => setState(
+                              () => _workspaceView = _WorkspaceView.resources,
+                            ),
                             onShowTriggers: () => setState(
                               () => _workspaceView = _WorkspaceView.triggers,
                             ),
@@ -1261,6 +1273,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.projectWorkspace,
     required this.onShowProject,
     required this.onShowTriggers,
+    required this.onShowResources,
   });
 
   final VoidCallback? openMap;
@@ -1287,12 +1300,14 @@ class _EditorWorkspace extends StatelessWidget {
   final EudProjectWorkspace? projectWorkspace;
   final VoidCallback onShowProject;
   final VoidCallback onShowTriggers;
+  final VoidCallback onShowResources;
 
   @override
   Widget build(BuildContext context) {
     final session = openMapState.session;
     final eudDocument = eudSourceController.state.document;
     final fullWidth =
+        workspaceView == _WorkspaceView.resources ||
         workspaceView == _WorkspaceView.triggers ||
         workspaceView == _WorkspaceView.settings ||
         workspaceView == _WorkspaceView.project;
@@ -1355,10 +1370,13 @@ class _EditorWorkspace extends StatelessWidget {
                   projectWorkspace: projectWorkspace,
                   onShowProject: onShowProject,
                   onShowTriggers: onShowTriggers,
+                  onShowResources: onShowResources,
                 ),
               Expanded(
                 child: IndexedStack(
-                  index: workspaceView == _WorkspaceView.triggers
+                  index: workspaceView == _WorkspaceView.resources
+                      ? 4
+                      : workspaceView == _WorkspaceView.triggers
                       ? 3
                       : workspaceView == _WorkspaceView.project
                       ? 2
@@ -1395,6 +1413,10 @@ class _EditorWorkspace extends StatelessWidget {
                     else
                       const SizedBox.shrink(),
                     TriggerPane(controller: objectEditingController),
+                    ResourcesPane(
+                      controller: objectEditingController,
+                      active: workspaceView == _WorkspaceView.resources,
+                    ),
                   ],
                 ),
               ),
@@ -1440,6 +1462,7 @@ class _DocumentTabs extends StatelessWidget {
     required this.projectWorkspace,
     required this.onShowProject,
     required this.onShowTriggers,
+    required this.onShowResources,
   });
 
   final OpenedMapSession? session;
@@ -1452,6 +1475,7 @@ class _DocumentTabs extends StatelessWidget {
   final EudProjectWorkspace? projectWorkspace;
   final VoidCallback onShowProject;
   final VoidCallback onShowTriggers;
+  final VoidCallback onShowResources;
 
   @override
   Widget build(BuildContext context) {
@@ -1507,6 +1531,14 @@ class _DocumentTabs extends StatelessWidget {
                   icon: Icons.account_tree_outlined,
                   selected: workspaceView == _WorkspaceView.triggers,
                   onPressed: onShowTriggers,
+                ),
+              if (session != null)
+                _DocumentTab(
+                  key: const Key('resources-tab'),
+                  label: 'Resources',
+                  icon: Icons.library_music,
+                  selected: workspaceView == _WorkspaceView.resources,
+                  onPressed: onShowResources,
                 ),
               if (projectWorkspace != null)
                 _DocumentTab(

@@ -184,9 +184,13 @@ bool FlutterWindow::OnCreate() {
                  result) {
         const bool is_project = call.method_name() == "openEudProject" ||
                                 call.method_name() == "saveEudProject";
+        const bool is_sound = call.method_name() == "openSound" ||
+                              call.method_name() == "saveSound";
         const bool is_open = call.method_name() == "openMap" ||
+                             call.method_name() == "openSound" ||
                              call.method_name() == "openEudProject";
         const bool is_save = call.method_name() == "saveMap" ||
+                             call.method_name() == "saveSound" ||
                              call.method_name() == "saveEudProject";
         const bool is_data_directory =
             call.method_name() == "pickStarCraftInstallationDirectory";
@@ -243,18 +247,26 @@ bool FlutterWindow::OnCreate() {
             L"All files (*.*)\0*.*\0";
         constexpr wchar_t project_filter[] =
             L"EUD projects (*.eud.json)\0*.eud.json\0";
+        constexpr wchar_t sound_filter[] = L"Wave audio (*.wav)\0*.wav\0";
         OPENFILENAMEW dialog = {};
         dialog.lStructSize = sizeof(dialog);
         dialog.hwndOwner = GetHandle();
         dialog.lpstrFile = selected_path;
         dialog.nMaxFile =
             static_cast<DWORD>(sizeof(selected_path) / sizeof(wchar_t));
-        dialog.lpstrFilter = is_project ? project_filter : filter;
+        dialog.lpstrFilter = is_sound     ? sound_filter
+                             : is_project ? project_filter
+                                          : filter;
         dialog.nFilterIndex = 1;
-        dialog.lpstrTitle = is_project
-            ? (is_open ? L"Open EUD Project" : L"Save EUD Project As (new file)")
-            : (is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As");
-        dialog.lpstrDefExt = is_project ? L"eud.json" : L"scx";
+        dialog.lpstrTitle =
+            is_sound ? (is_open ? L"Import PCM WAV" : L"Export WAV")
+            : is_project
+                ? (is_open ? L"Open EUD Project"
+                           : L"Save EUD Project As (new file)")
+                : (is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As");
+        dialog.lpstrDefExt = is_sound     ? L"wav"
+                             : is_project ? L"eud.json"
+                                          : L"scx";
         dialog.Flags =
             OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
         if (is_open) {

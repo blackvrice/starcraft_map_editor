@@ -42,7 +42,13 @@ class MapArchiveWriteRequest {
     required this.temporaryOutputPath,
     required List<int> scenarioChkBytes,
     required this.timeout,
-  }) : scenarioChkBytes = _copyBytes(scenarioChkBytes) {
+    Map<String, List<int>?> resourceEdits = const {},
+  }) : resourceEdits = Map.unmodifiable(
+         resourceEdits.map(
+           (k, v) => MapEntry(k, v == null ? null : List<int>.unmodifiable(v)),
+         ),
+       ),
+       scenarioChkBytes = _copyBytes(scenarioChkBytes) {
     _requireNonBlank(operationId, 'operationId');
     _requireNonBlank(sourcePath, 'sourcePath');
     _requireNonBlank(temporaryOutputPath, 'temporaryOutputPath');
@@ -61,6 +67,7 @@ class MapArchiveWriteRequest {
   final String sourcePath;
   final String temporaryOutputPath;
   final Uint8List scenarioChkBytes;
+  final Map<String, List<int>?> resourceEdits;
   final Duration timeout;
 }
 

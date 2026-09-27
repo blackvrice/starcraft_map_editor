@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:starcraft_map_editor/application/ports/map_resource_gateway.dart';
+import 'package:starcraft_map_editor/presentation/resources/resources_pane.dart';
+import '../fixtures/pcm_sound_fixture.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +23,101 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  testWidgets(
+    'resource tab edits strings and imports, previews, exports and undoes sounds',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final resources = _SoundGateway();
+      final fixture = await _openFixture(resourceGateway: resources);
+      addTearDown(fixture.dispose);
+      final controller = fixture.objectEditingController;
+      final original = fixture.openMapController.state.session!;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ResourcesPane(controller: controller, active: true),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey(('resource-string', 2))));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('resource-string-text')),
+        'Edited text',
+      );
+      await tester.tap(find.byKey(const Key('resource-string-apply')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Edited text'), findsOneWidget);
+      controller.undo();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Import PCM WAV'));
+      await tester.pumpAndSettle();
+      final imported = fixture.openMapController.state.session!;
+      expect(
+        imported.resourceEdits[r'staredit\wav\own.wav'],
+        pcmSoundFixture(),
+      );
+      expect(() => imported.resourceEdits.clear(), throwsUnsupportedError);
+      expect(
+        () => imported.resourceEdits.values.single![0] = 0,
+        throwsUnsupportedError,
+      );
+      await tester.tap(find.text('Sounds'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Preview sound'));
+      await tester.pumpAndSettle();
+      expect(resources.previewed, pcmSoundFixture());
+      await tester.tap(find.byTooltip('Export sound'));
+      await tester.pumpAndSettle();
+      expect(resources.exported, pcmSoundFixture());
+      await expectLater(controller.importSound(), throwsStateError);
+      controller.deleteSound(r'STAREDIT\WAV\OWN.WAV');
+      expect(fixture.openMapController.state.session!.resourceEdits, isEmpty);
+      controller.undo();
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .resourceEdits[r'staredit\wav\own.wav'],
+        pcmSoundFixture(),
+      );
+      controller.undo();
+      expect(fixture.openMapController.state.session!.resourceEdits, isEmpty);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        const RawChkEncoder().encode(original.rawDocument),
+      );
+      controller.redo();
+      expect(
+        await controller.soundBytes(r'STAREDIT\WAV\OWN.WAV'),
+        pcmSoundFixture(),
+      );
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  test(
+    'cancelled or invalid sound import leaves document and history unchanged',
+    () async {
+      final resources = _SoundGateway()..cancel = true;
+      final fixture = await _openFixture(resourceGateway: resources);
+      addTearDown(fixture.dispose);
+      final original = fixture.openMapController.state.session;
+      await fixture.objectEditingController.importSound();
+      expect(fixture.openMapController.state.session, same(original));
+      resources.cancel = false;
+      resources.invalid = true;
+      await expectLater(
+        fixture.objectEditingController.importSound(),
+        throwsFormatException,
+      );
+      expect(fixture.openMapController.state.session, same(original));
+      expect(fixture.objectEditingController.canUndo, isFalse);
+    },
+  );
   test(
     'trigger resources append atomically and undo with stale draft protection',
     () async {
@@ -797,7 +895,7 @@ final class _Fixture {
   }
 }
 
-Future<_Fixture> _openFixture() async {
+Future<_Fixture> _openFixture({MapResourceGateway? resourceGateway}) async {
   final chkBytes = _chkBytes();
   final map = ExtractedMap(
     sourcePath: r'C:\Maps\Objects.scx',
@@ -832,6 +930,7 @@ Future<_Fixture> _openFixture() async {
   final mapLayerController = MapLayerController()
     ..synchronizeSession(state.session);
   final objectEditingController = ObjectEditingController(
+    resourceGateway: resourceGateway,
     openMapController: openMapController,
     mapLayerController: mapLayerController,
   )..synchronizeSession(state.session);
@@ -841,6 +940,29 @@ Future<_Fixture> _openFixture() async {
     objectEditingController: objectEditingController,
     progressController: progressController,
   );
+}
+
+class _SoundGateway implements MapResourceGateway {
+  bool cancel = false, invalid = false;
+  List<int>? previewed, exported;
+  @override
+  Future<({String name, List<int> bytes})?> importSound() async => cancel
+      ? null
+      : (name: 'own.wav', bytes: invalid ? [0] : pcmSoundFixture());
+  @override
+  Future<void> exportSound(String name, List<int> bytes) async {
+    exported = bytes;
+  }
+
+  @override
+  Future<void> preview(List<int> bytes) async {
+    previewed = bytes;
+  }
+
+  @override
+  Future<void> stopPreview() async {}
+  @override
+  Future<List<int>?> readSound(String archive, String path) async => null;
 }
 
 Uint8List _chkBytes() {

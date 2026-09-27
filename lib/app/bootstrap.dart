@@ -1,3 +1,4 @@
+import '../infrastructure/filesystem/local_map_resource_gateway.dart';
 import 'package:flutter/widgets.dart';
 import '../application/eud/eud_build_preparation_controller.dart';
 import '../application/settings/eud_tool_settings_controller.dart';
@@ -112,6 +113,7 @@ void bootstrap() {
     projects: eudProjectWorkspace,
   );
   final objectEditingController = ObjectEditingController(
+    resourceGateway: LocalMapResourceGateway(archiveGateway),
     openMapController: openMapController,
     mapLayerController: mapLayerController,
   );

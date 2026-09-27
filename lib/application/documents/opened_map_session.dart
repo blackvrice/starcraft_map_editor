@@ -2,6 +2,7 @@ import '../../domain/chk/chk.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../ports/map_archive_gateway.dart';
 import '../ports/map_file_fingerprint_gateway.dart';
+import 'pending_map_resources.dart';
 
 class OpenedMapSession {
   OpenedMapSession({
@@ -13,7 +14,11 @@ class OpenedMapSession {
     required this.objectViews,
     required this.sourceFingerprint,
     required Iterable<EditorDiagnostic> diagnostics,
-  }) : diagnostics = List.unmodifiable(diagnostics);
+    Map<String, List<int>?> resourceEdits = const {},
+  }) : resourceEdits = PendingMapResources(resourceEdits),
+       diagnostics = List.unmodifiable(diagnostics);
+
+  final Map<String, List<int>?> resourceEdits;
 
   final ExtractedMap extractedMap;
   final RawChkDocument rawDocument;
@@ -30,7 +35,7 @@ class OpenedMapSession {
 
   int get scenarioChkSizeBytes => extractedMap.scenarioChkBytes.length;
 
-  bool get isDirty => rawDocument.isDirty;
+  bool get isDirty => rawDocument.isDirty || resourceEdits.isNotEmpty;
 
   bool get requiresRestrictedEditing =>
       diagnostics.any((diagnostic) => diagnostic.blocksOperation);

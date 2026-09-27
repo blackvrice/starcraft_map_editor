@@ -1,4 +1,6 @@
 import 'dart:typed_data';
+import 'package:starcraft_map_editor/application/ports/map_resource_gateway.dart';
+import '../fixtures/pcm_sound_fixture.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
@@ -71,6 +73,41 @@ void main() {
       await openMapController.dispose();
       await progressController.dispose();
     });
+    for (final corrupt in [false, true]) {
+      test(
+        'pending sound byte verification before promotion (corrupt=$corrupt)',
+        () async {
+          final original = openMapController.state.session!;
+          final sounds = {r'staredit\wav\own.wav': pcmSoundFixture()};
+          openMapController.adoptEditedSession(
+            OpenedMapSession(
+              extractedMap: original.extractedMap,
+              rawDocument: original.rawDocument,
+              metadataViews: original.metadataViews,
+              stringViews: original.stringViews,
+              terrainViews: original.terrainViews,
+              objectViews: original.objectViews,
+              sourceFingerprint: original.sourceFingerprint,
+              diagnostics: original.diagnostics,
+              resourceEdits: sounds,
+            ),
+          );
+          final pending = openMapController.state.session;
+          archiveGateway.corruptResource = corrupt;
+          final result = await saveMapController.saveAs();
+          expect(archiveGateway.writeRequests.single.resourceEdits, sounds);
+          if (corrupt) {
+            expect(result.status, SaveMapStatus.failed);
+            expect(saveFileGateway.promotedDestination, isNull);
+            expect(openMapController.state.session, same(pending));
+          } else {
+            expect(result.status, SaveMapStatus.saved);
+            expect(openMapController.state.session!.resourceEdits, isEmpty);
+            expect(openMapController.state.session!.isDirty, isFalse);
+          }
+        },
+      );
+    }
     test(
       'invalid edited trigger references stop before archive writes',
       () async {
@@ -499,7 +536,15 @@ void main() {
   });
 }
 
-class _FakeMapArchiveGateway implements MapArchiveGateway {
+class _FakeMapArchiveGateway
+    implements MapArchiveGateway, MapArchiveResourceReader {
+  bool corruptResource = false;
+  @override
+  Future<List<int>?> readResource(
+    String archivePath,
+    String resourcePath,
+  ) async =>
+      corruptResource ? [0] : writeRequests.single.resourceEdits[resourcePath];
   _FakeMapArchiveGateway(this.sourceMap);
 
   final ExtractedMap sourceMap;

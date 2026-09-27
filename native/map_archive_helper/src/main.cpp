@@ -145,8 +145,8 @@ int main() {
           ERROR_REVISION_MISMATCH,
           2);
     }
-    if (operation != "extractScenario" &&
-        operation != "replaceScenario") {
+    if (operation != "extractScenario" && operation != "replaceScenario" &&
+        operation != "extractSound") {
       return WriteError(
           request_id,
           operation,
@@ -180,6 +180,29 @@ int main() {
           2);
     }
 
+    if (operation == "extractSound") {
+      if (!IsNonEmptyString(request, "resourcePath") ||
+          !IsNonEmptyString(request, "resourceOutputPath"))
+        return WriteError(
+            request_id, operation, "ARCHIVE_PROTOCOL_INVALID_REQUEST",
+            "Missing sound path.", "validate", ERROR_INVALID_PARAMETER, 2);
+      const auto output = std::filesystem::u8path(
+          request["resourceOutputPath"].get<std::string>());
+      if (!output.is_absolute() || !IsOutputInsideWorkingDirectory(output))
+        return WriteError(request_id, operation, "ARCHIVE_PATH_NOT_ALLOWED",
+                          "Output outside workspace.", "validate",
+                          ERROR_ACCESS_DENIED, 2);
+      const auto result = starcraft_map_editor::archive::ExtractSound(
+          source_path, request["resourcePath"].get<std::string>(), output);
+      if (!result.success)
+        return WriteError(request_id, operation, result.error_code,
+                          result.message, result.stage, result.native_error, 3);
+      auto response = BaseResponse(request_id, operation);
+      response["status"] = "success";
+      response["sizeBytes"] = result.scenario_size_bytes;
+      std::cout << response.dump() << '\n';
+      return 0;
+    }
     if (operation == "extractScenario") {
       if (!IsNonEmptyString(request, "scenarioOutputPath")) {
         return WriteError(
@@ -285,10 +308,40 @@ int main() {
           2);
     }
 
+    std::vector<starcraft_map_editor::archive::ResourceChange> resources;
+    if (request.contains("resourceChanges")) {
+      if (!request["resourceChanges"].is_array() ||
+          request["resourceChanges"].size() > 64)
+        return WriteError(request_id, operation, "ARCHIVE_RESOURCE_LIMIT",
+                          "Invalid resource list.", "validate",
+                          ERROR_INVALID_PARAMETER, 2);
+      for (const auto& change : request["resourceChanges"]) {
+        if (!IsNonEmptyString(change, "path") || !change.contains("remove") ||
+            !change["remove"].is_boolean())
+          return WriteError(request_id, operation, "ARCHIVE_RESOURCE_REQUEST",
+                            "Invalid resource change.", "validate",
+                            ERROR_INVALID_PARAMETER, 2);
+        starcraft_map_editor::archive::ResourceChange resource;
+        resource.path = change["path"].get<std::string>();
+        resource.remove = change["remove"].get<bool>();
+        if (!resource.remove) {
+          if (!IsNonEmptyString(change, "inputPath"))
+            return WriteError(request_id, operation, "ARCHIVE_RESOURCE_REQUEST",
+                              "Missing input.", "validate",
+                              ERROR_INVALID_PARAMETER, 2);
+          resource.input =
+              std::filesystem::u8path(change["inputPath"].get<std::string>());
+          if (!resource.input.is_absolute() ||
+              !IsOutputInsideWorkingDirectory(resource.input))
+            return WriteError(request_id, operation, "ARCHIVE_PATH_NOT_ALLOWED",
+                              "Input outside workspace.", "validate",
+                              ERROR_ACCESS_DENIED, 2);
+        }
+        resources.push_back(resource);
+      }
+    }
     const auto result = starcraft_map_editor::archive::ReplaceScenario(
-        source_path,
-        scenario_input_path,
-        archive_output_path);
+        source_path, scenario_input_path, archive_output_path, resources);
     if (!result.success) {
       return WriteError(
           request_id,
@@ -305,6 +358,7 @@ int main() {
     response["output"] = {
         {"archiveSizeBytes", result.archive_size_bytes},
         {"scenarioSizeBytes", result.scenario_size_bytes},
+        {"resourceUpdates", resources.size()},
     };
     std::cout << response.dump() << '\n';
     return 0;

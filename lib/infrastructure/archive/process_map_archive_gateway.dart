@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../../application/ports/map_archive_gateway.dart';
+import '../../application/ports/map_resource_gateway.dart';
+import '../../domain/assets/map_sound.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 
 abstract final class MapArchiveDiagnosticCodes {
@@ -33,7 +35,78 @@ abstract final class MapArchiveDiagnosticCodes {
   static const encryptedEntries = 'ARCHIVE_ENCRYPTED_ENTRIES_PRESENT';
 }
 
-class ProcessMapArchiveGateway implements MapArchiveGateway {
+class ProcessMapArchiveGateway
+    implements MapArchiveGateway, MapArchiveResourceReader {
+  @override
+  Future<List<int>?> readResource(
+    String archivePath,
+    String resourcePath,
+  ) async {
+    resourcePath = MapSound.path(resourcePath);
+    if (!_isAbsoluteWindowsPath(archivePath)) {
+      throw const FormatException('Archive path must be absolute.');
+    }
+    final root = await (temporaryRoot ?? Directory.systemTemp).createTemp(
+      'map_sound_read_',
+    );
+    Process? process;
+    try {
+      final output = File('${root.path}${Platform.pathSeparator}sound.wav');
+      final id = 'resource-${DateTime.now().microsecondsSinceEpoch}';
+      process = await Process.start(
+        helperExecutablePath,
+        helperArguments,
+        workingDirectory: root.path,
+        environment: _minimalEnvironment(root.path),
+        includeParentEnvironment: false,
+        runInShell: false,
+      );
+      final stdout = _captureOutput(process.stdout, maximumProcessOutputBytes),
+          stderr = _captureOutput(process.stderr, maximumProcessOutputBytes);
+      process.stdin.writeln(
+        jsonEncode({
+          'protocolVersion': protocolVersion,
+          'requestId': id,
+          'operation': 'extractSound',
+          'sourcePath': archivePath,
+          'resourcePath': resourcePath,
+          'resourceOutputPath': output.path,
+        }),
+      );
+      await process.stdin.close();
+      final exit = await process.exitCode.timeout(const Duration(seconds: 30));
+      final out = await stdout, err = await stderr;
+      if (out.exceededLimit || err.exceededLimit) {
+        throw const FormatException('Sound helper output exceeded limit.');
+      }
+      final response = jsonDecode(out.text) as Map<String, dynamic>;
+      if (response['protocolVersion'] != protocolVersion ||
+          response['requestId'] != id ||
+          response['operation'] != 'extractSound' ||
+          response['helperVersion'] != helperVersion ||
+          response['stormLibRevision'] != stormLibRevision) {
+        throw const FormatException('Sound helper identity mismatch.');
+      }
+      if (response['error']?['code'] == 'ARCHIVE_RESOURCE_NOT_FOUND') {
+        return null;
+      }
+      if (exit != 0 || response['status'] != 'success') {
+        throw FormatException('Sound helper failed: ${out.text}\n${err.text}');
+      }
+      final length = await output.length();
+      if (length > MapSound.maximumBytes || length != response['sizeBytes']) {
+        throw const FormatException('Sound output size mismatch.');
+      }
+      return await output.readAsBytes();
+    } finally {
+      if (process != null) {
+        process.kill();
+        await process.exitCode;
+      }
+      await root.delete(recursive: true);
+    }
+  }
+
   ProcessMapArchiveGateway({
     required String helperExecutablePath,
     List<String> helperArguments = const [],
@@ -393,6 +466,8 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
       '${temporaryOutput.parent.path}${Platform.pathSeparator}'
       'scenario-input.chk',
     );
+    final resourceInputs = <File>[];
+    final resourceChanges = <Map<String, Object>>[];
     Process? process;
     try {
       if (await scenarioInput.exists()) {
@@ -404,6 +479,34 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         );
       }
       await scenarioInput.create(exclusive: true);
+      if (request.resourceEdits.length > 64 ||
+          request.resourceEdits.values.fold<int>(
+                0,
+                (n, b) => n + (b?.length ?? 0),
+              ) >
+              64 * 1024 * 1024) {
+        throw const FormatException(
+          'Sound changes exceed 64 entries or 64 MiB.',
+        );
+      }
+      for (final change in request.resourceEdits.entries) {
+        MapSound.path(change.key);
+        final item = <String, Object>{
+          'path': MapSound.path(change.key),
+          'remove': change.value == null,
+        };
+        if (change.value != null) {
+          MapSound.validate(change.value!);
+          final input = File(
+            '${temporaryOutput.parent.path}${Platform.pathSeparator}sound-input-${resourceInputs.length}.wav',
+          );
+          await input.create(exclusive: true);
+          resourceInputs.add(input);
+          await input.writeAsBytes(change.value!, flush: true);
+          item['inputPath'] = input.path;
+        }
+        resourceChanges.add(item);
+      }
       final scenarioHandle = await scenarioInput.open(mode: FileMode.writeOnly);
       try {
         await scenarioHandle.writeFrom(request.scenarioChkBytes);
@@ -440,6 +543,7 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
           'sourcePath': request.sourcePath,
           'scenarioInputPath': scenarioInput.path,
           'archiveOutputPath': request.temporaryOutputPath,
+          if (resourceChanges.isNotEmpty) 'resourceChanges': resourceChanges,
         }),
       );
       await process.stdin.flush();
@@ -495,6 +599,14 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
         request.operationId,
         exitCode,
       );
+      if (response.error == null &&
+          request.resourceEdits.isNotEmpty &&
+          jsonDecode(stdout.text)['output']?['resourceUpdates'] !=
+              request.resourceEdits.length) {
+        throw const FormatException(
+          'Helper did not acknowledge resource changes.',
+        );
+      }
       if (response.error != null) {
         return _writeFailure(
           code: response.error!.code,
@@ -590,6 +702,9 @@ class ProcessMapArchiveGateway implements MapArchiveGateway {
       }
       _cancelledOperationIds.remove(request.operationId);
       try {
+        for (final input in resourceInputs) {
+          if (await input.exists()) await input.delete();
+        }
         if (await scenarioInput.exists()) {
           await scenarioInput.delete();
         }

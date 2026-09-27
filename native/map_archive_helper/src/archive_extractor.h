@@ -55,6 +55,16 @@ struct ReplaceResult {
   std::uint32_t native_error = 0;
 };
 
+struct ResourceChange {
+  std::string path;
+  std::filesystem::path input;
+  bool remove = false;
+};
+bool IsSoundPath(const std::string& path);
+ReplaceResult ExtractSound(const std::filesystem::path& source,
+                           const std::string& name,
+                           const std::filesystem::path& output);
+
 ExtractResult ExtractScenario(
     const std::filesystem::path& source_archive_path,
     const std::filesystem::path& scenario_output_path);
@@ -62,6 +72,7 @@ ExtractResult ExtractScenario(
 ReplaceResult ReplaceScenario(
     const std::filesystem::path& source_archive_path,
     const std::filesystem::path& scenario_input_path,
-    const std::filesystem::path& archive_output_path);
+    const std::filesystem::path& archive_output_path,
+    const std::vector<ResourceChange>& resources = {});
 
 }  // namespace starcraft_map_editor::archive

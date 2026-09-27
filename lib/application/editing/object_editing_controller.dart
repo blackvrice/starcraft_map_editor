@@ -1,4 +1,7 @@
 import 'dart:async';
+import '../ports/map_resource_gateway.dart';
+import '../../domain/assets/map_sound.dart';
+import '../../domain/chk/typed/chk_resource_editor.dart';
 import 'dart:convert';
 
 import '../../domain/chk/chk.dart';
@@ -16,6 +19,7 @@ import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
+import '../documents/pending_map_resources.dart';
 import '../layers/map_layer_controller.dart';
 import 'object_placement.dart';
 import 'object_properties.dart';
@@ -48,6 +52,7 @@ class ObjectEditingController {
     this.spritePlacementFactory = const SpritePlacementFactory(),
     this.doodadPlacementFactory = const DoodadPlacementFactory(),
     this.historyLimit = 100,
+    this.resourceGateway,
   }) {
     if (historyLimit <= 0) {
       throw ArgumentError.value(
@@ -59,6 +64,126 @@ class ObjectEditingController {
   }
 
   final OpenMapController openMapController;
+  final MapResourceGateway? resourceGateway;
+
+  Future<void> importSound() async {
+    final session = openMapController.state.session;
+    if (session == null || resourceGateway == null) {
+      throw StateError('Open a map first.');
+    }
+    final imported = await resourceGateway!.importSound();
+    if (imported == null) return;
+    if (!identical(session, openMapController.state.session)) {
+      throw StateError('Map changed during import.');
+    }
+    final path = MapSound.path('staredit\\wav\\${imported.name}');
+    final table = ChkResourceEditor.table(session.rawDocument);
+    if (ChkResourceEditor.references(session.rawDocument).uses.any(
+      (use) =>
+          use.sound &&
+          table.entryForId(use.id)?.rawBytes != null &&
+          utf8
+                  .decode(
+                    table.entryForId(use.id)!.rawBytes!,
+                    allowMalformed: true,
+                  )
+                  .replaceAll('/', '\\')
+                  .toLowerCase() ==
+              path.toLowerCase(),
+    )) {
+      throw StateError(
+        'This path already has a sound reference. Choose a different file name.',
+      );
+    }
+    if (session.archiveMetadata.entries.any(
+          (e) => e.path.toLowerCase() == path.toLowerCase(),
+        ) ||
+        session.resourceEdits.keys.any(
+          (p) => p.toLowerCase() == path.toLowerCase(),
+        )) {
+      throw StateError(
+        'A sound already uses this path. Choose a different file name.',
+      );
+    }
+    if (!session.archiveMetadata.listingComplete ||
+        session.archiveMetadata.entries.any((e) => e.nameIsSynthetic)) {
+      throw StateError(
+        'Incomplete archive listing: name collisions cannot be ruled out.',
+      );
+    }
+    MapSound.validate(imported.bytes);
+    applyTriggerResources(
+      expectedDocument: session.rawDocument,
+      updatedDocument: ChkResourceEditor.registerSound(
+        session.rawDocument,
+        path,
+      ),
+      resourceEdits: {...session.resourceEdits, path: imported.bytes},
+    );
+  }
+
+  void deleteSound(String path) {
+    final session = openMapController.state.session!;
+    path = MapSound.path(path);
+    final entries = session.archiveMetadata.entries
+        .where((e) => e.path.toLowerCase() == path.toLowerCase())
+        .toList();
+    if (!session.archiveMetadata.listingComplete ||
+        session.archiveMetadata.entries.any((e) => e.nameIsSynthetic) ||
+        entries.any((e) => e.locale != 0 || e.nameIsSynthetic) ||
+        entries.length > 1) {
+      throw StateError('Ambiguous archive entry: deletion is blocked.');
+    }
+    final next = {...session.resourceEdits};
+    final pendingKey = next.keys
+        .where((p) => p.toLowerCase() == path.toLowerCase())
+        .firstOrNull;
+    if (pendingKey != null) path = pendingKey;
+    if (entries.isEmpty) {
+      next.remove(path);
+    } else {
+      next[path] = null;
+    }
+    applyTriggerResources(
+      expectedDocument: session.rawDocument,
+      updatedDocument: ChkResourceEditor.unregisterSound(
+        session.rawDocument,
+        path,
+      ),
+      resourceEdits: next,
+    );
+  }
+
+  Future<List<int>> soundBytes(String path) async {
+    final session = openMapController.state.session!;
+    path = MapSound.path(path);
+    path =
+        session.resourceEdits.keys
+            .where((p) => p.toLowerCase() == path.toLowerCase())
+            .firstOrNull ??
+        path;
+    if (session.resourceEdits.containsKey(path)) {
+      return session.resourceEdits[path] ??
+          (throw StateError('Sound is deleted.'));
+    }
+    if (resourceGateway == null) throw StateError('Sound gateway unavailable.');
+    final before = await openMapController.fingerprintGateway.fingerprint(
+      session.sourcePath,
+    );
+    if (before.sha256Digest != session.sourceFingerprint.sha256Digest) {
+      throw StateError('Source map changed on disk.');
+    }
+    final bytes = await resourceGateway!.readSound(session.sourcePath, path);
+    final after = await openMapController.fingerprintGateway.fingerprint(
+      session.sourcePath,
+    );
+    if (!identical(session, openMapController.state.session) ||
+        before.sha256Digest != after.sha256Digest) {
+      throw StateError('Map changed during sound read.');
+    }
+    return bytes ?? (throw StateError('The sound is not stored in this map.'));
+  }
+
   final MapLayerController mapLayerController;
   final ChkObjectViewDecoder objectViewDecoder;
   final ChkStringViewDecoder stringViewDecoder;
@@ -96,6 +221,7 @@ class ObjectEditingController {
   void applyTriggerResources({
     required RawChkDocument expectedDocument,
     required RawChkDocument updatedDocument,
+    Map<String, List<int>?>? resourceEdits,
   }) {
     final session = openMapController.state.session;
     if (session == null ||
@@ -103,7 +229,34 @@ class ObjectEditingController {
         !identical(session.rawDocument, expectedDocument)) {
       throw StateError('Map changed. Reopen trigger resources.');
     }
-    const allowed = {'STR ', 'STRx', 'SWNM', 'UPRP', 'UPUS'};
+    const allowed = {
+      'STR ',
+      'STRx',
+      'SWNM',
+      'UPRP',
+      'UPUS',
+      'WAV ',
+      'SPRP',
+      'FORC',
+      'MRGN',
+      'UNIS',
+      'UNIx',
+      'TRIG',
+      'MBRF',
+    };
+    if (resourceEdits != null) {
+      if (resourceEdits.length > 64 ||
+          resourceEdits.values.fold<int>(0, (n, b) => n + (b?.length ?? 0)) >
+              64 * 1024 * 1024) {
+        throw StateError(
+          'Pending sound edits exceed 64 entries or 64 MiB. Save first.',
+        );
+      }
+      for (final edit in resourceEdits.entries) {
+        MapSound.path(edit.key);
+        if (edit.value != null) MapSound.validate(edit.value!);
+      }
+    }
     if (updatedDocument.sections.length < expectedDocument.sections.length) {
       throw StateError('Resource edits cannot remove sections.');
     }
@@ -112,7 +265,7 @@ class ObjectEditingController {
     for (var i = 0; i < updatedDocument.sections.length; i++) {
       final next = updatedDocument.sections[i];
       if (i >= expectedDocument.sections.length) {
-        if (!{'SWNM', 'UPRP', 'UPUS'}.contains(next.name) ||
+        if (!{'SWNM', 'UPRP', 'UPUS', 'WAV '}.contains(next.name) ||
             updatedDocument.sections.where((s) => s.name == next.name).length !=
                 1) {
           throw StateError('Unsupported appended resource.');
@@ -127,10 +280,14 @@ class ObjectEditingController {
         after[i] = next;
       }
     }
-    if (after.isEmpty && appended.isEmpty) return;
+    if (after.isEmpty && appended.isEmpty && resourceEdits == null) return;
     _applyAndRecord(
       _ObjectEditCommand(
         label: 'Edit trigger resources',
+        beforeResources: resourceEdits == null ? null : session.resourceEdits,
+        afterResources: resourceEdits == null
+            ? null
+            : PendingMapResources(resourceEdits),
         beforeSections: before,
         afterSections: after,
         appendedSections: appended,
@@ -1194,6 +1351,8 @@ class ObjectEditingController {
       expected: command.afterSections,
       replacements: command.beforeSections,
       removedTrailingSections: command.appendedSections,
+      expectedResources: command.afterResources,
+      replacementResources: command.beforeResources,
       clearSelection: true,
     );
     _redoStack.add(command);
@@ -1211,6 +1370,8 @@ class ObjectEditingController {
       expected: command.beforeSections,
       replacements: command.afterSections,
       appendedSections: command.appendedSections,
+      expectedResources: command.beforeResources,
+      replacementResources: command.afterResources,
       clearSelection: true,
     );
     _undoStack.add(command);
@@ -1921,6 +2082,8 @@ class ObjectEditingController {
       replacements: command.afterSections,
       appendedSections: command.appendedSections,
       clearSelection: clearSelection,
+      expectedResources: command.beforeResources,
+      replacementResources: command.afterResources,
     );
     _undoStack.add(command);
     if (_undoStack.length > historyLimit) {
@@ -1936,12 +2099,18 @@ class ObjectEditingController {
     required bool clearSelection,
     List<RawChkSection> appendedSections = const [],
     List<RawChkSection> removedTrailingSections = const [],
+    Map<String, List<int>?>? expectedResources,
+    Map<String, List<int>?>? replacementResources,
   }) {
     final session = openMapController.state.session;
     if (session == null) {
       throw StateError('An object edit requires an open map session.');
     }
     var document = session.rawDocument;
+    if (expectedResources != null &&
+        !identical(session.resourceEdits, expectedResources)) {
+      throw StateError('Resource edit history is stale.');
+    }
     if (removedTrailingSections.isNotEmpty) {
       final firstRemoved =
           document.sections.length - removedTrailingSections.length;
@@ -2021,6 +2190,7 @@ class ObjectEditingController {
     final editedSession = OpenedMapSession(
       extractedMap: session.extractedMap,
       rawDocument: document,
+      resourceEdits: replacementResources ?? session.resourceEdits,
       metadataViews: session.metadataViews,
       stringViews: stringViews,
       terrainViews: terrainViews,
@@ -2070,15 +2240,21 @@ class ObjectEditingController {
     _changes.add(_state);
   }
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    await resourceGateway?.stopPreview();
+    await _changes.close();
+  }
 }
 
 final class _ObjectEditCommand {
+  final Map<String, List<int>?>? beforeResources, afterResources;
   _ObjectEditCommand({
     required this.label,
     required Map<int, RawChkSection> beforeSections,
     required Map<int, RawChkSection> afterSections,
     List<RawChkSection> appendedSections = const [],
+    this.beforeResources,
+    this.afterResources,
   }) : beforeSections = Map.unmodifiable(beforeSections),
        afterSections = Map.unmodifiable(afterSections),
        appendedSections = List.unmodifiable(appendedSections);

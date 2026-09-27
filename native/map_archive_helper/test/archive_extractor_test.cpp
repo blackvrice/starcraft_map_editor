@@ -607,6 +607,67 @@ bool TestReplaceRefusesSourceAsOutput() {
              "same-path failure preserves source bytes");
 }
 
+bool TestSoundChangesPreserveSourceAndOtherEntries() {
+  using starcraft_map_editor::archive::ExtractSound;
+  using starcraft_map_editor::archive::ResourceChange;
+  TemporaryDirectory temporary;
+  const auto source = temporary.path() / L"original.scx";
+  const auto added = temporary.path() / L"added.scx";
+  const auto removed = temporary.path() / L"removed.scx";
+  const auto scenario = temporary.path() / L"scenario.chk";
+  const auto extra = temporary.path() / L"extra.dat";
+  const auto wave = temporary.path() / L"own.wav";
+  const auto extracted = temporary.path() / L"read.wav";
+  const auto other = temporary.path() / L"read.dat";
+  const std::vector<std::uint8_t> extra_bytes{1, 2, 255, 4};
+  // Self-authored 8-bit PCM silence, never an extracted game asset.
+  std::vector<std::uint8_t> pcm{
+      'R', 'I', 'F', 'F', 38, 0,  0, 0, 'W', 'A', 'V', 'E',
+      'f', 'm', 't', ' ', 16, 0,  0, 0, 1,   0,   1,   0,
+      64,  31,  0,   0,   64, 31, 0, 0, 1,   0,   8,   0,
+      'd', 'a', 't', 'a', 2,  0,  0, 0, 128, 128};
+  if (!WriteBytes(scenario, ScenarioBytes()) ||
+      !WriteBytes(extra, extra_bytes) || !WriteBytes(wave, pcm) ||
+      !CreateArchive(source, &scenario, &extra, true))
+    return false;
+  const auto before = ReadBytes(source);
+  const std::string path = "staredit\\wav\\own.wav";
+  if (!Check(ReplaceScenario(source, scenario, added,
+                             {ResourceChange{path, wave, false}})
+                 .success,
+             "sound import into copied archive") ||
+      !Check(ExtractSound(added, path, extracted).success &&
+                 ReadBytes(extracted) == pcm,
+             "sound bytes round trip") ||
+      !Check(ExtractArchiveFile(added, kExtraArchivePath, other) &&
+                 ReadBytes(other) == extra_bytes,
+             "unrelated entry preserved"))
+    return false;
+  const auto collision = temporary.path() / L"collision.scx";
+  if (!Check(!ReplaceScenario(added, scenario, collision,
+                              {ResourceChange{path, wave, false}})
+                     .success &&
+                 !std::filesystem::exists(collision),
+             "collision refuses replacement and removes partial output"))
+    return false;
+  if (!Check(ReplaceScenario(added, scenario, removed,
+                             {ResourceChange{path, {}, true}})
+                 .success,
+             "sound delete from copied archive"))
+    return false;
+  const auto missing =
+      ExtractSound(removed, path, temporary.path() / L"missing.wav");
+  const auto remaining = temporary.path() / L"remaining.dat";
+  return Check(!missing.success &&
+                   missing.error_code == "ARCHIVE_RESOURCE_NOT_FOUND",
+               "deleted sound absent") &&
+         Check(ExtractArchiveFile(removed, kExtraArchivePath, remaining) &&
+                   ReadBytes(remaining) == extra_bytes,
+               "delete preserves unrelated entry") &&
+         Check(ReadBytes(source) == before,
+               "resource changes never modify source bytes");
+}
+
 }  // namespace
 
 int wmain(const int argument_count, wchar_t* arguments[]) {
@@ -631,6 +692,7 @@ int wmain(const int argument_count, wchar_t* arguments[]) {
       TestReplacesScenarioInCopiedArchive,
       TestReplaceRefusesExistingOutput,
       TestReplaceRefusesSourceAsOutput,
+      TestSoundChangesPreserveSourceAndOtherEntries,
   };
 
   for (const auto test : tests) {

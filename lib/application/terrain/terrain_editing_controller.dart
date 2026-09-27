@@ -386,6 +386,7 @@ class TerrainEditingController {
       OpenedMapSession(
         extractedMap: session.extractedMap,
         rawDocument: rawDocument,
+        resourceEdits: session.resourceEdits,
         metadataViews: session.metadataViews,
         stringViews: session.stringViews,
         terrainViews: terrainViews,
