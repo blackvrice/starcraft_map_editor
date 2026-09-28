@@ -156,7 +156,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Settings initialize before user initialization. Execution rules run before user beforeTriggerExec and ordinary triggers. Game compatibility is unverified; current unit shields are not rewritten.',
+                                      'Settings initialize before user initialization. Rules run at their selected before/after trigger hook. Instance rules affect only their guarded bound unit. Game compatibility is unverified.',
                                     ),
                                     const SizedBox(height: 12),
                                     SelectableText(

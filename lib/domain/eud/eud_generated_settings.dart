@@ -3,6 +3,8 @@ import 'package:crypto/crypto.dart';
 import 'eud_field_manifest.dart';
 import 'eud_project.dart';
 import 'eud_execution_rule.dart';
+import 'eud_rule_expression.dart';
+import 'eud_rule_codegen.dart';
 
 /// Deterministic compiler input. Compilable does not mean game verified.
 final class EudGeneratedSettings {
@@ -17,14 +19,20 @@ final class EudGeneratedSettings {
         return field != 0 ? field : a.targetId.compareTo(b.targetId);
       });
     final lines = <String>[
-      '# Generated EUD settings${project.rules.isEmpty ? ' v1' : ' and execution rules v2'}. Runtime unverified.',
-      '# Start once, before user onPluginStart. No current-CUnit shield writes.',
+      '# Generated EUD settings${project.rules.isEmpty
+          ? ' v1'
+          : project.rules.any((r) => r.extension != null)
+          ? ' and execution rules v3'
+          : ' and execution rules v2'}. Runtime unverified.',
+      '# Type settings initialize once; rules execute in their declared cycle hook.',
       'from eudplib import TrgUnit, Weapon, Flingy, Upgrade, Tech, TrgPlayer, Sprite, Image',
       if (project.rules.any((r) => r.enabled)) ...[
         'from eudplib import EUDVariable, EUDIf, EUDEndIf, DoActions, Accumulate, SetResources, Ore, Gas, AtLeast, AtMost, Exactly, SetTo, Add, Subtract',
         for (var i = 0; i < project.rules.length; i++)
           if (project.rules[i].enabled) '_editor_rule_$i = EUDVariable(0)',
       ],
+      if (project.rules.any((r) => r.enabled && r.extension != null))
+        ...EudRuleCodegen.declarations(project.rules),
       'def onPluginStart():',
       for (final item in operations) '    ${_assignment(item)}',
       '    print("EDITOR_SETTINGS_V1_INITIALIZED", flush=True)',
@@ -32,14 +40,30 @@ final class EudGeneratedSettings {
         '',
         'def beforeTriggerExec():',
         for (var i = 0; i < project.rules.length; i++)
-          if (project.rules[i].enabled) ..._rule(project.rules[i], i),
+          if (project.rules[i].enabled &&
+              project.rules[i].extension?.timing != EudRuleTiming.afterTriggers)
+            ..._rule(project.rules[i], i),
+        '    pass',
+      ],
+      if (project.rules.any(
+        (r) => r.enabled && r.extension?.timing == EudRuleTiming.afterTriggers,
+      )) ...[
+        'def afterTriggerExec():',
+        for (var i = 0; i < project.rules.length; i++)
+          if (project.rules[i].enabled &&
+              project.rules[i].extension?.timing == EudRuleTiming.afterTriggers)
+            ..._rule(project.rules[i], i),
       ],
     ];
     source = '${lines.join('\n')}\n';
     manifest =
         '${const JsonEncoder.withIndent('  ').convert({
           'format': 'starcraft-eud-generated-settings',
-          'generatorVersion': project.rules.isEmpty ? 1 : 2,
+          'generatorVersion': project.rules.any((r) => r.extension != null)
+              ? 3
+              : project.rules.isEmpty
+              ? 1
+              : 2,
           'runtimeStatus': 'unverified',
           'mapSha256': mapSha256,
           'projectSha256': projectSha256,
@@ -50,10 +74,11 @@ final class EudGeneratedSettings {
             'user.onPluginStart',
             if (project.rules.any((r) => r.enabled)) ...['generated.beforeTriggerExec (rules in list order)', 'user.beforeTriggerExec'],
             'normal triggers',
+            if (project.rules.any((r) => r.extension?.timing == EudRuleTiming.afterTriggers)) ...['user.afterTriggerExec', 'generated.afterTriggerExec (rules in list order)'],
           ],
           if (project.rules.isNotEmpty) 'executionRules': project.rules.map((r) => r.toJson()).toList(),
           if (project.rules.isNotEmpty) 'rulePolicy': 'synchronized-explicit-player; periodic-first-check-after-interval; once-until-first-match; basic-Accumulate-SetResources',
-          'shieldPolicy': 'type-only-no-current-unit-write',
+          'shieldPolicy': project.rules.any((r) => r.extension?.usesUnit ?? false) ? 'guarded-bound-instance; type-settings-independent' : 'type-only-no-current-unit-write',
           'operations': operations.map((o) => o.toJson()).toList(),
         })}\n';
   }
@@ -63,6 +88,7 @@ final class EudGeneratedSettings {
   late final String projectSha256;
 
   static List<String> _rule(EudExecutionRule rule, int index) {
+    if (rule.extension != null) return EudRuleCodegen.rule(rule, index);
     final state = '_editor_rule_$index';
     final resource = rule.resource == EudResource.ore ? 'Ore' : 'Gas';
     final comparison = ['AtLeast', 'AtMost', 'Exactly'][rule.comparison.index];

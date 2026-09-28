@@ -1,3 +1,5 @@
+import 'eud_rule_expression.dart';
+
 /// Synchronized game-state rules. No source text, local-player predicates,
 /// memory addresses or runtime object handles are accepted by this model.
 enum EudResource { ore, gas }
@@ -21,6 +23,7 @@ final class EudExecutionRule {
     this.schedule = EudRuleSchedule.once,
     this.interval = 24,
     this.enabled = true,
+    this.extension,
   }) {
     if (!RegExp(r'^[a-zA-Z][a-zA-Z0-9_]{0,63}$').hasMatch(id) ||
         name.trim().isEmpty ||
@@ -54,8 +57,23 @@ final class EudExecutionRule {
   /// beforeTriggerExec invocations, not wall-clock milliseconds.
   final int interval;
   final bool enabled;
+  final EudRuleExtension? extension;
 
-  String get writeTarget => '$player:${resource.name}';
+  String get writeTarget {
+    final e = extension;
+    if (e == null) return '$player:${resource.name}';
+    return switch (e.action) {
+      EudRuleAction.minerals => '$player:ore',
+      EudRuleAction.gas => '$player:gas',
+      EudRuleAction.variable => 'variable:${e.target}',
+      EudRuleAction.upgrade => 'upgrade:$player:${e.target}',
+      EudRuleAction.technology => 'technology:$player:${e.target}',
+      EudRuleAction.location ||
+      EudRuleAction.followUnit => 'location:${e.target}',
+      EudRuleAction.text || EudRuleAction.sound => 'display:$id',
+      _ => '${e.action.name}:$player:${e.target}:${e.unitType}',
+    };
+  }
 
   Map<String, Object> toJson() => {
     'id': id,
@@ -69,10 +87,12 @@ final class EudExecutionRule {
     'schedule': schedule.name,
     'interval': interval,
     'enabled': enabled,
+    if (extension != null) 'extension': extension!.toJson(),
   };
 
   static EudExecutionRule fromJson(Object? value) {
-    const keys = {
+    final keys = {
+      if (value is Map && value.containsKey('extension')) 'extension',
       'id',
       'name',
       'player',
@@ -116,6 +136,9 @@ final class EudExecutionRule {
       schedule: choice('schedule', EudRuleSchedule.values),
       interval: value['interval'] as int,
       enabled: value['enabled'] as bool,
+      extension: value.containsKey('extension')
+          ? EudRuleExtension.decode(value['extension'])
+          : null,
     );
   }
 }

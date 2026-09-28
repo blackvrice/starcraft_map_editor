@@ -23,6 +23,7 @@ import '../../application/eud/eud_build_record.dart';
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_project_workspace.dart';
 import '../eud_editor/eud_project_pane.dart';
+import '../eud_editor/eud_rules_editor.dart';
 import '../../application/eud/eud_source_document.dart';
 import '../../application/layers/map_layer_controller.dart';
 import '../../application/operations/operation_progress.dart';
@@ -865,6 +866,13 @@ class _EditorShellState extends State<EditorShell> {
                                     catalogController:
                                         widget.placementCatalogController,
                                     embedded: true,
+                                    onExecutionRules:
+                                        widget.eudProjectWorkspace == null
+                                        ? null
+                                        : () => setState(
+                                            () => _workspaceView =
+                                                _WorkspaceView.project,
+                                          ),
                                     onClosed: _showMapWorkspace,
                                   )
                                 : const SizedBox.shrink(),
@@ -1422,7 +1430,78 @@ class _EditorWorkspace extends StatelessWidget {
                       )
                     else
                       const SizedBox.shrink(),
-                    TriggerPane(controller: objectEditingController),
+                    DefaultTabController(
+                      length: 2,
+                      child: Column(
+                        children: [
+                          const TabBar(
+                            tabs: [
+                              Tab(text: 'Ordinary triggers'),
+                              Tab(text: 'EUD extensions'),
+                            ],
+                          ),
+                          Expanded(
+                            child: TabBarView(
+                              children: [
+                                TriggerPane(
+                                  controller: objectEditingController,
+                                ),
+                                if (projectWorkspace != null)
+                                  StreamBuilder<void>(
+                                    stream: projectWorkspace!.changes,
+                                    builder: (context, _) {
+                                      final controller =
+                                          projectWorkspace!.projects;
+                                      return ListView(
+                                        padding: const EdgeInsets.all(16),
+                                        children: [
+                                          TextButton(
+                                            onPressed: onShowProject,
+                                            child: const Text(
+                                              'Open EUD Project to create, save or build rules',
+                                            ),
+                                          ),
+                                          if (controller.project != null) ...[
+                                            EudRulesEditor(
+                                              controller: controller,
+                                              enabled:
+                                                  !projectWorkspace!.isBusy,
+                                            ),
+                                            Wrap(
+                                              children: [
+                                                TextButton(
+                                                  onPressed: controller.canUndo
+                                                      ? controller.undo
+                                                      : null,
+                                                  child: const Text(
+                                                    'Undo project',
+                                                  ),
+                                                ),
+                                                TextButton(
+                                                  onPressed: controller.canRedo
+                                                      ? controller.redo
+                                                      : null,
+                                                  child: const Text(
+                                                    'Redo project',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ],
+                                      );
+                                    },
+                                  )
+                                else
+                                  const Text(
+                                    'EUD project workspace unavailable.',
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     ResourcesPane(
                       controller: objectEditingController,
                       active: workspaceView == _WorkspaceView.resources,

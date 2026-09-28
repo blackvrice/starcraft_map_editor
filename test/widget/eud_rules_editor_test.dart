@@ -7,6 +7,46 @@ import '../application/eud_project_controller_test.dart' show MemoryStore;
 import '../domain/eud/eud_execution_rule_test.dart' show rule;
 
 void main() {
+  testWidgets('extended form applies typed values and ordering is undoable', (
+    tester,
+  ) async {
+    final controller = EudProjectController(MemoryStore());
+    addTearDown(controller.dispose);
+    controller.create(
+      EudProject(
+        mapPath: 'base.scx',
+        mapSha256: 'a' * 64,
+        rules: [rule(id: 'existing')],
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StreamBuilder<void>(
+            stream: controller.changes,
+            builder: (_, _) =>
+                EudRulesEditor(controller: controller, enabled: true),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('eud-rule-add')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Extended execution rule'));
+    await tester.tap(find.text('Extended execution rule'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('eud-rule-apply')));
+    await tester.pumpAndSettle();
+    expect(controller.project!.rules.last.extension, isNotNull);
+    final added = controller.project!.rules.last.id;
+    await tester.tap(find.byTooltip('Move rule up').last);
+    await tester.pump();
+    expect(controller.project!.rules.first.id, added);
+    controller.undo();
+    await tester.pump();
+    expect(controller.project!.rules.first.id, 'existing');
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'rule form applies, cancels, validates duplicate writes and supports undo',
     (tester) async {

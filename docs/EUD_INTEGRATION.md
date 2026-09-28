@@ -1,5 +1,9 @@
 # EUD 연동
 
+2026-09-28: 실행 규칙 schema v3는 제한된 변수/값 식과 플레이어·개체·위치·표시 액션을
+생성한다. before/after 훅 순서, 개체 바인딩과 로컬 표시 경계는
+[EUD 실행 규칙](EUD_EXECUTION_RULES.md), 보류 범위는 [지원 결정](research/EUD_RUNTIME_SUPPORT.md)을 따른다.
+
 2026-09-28: [EUD 실행 규칙](EUD_EXECUTION_RULES.md)의 플레이어 자원 조건과
 1회/주기 실행을 생성 beforeTriggerExec에 연결했다. 규칙만 있는 프로젝트도
 설정 전용 빌드에 포함하며 Save As 자체는 EUD를 실행하지 않는다.

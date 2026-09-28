@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'eud_rule_extension_form.dart';
 import '../../application/eud/eud_project_controller.dart';
 import '../../domain/eud/eud_execution_rule.dart';
 import '../../domain/eud/eud_project.dart';
@@ -24,6 +25,33 @@ class EudRulesEditor extends StatelessWidget {
     );
   }
 
+  void _replace(
+    BuildContext context,
+    EudProject snapshot,
+    Iterable<EudExecutionRule> rules,
+  ) {
+    try {
+      controller.replaceRules(rules, expectedProject: snapshot);
+    } catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  void _move(
+    BuildContext context,
+    EudProject snapshot,
+    EudExecutionRule rule,
+    int delta,
+  ) {
+    final rules = [...snapshot.rules];
+    final index = rules.indexOf(rule);
+    rules.removeAt(index);
+    rules.insert(index + delta, rule);
+    _replace(context, snapshot, rules);
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = controller.project!;
@@ -41,7 +69,7 @@ class EudRulesEditor extends StatelessWidget {
               'Synchronized player resources • Executes before ordinary triggers. Periods count trigger cycles, not seconds. Save Project, then Prepare EUD Build to test.',
             ),
             const Text(
-              'One enabled writer per player/resource. User code and ordinary triggers may also change resources; review them separately.',
+              'One enabled writer per target. Review user code and ordinary triggers separately. Extended rules support variables, player state, locations, guarded units and local display.',
             ),
             OutlinedButton.icon(
               key: const Key('eud-rule-add'),
@@ -55,11 +83,27 @@ class EudRulesEditor extends StatelessWidget {
               ListTile(
                 title: Text('${rule.name}${rule.enabled ? '' : ' (disabled)'}'),
                 subtitle: Text(
-                  'Player ${rule.player + 1} • ${rule.resource.name} ${rule.comparison.name} ${rule.threshold} → ${rule.operation.name} ${rule.amount} • ${rule.schedule == EudRuleSchedule.once ? 'Once on first match' : 'Every ${rule.interval} cycles'}',
+                  rule.extension != null
+                      ? '${rule.extension!.action.name} #${rule.extension!.target} • Player ${rule.player + 1} • ${rule.extension!.timing.name} • ${rule.schedule.name} / ${rule.interval} cycles'
+                      : 'Player ${rule.player + 1} • ${rule.resource.name} ${rule.comparison.name} ${rule.threshold} → ${rule.operation.name} ${rule.amount} • ${rule.schedule == EudRuleSchedule.once ? 'Once on first match' : 'Every ${rule.interval} cycles'}',
                 ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    IconButton(
+                      tooltip: 'Move rule up',
+                      onPressed: enabled && project.rules.first != rule
+                          ? () => _move(context, project, rule, -1)
+                          : null,
+                      icon: const Icon(Icons.arrow_upward),
+                    ),
+                    IconButton(
+                      tooltip: 'Move rule down',
+                      onPressed: enabled && project.rules.last != rule
+                          ? () => _move(context, project, rule, 1)
+                          : null,
+                      icon: const Icon(Icons.arrow_downward),
+                    ),
                     IconButton(
                       tooltip: 'Edit rule',
                       onPressed: enabled ? () => _edit(context, rule) : null,
@@ -68,9 +112,10 @@ class EudRulesEditor extends StatelessWidget {
                     IconButton(
                       tooltip: 'Delete rule',
                       onPressed: enabled
-                          ? () => controller.replaceRules(
+                          ? () => _replace(
+                              context,
+                              project,
                               project.rules.where((r) => r.id != rule.id),
-                              expectedProject: project,
                             )
                           : null,
                       icon: const Icon(Icons.delete_outline),
@@ -119,8 +164,10 @@ class _RuleDialogState extends State<_RuleDialog> {
       widget.original?.operation ?? EudResourceOperation.add;
   late EudRuleSchedule _schedule =
       widget.original?.schedule ?? EudRuleSchedule.once;
+  late bool _isExtended = widget.original?.extension != null;
   late bool _enabled = widget.original?.enabled ?? true;
   String? _error;
+  final _extension = GlobalKey<EudRuleExtensionFormState>();
 
   @override
   void dispose() {
@@ -166,6 +213,7 @@ class _RuleDialogState extends State<_RuleDialog> {
         schedule: _schedule,
         interval: int.parse(_interval.text.trim()),
         enabled: _enabled,
+        extension: _extension.currentState?.read(),
       );
       widget.controller.replaceRules([
         for (final existing in widget.snapshot.rules)
@@ -200,13 +248,14 @@ class _RuleDialogState extends State<_RuleDialog> {
               (p) => 'Player ${p + 1}',
               (p) => _player = p,
             ),
-            _choices(
-              'Resource (condition and action)',
-              _resource,
-              EudResource.values,
-              (r) => r == EudResource.ore ? 'Minerals' : 'Gas',
-              (r) => _resource = r,
-            ),
+            if (!_isExtended)
+              _choices(
+                'Resource (condition and action)',
+                _resource,
+                EudResource.values,
+                (r) => r == EudResource.ore ? 'Minerals' : 'Gas',
+                (r) => _resource = r,
+              ),
             _choices(
               'Comparison',
               _comparison,
@@ -214,12 +263,13 @@ class _RuleDialogState extends State<_RuleDialog> {
               (v) => v.name,
               (v) => _comparison = v,
             ),
-            TextField(
-              controller: _threshold,
-              decoration: const InputDecoration(
-                labelText: 'Threshold (0–2147483647)',
+            if (!_isExtended)
+              TextField(
+                controller: _threshold,
+                decoration: const InputDecoration(
+                  labelText: 'Threshold (0–2147483647)',
+                ),
               ),
-            ),
             _choices(
               'Action',
               _operation,
@@ -227,11 +277,17 @@ class _RuleDialogState extends State<_RuleDialog> {
               (v) => v.name,
               (v) => _operation = v,
             ),
-            TextField(
-              controller: _amount,
-              decoration: const InputDecoration(
-                labelText: 'Amount (0–2147483647)',
+            if (!_isExtended)
+              TextField(
+                controller: _amount,
+                decoration: const InputDecoration(
+                  labelText: 'Amount (0–2147483647)',
+                ),
               ),
+            EudRuleExtensionForm(
+              key: _extension,
+              initial: widget.original?.extension,
+              onEnabledChanged: (value) => setState(() => _isExtended = value),
             ),
             _choices(
               'Schedule',

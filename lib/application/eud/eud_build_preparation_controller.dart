@@ -5,6 +5,7 @@ import 'eud_build_configuration.dart';
 import 'eud_build_controller.dart';
 import 'eud_project_workspace.dart';
 import '../../domain/eud/eud_generated_settings.dart';
+import '../../domain/eud/eud_rule_references.dart';
 
 final class EudBuildPreparationController {
   EudBuildPreparationController({
@@ -67,6 +68,11 @@ final class EudBuildPreparationController {
         if (!await files.refersToSameLocation(project.mapPath, baseMap)) {
           return 'The build base must be the map bound to this EUD project.';
         }
+        final references = EudRuleReferences.validate(
+          project,
+          mapSession!.rawDocument,
+        );
+        if (references.isNotEmpty) return references.join(', ');
         generated = EudGeneratedSettings(project);
       }
       final configuration = EudBuildConfiguration(

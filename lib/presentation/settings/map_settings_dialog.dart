@@ -16,10 +16,12 @@ class MapSettingsDialog extends StatefulWidget {
     required this.catalogController,
     this.embedded = false,
     this.onClosed,
+    this.onExecutionRules,
     super.key,
   });
   final bool embedded;
   final VoidCallback? onClosed;
+  final VoidCallback? onExecutionRules;
   final ObjectEditingController controller;
   final PlacementCatalogController catalogController;
   @override
@@ -130,6 +132,12 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
                   ],
                 ),
               ),
+              if (widget.onExecutionRules != null)
+                TextButton.icon(
+                  onPressed: widget.onExecutionRules,
+                  icon: const Icon(Icons.bolt),
+                  label: const Text('EUD execution rules'),
+                ),
               TextButton(
                 key: const Key('map-settings-close'),
                 onPressed: _close,

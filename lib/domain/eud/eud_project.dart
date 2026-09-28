@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'eud_field_manifest.dart';
 import 'eud_execution_rule.dart';
+import 'eud_rule_expression.dart';
 
 final class EudOverride {
   EudOverride({
@@ -99,6 +100,40 @@ final class EudProject {
         issues.add('${rule.id}:duplicateResourceWrite:${rule.writeTarget}');
       }
     }
+    final graph = <int, Set<int>>{};
+    var unitRules = 0;
+    for (final rule in rules.where((r) => r.enabled)) {
+      final e = rule.extension;
+      if (e == null) continue;
+      if (e.usesUnit) unitRules++;
+      if (e.action == EudRuleAction.variable) {
+        graph[e.target] = e.values
+            .where((v) => v.source == EudValueSource.variable)
+            .map((v) => v.index)
+            .toSet();
+      }
+    }
+    if (unitRules > 4) issues.add('unitScanBudgetExceeded:4');
+    if (_hasCycle(graph)) issues.add('cyclicVariableRules');
+    final dependencies = <String, Set<String>>{};
+    for (final rule in rules.where(
+      (r) => r.enabled && r.extension != null && !r.extension!.localDisplay,
+    )) {
+      final reads = <String>{};
+      for (final v in rule.extension!.values) {
+        final key = switch (v.source) {
+          EudValueSource.constant => null,
+          EudValueSource.variable => 'variable:${v.index}',
+          EudValueSource.minerals => '${v.player}:ore',
+          EudValueSource.gas => '${v.player}:gas',
+          EudValueSource.upgrade => 'upgrade:${v.player}:${v.index}',
+          EudValueSource.technology => 'technology:${v.player}:${v.index}',
+        };
+        if (key != null && key != rule.writeTarget) reads.add(key);
+      }
+      dependencies[rule.writeTarget] = reads;
+    }
+    if (_hasCycle(dependencies)) issues.add('cyclicRuleDependencies');
     final values = {for (final item in overrides) item.identity: item};
     for (final item in overrides) {
       final error = EudFieldManifest.validate(
@@ -147,7 +182,11 @@ final class EudProject {
       });
     return '${const JsonEncoder.withIndent('  ').convert({
       'format': 'starcraft-map-editor-eud',
-      'schemaVersion': rules.isEmpty ? schemaVersion : 2,
+      'schemaVersion': rules.any((r) => r.extension != null)
+          ? 3
+          : rules.isEmpty
+          ? schemaVersion
+          : 2,
       if (rules.isNotEmpty) 'rules': rules.map((r) => r.toJson()).toList(),
       'map': {'path': mapPath, 'sha256': mapSha256},
       'overrides': ordered.map((item) => item.toJson()).toList(),
@@ -167,12 +206,13 @@ final class EudProject {
       'schemaVersion',
       'map',
       'overrides',
-      if (version == 2) 'rules',
+      if (version == 2 || version == 3) 'rules',
     });
     if (root['format'] != 'starcraft-map-editor-eud' ||
         root['schemaVersion'] is! int ||
         (root['schemaVersion'] != schemaVersion &&
-            root['schemaVersion'] != 2)) {
+            root['schemaVersion'] != 2 &&
+            root['schemaVersion'] != 3)) {
       throw const FormatException(
         'Unsupported EUD project schema; migration required.',
       );
@@ -185,11 +225,16 @@ final class EudProject {
         entries.length > maxOverrides) {
       throw const FormatException('Invalid EUD project structure.');
     }
-    final rawRules = version == 2 ? root['rules'] : <Object>[];
+    final rawRules = (version == 2 || version == 3)
+        ? root['rules']
+        : <Object>[];
     if (rawRules is! List || rawRules.length > maxRules) {
       throw const FormatException('Invalid EUD execution rules.');
     }
     final rules = rawRules.map(EudExecutionRule.fromJson).toList();
+    if (version != 3 && rules.any((r) => r.extension != null)) {
+      throw const FormatException('Extended rules require schema v3.');
+    }
     final overrides = <EudOverride>[];
     for (final entry in entries) {
       final item = _object(entry, {
@@ -229,4 +274,21 @@ final class EudProject {
     }
     return value;
   }
+}
+
+// Linear graph traversal keeps validation bounded for untrusted project files.
+bool _hasCycle<T>(Map<T, Set<T>> graph) {
+  final active = <T>{}, complete = <T>{};
+  bool visit(T node) {
+    if (complete.contains(node)) return false;
+    if (!active.add(node)) return true;
+    for (final next in graph[node] ?? <T>{}) {
+      if (visit(next)) return true;
+    }
+    active.remove(node);
+    complete.add(node);
+    return false;
+  }
+
+  return graph.keys.any(visit);
 }

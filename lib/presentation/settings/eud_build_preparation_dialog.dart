@@ -123,7 +123,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
                   'Include project settings in an unverified test build',
                 ),
                 subtitle: const Text(
-                  'Type settings initialize once; execution rules run before user cycle hooks and ordinary triggers. Existing units are not refilled or clamped. Game and multiplayer behavior still require testing.',
+                  'Type settings initialize once. Rules use their before/after trigger hook; instance rules can change a guarded unit. Game and multiplayer behavior still require testing.',
                 ),
               ),
             if (_message != null) SelectableText(_message!),

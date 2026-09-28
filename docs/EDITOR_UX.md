@@ -1,5 +1,9 @@
 # 에디터 UX
 
+2026-09-28: Triggers의 EUD extensions 탭과 Settings의 실행 규칙 버튼을 추가했다.
+확장 모드에서 조건/값 식·타깃·before/after 훅을 편집하고 목록 순서를 변경할 수 있다.
+[EUD 실행 규칙](EUD_EXECUTION_RULES.md) 참조.
+
 2026-09-28: EUD Project의 **EUD execution rules → Add execution rule**에서
 자원 조건과 1회/주기 실행을 편집한다. 프로젝트 Undo/Redo와 Save Project로
 보존하고 Prepare EUD Build로 컴파일한다. [실행 규칙 계약](EUD_EXECUTION_RULES.md) 참조.
