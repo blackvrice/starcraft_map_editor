@@ -1,5 +1,8 @@
 # 에디터 UX
 
+미션 브리핑은 상단 **Briefing** 탭에서 플레이어·액션 순서·텍스트·초상화·사운드·시간을
+편집한다. 초안 적용과 Save As 흐름은 [미션 브리핑 편집기](BRIEFING_EDITOR.md)를 따른다.
+
 저장 파일의 epScript 빌드는 `File → Prepare EUD Build…`에서 준비한 뒤 Build로 실행한다.
 입력·보호 규칙은 [빌드 준비 화면](EUD_BUILD_PREPARATION_UI.md)을 참조한다.
 

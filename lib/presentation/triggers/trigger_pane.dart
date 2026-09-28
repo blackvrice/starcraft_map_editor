@@ -8,8 +8,13 @@ import 'trigger_resource_dialog.dart';
 import '../settings/default_unit_names.dart';
 
 class TriggerPane extends StatefulWidget {
-  const TriggerPane({required this.controller, super.key});
+  const TriggerPane({
+    required this.controller,
+    this.briefing = false,
+    super.key,
+  });
   final ObjectEditingController controller;
+  final bool briefing;
   @override
   State<TriggerPane> createState() => _TriggerPaneState();
 }
@@ -24,7 +29,11 @@ class _TriggerPaneState extends State<TriggerPane> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, set) => AlertDialog(
-          title: const Text('Owners for selected triggers'),
+          title: Text(
+            widget.briefing
+                ? 'Owners for selected briefings'
+                : 'Owners for selected triggers',
+          ),
           content: SizedBox(
             width: 480,
             child: SingleChildScrollView(
@@ -79,6 +88,7 @@ class _TriggerPaneState extends State<TriggerPane> {
     if (accepted != true || !mounted) return;
     _run(
       () => widget.controller.applyTriggers(
+        briefing: widget.briefing,
         expectedDocument: snapshot,
         records: [
           for (var i = 0; i < data.records.length; i++)
@@ -116,6 +126,7 @@ class _TriggerPaneState extends State<TriggerPane> {
     if (result == null || !mounted) return;
     _run(
       () => widget.controller.applyTriggers(
+        briefing: widget.briefing,
         expectedDocument: snapshot,
         records: [...triggers.records]..[index] = result,
       ),
@@ -129,7 +140,7 @@ class _TriggerPaneState extends State<TriggerPane> {
       ChkTriggers? triggers;
       String? readError;
       try {
-        triggers = widget.controller.triggers;
+        triggers = widget.controller.readTriggers(briefing: widget.briefing);
       } catch (e) {
         readError = e.toString();
       }
@@ -142,6 +153,7 @@ class _TriggerPaneState extends State<TriggerPane> {
       }
       void apply(List<ChkTrigger> records) => _run(
         () => widget.controller.applyTriggers(
+          briefing: widget.briefing,
           expectedDocument: snapshot!,
           records: records,
         ),
@@ -156,11 +168,17 @@ class _TriggerPaneState extends State<TriggerPane> {
               runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Text('Triggers', style: TextStyle(fontSize: 22)),
+                Text(
+                  widget.briefing ? 'Briefing' : 'Triggers',
+                  style: const TextStyle(fontSize: 22),
+                ),
                 if (data != null)
                   TextButton(
                     onPressed: () {
-                      final issues = ChkTriggers.validationIssues(snapshot!);
+                      final issues = ChkTriggers.validationIssues(
+                        snapshot!,
+                        briefing: widget.briefing,
+                      );
                       showDialog<void>(
                         context: context,
                         builder: (context) => AlertDialog(
@@ -217,7 +235,10 @@ class _TriggerPaneState extends State<TriggerPane> {
                         enabled ? 'Enable selected' : 'Disable selected',
                       ),
                     ),
-                  for (final kind in TriggerResourceKind.values)
+                  for (final kind
+                      in widget.briefing
+                          ? [TriggerResourceKind.text]
+                          : TriggerResourceKind.values)
                     TextButton(
                       onPressed: () async {
                         final result = await showDialog<RawChkDocument>(
@@ -248,8 +269,11 @@ class _TriggerPaneState extends State<TriggerPane> {
                   key: const Key('trigger-add'),
                   onPressed: data == null
                       ? null
-                      : () => apply([...data.records, ChkTrigger.create()]),
-                  child: const Text('Add trigger'),
+                      : () => apply([
+                          ...data.records,
+                          ChkTrigger.create(briefing: widget.briefing),
+                        ]),
+                  child: Text(widget.briefing ? 'Add briefing' : 'Add trigger'),
                 ),
                 TextButton(
                   onPressed: widget.controller.canUndo
@@ -266,10 +290,12 @@ class _TriggerPaneState extends State<TriggerPane> {
               ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              'Ordinary TRIG editor • 22 condition types / 57 action types. Unsupported and EUD slots remain raw. New triggers start with Never. Save As writes applied changes.',
+              widget.briefing
+                  ? 'Mission Briefing • 9 action types. Times are milliseconds; portrait slots are 1–4. Add text here and import sounds in Resources. Save As writes applied changes.'
+                  : 'Ordinary TRIG editor • 22 condition types / 57 action types. Unsupported and EUD slots remain raw. New triggers start with Never. Save As writes applied changes.',
             ),
           ),
           if (readError != null || _error != null)
@@ -297,10 +323,12 @@ class _TriggerPaneState extends State<TriggerPane> {
                       ),
                     ),
                     title: Text(
-                      'Trigger ${index + 1}${record.enabled ? '' : ' (disabled)'} — ${owners.isEmpty ? 'No owner' : owners.join(', ')}',
+                      '${widget.briefing ? 'Briefing' : 'Trigger'} ${index + 1}${record.enabled ? '' : ' (disabled)'} — ${owners.isEmpty ? 'No owner' : owners.join(', ')}',
                     ),
                     subtitle: Text(
-                      '${_summary(record, false)} → ${_summary(record, true)}',
+                      widget.briefing
+                          ? _summary(record, true)
+                          : '${_summary(record, false)} → ${_summary(record, true)}',
                     ),
                     onTap: () => _edit(data, index, snapshot!),
                     trailing: Wrap(
@@ -330,20 +358,31 @@ class _TriggerPaneState extends State<TriggerPane> {
                           icon: const Icon(Icons.arrow_downward),
                         ),
                         IconButton(
-                          tooltip: 'Duplicate trigger',
+                          tooltip: widget.briefing
+                              ? 'Duplicate briefing'
+                              : 'Duplicate trigger',
                           onPressed: () => apply(
-                            [...data.records]
-                              ..insert(index + 1, ChkTrigger(record.bytes)),
+                            [...data.records]..insert(
+                              index + 1,
+                              ChkTrigger(
+                                record.bytes,
+                                briefing: widget.briefing,
+                              ),
+                            ),
                           ),
                           icon: const Icon(Icons.copy),
                         ),
                         IconButton(
-                          tooltip: 'Delete trigger',
+                          tooltip: widget.briefing
+                              ? 'Delete briefing'
+                              : 'Delete trigger',
                           onPressed: () async {
                             final accepted = await showDialog<bool>(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: Text('Delete trigger ${index + 1}?'),
+                                title: Text(
+                                  'Delete ${widget.briefing ? 'briefing' : 'trigger'} ${index + 1}?',
+                                ),
                                 content: const Text(
                                   'The entire record, including preserved unsupported slots, will be removed. Undo restores it.',
                                 ),
@@ -383,7 +422,10 @@ class _TriggerPaneState extends State<TriggerPane> {
       final slot = record.slot(action, i);
       if (slot.every((b) => b == 0)) continue;
       final id = ChkTrigger.type(action, slot);
-      names.add(TriggerOpcodes.find(action, id)?.name ?? 'Raw #$id');
+      names.add(
+        TriggerOpcodes.find(action, id, briefing: widget.briefing)?.name ??
+            'Raw #$id',
+      );
     }
     return names.isEmpty ? 'None' : names.take(3).join(', ');
   }
@@ -421,6 +463,7 @@ class _RecordDialogState extends State<_RecordDialog> {
       barrierDismissible: false,
       builder: (_) => _SlotDialog(
         action: action,
+        briefing: _draft.briefing,
         original: add ? null : original,
         document: widget.document,
       ),
@@ -467,8 +510,13 @@ class _RecordDialogState extends State<_RecordDialog> {
               final opcode = TriggerOpcodes.find(
                 action,
                 ChkTrigger.type(action, slot),
+                briefing: _draft.briefing,
               );
-              final editable = ChkTrigger.editable(action, slot);
+              final editable = ChkTrigger.editable(
+                action,
+                slot,
+                briefing: _draft.briefing,
+              );
               return ListTile(
                 dense: true,
                 title: Text(
@@ -568,7 +616,7 @@ class _RecordDialogState extends State<_RecordDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Edit trigger'),
+    title: Text(_draft.briefing ? 'Edit briefing' : 'Edit trigger'),
     content: SizedBox(
       width: 820,
       height: 560,
@@ -582,7 +630,9 @@ class _RecordDialogState extends State<_RecordDialog> {
             Wrap(
               children: [
                 FilterChip(
-                  label: const Text('Trigger enabled'),
+                  label: Text(
+                    _draft.briefing ? 'Briefing enabled' : 'Trigger enabled',
+                  ),
                   selected: _draft.enabled,
                   onSelected: (v) =>
                       setState(() => _draft = _draft.withEnabled(v)),
@@ -596,7 +646,7 @@ class _RecordDialogState extends State<_RecordDialog> {
                   ),
               ],
             ),
-            _slots(false),
+            if (!_draft.briefing) _slots(false),
             const Divider(),
             _slots(true),
             ExpansionTile(
@@ -630,10 +680,11 @@ class _RecordDialogState extends State<_RecordDialog> {
 class _SlotDialog extends StatefulWidget {
   const _SlotDialog({
     required this.action,
+    required this.briefing,
     required this.original,
     required this.document,
   });
-  final bool action;
+  final bool action, briefing;
   final List<int>? original;
   final RawChkDocument document;
   @override
@@ -731,12 +782,15 @@ class _SlotDialogState extends State<_SlotDialog> {
   }
 
   late TriggerOpcode _opcode = widget.original == null
-      ? (widget.action
+      ? (widget.briefing
+            ? TriggerOpcodes.briefingActions.first
+            : widget.action
             ? TriggerOpcodes.actions.firstWhere((op) => op.id == 3)
             : TriggerOpcodes.conditions.first)
       : TriggerOpcodes.find(
           widget.action,
           ChkTrigger.type(widget.action, widget.original!),
+          briefing: widget.briefing,
         )!;
   final _values = <String, int>{};
   late bool _alwaysDisplay =
@@ -783,7 +837,9 @@ class _SlotDialogState extends State<_SlotDialog> {
               value: _opcode,
               items: [
                 for (final op
-                    in widget.action
+                    in widget.briefing
+                        ? TriggerOpcodes.briefingActions
+                        : widget.action
                         ? TriggerOpcodes.actions
                         : TriggerOpcodes.conditions)
                   DropdownMenuItem(value: op, child: Text(op.name)),
@@ -797,7 +853,9 @@ class _SlotDialogState extends State<_SlotDialog> {
               const Text(
                 'Changing type replaces this slot’s arguments when applied.',
               ),
-            if (widget.action && {7, 9}.contains(_opcode.id))
+            if (!widget.briefing &&
+                widget.action &&
+                {7, 9}.contains(_opcode.id))
               CheckboxListTile(
                 title: const Text('Always display text'),
                 value: _alwaysDisplay,
@@ -823,6 +881,7 @@ class _SlotDialogState extends State<_SlotDialog> {
               _opcode,
               _values,
               widget.document,
+              briefing: widget.briefing,
               original:
                   widget.original != null &&
                       ChkTrigger.type(widget.action, widget.original!) ==
@@ -830,7 +889,9 @@ class _SlotDialogState extends State<_SlotDialog> {
                   ? widget.original
                   : null,
             );
-            if (widget.action && {7, 9}.contains(_opcode.id)) {
+            if (!widget.briefing &&
+                widget.action &&
+                {7, 9}.contains(_opcode.id)) {
               slot[28] = _alwaysDisplay ? slot[28] | 4 : slot[28] & ~4;
             }
             Navigator.pop(context, slot);

@@ -516,6 +516,46 @@ void _registerSettingsRoundtrip(bool realArchive) {
         expectedDocument: triggerDoc,
         records: [trigger, preserved],
       );
+      final briefingDoc = openController.state.session!.rawDocument;
+      final briefing = ChkTrigger.create(briefing: true)
+          .withOwner(1, true)
+          .withSlot(
+            true,
+            0,
+            ChkTrigger.makeSlot(
+              true,
+              TriggerOpcodes.find(true, 5, briefing: true)!,
+              {'Unit ID': 0, 'Portrait slot': 0},
+              briefingDoc,
+              briefing: true,
+            ),
+          )
+          .withSlot(
+            true,
+            1,
+            ChkTrigger.makeSlot(
+              true,
+              TriggerOpcodes.find(true, 3, briefing: true)!,
+              {'String ID': 1, 'Duration (ms)': 1500},
+              briefingDoc,
+              briefing: true,
+            ),
+          );
+      final rawBriefing = ChkTrigger(preserved.bytes, briefing: true);
+      editingController.applyTriggers(
+        expectedDocument: briefingDoc,
+        records: [briefing, rawBriefing],
+        briefing: true,
+      );
+      editingController.undo();
+      expect(
+        ChkTriggers.read(
+          openController.state.session!.rawDocument,
+          briefing: true,
+        ).records,
+        isEmpty,
+      );
+      editingController.redo();
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(saved.outputPath, outputPath);
@@ -538,7 +578,22 @@ void _registerSettingsRoundtrip(bool realArchive) {
         'UPRP',
         'UPUS',
         'SWNM',
+        'MBRF',
       ]);
+      expect(
+        ChkTriggers.read(
+          writtenDocument,
+          briefing: true,
+        ).records.map((r) => r.bytes),
+        [briefing.bytes, rawBriefing.bytes],
+      );
+      expect(
+        ChkTriggers.read(
+          openController.state.session!.rawDocument,
+          briefing: true,
+        ).records.map((r) => r.bytes),
+        [briefing.bytes, rawBriefing.bytes],
+      );
       expect(
         _sectionNamed(writtenDocument, 'XTRA').payload,
         originalUnknownPayload,

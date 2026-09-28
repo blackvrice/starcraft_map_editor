@@ -211,11 +211,15 @@ class ObjectEditingController {
   String? get redoLabel => canRedo ? _redoStack.last.label : null;
 
   ChkTriggers get triggers {
+    return readTriggers();
+  }
+
+  ChkTriggers readTriggers({bool briefing = false}) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
       throw StateError('Open an editable map.');
     }
-    return ChkTriggers.read(session.rawDocument);
+    return ChkTriggers.read(session.rawDocument, briefing: briefing);
   }
 
   void applyTriggerResources({
@@ -299,6 +303,7 @@ class ObjectEditingController {
   void applyTriggers({
     required RawChkDocument expectedDocument,
     required List<ChkTrigger> records,
+    bool briefing = false,
   }) {
     final session = openMapController.state.session;
     if (session == null ||
@@ -306,9 +311,36 @@ class ObjectEditingController {
         !identical(session.rawDocument, expectedDocument)) {
       throw StateError('Map changed. Reopen the trigger editor.');
     }
-    final index = ChkTriggers.read(expectedDocument).sectionIndex;
-    final before = expectedDocument.sections[index];
+    if (records.any((r) => r.briefing != briefing)) {
+      throw StateError('TRIG and MBRF records cannot be mixed.');
+    }
+    final index = ChkTriggers.read(
+      expectedDocument,
+      briefing: briefing,
+    ).sectionIndex;
     final bytes = ChkTriggers.encode(records);
+    if (index < 0) {
+      if (records.isEmpty) return;
+      _applyAndRecord(
+        _ObjectEditCommand(
+          label: 'Create briefing',
+          beforeSections: {},
+          afterSections: {},
+          appendedSections: [
+            RawChkSection(
+              nameBytes: 'MBRF'.codeUnits,
+              declaredLength: bytes.length,
+              payload: bytes,
+              sourceOffset: expectedDocument.sourceLength,
+              isDirty: true,
+            ),
+          ],
+        ),
+        clearSelection: false,
+      );
+      return;
+    }
+    final before = expectedDocument.sections[index];
     final original = before.payload;
     if (bytes.length == original.length &&
         Iterable<int>.generate(
@@ -318,7 +350,7 @@ class ObjectEditingController {
     }
     _applyAndRecord(
       _ObjectEditCommand(
-        label: 'Edit triggers',
+        label: briefing ? 'Edit briefing' : 'Edit triggers',
         beforeSections: {index: before},
         afterSections: {index: before.withPayload(bytes)},
       ),

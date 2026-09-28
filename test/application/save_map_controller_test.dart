@@ -73,6 +73,45 @@ void main() {
       await openMapController.dispose();
       await progressController.dispose();
     });
+    test(
+      'invalid briefing text reference stops before archive writing',
+      () async {
+        final before = openMapController.state.session!;
+        final bytes = ChkTrigger.create(briefing: true).bytes.toList()
+          ..[346] = 3
+          ..[324] = 255;
+        final doc = before.rawDocument.appendSection(
+          RawChkSection(
+            nameBytes: 'MBRF'.codeUnits,
+            declaredLength: 2400,
+            payload: bytes,
+            sourceOffset: 0,
+            isDirty: true,
+          ),
+        );
+        openMapController.adoptEditedSession(
+          OpenedMapSession(
+            extractedMap: before.extractedMap,
+            rawDocument: doc,
+            metadataViews: before.metadataViews,
+            stringViews: before.stringViews,
+            terrainViews: before.terrainViews,
+            objectViews: before.objectViews,
+            sourceFingerprint: before.sourceFingerprint,
+            diagnostics: before.diagnostics,
+          ),
+        );
+        final result = await saveMapController.saveAs();
+        expect(result.status, SaveMapStatus.failed);
+        expect(
+          result.diagnostics.single.code,
+          SaveMapDiagnosticCodes.invalidTriggers,
+        );
+        expect(result.diagnostics.single.rawDetails, contains('Briefing 1'));
+        expect(archiveGateway.writeRequests, isEmpty);
+        expect(saveFileGateway.promotedDestination, isNull);
+      },
+    );
     for (final corrupt in [false, true]) {
       test(
         'pending sound byte verification before promotion (corrupt=$corrupt)',

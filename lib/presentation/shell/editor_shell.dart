@@ -56,6 +56,7 @@ enum _WorkspaceView {
   project,
   triggers,
   resources,
+  briefing,
 }
 
 class EditorShell extends StatefulWidget {
@@ -849,6 +850,9 @@ class _EditorShellState extends State<EditorShell> {
                             onShowEud: _showEudWorkspace,
                             onShowCatalog: _showCatalogWorkspace,
                             onOpenSettings: _showSettingsWorkspace,
+                            onShowBriefing: () => setState(
+                              () => _workspaceView = _WorkspaceView.briefing,
+                            ),
                             onShowResources: () => setState(
                               () => _workspaceView = _WorkspaceView.resources,
                             ),
@@ -1274,6 +1278,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onShowProject,
     required this.onShowTriggers,
     required this.onShowResources,
+    required this.onShowBriefing,
   });
 
   final VoidCallback? openMap;
@@ -1301,12 +1306,14 @@ class _EditorWorkspace extends StatelessWidget {
   final VoidCallback onShowProject;
   final VoidCallback onShowTriggers;
   final VoidCallback onShowResources;
+  final VoidCallback onShowBriefing;
 
   @override
   Widget build(BuildContext context) {
     final session = openMapState.session;
     final eudDocument = eudSourceController.state.document;
     final fullWidth =
+        workspaceView == _WorkspaceView.briefing ||
         workspaceView == _WorkspaceView.resources ||
         workspaceView == _WorkspaceView.triggers ||
         workspaceView == _WorkspaceView.settings ||
@@ -1371,10 +1378,13 @@ class _EditorWorkspace extends StatelessWidget {
                   onShowProject: onShowProject,
                   onShowTriggers: onShowTriggers,
                   onShowResources: onShowResources,
+                  onShowBriefing: onShowBriefing,
                 ),
               Expanded(
                 child: IndexedStack(
-                  index: workspaceView == _WorkspaceView.resources
+                  index: workspaceView == _WorkspaceView.briefing
+                      ? 5
+                      : workspaceView == _WorkspaceView.resources
                       ? 4
                       : workspaceView == _WorkspaceView.triggers
                       ? 3
@@ -1416,6 +1426,10 @@ class _EditorWorkspace extends StatelessWidget {
                     ResourcesPane(
                       controller: objectEditingController,
                       active: workspaceView == _WorkspaceView.resources,
+                    ),
+                    TriggerPane(
+                      controller: objectEditingController,
+                      briefing: true,
                     ),
                   ],
                 ),
@@ -1463,6 +1477,7 @@ class _DocumentTabs extends StatelessWidget {
     required this.onShowProject,
     required this.onShowTriggers,
     required this.onShowResources,
+    required this.onShowBriefing,
   });
 
   final OpenedMapSession? session;
@@ -1476,6 +1491,7 @@ class _DocumentTabs extends StatelessWidget {
   final VoidCallback onShowProject;
   final VoidCallback onShowTriggers;
   final VoidCallback onShowResources;
+  final VoidCallback onShowBriefing;
 
   @override
   Widget build(BuildContext context) {
@@ -1539,6 +1555,14 @@ class _DocumentTabs extends StatelessWidget {
                   icon: Icons.library_music,
                   selected: workspaceView == _WorkspaceView.resources,
                   onPressed: onShowResources,
+                ),
+              if (session != null)
+                _DocumentTab(
+                  key: const Key('briefing-tab'),
+                  label: 'Briefing',
+                  icon: Icons.movie_outlined,
+                  selected: workspaceView == _WorkspaceView.briefing,
+                  onPressed: onShowBriefing,
                 ),
               if (projectWorkspace != null)
                 _DocumentTab(

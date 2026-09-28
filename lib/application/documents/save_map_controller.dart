@@ -160,18 +160,24 @@ class SaveMapController {
     MapSaveWorkspace? workspace;
     String? operationId;
     try {
-      if (sourceSession.rawDocument.sections.any(
-        (s) => s.name == 'TRIG' && s.isDirty,
-      )) {
-        final issues = ChkTriggers.validationIssues(sourceSession.rawDocument);
+      for (final briefing in [false, true]) {
+        if (!sourceSession.rawDocument.sections.any(
+          (s) => s.name == (briefing ? 'MBRF' : 'TRIG') && s.isDirty,
+        )) {
+          continue;
+        }
+        final issues = ChkTriggers.validationIssues(
+          sourceSession.rawDocument,
+          briefing: briefing,
+        );
         if (issues.isNotEmpty) {
           return _emitFailure(
             _diagnostic(
               code: SaveMapDiagnosticCodes.invalidTriggers,
               message:
-                  'Edited triggers contain invalid field values or references.',
+                  'Edited ${briefing ? 'briefings' : 'triggers'} contain invalid field values or references.',
               remediation:
-                  'Open Triggers → Validate references and correct the reported slots.',
+                  'Open ${briefing ? 'Briefing' : 'Triggers'} → Validate references and correct the reported slots.',
               rawDetails: issues.join('\n'),
             ),
           );

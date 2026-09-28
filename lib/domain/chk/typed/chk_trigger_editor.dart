@@ -415,8 +415,43 @@ abstract final class TriggerOpcodes {
       ),
     ], flags: 4),
   ];
-  static TriggerOpcode? find(bool action, int id) {
-    for (final opcode in action ? actions : conditions) {
+  static const briefingSlot = TriggerArgument(
+    'Portrait slot',
+    16,
+    4,
+    choices: {0: 'Slot 1', 1: 'Slot 2', 2: 'Slot 3', 3: 'Slot 4'},
+  );
+  static const briefingDuration = TriggerArgument('Duration (ms)', 12, 4);
+  // Chkdraft chk.cpp: briefingTextArguments / briefingDefaultFlags.
+  static const briefingActions = [
+    TriggerOpcode(1, 'Wait', [briefingDuration], flags: 4),
+    TriggerOpcode(2, 'Play WAV', [sound, briefingDuration], flags: 4),
+    TriggerOpcode(3, 'Text message', [text, briefingDuration]),
+    TriggerOpcode(4, 'Mission objectives', [text]),
+    TriggerOpcode(5, 'Show portrait', [au, briefingSlot], flags: 20),
+    TriggerOpcode(6, 'Hide portrait', [briefingSlot], flags: 4),
+    TriggerOpcode(7, 'Speaking portrait', [
+      briefingSlot,
+      briefingDuration,
+    ], flags: 4),
+    TriggerOpcode(8, 'Transmission', [
+      text,
+      briefingSlot,
+      modifier,
+      TriggerArgument('Time adjustment (ms)', 20, 4),
+      sound,
+      briefingDuration,
+    ]),
+    TriggerOpcode(9, 'Skip tutorial enabled', []),
+  ];
+
+  static TriggerOpcode? find(bool action, int id, {bool briefing = false}) {
+    for (final opcode
+        in briefing
+            ? (action ? briefingActions : <TriggerOpcode>[])
+            : action
+            ? actions
+            : conditions) {
       if (opcode.id == id) return opcode;
     }
     return null;
@@ -424,17 +459,19 @@ abstract final class TriggerOpcodes {
 }
 
 final class ChkTrigger {
-  ChkTrigger(List<int> bytes) : bytes = List.unmodifiable(bytes) {
+  ChkTrigger(List<int> bytes, {this.briefing = false})
+    : bytes = List.unmodifiable(bytes) {
     if (bytes.length != 2400 || bytes.any((b) => b < 0 || b > 255)) {
       throw const FormatException('TRIG records require 2400 bytes.');
     }
   }
-  factory ChkTrigger.create() {
+  factory ChkTrigger.create({bool briefing = false}) {
     final bytes = Uint8List(2400);
-    bytes[15] = 23; // New triggers start with Never until explicitly edited.
+    bytes[15] = briefing ? 13 : 23; // Mission Briefing / Never.
     bytes[2372] = 1;
-    return ChkTrigger(bytes);
+    return ChkTrigger(bytes, briefing: briefing);
   }
+  final bool briefing;
   final List<int> bytes;
   List<int> slot(bool action, int index) {
     RangeError.checkValueInInterval(index, 0, action ? 63 : 15);
@@ -444,8 +481,9 @@ final class ChkTrigger {
   }
 
   static int type(bool action, List<int> slot) => slot[action ? 26 : 15];
-  static bool editable(bool action, List<int> slot) =>
-      TriggerOpcodes.find(action, type(action, slot)) != null &&
+  static bool editable(bool action, List<int> slot, {bool briefing = false}) =>
+      TriggerOpcodes.find(action, type(action, slot), briefing: briefing) !=
+          null &&
       slot[action ? 30 : 18] == 0 &&
       slot[action ? 31 : 19] == 0 &&
       (!(type(action, slot) == (action ? 45 : 15)) ||
@@ -461,10 +499,11 @@ final class ChkTrigger {
   bool get enabled => bytes[2368] & 8 == 0;
   ChkTrigger withEnabled(bool enabled) => ChkTrigger(
     [...bytes]..[2368] = enabled ? bytes[2368] & ~8 : bytes[2368] | 8,
+    briefing: briefing,
   );
   ChkTrigger withSlotEnabled(bool action, int index, bool enabled) {
     final next = slot(action, index);
-    if (!editable(action, next)) {
+    if (!editable(action, next, briefing: briefing)) {
       throw const FormatException('Unsupported slot is read-only.');
     }
     final offset = action ? 28 : 17;
@@ -482,7 +521,7 @@ final class ChkTrigger {
       throw RangeError.value(player);
     }
     final next = Uint8List.fromList(bytes)..[2372 + player] = enabled ? 1 : 0;
-    return ChkTrigger(next);
+    return ChkTrigger(next, briefing: briefing);
   }
 
   ChkTrigger withSlot(bool action, int index, List<int> replacement) {
@@ -498,7 +537,7 @@ final class ChkTrigger {
       (action ? 320 : 0) + (index + 1) * size,
       replacement,
     );
-    return ChkTrigger(next);
+    return ChkTrigger(next, briefing: briefing);
   }
 
   static List<int> makeSlot(
@@ -507,12 +546,14 @@ final class ChkTrigger {
     Map<String, int> values,
     RawChkDocument document, {
     List<int>? original,
+    bool briefing = false,
   }) {
-    if (TriggerOpcodes.find(action, opcode.id) != opcode) {
+    if (TriggerOpcodes.find(action, opcode.id, briefing: briefing) != opcode) {
       throw const FormatException('Unsupported opcode.');
     }
     if (original != null &&
-        (!editable(action, original) || type(action, original) != opcode.id)) {
+        (!editable(action, original, briefing: briefing) ||
+            type(action, original) != opcode.id)) {
       throw const FormatException('Unsupported slot must be preserved.');
     }
     final bytes = original == null
@@ -598,17 +639,21 @@ final class ChkTrigger {
 }
 
 final class ChkTriggers {
-  static List<String> validationIssues(RawChkDocument document) {
+  static List<String> validationIssues(
+    RawChkDocument document, {
+    bool briefing = false,
+  }) {
     final issues = <String>[];
-    final records = read(document).records;
+    final records = read(document, briefing: briefing).records;
     for (var r = 0; r < records.length; r++) {
-      for (final action in [false, true]) {
+      for (final action in briefing ? [true] : [false, true]) {
         for (var s = 0; s < (action ? 64 : 16); s++) {
           final slot = records[r].slot(action, s);
-          if (!ChkTrigger.editable(action, slot)) continue;
+          if (!ChkTrigger.editable(action, slot, briefing: briefing)) continue;
           final opcode = TriggerOpcodes.find(
             action,
             ChkTrigger.type(action, slot),
+            briefing: briefing,
           )!;
           try {
             ChkTrigger.makeSlot(
@@ -620,10 +665,11 @@ final class ChkTriggers {
               },
               document,
               original: slot,
+              briefing: briefing,
             );
           } catch (e) {
             issues.add(
-              'Trigger ${r + 1}, ${action ? 'action' : 'condition'} ${s + 1} (${opcode.name}): $e',
+              '${briefing ? 'Briefing' : 'Trigger'} ${r + 1}, ${action ? 'action' : 'condition'} ${s + 1} (${opcode.name}): $e',
             );
           }
         }
@@ -636,23 +682,26 @@ final class ChkTriggers {
     : records = List.unmodifiable(records);
   final int sectionIndex;
   final List<ChkTrigger> records;
-  static ChkTriggers read(RawChkDocument document) {
+  static ChkTriggers read(RawChkDocument document, {bool briefing = false}) {
+    final name = briefing ? 'MBRF' : 'TRIG';
     final indices = [
       for (var i = 0; i < document.sections.length; i++)
-        if (document.sections[i].name == 'TRIG') i,
+        if (document.sections[i].name == name) i,
     ];
+    // Only an absent briefing may be explicitly created; never repair damage.
+    if (briefing && indices.isEmpty) return ChkTriggers(-1, []);
     if (indices.length != 1) {
-      throw const FormatException(
-        'Expected one TRIG section. Missing or duplicate sections are preserved without editing.',
+      throw FormatException(
+        'Expected one $name section. Missing or duplicate sections are preserved without editing.',
       );
     }
     final bytes = document.sections[indices.single].payload;
     if (bytes.length % 2400 != 0) {
-      throw const FormatException('Truncated TRIG section; editing blocked.');
+      throw FormatException('Truncated $name section; editing blocked.');
     }
     return ChkTriggers(indices.single, [
       for (var i = 0; i < bytes.length; i += 2400)
-        ChkTrigger(bytes.sublist(i, i + 2400)),
+        ChkTrigger(bytes.sublist(i, i + 2400), briefing: briefing),
     ]);
   }
 

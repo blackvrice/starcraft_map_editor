@@ -24,6 +24,102 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 
 void main() {
   testWidgets(
+    'briefing draft edits action duration and owners, cancel, duplicate and undo',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final controller = fixture.objectEditingController;
+      final original = fixture.openMapController.state.session!.rawDocument;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TriggerPane(controller: controller, briefing: true),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Add briefing'));
+      await tester.pumpAndSettle();
+      expect(controller.triggers.records, isEmpty);
+      expect(
+        controller.readTriggers(briefing: true).records.single.bytes[15],
+        13,
+      );
+      await tester.tap(find.byKey(const ValueKey(('trigger', 0))));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('trigger-add-condition')), findsNothing);
+      await tester.tap(find.widgetWithText(FilterChip, 'Player 2'));
+      await tester.tap(find.byKey(const Key('trigger-add-action')));
+      await tester.pumpAndSettle();
+      final chooser = tester.widget<DropdownButton<TriggerOpcode>>(
+        find.byKey(const Key('trigger-opcode')),
+      );
+      expect(
+        chooser.items!.map((e) => e.value!.id),
+        List.generate(9, (i) => i + 1),
+      );
+      await tester.enterText(find.byType(TextFormField), '1500');
+      await tester.tap(find.byKey(const Key('trigger-slot-apply')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('trigger-apply')));
+      await tester.pumpAndSettle();
+      final record = controller.readTriggers(briefing: true).records.single;
+      expect(record.bytes[2373], 1);
+      expect(
+        ChkTrigger.argument(
+          record.slot(true, 0),
+          TriggerOpcodes.briefingDuration,
+        ),
+        1500,
+      );
+      await tester.tap(find.byKey(const ValueKey(('trigger', 0))));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, 'Player 2'));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(
+        controller.readTriggers(briefing: true).records.single.bytes,
+        record.bytes,
+      );
+      await tester.tap(find.byTooltip('Duplicate briefing'));
+      await tester.pumpAndSettle();
+      expect(controller.readTriggers(briefing: true).records, hasLength(2));
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(controller.readTriggers(briefing: true).records, hasLength(1));
+      expect(
+        () => controller.applyTriggers(
+          expectedDocument: original,
+          records: [],
+          briefing: true,
+        ),
+        throwsStateError,
+      );
+      controller.undo();
+      controller.undo();
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        const RawChkEncoder().encode(original),
+      );
+      controller.redo();
+      expect(controller.readTriggers(briefing: true).records, hasLength(1));
+      final current = fixture.openMapController.state.session!.rawDocument;
+      expect(
+        () => controller.applyTriggers(
+          expectedDocument: current,
+          records: [ChkTrigger.create()],
+          briefing: true,
+        ),
+        throwsStateError,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
     'resource tab edits strings and imports, previews, exports and undoes sounds',
     (tester) async {
       await tester.binding.setSurfaceSize(const Size(1200, 900));

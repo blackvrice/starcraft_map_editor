@@ -70,6 +70,11 @@ void main() {
       await tester.tap(find.byKey(const Key('triggers-tab')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('trigger-add')), findsOneWidget);
+      await tester.ensureVisible(find.byKey(const Key('briefing-tab')));
+      await tester.tap(find.byKey(const Key('briefing-tab')));
+      await tester.pumpAndSettle();
+      expect(find.text('Add briefing'), findsOneWidget);
+      expect(find.text('Add trigger'), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('eud-project-tab')));
       await tester.tap(find.byKey(const Key('eud-project-tab')));
       await tester.pumpAndSettle();
