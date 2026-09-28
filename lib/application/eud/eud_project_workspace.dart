@@ -48,7 +48,7 @@ final class EudProjectWorkspace {
   Stream<void> get changes => _changes.stream;
   bool get isBusy => _busy || projects.isBusy;
   bool get hasUnbuiltOverrides =>
-      projects.project?.overrides.isNotEmpty ?? false;
+      projects.project?.hasGeneratedContent ?? false;
   List<EudEffectiveSetting> get effectiveSettings {
     final project = projects.project;
     if (project == null) return const [];

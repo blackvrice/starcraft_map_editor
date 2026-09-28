@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../domain/eud/eud_execution_rule_test.dart' show rule;
 import '../fixtures/eud_project_workspace_fixture.dart';
 import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,6 +63,44 @@ void main() {
       f.hash = 'b' * 64;
       expect(await prepare(true), isNotNull);
       expect(h.builds.canStart, isFalse);
+    },
+  );
+  test(
+    'rules-only project uses opt-in generation and invalidates a prepared snapshot',
+    () async {
+      final h = PreparationHarness();
+      final f = EudWorkspaceFixture();
+      addTearDown(h.dispose);
+      addTearDown(f.dispose);
+      await f.maps.open();
+      await f.workspace.createFromMap();
+      f.projects.replaceRules([rule()]);
+      final controller = EudBuildPreparationController(
+        tools: h.tools,
+        builds: h.builds,
+        files: ProjectPreparationFiles(),
+        blockReason: () => null,
+        projects: f.workspace,
+      );
+      expect(controller.hasProjectSettings, isTrue);
+      Future<String?> prepare(bool allow) => controller.prepare(
+        baseMap: f.projects.project!.mapPath,
+        sourceRoot: '',
+        entrySource: '',
+        outputMap: r'C:\out\rules.scx',
+        trustSource: true,
+        allowUnverifiedSettings: allow,
+      );
+      expect(await prepare(false), contains('unverified'));
+      expect(await prepare(true), isNull);
+      final plan = h.builds.state.plan!;
+      expect(plan.configuration.settingsOnly, isTrue);
+      expect(
+        plan.configuration.generatedSettings!.source,
+        contains('def beforeTriggerExec():'),
+      );
+      f.projects.replaceRules([]);
+      expect(plan.contextIsCurrent!(), isFalse);
     },
   );
   late PreparationHarness h;

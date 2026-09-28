@@ -8,6 +8,7 @@ import 'package:starcraft_map_editor/application/ports/eud_compiler_models.dart'
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 import 'package:starcraft_map_editor/domain/eud/eud_generated_settings.dart';
 import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
+import 'package:starcraft_map_editor/domain/eud/eud_execution_rule.dart';
 import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/bundled_eud_tool.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/process_eud_compiler_gateway.dart';
@@ -52,13 +53,40 @@ void main() {
             mapSha256: run == 3
                 ? '0' * 64
                 : sha256.convert(original).toString(),
-            overrides: [
-              EudOverride(
-                field: 'unit.maxShield',
-                targetId: 70,
-                value: 300,
-                overrideChk: true,
+            rules: [
+              for (final schedule in EudRuleSchedule.values)
+                EudExecutionRule(
+                  id: schedule.name,
+                  name: schedule.name,
+                  player: schedule.index,
+                  resource: EudResource.values[schedule.index],
+                  comparison: EudComparison.values[schedule.index],
+                  threshold: 100,
+                  operation: schedule == EudRuleSchedule.once
+                      ? EudResourceOperation.add
+                      : EudResourceOperation.subtract,
+                  amount: 50,
+                  schedule: schedule,
+                ),
+              EudExecutionRule(
+                id: 'exact',
+                name: 'exact',
+                player: 2,
+                resource: EudResource.ore,
+                comparison: EudComparison.exactly,
+                threshold: 0,
+                operation: EudResourceOperation.setTo,
+                amount: 10,
               ),
+            ],
+            overrides: [
+              if (run != 2)
+                EudOverride(
+                  field: 'unit.maxShield',
+                  targetId: 70,
+                  value: 300,
+                  overrideChk: true,
+                ),
             ],
           ),
         );

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../domain/eud/eud_project.dart';
+import '../../domain/eud/eud_execution_rule.dart';
 import '../ports/eud_project_store.dart';
 
 final class EudProjectController {
@@ -71,6 +72,30 @@ final class EudProjectController {
     _notify();
   }
 
+  void replaceRules(
+    Iterable<EudExecutionRule> values, {
+    EudProject? expectedProject,
+  }) {
+    _requireAlive();
+    final current = _project;
+    if (_busy ||
+        current == null ||
+        (expectedProject != null && !identical(expectedProject, current))) {
+      throw StateError(
+        'EUD project changed or is busy; reopen the rule editor.',
+      );
+    }
+    final next = current.withRules(values);
+    if (next.validationIssues.isNotEmpty) {
+      throw FormatException(next.validationIssues.join(', '));
+    }
+    if (next.encode() == current.encode()) return;
+    _undo.add(current);
+    _redo.clear();
+    _project = next;
+    _notify();
+  }
+
   bool undo() => _move(_undo, _redo);
   bool redo() => _move(_redo, _undo);
 
@@ -84,6 +109,7 @@ final class EudProjectController {
       mapPath: mapPath,
       mapSha256: mapSha256,
       overrides: _project!.overrides,
+      rules: _project!.rules,
     );
     if (next.encode() == _project!.encode()) return;
     _undo.add(_project!);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'eud_field_manifest.dart';
+import 'eud_execution_rule.dart';
 
 final class EudOverride {
   EudOverride({
@@ -42,7 +43,9 @@ final class EudProject {
     required this.mapPath,
     required this.mapSha256,
     Iterable<EudOverride> overrides = const [],
-  }) : overrides = List.unmodifiable(overrides) {
+    Iterable<EudExecutionRule> rules = const [],
+  }) : overrides = List.unmodifiable(overrides),
+       rules = List.unmodifiable(rules) {
     if (mapPath.trim().isEmpty ||
         mapPath.length > 4096 ||
         mapPath.contains('\u0000') ||
@@ -51,6 +54,10 @@ final class EudProject {
     }
     if (this.overrides.length > maxOverrides) {
       throw const FormatException('Too many EUD overrides.');
+    }
+    if (this.rules.length > maxRules ||
+        this.rules.map((r) => r.id).toSet().length != this.rules.length) {
+      throw const FormatException('Too many or duplicate EUD execution rules.');
     }
     final keys = <String>{};
     for (final item in this.overrides) {
@@ -61,17 +68,37 @@ final class EudProject {
   }
   static const schemaVersion = 1;
   static const maxOverrides = 5000;
+  static const maxRules = 64;
   static const maxTextLength = 2 * 1024 * 1024;
   final String mapPath;
   final String mapSha256;
   final List<EudOverride> overrides;
+  final List<EudExecutionRule> rules;
+  bool get hasGeneratedContent => overrides.isNotEmpty || rules.isNotEmpty;
 
-  EudProject withOverrides(Iterable<EudOverride> values) =>
-      EudProject(mapPath: mapPath, mapSha256: mapSha256, overrides: values);
+  EudProject withRules(Iterable<EudExecutionRule> values) => EudProject(
+    mapPath: mapPath,
+    mapSha256: mapSha256,
+    overrides: overrides,
+    rules: values,
+  );
+
+  EudProject withOverrides(Iterable<EudOverride> values) => EudProject(
+    mapPath: mapPath,
+    mapSha256: mapSha256,
+    overrides: values,
+    rules: rules,
+  );
 
   /// Validates editable structure, not compiler/game compatibility.
   List<String> get validationIssues {
     final issues = <String>[];
+    final writes = <String>{};
+    for (final rule in rules.where((r) => r.enabled)) {
+      if (!writes.add(rule.writeTarget)) {
+        issues.add('${rule.id}:duplicateResourceWrite:${rule.writeTarget}');
+      }
+    }
     final values = {for (final item in overrides) item.identity: item};
     for (final item in overrides) {
       final error = EudFieldManifest.validate(
@@ -120,7 +147,8 @@ final class EudProject {
       });
     return '${const JsonEncoder.withIndent('  ').convert({
       'format': 'starcraft-map-editor-eud',
-      'schemaVersion': schemaVersion,
+      'schemaVersion': rules.isEmpty ? schemaVersion : 2,
+      if (rules.isNotEmpty) 'rules': rules.map((r) => r.toJson()).toList(),
       'map': {'path': mapPath, 'sha256': mapSha256},
       'overrides': ordered.map((item) => item.toJson()).toList(),
     })}\n';
@@ -130,15 +158,21 @@ final class EudProject {
     if (text.length > maxTextLength) {
       throw const FormatException('EUD project exceeds size limit.');
     }
-    final root = _object(jsonDecode(text), {
+    final decoded = jsonDecode(text);
+    final version = decoded is Map<String, dynamic>
+        ? decoded['schemaVersion']
+        : null;
+    final root = _object(decoded, {
       'format',
       'schemaVersion',
       'map',
       'overrides',
+      if (version == 2) 'rules',
     });
     if (root['format'] != 'starcraft-map-editor-eud' ||
         root['schemaVersion'] is! int ||
-        root['schemaVersion'] != schemaVersion) {
+        (root['schemaVersion'] != schemaVersion &&
+            root['schemaVersion'] != 2)) {
       throw const FormatException(
         'Unsupported EUD project schema; migration required.',
       );
@@ -151,6 +185,11 @@ final class EudProject {
         entries.length > maxOverrides) {
       throw const FormatException('Invalid EUD project structure.');
     }
+    final rawRules = version == 2 ? root['rules'] : <Object>[];
+    if (rawRules is! List || rawRules.length > maxRules) {
+      throw const FormatException('Invalid EUD execution rules.');
+    }
+    final rules = rawRules.map(EudExecutionRule.fromJson).toList();
     final overrides = <EudOverride>[];
     for (final entry in entries) {
       final item = _object(entry, {
@@ -178,6 +217,7 @@ final class EudProject {
       mapPath: map['path'] as String,
       mapSha256: map['sha256'] as String,
       overrides: overrides,
+      rules: rules,
     );
   }
 

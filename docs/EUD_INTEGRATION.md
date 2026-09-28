@@ -1,5 +1,9 @@
 # EUD 연동
 
+2026-09-28: [EUD 실행 규칙](EUD_EXECUTION_RULES.md)의 플레이어 자원 조건과
+1회/주기 실행을 생성 beforeTriggerExec에 연결했다. 규칙만 있는 프로젝트도
+설정 전용 빌드에 포함하며 Save As 자체는 EUD를 실행하지 않는다.
+
 2026-09-25: Windows 빌드에 [관리형 euddraft](EUD_BUNDLED_TOOL.md)를 동봉한다.
 기본 도구 선택·실제 epScript 빌드를 연결했다. 2026-09-26에는
 [선언적 설정 테스트 빌드](EUD_GENERATED_BUILD_VALIDATION.md)를 연결했다.

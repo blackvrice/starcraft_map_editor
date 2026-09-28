@@ -56,7 +56,7 @@ final class EudBuildPreparationController {
           !(projects?.isBusy ?? false) &&
           blockReason() == null;
       EudGeneratedSettings? generated;
-      if (project != null && project.overrides.isNotEmpty) {
+      if (project != null && project.hasGeneratedContent) {
         if (!allowUnverifiedSettings) {
           return 'Enable the unverified settings test build to compile project settings.';
         }

@@ -1,5 +1,9 @@
 # 에디터 UX
 
+2026-09-28: EUD Project의 **EUD execution rules → Add execution rule**에서
+자원 조건과 1회/주기 실행을 편집한다. 프로젝트 Undo/Redo와 Save Project로
+보존하고 Prepare EUD Build로 컴파일한다. [실행 규칙 계약](EUD_EXECUTION_RULES.md) 참조.
+
 미션 브리핑은 상단 **Briefing** 탭에서 플레이어·액션 순서·텍스트·초상화·사운드·시간을
 편집한다. 초안 적용과 Save As 흐름은 [미션 브리핑 편집기](BRIEFING_EDITOR.md)를 따른다.
 

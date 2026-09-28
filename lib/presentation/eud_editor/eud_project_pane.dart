@@ -6,6 +6,7 @@ import 'eud_impact_pane.dart';
 import 'eud_weapon_editor.dart';
 import 'eud_shield_editor.dart';
 import 'eud_field_editor.dart';
+import 'eud_rules_editor.dart';
 import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_effective_settings.dart';
 import '../../domain/eud/eud_generated_settings.dart';
@@ -155,7 +156,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Generated settings run once before user initialization in an opt-in test build. Game compatibility is unverified; current unit shields are not rewritten.',
+                                      'Settings initialize before user initialization. Execution rules run before user beforeTriggerExec and ordinary triggers. Game compatibility is unverified; current unit shields are not rewritten.',
                                     ),
                                     const SizedBox(height: 12),
                                     SelectableText(
@@ -220,6 +221,7 @@ class _EudProjectPaneState extends State<EudProjectPane> {
             key: const Key('eud-project-binding'),
           ),
           if (project != null) ...[
+            EudRulesEditor(controller: controller, enabled: !busy),
             const SizedBox(height: 8),
             SelectableText(
               'Project: ${controller.path ?? 'Not saved'}\nMap: ${project.mapPath}\nSHA-256: ${project.mapSha256}',
