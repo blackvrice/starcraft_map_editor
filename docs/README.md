@@ -10,8 +10,8 @@
 4. 구현할 계층과 사용자 흐름: [아키텍처](ARCHITECTURE.md), [에디터 UX](EDITOR_UX.md)
 5. 작업과 검증 절차: [개발 워크플로](DEVELOPMENT_WORKFLOW.md), [테스트와 품질](TESTING_AND_QUALITY.md)
 
-개발 계획은 현재 상태, 구현 이력은 완료 당시의 증거, 기능 대조표는 점검 당시의
-누락 분석을 담당한다. 설계 문서의 계획 항목은 현재 앱의 지원 기능 목록이 아니다.
+개발 계획은 현재 상태, 구현 이력은 완료 당시의 증거, 기능 대조표는 현행 구현과
+남은 범위를 담당한다. 설계 문서의 계획 항목은 현재 앱의 지원 기능 목록이 아니다.
 M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭의 완료를 뜻하지 않는다.
 
 ## 문서 지도
@@ -19,7 +19,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | 문서 | 용도 | 변경 시점 |
 | --- | --- | --- |
 | [AI 에이전트 가이드](AI_AGENT_GUIDE.md) | 새 기기·새 AI 도구의 환경 구축, 작업 루프, 검증 명령표, 금지 사항, 인수인계 | 환경·명령·작업 규칙이 바뀔 때 |
-| [EUD 실행 규칙](EUD_EXECUTION_RULES.md) | 플레이어 자원 조건·1회/주기·저장·빌드 계약 | 실행 규칙 범위가 바뀔 때 |
+| [EUD 실행 규칙](EUD_EXECUTION_RULES.md) | 변수/식·개체/플레이어/위치/표시·schema·빌드 계약 | 실행 규칙 범위가 바뀔 때 |
 | [미션 브리핑 편집기](BRIEFING_EDITOR.md) | MBRF 액션·플레이어·초안·저장 검증 | 브리핑 편집이 바뀔 때 |
 | [문자열·사운드 관리](RESOURCE_MANAGEMENT.md) | Resources 탭·참조 추적·PCM WAV·안전한 저장 | 리소스 편집/저장 정책이 바뀔 때 |
 | [제품 요구사항](PRODUCT_REQUIREMENTS.md) | 대상 사용자, 범위, 요구사항, MVP 완료 조건 | 제품 범위가 바뀔 때 |
@@ -53,6 +53,37 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [기본 에디터 기능 대조표](BASIC_EDITOR_COVERAGE.md) | 기존 에디터 기본 기능의 누락 점검과 개발 단계 연결 | 기본 기능 범위나 구현 상태가 바뀔 때 |
 | [용어집](GLOSSARY.md) | 프로젝트에서 사용하는 용어의 의미 | 새 개념을 도입할 때 |
 | [아키텍처 결정 기록](decisions/README.md) | 중요한 선택의 이유와 대안 | 되돌리기 어려운 결정을 할 때 |
+
+## 추가 기능·검증 문서
+
+| 문서 | 용도 |
+| --- | --- |
+| [문서 정합성 점검과 작업 인수인계](DOCUMENTATION_REVIEW.md) | 전체 문서 점검 결과·코드 재개 지점·검증 한계 |
+| [저장 파일 기반 EUD 빌드 준비](EUD_BUILD_PREPARATION_UI.md) | Prepare 입력·도구 우선순위·테스트 빌드 선택 |
+| [앱 동봉 EUD 도구 — 0.10.2.5-editor.1](EUD_BUNDLED_TOOL.md) | 관리형 도구 공급·무결성·배포 인수 |
+| [설정별 EUD 후보 필드 확대](EUD_EXPANDED_FIELDS.md) | 61개 후보 필드·참조/수치 범위·공유 영향 한계 |
+| [EUD 생성 빌드와 게임 검증](EUD_GENERATED_BUILD_VALIDATION.md) | 생성 소스·안전 빌드·사용자 게임 관찰 |
+| [선언적 EUD 생성 명세 미리보기](EUD_GENERATION_PREVIEW.md) | 생성 소스/manifest 미리보기와 최초 JSON 이력 |
+| [실드 초기화 및 생성 빌드 작업 준비](EUD_SHIELD_BUILD_PREPARATION.md) | 실드 초기화 비교 시나리오·최초 준비 기록 |
+| [동봉 EUD 도구 manifest와 무결성 검사](EUD_TOOL_MANIFEST.md) | manifest 검사 계약·초기 구현 이력 |
+| [EUD 도구 선택·진단 화면](EUD_TOOL_SETTINGS_UI.md) | 기본/외부 도구 선택과 진단 UI |
+| [새 맵 생성 정책과 CHK 생성기](NEW_MAP.md) | 생성 정책·도메인 구현·UI/신규 MPQ 통합 인수인계 |
+| [실제 설치 카탈로그 배치 검증](PLACEMENT_INSTALLATION_SMOKE.md) | 로컬 설치 카탈로그 배치 스모크 기록 |
+| [일반 트리거 편집기](TRIGGER_EDITOR.md) | 조건22·액션57·UPRP/스위치·원시 보존 |
+| [런타임 EUD 지원 결정](research/EUD_RUNTIME_SUPPORT.md) | 버튼셋·Order·IScript·지형/안개 보류 근거 |
+| [euddraft 배포 조사](research/euddraft-0.10.2.5/README.md) | 고정 배포본의 manifest·출처·고지·업데이트 조사 |
+
+## 현재 작업과 문서 읽기
+
+2026-09-29: 설정·일반 트리거·브리핑·리소스·문서 공통 Undo/Redo,
+관리형 EUD 동봉·61개 후보 필드·확장 실행 규칙의 편집/테스트 빌드를 구현했다.
+새 맵은 도메인 생성기 완료, UI·신규 MPQ 저장 통합 중이다.
+[개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
+[문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.
+
+현재 지원 계약과 과거 검증 기록을 구분한다. 날짜별 테스트 수·성능 수치·외부
+배포물 해시는 당시 증거이며 새 날짜나 최신 실행 결과로 덮어쓰지 않는다.
+연구·ADR·라이선스 원문은 결론이 바뀐 근거 없이 다시 작성하지 않는다.
 
 ## 문서 우선순위
 

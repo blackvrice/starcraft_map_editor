@@ -33,8 +33,9 @@ Save Project로 저장한다. 기존 실드/무기 편집기도 같은 프로젝
 | sprite | 2 | image, isVisible |
 | image | 5 | isTurnable, isClickable, useFullIscript, drawIfCloaked, drawingFunction |
 
-Registry는 `lib/domain/eud/eud_field_manifest.dart`에 있다. 스키마 v1의 field key를
-추가했으며 바이너리 맵에 직접 쓰지 않는다. 구버전 앱은 모르는 키를 보존하지만
+Registry는 `lib/domain/eud/eud_field_manifest.dart`에 있다. override의 field key를
+확대했으며 바이너리 맵에 직접 쓰지 않는다. 규칙 없는 프로젝트는 schema v1,
+기본 규칙은 v2, 확장 규칙은 v3다([계약](EUD_EXECUTION_RULES.md)). 구버전 앱은 모르는 키를 보존하지만
 검증 시 거부한다. 알 수 없는 키를 실행 코드나 메모리 주소로 해석하지 않는다.
 
 ## 검증과 영향 범위

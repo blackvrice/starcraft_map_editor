@@ -2,7 +2,8 @@
 
 2026-09-27 일반 조건 22종과 액션 57종의 구조 편집을 구현했다.
 [문자열·사운드 관리](RESOURCE_MANAGEMENT.md)와 2026-09-28의
-[미션 브리핑 편집기](BRIEFING_EDITOR.md)도 연결되었다. M7.1의 EUD 실행 규칙은 별도 개발 범위다.
+[미션 브리핑 편집기](BRIEFING_EDITOR.md)도 연결되었다. M7.1의 [EUD 실행 규칙](EUD_EXECUTION_RULES.md)은 Triggers → EUD extensions에서
+별도로 편집하며 일반 TRIG 바이트 편집과 구분한다.
 
 ## 사용 순서
 

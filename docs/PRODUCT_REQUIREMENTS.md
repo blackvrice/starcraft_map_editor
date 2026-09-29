@@ -1,5 +1,9 @@
 # 제품 요구사항
 
+이 문서는 목표와 인수 조건이다. 항목에 “해야 한다”가 있어도 구현 완료를 뜻하지
+않는다. 2026-09-29 현재 상태는 [기능 대조표](BASIC_EDITOR_COVERAGE.md)와
+[개발 계획](DEVELOPMENT_PLAN.md)을 따른다.
+
 ## 1. 제품 비전
 
 StarCraft UMS 제작자가 맵 편집기와 EUD 도구를 오가며 파일을 복사하고 오류 로그를 추적하는 부담을 줄인다. 하나의 Windows 데스크톱 앱에서 맵 데이터 편집, epScript 작성, 안전한 EUD 빌드와 결과 검증을 수행할 수 있게 한다.
@@ -212,9 +216,12 @@ MVP는 다음 수직 흐름이 모두 실제 파일로 검증된 상태다.
 
 ## 11. 미결정 사항
 
-- euddraft를 앱에 포함할지, 사용자 설치만 지원할지
-- 프로젝트 파일 형식과 확장자
+- 새 도구 버전의 검토·배포 및 프로젝트 마이그레이션 정책
+- 다중 언어 entry와 소스 파일 관리 범위
 - 다중 맵·다중 소스 문서의 후속 지원 범위
 - StarCraft 실행 경로 자동 탐색과 테스트 실행 범위
 
+euddraft 동봉은 [ADR-0011](decisions/0011-managed-euddraft-bundle.md),
+EUD JSON 프로젝트는 [ADR-0009](decisions/0009-declarative-eud-project.md)와
+[실행 규칙 schema v2/v3](EUD_EXECUTION_RULES.md)로 구현했다.
 StormLib 연동은 [별도 helper 프로세스](decisions/0004-stormlib-helper-process.md)로 결정했다.

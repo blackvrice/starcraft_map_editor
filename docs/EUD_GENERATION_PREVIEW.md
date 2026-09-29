@@ -1,5 +1,20 @@
 # 선언적 EUD 생성 명세 미리보기
 
+## 현행 동작 (2026-09-29)
+
+Generation preview는 8분류·61개 후보 override 및 실행 규칙을 검증하고 생성
+Python 소스와 manifest를 표시한다. override는 정렬하며 실행 규칙의 목록 순서는
+보존한다. 프로젝트/맵/사용자 소스는 변경하지 않는다. 명시적 테스트 빌드 연결과
+입력 snapshot 검증은 [생성 빌드](EUD_GENERATED_BUILD_VALIDATION.md), before/after
+훅과 schema v1/v2/v3는 [실행 규칙](EUD_EXECUTION_RULES.md)을 따른다.
+게임 미검증 상태는 유지하지만 실행 소스가 없던 최초 단계와 혼동하지 않는다.
+Save Project/Map Save As는 컴파일하지 않는다.
+
+## 최초 JSON 미리보기 이력 (2026-09-25)
+
+아래 설명과 검증 수치는 당시 상태다. 실행 불가능한 JSON만 표시하던 경계는
+현재 생성 소스·테스트 빌드로 확장되었다.
+
 2026-09-25 EUD Project의 `Generation preview` 버튼을 추가했다. 후보 5개 필드의
 구조 검증을 통과한 프로젝트를 `(table, id, field)` 순서의 결정적 JSON으로 보여준다.
 입력 맵 SHA-256, 도구/API revision, 값과 명시적 CHK override 여부를 포함한다.

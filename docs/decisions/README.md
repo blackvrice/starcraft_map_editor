@@ -24,10 +24,9 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0009](0009-declarative-eud-project.md) | Accepted | 별도 JSON 프로젝트의 EUD 선언적 설정·저장·Undo 경계 |
 | [0010](0010-reviewed-doodad-deletion.md) | Accepted | 복원 정보와 명시적 overlay 확인에 따른 단일 Doodad 복합 삭제 |
 | [0011](0011-managed-euddraft-bundle.md) | Accepted | updater 대체 소스와 신뢰 목록을 포함한 관리형 euddraft 동봉 |
+| [0012](0012-generated-eud-test-builds.md) | Accepted | 선언적 EUD 설정의 명시적 테스트 빌드 |
 
 ## 새 ADR 형식
-
-추가 결정: [0012 — 선언적 EUD 테스트 빌드](0012-generated-eud-test-builds.md) (Accepted).
 
 ```markdown
 # ADR-NNNN: 제목

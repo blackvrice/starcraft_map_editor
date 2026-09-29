@@ -1,5 +1,9 @@
 # 유닛 생산 허용
 
+주 진입점은 **Map Settings → Availability** 탭이며 기존 File 메뉴도 사용할 수 있다.
+[통합 설정 UI](MAP_SETTINGS_UI.md)의 이름/ID·선택 연동 규칙을 함께 따른다.
+문서 공통 Undo/Redo와 Map Save As를 사용하며 EUD 프로젝트 저장과 구분한다.
+
 M6.3의 File → Unit Availability…에서 유닛 ID 0~227의 맵 공통 기본값과
 플레이어 1~8의 생산 허용/금지, 기본값 상속을 편집한다. 플레이어 9~12의
 저장 값은 읽기 전용으로 표시한다. 이 화면은 배치 객체 속성과 별개다.

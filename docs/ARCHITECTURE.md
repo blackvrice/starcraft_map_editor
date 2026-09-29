@@ -1,5 +1,10 @@
 # 아키텍처
 
+2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
+리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
+클래스 선언 전체가 아니다. 새 맵의 원본 없는 세션·helper 0.5.0은 작업 중이며
+[인수인계](NEW_MAP.md)의 UI/통합 테스트를 마치기 전에는 완료로 취급하지 않는다.
+
 ## 1. 목표와 제약
 
 이 아키텍처는 다음 문제를 우선 해결한다.
@@ -154,9 +159,10 @@ RawChkSection
 
 고정 레코드 경계가 잘렸거나 `MRGN`이 Original 64개/확장 255개 크기가 아니면
 해당 typed view만 만들지 않고 차단 진단을 세션에 추가한다. 원시 섹션은 그대로
-남으며 현재 단계에서는 좌표·owner·문자열 참조의 의미 유효성을 판단하지 않는다.
+남는다. 의미 유효성은 별도 `ChkObjectReferenceValidator`가 좌표·owner·문자열
+참조를 검사하며 원시 값을 자동 수정하지 않는다.
 
-### MapDocument
+### MapDocument (개념 모델)
 
 편집 UI가 사용하는 의미 모델과 원시 문서를 묶는다.
 
@@ -176,7 +182,7 @@ MapDocument
 
 의미 모델은 원시 데이터의 유일한 원본이 아니라 편집을 위한 투영이다. 저장할 때 변경된 의미 모델만 해당 CHK 섹션에 반영한다.
 
-### DocumentSession
+### DocumentSession (개념 모델)
 
 ```text
 DocumentSession
@@ -274,7 +280,7 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.7.0의
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.8.0의
 `listPlacementCatalog`를 실행한다. Unit·pure Sprite와 tileset별 Doodad recipe도
 같은 operation을 사용하며, 기존 `ObjectPaletteController` template의 UI merge는
 후속 단계로 남아 있다.
@@ -309,9 +315,8 @@ M6.2의 전체 배치 목록은 `application/ports`의
 - `ObjectPlacementCatalogLoader`는 preview issue가 없는 ID만 neutral player color의
   `renderObjectAtlas`로 요청하고 설치 product/build, helper/CascLib revision과
   요청 전체 coverage를 다시 대조한다. 성공 frame의 가변 크기, anchor와 RGBA는
-  catalog stable key에 연결된다. Unit·Sprite CHK factory가 아직 없으므로 이미지
-  유무와 별개로 placement availability는 factory-pending 상태이며, 다음 factory
-  단계 전에는 popup에서 배치 가능으로 표시하지 않는다.
+  catalog stable key에 연결된다. `ObjectPlacementFactory`가 검증된 Unit/Sprite
+  레코드를 생성하며 종류별 capability·경계·레이어 잠금을 통과한 항목만 배치한다.
 - Doodad 요청은 현재 tileset의 `CV5`, `VX4EX`, `VR4`, `WPE`와 DDData를 고정
   경로로 읽는다. native decoder는 `index == 1`이고 이름 ID가 있는 CV5 시작
   group을 DDData ID와 함께 정렬하고, 1~16 타일 footprint의 sparse raw `MTXM`,
@@ -320,8 +325,9 @@ M6.2의 전체 배치 목록은 `application/ports`의
   `DoodadPlacementRecipe`로 만든다. Dart domain 모델은 모든 u16, 배열 길이,
   CV5 group/member raw 값과 overlay ID 범위를 다시 검증한다.
 - 손상 Doodad는 page 전체 실패가 아니라 `doodadRecipeIssueCode`가 있는 항목으로
-  격리한다. 검증된 recipe도 아직 `DD2 `·`MTXM`·`THG2` 원자적 command가 없으므로
-  command-pending 상태이며, 카탈로그 탐색만으로 CHK나 dirty/Undo를 바꾸지 않는다.
+  격리한다. 검증된 recipe의 `DD2 `·`MTXM`·필요한 `THG2`를 원자적으로 배치하고
+  한 번에 Undo한다. 기존 Doodad 삭제는 [ADR-0010](decisions/0010-reviewed-doodad-deletion.md)의
+  복원 정보·overlay 확인 조건을 적용한다. 탐색 자체는 CHK와 기록을 바꾸지 않는다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.
@@ -473,7 +479,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.7.0을
+렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.8.0을
 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
@@ -748,8 +754,10 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - 앱은 절대 경로의 helper를 셸 없이 실행하고 버전이 있는 UTF-8 JSON 요청을
   줄바꿈으로 끝나는 단일 stdin 레코드로 전달한다. helper는 EOF를 기다리지 않고
   첫 줄을 받은 즉시 처리한다.
-- 현재 helper는 `extractScenario`, `replaceScenario`만 제공하며 MVP에서
-  접근 가능한 항목은 정확히 `staredit\scenario.chk`다.
+- 검증된 helper 0.4.0은 `extractScenario`, `replaceScenario`, `extractSound`를
+  제공한다. CHK와 제한된 WAV 리소스 추가/삭제/추출을 처리하며
+  [리소스 관리](RESOURCE_MANAGEMENT.md)의 경로·PCM·크기 제한을 따른다.
+  작업 트리의 0.5.0 `createScenario`는 신규 MPQ 통합 중이다.
 - 바이너리 CHK는 앱 소유 요청별 임시 디렉터리의 파일로 교환한다.
 - stdout의 구조화 응답과 stderr를 동시에 소비하고 종료 코드, 프로토콜,
   최종 응답을 모두 확인한다.

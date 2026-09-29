@@ -1,5 +1,9 @@
 # 플레이어 설정
 
+주 진입점은 **Map Settings → Players** 탭이며 기존 File 메뉴도 사용할 수 있다.
+[통합 설정 UI](MAP_SETTINGS_UI.md)의 이름/ID·선택 연동 규칙을 함께 따른다.
+문서 공통 Undo/Redo와 Map Save As를 사용하며 EUD 프로젝트 저장과 구분한다.
+
 ## 현재 지원
 
 File → Player Settings에서 플레이어 1~8의 슬롯 종류, 종족, 기본 색상 ID를

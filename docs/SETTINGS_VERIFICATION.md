@@ -40,7 +40,11 @@ flutter test test/integration/object_editing_roundtrip_test.dart
 Flutter 3.47.2 / Dart 3.13.2 사용. 기준 3.44.8 / 3.12는 미검증이다.
 환경 변수가 없거나 Windows가 아니면 native MPQ 사례만 명시적으로 건너뛴다.
 
-## 실제 SC:R 적용: 미검증
+## 실제 SC:R 적용: 일부 사용자 확인, 추가 사례 대기
+
+첫 [공중 유닛 비교](SETTINGS_GAME_SMOKE.md)는 사용자 완료 보고가 있다.
+[무기·업그레이드·클로킹 비교](SETTINGS_COMBAT_SMOKE.md)와 나머지 표의 검증은 남아 있다.
+아래 합성 MPQ 저장 테스트는 게임 검증과 별개다.
 
 이 합성 맵은 저장 보존을 검증하기 위한 것이며 플레이 가능한 게임 검증 fixture가
 아니다. 아카이브 재열기 성공을 로비·게임 동작 성공으로 취급하지 않는다.

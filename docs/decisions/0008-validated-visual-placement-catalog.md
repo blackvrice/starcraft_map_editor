@@ -16,6 +16,12 @@ preview 검증과 object atlas thumbnail loader를 추가했다. 기본 CHK fact
 optional overlay가 모두 검증된 항목도 원자적 command가 완료되기 전에는
 command-pending으로 유지한다. 기존 Object Palette/UI merge는 후속 항목이다.
 
+2026-09-29 상태 주석: 위 factory/command-pending은 초기 공급 단계의 이력이다.
+현재 Unit/Sprite factory와 Doodad 복합 배치는 구현되었고 제한된 기존 Doodad
+삭제도 [ADR-0010](0010-reviewed-doodad-deletion.md)으로 연결했다. 이 ADR의
+검증된 데이터만 배치한다는 결정은 그대로 유지한다. 현행 상태는
+[개발 계획](../DEVELOPMENT_PLAN.md)의 M6.2를 따른다.
+
 ## Context
 
 현재 Object Palette는 열린 맵에 이미 있는 `UNIT`, `DD2 `, `THG2` 레코드를

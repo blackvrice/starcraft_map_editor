@@ -483,7 +483,7 @@ profile Windows 빌드를 DevTools에서 열고 `MapCanvasPainter.paint` Timelin
 기본 명령:
 
 ```powershell
-dart format --output=none --set-exit-if-changed .
+dart format --output=none --set-exit-if-changed lib test tool
 flutter analyze
 flutter test
 ```
@@ -491,6 +491,11 @@ flutter test
 네이티브 코드가 추가되면 해당 포맷터, 정적 분석, 단위 테스트를 같은 완료 게이트에 포함한다.
 
 ## 7. CI 단계
+
+현행 자동화는 [Windows CI](../.github/workflows/windows-ci.yml)가 기준이다.
+format/analyze/test, Windows debug 빌드, native CTest, 관리형 EUD 빌드/종료 및
+MPQ 스모크를 실행한다. 아래 release 빌드·문서 링크·설치/제거는 품질 목표이며
+현재 workflow의 자동 실행 항목으로 간주하지 않는다.
 
 ### 모든 커밋/PR
 

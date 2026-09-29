@@ -1,5 +1,9 @@
 # 세력 설정
 
+주 진입점은 **Map Settings → Forces** 탭이며 기존 File 메뉴도 사용할 수 있다.
+[통합 설정 UI](MAP_SETTINGS_UI.md)의 이름/ID·선택 연동 규칙을 함께 따른다.
+문서 공통 Undo/Redo와 Map Save As를 사용하며 EUD 프로젝트 저장과 구분한다.
+
 File → Force Settings에서 플레이어 1~8의 세력 배정과 세력 1~4의 이름,
 시작 위치 무작위화, 동맹, 공동 승리, 시야 공유를 편집한다. 플레이어와 세력을
 오가며 입력한 변경은 Apply로 한 명령에 적용한다. Cancel은 미적용 입력을

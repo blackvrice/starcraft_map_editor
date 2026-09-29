@@ -3,6 +3,18 @@
 2026-09-29: M6.4 생성 규칙 및 도메인 생성기 완료. **New Map 화면과 신규 MPQ
 저장은 다음 항목이며 아직 앱에서 새 맵을 생성할 수 없다.**
 
+## 통합 작업 인수인계 (2026-09-29)
+
+`bad4bab`은 아래 도메인 생성기까지만 완료한 커밋이다. 후속 작업 트리에는
+`ExtractedMap.inMemory`, nullable 원본 경로/fingerprint, `OpenMapController.createNew`,
+새 문서 Save As 분기와 helper `createScenario`(예정 버전 0.5.0)가 추가되어 있다.
+이 변경은 아직 커밋·native 검증되지 않았고 New Map UI도 연결하지 않았다.
+
+이어 할 일: 로컬 카탈로그로 검증한 초기 타일 선택 대화상자, 기존 미저장 문서
+교체 확인, 취소/실패 시 기존 세션 유지, 신규 MPQ 생성/재열기·출력 보호 테스트,
+Windows 빌드·CTest·시작 검증. 도메인 생성기의 테스트 통과를 이 통합의 검증으로
+대체하지 않는다. 작업 중인 코드를 제거하거나 신규 기능 완료로 표시하지 않는다.
+
 ## 현재 구현
 
 `NewMapOptions`와 `NewMapFactory`는 기존 맵·템플릿·파일 시스템 없이 새 CHK
