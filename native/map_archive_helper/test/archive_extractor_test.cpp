@@ -668,6 +668,30 @@ bool TestSoundChangesPreserveSourceAndOtherEntries() {
                "resource changes never modify source bytes");
 }
 
+bool TestCreatesArchiveWithoutSource() {
+  using starcraft_map_editor::archive::CreateScenario;
+  TemporaryDirectory temporary;
+  const auto scenario = temporary.path() / L"new.chk";
+  const auto output = temporary.path() / L"새 맵.scx";
+  const std::vector<std::uint8_t> bytes{86,69,82,32,2,0,0,0,205,0};
+  if (!WriteBytes(scenario, bytes)) return false;
+  const auto created = CreateScenario(scenario, output);
+  if (!Check(created.success, "create new archive without a source")) return false;
+  const auto before = ReadBytes(output);
+  const auto extracted = temporary.path() / L"reopened.chk";
+  const auto result = ExtractScenario(output, extracted);
+  if (!Check(result.success && ReadBytes(extracted) == bytes, "new archive CHK roundtrip")) return false;
+  if (!Check(!CreateScenario(scenario, output).success && ReadBytes(output) == before,
+             "new archive refuses existing MPQ")) return false;
+  const auto ordinary = temporary.path() / L"existing.scx";
+  if (!WriteBytes(ordinary, bytes)) return false;
+  if (!Check(!CreateScenario(scenario, ordinary).success && ReadBytes(ordinary) == bytes,
+             "new archive refuses ordinary existing file")) return false;
+  const auto failed = temporary.path() / L"failed.scx";
+  return Check(!CreateScenario(temporary.path() / L"missing.chk", failed).success &&
+                   !std::filesystem::exists(failed), "missing CHK leaves no output");
+}
+
 }  // namespace
 
 int wmain(const int argument_count, wchar_t* arguments[]) {
@@ -684,6 +708,7 @@ int wmain(const int argument_count, wchar_t* arguments[]) {
   }
 
   const std::array tests{
+      TestCreatesArchiveWithoutSource,
       TestExtractsScenarioWithoutChangingSource,
       TestReportsSyntheticNamesWithoutListFile,
       TestReportsMissingScenarioWithoutOutput,

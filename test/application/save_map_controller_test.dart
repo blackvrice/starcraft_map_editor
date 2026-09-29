@@ -1,3 +1,4 @@
+import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'dart:typed_data';
 import 'package:starcraft_map_editor/application/ports/map_resource_gateway.dart';
 import '../fixtures/pcm_sound_fixture.dart';
@@ -38,13 +39,13 @@ void main() {
       );
       archiveGateway = _FakeMapArchiveGateway(sourceMap);
       filePicker = _FakeMapFilePicker(
-        openPath: sourceMap.sourcePath,
+        openPath: sourceMap.sourcePath!,
         savePath: r'C:\Maps\Arena Copy.scx',
       );
       saveFileGateway = _FakeMapSaveFileGateway();
       fingerprintGateway = _FakeMapFileFingerprintGateway(
         defaultResponses: {
-          sourceMap.sourcePath: _originalFingerprint(),
+          sourceMap.sourcePath!: _originalFingerprint(),
           saveFileGateway.workspace.temporaryOutputPath: _outputFingerprint(),
         },
       );
@@ -73,6 +74,56 @@ void main() {
       await openMapController.dispose();
       await progressController.dispose();
     });
+    test('new map Save As never fingerprints a nonexistent source', () async {
+      openMapController.createNew(
+        NewMapOptions(rawTileValue: 32),
+        expectedSession: openMapController.state.session,
+      );
+      fingerprintGateway.paths.clear();
+      final result = await saveMapController.saveAs();
+      expect(result.status, SaveMapStatus.saved);
+      expect(archiveGateway.writeRequests.single.sourcePath, isNull);
+      expect(
+        fingerprintGateway.paths,
+        everyElement(saveFileGateway.workspace.temporaryOutputPath),
+      );
+      expect(openMapController.state.session!.sourcePath, filePicker.savePath);
+      expect(openMapController.state.session!.isNewMap, isFalse);
+      expect(openMapController.state.session!.isDirty, isFalse);
+      expect(filePicker.saveSuggestedNames.single, contains('Untitled'));
+    });
+    for (final failure in ['write', 'verify', 'promote', 'extension']) {
+      test('new map $failure failure preserves unsaved session', () async {
+        final session = openMapController
+            .createNew(
+              NewMapOptions(rawTileValue: 32),
+              expectedSession: openMapController.state.session,
+            )
+            .session!;
+        if (failure == 'write') {
+          archiveGateway.writeFailure = EditorDiagnostic(
+            code: 'FAIL',
+            severity: DiagnosticSeverity.error,
+            message: 'failed',
+            stage: DiagnosticStage.save,
+          );
+        }
+        if (failure == 'verify') {
+          archiveGateway.verifiedChkBytes = _validChkBytes();
+        }
+        if (failure == 'promote') {
+          saveFileGateway.promotionError = StateError('failed');
+        }
+        final result = await saveMapController.saveAs(
+          destinationPath: failure == 'extension' ? r'C:\Maps\wrong.scm' : null,
+        );
+        expect(result.status, SaveMapStatus.failed);
+        expect(openMapController.state.session, same(session));
+        expect(session.isDirty, isTrue);
+        expect(saveFileGateway.promotedDestination, isNull);
+      });
+    }
+
     test(
       'invalid briefing text reference stops before archive writing',
       () async {
@@ -196,7 +247,7 @@ void main() {
         expect(archiveGateway.writeRequests, hasLength(1));
         expect(
           archiveGateway.writeRequests.single.sourcePath,
-          sourceMap.sourcePath,
+          sourceMap.sourcePath!,
         );
         expect(
           archiveGateway.writeRequests.single.temporaryOutputPath,
@@ -232,11 +283,11 @@ void main() {
           64 * 96,
         );
         expect(fingerprintGateway.paths, [
-          sourceMap.sourcePath,
-          sourceMap.sourcePath,
-          sourceMap.sourcePath,
+          sourceMap.sourcePath!,
+          sourceMap.sourcePath!,
+          sourceMap.sourcePath!,
           saveFileGateway.workspace.temporaryOutputPath,
-          sourceMap.sourcePath,
+          sourceMap.sourcePath!,
         ]);
         expect(progressController.current!.phase, OperationPhase.succeeded);
         expect(
@@ -296,7 +347,7 @@ void main() {
 
     test('refuses to overwrite the current source path', () async {
       final state = await saveMapController.saveAs(
-        destinationPath: sourceMap.sourcePath.toLowerCase(),
+        destinationPath: sourceMap.sourcePath!.toLowerCase(),
         replaceExisting: true,
       );
 
@@ -307,7 +358,10 @@ void main() {
       );
       expect(archiveGateway.writeRequests, isEmpty);
       expect(saveFileGateway.createWorkspaceCount, 0);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
     });
 
     test('refuses an existing destination without changing it', () async {
@@ -395,7 +449,7 @@ void main() {
         expect(saveFileGateway.cleanupCount, 1);
         expect(
           openMapController.state.session!.sourcePath,
-          sourceMap.sourcePath,
+          sourceMap.sourcePath!,
         );
         expect(progressController.current!.phase, OperationPhase.failed);
       },
@@ -433,7 +487,10 @@ void main() {
         SaveMapDiagnosticCodes.promotionFailed,
       );
       expect(saveFileGateway.cleanupCount, 1);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
     });
 
     test('does not replace a destination changed during Save As', () async {
@@ -458,7 +515,10 @@ void main() {
       );
       expect(saveFileGateway.promotedDestination, isNull);
       expect(saveFileGateway.cleanupCount, 1);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
     });
 
     test('does not replace a destination created during Save As', () async {
@@ -502,11 +562,14 @@ void main() {
       );
       expect(state.diagnostics.single.filePath, backupPath);
       expect(saveFileGateway.cleanupCount, 1);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
     });
 
     test('stops before writing when the opened source changed', () async {
-      fingerprintGateway.defaultResponses[sourceMap.sourcePath] =
+      fingerprintGateway.defaultResponses[sourceMap.sourcePath!] =
           _changedFingerprint();
 
       final state = await saveMapController.saveAs(
@@ -521,11 +584,14 @@ void main() {
       expect(saveFileGateway.createWorkspaceCount, 0);
       expect(archiveGateway.writeRequests, isEmpty);
       expect(saveFileGateway.promotedDestination, isNull);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
     });
 
     test('does not promote when the source changes during Save As', () async {
-      fingerprintGateway.script(sourceMap.sourcePath, [
+      fingerprintGateway.script(sourceMap.sourcePath!, [
         _originalFingerprint(),
         _changedFingerprint(),
       ]);
@@ -542,14 +608,17 @@ void main() {
       expect(archiveGateway.writeRequests, hasLength(1));
       expect(saveFileGateway.promotedDestination, isNull);
       expect(saveFileGateway.cleanupCount, 1);
-      expect(openMapController.state.session!.sourcePath, sourceMap.sourcePath);
+      expect(
+        openMapController.state.session!.sourcePath,
+        sourceMap.sourcePath!,
+      );
       expect(progressController.current!.phase, OperationPhase.failed);
     });
 
     test(
       'does not promote when the source disappears during Save As',
       () async {
-        fingerprintGateway.script(sourceMap.sourcePath, [
+        fingerprintGateway.script(sourceMap.sourcePath!, [
           _originalFingerprint(),
           StateError('source file disappeared'),
         ]);
@@ -568,7 +637,7 @@ void main() {
         expect(saveFileGateway.cleanupCount, 1);
         expect(
           openMapController.state.session!.sourcePath,
-          sourceMap.sourcePath,
+          sourceMap.sourcePath!,
         );
       },
     );
@@ -595,7 +664,7 @@ class _FakeMapArchiveGateway
   @override
   Future<MapArchiveOpenResult> open(MapArchiveOpenRequest request) async {
     openRequests.add(request);
-    if (request.sourcePath == sourceMap.sourcePath) {
+    if (request.sourcePath == sourceMap.sourcePath!) {
       return MapArchiveOpenResult.success(map: sourceMap);
     }
     final chkBytes =

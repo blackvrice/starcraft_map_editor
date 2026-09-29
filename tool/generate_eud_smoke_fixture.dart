@@ -6,7 +6,7 @@ import 'package:crypto/crypto.dart';
 
 const _mapWidth = 32;
 const _mapHeight = 32;
-const _helperVersion = '0.4.0';
+const _helperVersion = '0.5.0';
 const _stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
 
 Future<void> main(List<String> arguments) => generateMapFixture(arguments);

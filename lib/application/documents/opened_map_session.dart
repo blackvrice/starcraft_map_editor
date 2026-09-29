@@ -16,7 +16,11 @@ class OpenedMapSession {
     required Iterable<EditorDiagnostic> diagnostics,
     Map<String, List<int>?> resourceEdits = const {},
   }) : resourceEdits = PendingMapResources(resourceEdits),
-       diagnostics = List.unmodifiable(diagnostics);
+       diagnostics = List.unmodifiable(diagnostics) {
+    if ((extractedMap.sourcePath == null) != (sourceFingerprint == null)) {
+      throw ArgumentError('Only a new map may omit its source fingerprint.');
+    }
+  }
 
   final Map<String, List<int>?> resourceEdits;
 
@@ -26,16 +30,19 @@ class OpenedMapSession {
   final ChkStringViews stringViews;
   final ChkTerrainViews terrainViews;
   final ChkObjectViews objectViews;
-  final MapFileFingerprint sourceFingerprint;
+  final MapFileFingerprint? sourceFingerprint;
   final List<EditorDiagnostic> diagnostics;
 
-  String get sourcePath => extractedMap.sourcePath;
+  bool get isNewMap => extractedMap.sourcePath == null;
+
+  String? get sourcePath => extractedMap.sourcePath;
 
   MapArchiveMetadata get archiveMetadata => extractedMap.metadata;
 
   int get scenarioChkSizeBytes => extractedMap.scenarioChkBytes.length;
 
-  bool get isDirty => rawDocument.isDirty || resourceEdits.isNotEmpty;
+  bool get isDirty =>
+      isNewMap || rawDocument.isDirty || resourceEdits.isNotEmpty;
 
   bool get requiresRestrictedEditing =>
       diagnostics.any((diagnostic) => diagnostic.blocksOperation);

@@ -176,16 +176,19 @@ class ObjectEditingController {
       return session.resourceEdits[path] ??
           (throw StateError('Sound is deleted.'));
     }
+    if (session.isNewMap) {
+      throw StateError('The sound is not stored in this new map.');
+    }
     if (resourceGateway == null) throw StateError('Sound gateway unavailable.');
     final before = await openMapController.fingerprintGateway.fingerprint(
-      session.sourcePath,
+      session.sourcePath!,
     );
-    if (before.sha256Digest != session.sourceFingerprint.sha256Digest) {
+    if (before.sha256Digest != session.sourceFingerprint!.sha256Digest) {
       throw StateError('Source map changed on disk.');
     }
-    final bytes = await resourceGateway!.readSound(session.sourcePath, path);
+    final bytes = await resourceGateway!.readSound(session.sourcePath!, path);
     final after = await openMapController.fingerprintGateway.fingerprint(
-      session.sourcePath,
+      session.sourcePath!,
     );
     if (!identical(session, openMapController.state.session) ||
         before.sha256Digest != after.sha256Digest) {

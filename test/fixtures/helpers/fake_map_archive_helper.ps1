@@ -10,7 +10,7 @@ $baseResponse = [ordered]@{
     protocolVersion = 1
     requestId = [string]$request.requestId
     operation = [string]$request.operation
-    helperVersion = '0.4.0'
+    helperVersion = '0.5.0'
     stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a'
 }
 

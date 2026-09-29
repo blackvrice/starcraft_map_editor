@@ -72,8 +72,8 @@ final class EudProjectWorkspace {
     final session = await _verifiedMap();
     if (!projects.create(
       EudProject(
-        mapPath: session.sourcePath,
-        mapSha256: session.sourceFingerprint.sha256Digest,
+        mapPath: session.sourcePath!,
+        mapSha256: session.sourceFingerprint!.sha256Digest,
       ),
       discardChanges: discardChanges,
     )) {
@@ -85,8 +85,8 @@ final class EudProjectWorkspace {
   Future<void> rebind() => _run(() async {
     final session = await _verifiedMap();
     projects.rebindMap(
-      mapPath: session.sourcePath,
-      mapSha256: session.sourceFingerprint.sha256Digest,
+      mapPath: session.sourcePath!,
+      mapSha256: session.sourceFingerprint!.sha256Digest,
     );
     _binding = EudMapBinding.matched;
   });
@@ -96,8 +96,8 @@ final class EudProjectWorkspace {
     final project = projects.project;
     _binding =
         project != null &&
-            _normalize(project.mapPath) == _normalize(session.sourcePath) &&
-            project.mapSha256 == session.sourceFingerprint.sha256Digest
+            _normalize(project.mapPath) == _normalize(session.sourcePath!) &&
+            project.mapSha256 == session.sourceFingerprint!.sha256Digest
         ? EudMapBinding.matched
         : EudMapBinding.mismatch;
   });
@@ -132,7 +132,7 @@ final class EudProjectWorkspace {
     }
     final generation = _generation;
     final current = await maps.fingerprintGateway.fingerprint(
-      session.sourcePath,
+      session.sourcePath!,
     );
     if (_disposed ||
         generation != _generation ||

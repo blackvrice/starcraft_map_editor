@@ -17,7 +17,7 @@ using json = nlohmann::json;
 
 constexpr std::int32_t kProtocolVersion = 1;
 constexpr std::size_t kMaximumRequestBytes = 64 * 1024;
-constexpr char kHelperVersion[] = "0.4.0";
+constexpr char kHelperVersion[] = "0.5.0";
 constexpr char kStormLibRevision[] =
     "c91595a1a1b7b515567bd62a60af066914a29a6a";
 
@@ -120,8 +120,7 @@ int main() {
         !request.contains("protocolVersion") ||
         !request["protocolVersion"].is_number_integer() ||
         !IsNonEmptyString(request, "requestId") ||
-        !IsNonEmptyString(request, "operation") ||
-        !IsNonEmptyString(request, "sourcePath")) {
+        !IsNonEmptyString(request, "operation")) {
       return WriteError(
           "",
           "",
@@ -146,7 +145,7 @@ int main() {
           2);
     }
     if (operation != "extractScenario" && operation != "replaceScenario" &&
-        operation != "extractSound") {
+        operation != "extractSound" && operation != "createScenario") {
       return WriteError(
           request_id,
           operation,
@@ -167,9 +166,15 @@ int main() {
           2);
     }
 
-    const auto source_path = std::filesystem::u8path(
-        request["sourcePath"].get<std::string>());
-    if (!source_path.is_absolute()) {
+    const bool create_new = operation == "createScenario";
+    if ((!create_new && !IsNonEmptyString(request, "sourcePath")) ||
+        (create_new && request.contains("sourcePath")))
+      return WriteError(request_id, operation, "ARCHIVE_PROTOCOL_INVALID_REQUEST",
+          "Source path is required only for existing archive operations.",
+          "validate", ERROR_INVALID_PARAMETER, 2);
+    const auto source_path = create_new ? std::filesystem::path{} :
+        std::filesystem::u8path(request["sourcePath"].get<std::string>());
+    if (!create_new && !source_path.is_absolute()) {
       return WriteError(
           request_id,
           operation,
@@ -340,8 +345,9 @@ int main() {
         resources.push_back(resource);
       }
     }
-    const auto result = starcraft_map_editor::archive::ReplaceScenario(
-        source_path, scenario_input_path, archive_output_path, resources);
+    const auto result = create_new
+        ? starcraft_map_editor::archive::CreateScenario(scenario_input_path, archive_output_path, resources)
+        : starcraft_map_editor::archive::ReplaceScenario(source_path, scenario_input_path, archive_output_path, resources);
     if (!result.success) {
       return WriteError(
           request_id,

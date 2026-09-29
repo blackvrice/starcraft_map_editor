@@ -1,25 +1,46 @@
 # 새 맵 생성 정책과 CHK 생성기
 
-2026-09-29: M6.4 생성 규칙 및 도메인 생성기 완료. **New Map 화면과 신규 MPQ
-저장은 다음 항목이며 아직 앱에서 새 맵을 생성할 수 없다.**
+2026-09-29: New Map UI → 원본 없는 메모리 문서 → 신규 MPQ Save As → 재열기까지
+연결했다. 기존 맵을 복제하지 않는다. 최종 helper의 native 테스트와 실제 MPQ
+저장·재열기 검증을 통과했으며 실제 게임/외부 에디터 인수는 별도다.
 
-## 통합 작업 인수인계 (2026-09-29)
+## 사용 방법
 
-`bad4bab`은 아래 도메인 생성기까지만 완료한 커밋이다. 후속 작업 트리에는
-`ExtractedMap.inMemory`, nullable 원본 경로/fingerprint, `OpenMapController.createNew`,
-새 문서 Save As 분기와 helper `createScenario`(예정 버전 0.5.0)가 추가되어 있다.
-이 변경은 아직 커밋·native 검증되지 않았고 New Map UI도 연결하지 않았다.
+1. **File → New Map…** 또는 **Ctrl+N**을 누른다.
+2. 제목·설명, 가로/세로(32~256, 32의 배수), Human 수(1~8), 타일셋을 선택한다.
+3. 로컬 StarCraft Data Assets의 카탈로그에서 초기 raw 타일 썸네일을 선택한다.
+   Previous/Next로 페이지를 이동한다. 설치가 없거나 타일 렌더 검증이 실패하면
+   Settings에서 설치를 준비하고 Reload tiles로 재시도한다. 임의 숫자 기본값은 없다.
+4. Create로 문서를 만든다. 기존 문서가 dirty면 Discard and create 확인이 필요하다.
+   Keep current map/Cancel, 잘못된 입력, 문서·자산 변경은 기존 세션을 유지한다.
+5. Save As로 새 `.scx` 경로를 선택한다. 성공 후 저장 경로·fingerprint가 있는
+   일반 세션이 되고 Open Map으로 다시 열 수 있다. 생성만 하면 디스크 파일은 없다.
 
-이어 할 일: 로컬 카탈로그로 검증한 초기 타일 선택 대화상자, 기존 미저장 문서
-교체 확인, 취소/실패 시 기존 세션 유지, 신규 MPQ 생성/재열기·출력 보호 테스트,
-Windows 빌드·CTest·시작 검증. 도메인 생성기의 테스트 통과를 이 통합의 검증으로
-대체하지 않는다. 작업 중인 코드를 제거하거나 신규 기능 완료로 표시하지 않는다.
+새 문서는 항상 미저장 상태이며 `sourcePath`와 `sourceFingerprint`는 모두 null이다.
+가짜 경로/해시를 만들지 않는다. 기존 사운드는 없지만 Resources에서 가져온 보류
+WAV는 첫 Save As에 함께 저장한다. EUD 프로젝트 연결/빌드는 먼저 맵을 저장해야 한다.
+New Map과 Save As 후 이전 맵의 공통 Undo 기록은 초기화된다.
+
+## 계층과 보호 경계
+
+- `NewMapController`는 대화상자 시작 시 문서 snapshot과 최신 검증된 타일 페이지를
+  보관한다. 설치/페이지/문서 변경, 닫힌 컨트롤러, 미검증 타일은 생성에 사용할 수 없다.
+- UI는 `TilePlacementCatalogLoader`를 통해 로컬 카탈로그·아틀라스 포트를 사용한다.
+  UI에서 파일·CASC·MPQ를 직접 읽지 않는다. 썸네일/게임 자산을 저장소에 넣지 않는다.
+- MPQ helper **0.5.0**, protocol 1의 `createScenario`는 `sourcePath` 키를 받지 않는다.
+  `MapArchiveWriteRequest.sourcePath == null`인 경우에만 이 연산을 요청한다.
+  기존 파일이 있으면 거부하고 CREATE_NEW로 임시 경로를 확보한 뒤 MPQ v1을 생성한다.
+- Save As는 대상 확인 → 임시 MPQ 생성 → CHK 전체 바이트/보류 WAV 재검증 → 대상
+  외부 변경·문서 snapshot 재확인 → 승격 → 저장 세션 채택 순서를 따른다.
+  원본 없는 문서의 source fingerprint 조회는 생략하지만 출력 검증은 생략하지 않는다.
+- 실패/취소 시 미저장 문서와 보류 리소스를 유지한다. 기존 목적지 교체는 기존
+  Save As의 명시적 확인·해시·백업·복원 규칙을 따르며 입력 맵 덮어쓰기는 여전히 금지한다.
 
 ## 현재 구현
 
 `NewMapOptions`와 `NewMapFactory`는 기존 맵·템플릿·파일 시스템 없이 새 CHK
 문서를 만든다. 입력이나 생성이 실패하면 기존 문서를 변경하지 않는다. 생성된
-섹션은 모두 dirty다. 성공한 저장 뒤 clean 상태로 전환하는 책임은 다음 단계의
+섹션은 모두 dirty다. 성공한 저장 뒤 clean 상태로 전환하는 책임은
 문서 세션에 있으며, 생성기가 디스크 파일이나 가짜 원본 경로를 만들지 않는다.
 
 | 항목 | 최초 지원 정책 |
@@ -39,8 +60,8 @@ Windows 빌드·CTest·시작 검증. 도메인 생성기의 테스트 통과를
 | 생산/연구 | PUNI 허용/상속=1, PUPx 시작 레벨=0/표준 최대 레벨, PTEx 표준 연구 상태와 플레이어 상속 |
 
 초기 타일 번호의 숫자 범위와 로컬 게임 자산 검증은 별개다. 도메인 생성기는
-0~65535만 검사한다. UI 연결 시 해당 타일셋의 CV5 범위·렌더 성공을 검증한
-카탈로그 타일만 선택하도록 해야 한다. 시작 위치의 좌표 범위·소유자·중복은
+0~65535만 검사한다. UI는 해당 타일셋의 CV5 범위·렌더 성공을 검증한
+카탈로그 타일만 선택하도록 제한한다. 시작 위치의 좌표 범위·소유자·중복은
 검사하지만 지형의 보행 가능성은 아직 보장하지 않는다.
 
 ISOM은 생성하지 않는다. 등각 지형 생성/전환 기능이 준비되기 전에는 이 경로를
@@ -70,18 +91,12 @@ WAV  SWNM COLR PUPx PTEx UNIx UPGx TECx
 - 출력은 `RawChkEncoder`로 인코딩하고 `RawChkParser` 및 기존 typed decoder로
   다시 읽을 수 있다. VCOD golden SHA-256과 모든 생성 결과의 바이트 왕복을 검증한다.
 
-## 다음 항목의 연결 계약
+## 남은 인수와 제한
 
-1. New Map 대화상자에서 크기·타일셋·검증된 초기 raw 타일·플레이어 수·제목을
-   입력한다. 취소/오류/미저장 변경 확인 취소는 기존 문서와 기록을 유지한다.
-2. `OpenedMapSession`에 원본 파일이 없는 상태를 명시적으로 추가한다. 없는
-   파일의 fingerprint를 만들거나 기존 맵을 복제해 새 문서처럼 표시하지 않는다.
-3. MPQ 포트와 helper에 신규 아카이브 생성 연산을 추가한다. 기존 파일 교체 연산과
-   구분하고 버전·로그·취소·출력 검증 계약을 유지한다.
-4. Save As는 신규 MPQ 임시 출력 → CHK/리소스 재검증 → 승격 → 새 세션 채택을
-   수행한다. 실패하면 미저장 문서를 유지하고 목적지 파일을 손상하지 않는다.
-5. 실제 MPQ 신규 생성/재열기, 시작 위치·플레이어·타일 검증, 외부 에디터 및
-   SC:R 실행을 별도로 확인한다. 생성기 단위 테스트는 게임 인수 검증을 대체하지 않는다.
+실제 SC:R에서 로비/시작 위치/플레이어/타일 표시와 외부 에디터 왕복을 확인해야
+한다. 기본 트리거가 비어 있으므로 자동 자원·승패·일꾼 생성은 없다. ISOM·등각
+지형/경사로·초기 타일 보행 가능성 보장은 범위 밖이며 게임 실행 성공을 약속하지 않는다.
+기존 맵 resize와 타일셋 변환은 이 대화상자의 기능이 아니다.
 
 ## 조사 근거와 제품 결정
 
@@ -97,9 +112,41 @@ WAV  SWNM COLR PUPx PTEx UNIx UPGx TECx
 `test/domain/chk/new_map_factory_test.dart`에서 결정성, dirty 상태, 바이트 왕복,
 기존 설정 편집기로의 읽기, 문자열·객체 참조, 플레이어 시작 위치, 8개 타일셋,
 직사각형과 최소/최대 크기, 잘못된 입력/초과 문자열 거부를 검증한다.
-새 맵 UI·새 MPQ 생성·실제 게임 검증은 이 단계의 구현에 포함되지 않는다.
+UI/세션·native 생성의 후속 검증은 아래 기록이며 실제 게임 검증은 별도다.
 
-2026-09-29 실행 결과: 생성기 10개 포함 전체 774개 통과(선택 환경 27개 skip),
+2026-09-29 최초 도메인 단계 실행 결과: 생성기 10개 포함 전체 774개 통과(선택 환경 27개 skip),
 `flutter analyze` 통과. Flutter 3.47.2 / Dart 3.13.2로 검증했으며 기준 SDK는
 3.44.8 / 3.12다. 변경 파일 format은 통과했고 전체 format은 기존 무관한
 infrastructure 테스트 4개의 차이로 실패했다.
+
+### UI·신규 MPQ 통합 검증 (2026-09-29)
+
+- 생성 컨트롤러: 미검증/이전 페이지/설치 변경/늦은 결과/폐기된 선택 거부, 원본 I/O 없음.
+- 위젯: 타일 선택 전 Create 비활성, 미저장 교체 확인의 취소/수락과 창 닫기.
+- Save As: source fingerprint 조회 생략, 성공 시 저장 세션 채택, 쓰기/재검증/
+  승격/확장자 실패 시 미저장 상태 보존.
+- 초기 0.5.0 빌드의 실제 MPQ 통합 테스트 1개 통과: 8개 타일셋·32×64·8명·
+  한글 경로·자체 제작 PCM WAV, 취소/재열기·CHK 전체 일치·기존 출력 바이트 보존.
+- 전체 Dart 테스트 784개 통과/28개 선택 환경 skip. analyze 무이슈,
+  변경 Dart 16개 format 통과. 전체 format은 기존 무관한 infrastructure 테스트
+  4개의 차이로 미통과다. Flutter 3.47.2/Dart 3.13.2 사용(기준 3.44.8/3.12 별도).
+- 최종 Windows debug 빌드와 앱 4초 시작 통과. native 아카이브 테스트 타깃도
+  명시적 빌드 성공. 기존 CascLib CMake 최소 버전 경고는 남아 있다.
+- 최종 native CTest 5개 모두 통과. 최종 helper의 신규/기존 MPQ 저장·재열기와
+  번들 helper 통합 테스트 5개 모두 통과했다.
+- 처음에는 Windows 앱 제어 정책(4551)으로 새 실행 파일이 차단되었다.
+  사용자가 Smart App Control 설정을 변경했다고 알린 후 동일한 최종 바이너리로
+  위 검증을 재실행해 통과했다. 에이전트가 보안 설정을 변경하지는 않았다.
+
+실제 helper 검증 재현 명령:
+
+```powershell
+ctest --test-dir build/windows/x64 -C Debug --output-on-failure
+$env:MAP_ARCHIVE_HELPER_PATH = (Resolve-Path 'build/windows/x64/runner/Debug/map_archive_helper.exe').Path
+$env:MAP_ARCHIVE_TEST_MAP = (Resolve-Path 'test/fixtures/maps/generated/minimal-self-authored.scx').Path
+flutter test test/integration/new_map_roundtrip_test.dart test/integration/object_editing_roundtrip_test.dart test/infrastructure/bundled_map_archive_helper_test.dart
+```
+
+게임/외부 에디터 실행과 정상 로컬 자산으로 새 대화상자를 직접 조작하는 검증은
+이번에 수행하지 않았다. 초기 타일을 선택할 수 있다는 사실이 보행 가능성·ISOM
+상호 운용·플레이 가능한 승패/자원 트리거를 자동 보장하지 않는다.

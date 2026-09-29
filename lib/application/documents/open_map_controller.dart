@@ -11,6 +11,7 @@ import '../ports/map_file_fingerprint_gateway.dart';
 import '../recent_projects/recent_projects_service.dart';
 import 'opened_map_session.dart';
 import 'map_edit_history.dart';
+import '../../domain/chk/new_map_factory.dart';
 
 abstract final class OpenMapDiagnosticCodes {
   static const fileSelectionFailed = 'OPEN_MAP_FILE_SELECTION_FAILED';
@@ -108,6 +109,54 @@ class OpenMapController {
   OpenMapState get state => _state;
 
   Stream<OpenMapState> get changes => _changes.stream;
+
+  OpenMapState createNew(
+    NewMapOptions options, {
+    required OpenedMapSession? expectedSession,
+  }) {
+    final progress = operationProgressController.current;
+    if (_isOpening ||
+        (progress != null && !progress.isTerminal) ||
+        editHistory.isTransactionActive ||
+        !identical(expectedSession, _state.session)) {
+      throw StateError('The document changed or an operation is still active.');
+    }
+    final document = const NewMapFactory().create(options);
+    final metadata = metadataViewDecoder.decode(document);
+    final strings = stringViewDecoder.decode(document);
+    final terrain = terrainViewDecoder.decode(document);
+    final objects = objectViewDecoder.decode(document);
+    final diagnostics = [
+      ...metadata.diagnostics,
+      ...strings.diagnostics,
+      ...terrain.diagnostics,
+      ...objects.diagnostics,
+      ...objectReferenceValidator.validate(
+        metadataViews: metadata,
+        stringViews: strings,
+        objectViews: objects,
+      ),
+      ...const ChkPlayerSettingsEditor().diagnostics(document),
+    ];
+    if (diagnostics.any((d) => d.blocksOperation)) {
+      throw StateError('New map validation failed.');
+    }
+    final session = OpenedMapSession(
+      extractedMap: ExtractedMap.inMemory(
+        scenarioChkBytes: const RawChkEncoder().encode(document),
+      ),
+      rawDocument: document,
+      metadataViews: metadata,
+      stringViews: strings,
+      terrainViews: terrain,
+      objectViews: objects,
+      sourceFingerprint: null,
+      diagnostics: diagnostics,
+    );
+    return _emit(
+      OpenMapState.opened(openedSession: session, diagnostics: diagnostics),
+    );
+  }
 
   Future<OpenMapState> open({String? sourcePath}) async {
     if (_isOpening) {
@@ -370,7 +419,7 @@ class OpenMapController {
     final diagnostics = [...session.diagnostics];
     try {
       await recentProjectsService.recordOpened(
-        session.sourcePath,
+        session.sourcePath!,
         openedAt: _clock(),
       );
     } on Object catch (error) {

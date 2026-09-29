@@ -512,10 +512,10 @@ ExtractResult ExtractScenario(
   return result;
 }
 
-ReplaceResult ReplaceScenario(const std::filesystem::path& source_archive_path,
+static ReplaceResult WriteScenario(const std::filesystem::path& source_archive_path,
                               const std::filesystem::path& scenario_input_path,
                               const std::filesystem::path& archive_output_path,
-                              const std::vector<ResourceChange>& resources) {
+                              const std::vector<ResourceChange>& resources, bool create_new) {
   if (resources.size() > 64)
     return ReplaceFailure("ARCHIVE_RESOURCE_LIMIT",
                           "Too many resource changes.", "validate",
@@ -538,7 +538,7 @@ ReplaceResult ReplaceScenario(const std::filesystem::path& source_archive_path,
                               "validate", ERROR_INVALID_DATA);
     }
   }
-  if (!source_archive_path.is_absolute() ||
+  if ((!create_new && !source_archive_path.is_absolute()) ||
       !scenario_input_path.is_absolute() ||
       !archive_output_path.is_absolute()) {
     return ReplaceFailure(
@@ -549,34 +549,36 @@ ReplaceResult ReplaceScenario(const std::filesystem::path& source_archive_path,
   }
 
   std::error_code file_error;
-  const auto canonical_source =
-      std::filesystem::weakly_canonical(source_archive_path, file_error);
-  if (file_error) {
-    return ReplaceFailure(
-        "ARCHIVE_SOURCE_PATH_CHECK_FAILED",
-        "The source archive path could not be resolved.",
-        "validate",
-        static_cast<DWORD>(file_error.value()));
-  }
-  const auto canonical_output =
-      std::filesystem::weakly_canonical(archive_output_path, file_error);
-  if (file_error) {
-    return ReplaceFailure(
-        "ARCHIVE_OUTPUT_PATH_CHECK_FAILED",
-        "The archive output path could not be resolved.",
-        "validate",
-        static_cast<DWORD>(file_error.value()));
-  }
-  if (_wcsicmp(
-          canonical_source.c_str(),
-          canonical_output.c_str()) == 0) {
-    return ReplaceFailure(
-        "ARCHIVE_SOURCE_OUTPUT_SAME",
-        "The source and temporary output paths must differ.",
-        "validate",
-        ERROR_INVALID_PARAMETER);
-  }
+  if (!create_new) {
+    const auto canonical_source =
+        std::filesystem::weakly_canonical(source_archive_path, file_error);
+    if (file_error) {
+      return ReplaceFailure(
+          "ARCHIVE_SOURCE_PATH_CHECK_FAILED",
+          "The source archive path could not be resolved.",
+          "validate",
+          static_cast<DWORD>(file_error.value()));
+    }
+    const auto canonical_output =
+        std::filesystem::weakly_canonical(archive_output_path, file_error);
+    if (file_error) {
+      return ReplaceFailure(
+          "ARCHIVE_OUTPUT_PATH_CHECK_FAILED",
+          "The archive output path could not be resolved.",
+          "validate",
+          static_cast<DWORD>(file_error.value()));
+    }
+    if (_wcsicmp(
+            canonical_source.c_str(),
+            canonical_output.c_str()) == 0) {
+      return ReplaceFailure(
+          "ARCHIVE_SOURCE_OUTPUT_SAME",
+          "The source and temporary output paths must differ.",
+          "validate",
+          ERROR_INVALID_PARAMETER);
+    }
 
+  }
   if (std::filesystem::exists(archive_output_path, file_error)) {
     return ReplaceFailure(
         "ARCHIVE_OUTPUT_ALREADY_EXISTS",
@@ -609,26 +611,50 @@ ReplaceResult ReplaceScenario(const std::filesystem::path& source_archive_path,
         ERROR_FILE_TOO_LARGE);
   }
 
-  if (!std::filesystem::copy_file(
-          source_archive_path,
-          archive_output_path,
-          std::filesystem::copy_options::none,
-          file_error)) {
-    const DWORD native_error =
-        file_error
-            ? static_cast<DWORD>(file_error.value())
-            : ERROR_WRITE_FAULT;
-    if (native_error != ERROR_FILE_EXISTS &&
-        native_error != ERROR_ALREADY_EXISTS) {
+  if (create_new) {
+    // Reserve exactly our output. StormLib may otherwise append to an existing
+    // non-MPQ file, so an existence check alone is insufficient.
+    HANDLE reserved = CreateFileW(archive_output_path.c_str(), GENERIC_WRITE,
+        0, nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (reserved == INVALID_HANDLE_VALUE)
+      return ReplaceFailure("ARCHIVE_OUTPUT_ALREADY_EXISTS",
+          "Cannot reserve new archive output.", "create", GetLastError());
+    CloseHandle(reserved);
+    HANDLE created = nullptr;
+    if (!SFileCreateArchive(archive_output_path.c_str(),
+          MPQ_CREATE_ARCHIVE_V1 | MPQ_CREATE_LISTFILE, 128, &created)) {
+      const auto error = GetLastError();
       RemovePartialOutput(archive_output_path);
+      return ReplaceFailure("ARCHIVE_CREATE_FAILED", "Cannot create MPQ archive.", "create", error);
     }
-    return ReplaceFailure(
-        "ARCHIVE_SOURCE_COPY_FAILED",
-        "The source archive could not be copied to temporary output.",
-        "copy",
-        native_error);
-  }
+    if (!SFileCloseArchive(created)) {
+      const auto error = GetLastError();
+      RemovePartialOutput(archive_output_path);
+      return ReplaceFailure("ARCHIVE_CREATE_FAILED",
+                            "Cannot finalize new MPQ archive.", "create", error);
+    }
+  } else {
+    if (!std::filesystem::copy_file(
+            source_archive_path,
+            archive_output_path,
+            std::filesystem::copy_options::none,
+            file_error)) {
+      const DWORD native_error =
+          file_error
+              ? static_cast<DWORD>(file_error.value())
+              : ERROR_WRITE_FAULT;
+      if (native_error != ERROR_FILE_EXISTS &&
+          native_error != ERROR_ALREADY_EXISTS) {
+        RemovePartialOutput(archive_output_path);
+      }
+      return ReplaceFailure(
+          "ARCHIVE_SOURCE_COPY_FAILED",
+          "The source archive could not be copied to temporary output.",
+          "copy",
+          native_error);
+    }
 
+  }
   const DWORD output_attributes =
       GetFileAttributesW(archive_output_path.c_str());
   if (output_attributes == INVALID_FILE_ATTRIBUTES ||
@@ -755,6 +781,17 @@ bool IsSoundPath(const std::string& path) {
     }
   }
   return !segment.empty();
+}
+
+ReplaceResult ReplaceScenario(const std::filesystem::path& source,
+    const std::filesystem::path& scenario, const std::filesystem::path& output,
+    const std::vector<ResourceChange>& resources) {
+  return WriteScenario(source, scenario, output, resources, false);
+}
+
+ReplaceResult CreateScenario(const std::filesystem::path& scenario,
+    const std::filesystem::path& output, const std::vector<ResourceChange>& resources) {
+  return WriteScenario({}, scenario, output, resources, true);
 }
 
 ReplaceResult ExtractSound(const std::filesystem::path& source,

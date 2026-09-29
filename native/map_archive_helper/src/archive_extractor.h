@@ -69,6 +69,10 @@ ExtractResult ExtractScenario(
     const std::filesystem::path& source_archive_path,
     const std::filesystem::path& scenario_output_path);
 
+ReplaceResult CreateScenario(const std::filesystem::path& scenario_input_path,
+                            const std::filesystem::path& archive_output_path,
+                            const std::vector<ResourceChange>& resources = {});
+
 ReplaceResult ReplaceScenario(
     const std::filesystem::path& source_archive_path,
     const std::filesystem::path& scenario_input_path,

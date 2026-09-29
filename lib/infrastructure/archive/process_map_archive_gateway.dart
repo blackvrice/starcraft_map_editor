@@ -147,7 +147,7 @@ class ProcessMapArchiveGateway
   }
 
   static const protocolVersion = 1;
-  static const helperVersion = '0.4.0';
+  static const helperVersion = '0.5.0';
   static const stormLibRevision = 'c91595a1a1b7b515567bd62a60af066914a29a6a';
   static const maximumListedArchiveEntries = 1024;
 
@@ -391,11 +391,13 @@ class ProcessMapArchiveGateway
   Future<MapArchiveWriteResult> writeTemporary(
     MapArchiveWriteRequest request,
   ) async {
-    if (!_isAbsoluteWindowsPath(request.sourcePath)) {
+    final sourcePath = request.sourcePath;
+    final operation = sourcePath == null ? 'createScenario' : 'replaceScenario';
+    if (sourcePath != null && !_isAbsoluteWindowsPath(sourcePath)) {
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.invalidSourcePath,
         message: 'The source map path must be an absolute Windows path.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Open the source map again using the Open Map dialog.',
       );
     }
@@ -407,11 +409,12 @@ class ProcessMapArchiveGateway
         remediation: 'Create the Save As workspace again.',
       );
     }
-    if (_sameWindowsPath(request.sourcePath, request.temporaryOutputPath)) {
+    if (sourcePath != null &&
+        _sameWindowsPath(sourcePath, request.temporaryOutputPath)) {
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.sourceOutputSame,
         message: 'The source map cannot be used as temporary output.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Choose a different Save As destination.',
       );
     }
@@ -419,7 +422,7 @@ class ProcessMapArchiveGateway
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.duplicateOperation,
         message: 'An archive operation with the same ID is already active.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Wait for the active operation or cancel it first.',
       );
     }
@@ -429,7 +432,7 @@ class ProcessMapArchiveGateway
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.helperNotFound,
         message: 'The bundled map archive helper is missing.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Repair or reinstall the application.',
       );
     }
@@ -539,8 +542,8 @@ class ProcessMapArchiveGateway
         jsonEncode({
           'protocolVersion': protocolVersion,
           'requestId': request.operationId,
-          'operation': 'replaceScenario',
-          'sourcePath': request.sourcePath,
+          'operation': operation,
+          'sourcePath': ?sourcePath,
           'scenarioInputPath': scenarioInput.path,
           'archiveOutputPath': request.temporaryOutputPath,
           if (resourceChanges.isNotEmpty) 'resourceChanges': resourceChanges,
@@ -564,7 +567,7 @@ class ProcessMapArchiveGateway
         return _writeFailure(
           code: MapArchiveDiagnosticCodes.timedOut,
           message: 'The temporary archive writer timed out.',
-          filePath: request.sourcePath,
+          filePath: request.sourcePath ?? request.temporaryOutputPath,
           remediation: 'Retry the operation or inspect the map for corruption.',
           rawDetails: _rawProcessDetails(
             stderr: stderr,
@@ -579,7 +582,7 @@ class ProcessMapArchiveGateway
         return _writeFailure(
           code: MapArchiveDiagnosticCodes.cancelled,
           message: 'The map archive write was cancelled.',
-          filePath: request.sourcePath,
+          filePath: request.sourcePath ?? request.temporaryOutputPath,
           remediation: 'Run Save As again when ready.',
           rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
         );
@@ -588,7 +591,7 @@ class ProcessMapArchiveGateway
         return _writeFailure(
           code: MapArchiveDiagnosticCodes.outputLimitExceeded,
           message: 'The map archive helper produced too much output.',
-          filePath: request.sourcePath,
+          filePath: request.sourcePath ?? request.temporaryOutputPath,
           remediation: 'Repair the application or report the helper failure.',
           rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
         );
@@ -598,6 +601,7 @@ class ProcessMapArchiveGateway
         stdout.text,
         request.operationId,
         exitCode,
+        operation,
       );
       if (response.error == null &&
           request.resourceEdits.isNotEmpty &&
@@ -611,7 +615,7 @@ class ProcessMapArchiveGateway
         return _writeFailure(
           code: response.error!.code,
           message: response.error!.message,
-          filePath: request.sourcePath,
+          filePath: request.sourcePath ?? request.temporaryOutputPath,
           remediation: _remediationFor(response.error!.code),
           rawDetails: _rawProcessDetails(
             exitCode: exitCode,
@@ -674,7 +678,7 @@ class ProcessMapArchiveGateway
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.startFailed,
         message: 'The map archive helper could not be started.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Repair or reinstall the application.',
         rawDetails: error.errorCode.toString(),
       );
@@ -691,7 +695,7 @@ class ProcessMapArchiveGateway
       return _writeFailure(
         code: MapArchiveDiagnosticCodes.invalidResponse,
         message: 'The map archive helper returned an invalid response.',
-        filePath: request.sourcePath,
+        filePath: request.sourcePath ?? request.temporaryOutputPath,
         remediation: 'Repair the application or report the helper failure.',
         rawDetails: error.message,
       );
@@ -963,6 +967,7 @@ class ProcessMapArchiveGateway
     String output,
     String operationId,
     int exitCode,
+    String expectedOperation,
   ) {
     final lines = const LineSplitter()
         .convert(output)
@@ -978,7 +983,7 @@ class ProcessMapArchiveGateway
     if (decoded is! Map<String, dynamic> ||
         decoded['protocolVersion'] != protocolVersion ||
         decoded['requestId'] != operationId ||
-        decoded['operation'] != 'replaceScenario' ||
+        decoded['operation'] != expectedOperation ||
         decoded['helperVersion'] != helperVersion ||
         decoded['stormLibRevision'] != stormLibRevision) {
       throw const FormatException(

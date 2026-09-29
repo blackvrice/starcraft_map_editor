@@ -1,3 +1,6 @@
+import '../../application/documents/new_map_controller.dart';
+import '../../application/terrain/tile_placement_catalog_loader.dart';
+import '../documents/new_map_dialog.dart';
 import '../resources/resources_pane.dart';
 import '../../application/eud/eud_build_preparation_controller.dart';
 import '../../application/settings/eud_tool_settings_controller.dart';
@@ -128,6 +131,31 @@ class _EditorShellState extends State<EditorShell> {
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
   bool _settingsVisited = false;
+
+  Future<void> _newMap() async {
+    final catalog = widget.placementCatalogController;
+    final controller = NewMapController(
+      maps: widget.openMapController,
+      assets: () => widget.starCraftDataAssetSettingsController.state,
+      loader: catalog.catalogGateway == null || catalog.tileAtlasGateway == null
+          ? null
+          : TilePlacementCatalogLoader(
+              catalogGateway: catalog.catalogGateway!,
+              tileAtlasGateway: catalog.tileAtlasGateway!,
+            ),
+    );
+    try {
+      final created = await showDialog<bool>(
+        context: context,
+        builder: (_) => NewMapDialog(controller: controller),
+      );
+      if (mounted && created == true) {
+        setState(() => _workspaceView = _WorkspaceView.map);
+      }
+    } finally {
+      controller.dispose();
+    }
+  }
 
   @override
   void initState() {
@@ -614,6 +642,8 @@ class _EditorShellState extends State<EditorShell> {
 
     final shortcuts = <ShortcutActivator, VoidCallback>{};
     if (openMap != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.keyN, control: true)] =
+          _newMap;
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyO, control: true)] =
           openMap;
     }
@@ -674,6 +704,7 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  newMap: openMap == null ? null : _newMap,
                   prepareEud:
                       widget.eudBuildPreparationController == null ||
                           eudBuildState.isActive
@@ -922,6 +953,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openForceSettings,
     required this.openPlayerSettings,
     required this.openMapInformation,
+    required this.newMap,
     required this.openMap,
     required this.saveAs,
     required this.newEudSource,
@@ -932,6 +964,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openSettings,
   });
 
+  final VoidCallback? newMap;
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
   final VoidCallback? prepareEud;
@@ -957,6 +990,11 @@ class _EditorMenuBar extends StatelessWidget {
       children: [
         SubmenuButton(
           menuChildren: [
+            MenuItemButton(
+              key: const Key('menu-new-map'),
+              onPressed: newMap,
+              child: const Text('New Map…'),
+            ),
             MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
             MenuItemButton(
               onPressed: prepareEud,
@@ -1581,7 +1619,9 @@ class _DocumentTabs extends StatelessWidget {
               if (session case final session?)
                 _DocumentTab(
                   key: const Key('map-document-tab'),
-                  label: _fileName(session.sourcePath),
+                  label: session.sourcePath == null
+                      ? 'Untitled map'
+                      : _fileName(session.sourcePath!),
                   dirty: session.isDirty,
                   icon: Icons.map_outlined,
                   selected: workspaceView == _WorkspaceView.map,
@@ -2094,7 +2134,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                       child: Tooltip(
                         message: session.sourcePath,
                         child: Text(
-                          _fileName(session.sourcePath),
+                          session.sourcePath == null
+                              ? 'Untitled map'
+                              : _fileName(session.sourcePath!),
                           key: const Key('opened-map-name'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -2238,7 +2280,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                     dimensions.height == 0
                 ? const _MapCanvasUnavailable()
                 : MapCanvas(
-                    key: ValueKey('map-canvas:${session.sourcePath}'),
+                    key: ObjectKey(session.extractedMap),
                     mapWidth: dimensions.width,
                     mapHeight: dimensions.height,
                     rawTileValues: terrainLayer.isVisible
@@ -3171,8 +3213,16 @@ class _MapDocumentInspector extends StatelessWidget {
       key: const Key('map-inspector'),
       padding: const EdgeInsets.all(12),
       children: [
-        _InspectorValue(label: 'File', value: _fileName(session.sourcePath)),
-        _InspectorValue(label: 'Source path', value: session.sourcePath),
+        _InspectorValue(
+          label: 'File',
+          value: session.sourcePath == null
+              ? 'Untitled map'
+              : _fileName(session.sourcePath!),
+        ),
+        _InspectorValue(
+          label: 'Source path',
+          value: session.sourcePath ?? 'Not saved yet',
+        ),
         _InspectorValue(
           label: 'Map size',
           value: dimensions == null
@@ -4508,7 +4558,7 @@ class _StatusBar extends StatelessWidget {
                           '${eudDocument.isDirty ? ' • Modified' : ' • Clean'}'
                     : session == null
                     ? 'No document'
-                    : '${_fileName(session.sourcePath)}'
+                    : '${session.sourcePath == null ? 'Untitled map' : _fileName(session.sourcePath!)}'
                           '${session.isDirty ? ' • Modified' : ' • Clean'}',
                 key: const Key('active-document-status'),
                 maxLines: 1,

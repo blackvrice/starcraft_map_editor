@@ -20,7 +20,12 @@
 | 문서 접근 | 누락된 기능 문서와 ADR-0012를 인덱스에 연결 | [인덱스](README.md), [ADR 목록](decisions/README.md) |
 | 품질/복구 | 실제 Windows CI와 목표 게이트 구분, 포맷 명령 통일, 자동 저장은 M8 미구현으로 명시 | [품질](TESTING_AND_QUALITY.md), [안전](DATA_SAFETY.md) |
 
-## 다음 개발 재개 지점
+2026-09-29 후속 개발: 아래 문서 점검 당시 미커밋이던 New Map UI·신규 MPQ
+저장/재열기를 연결했다. 사용자 설정 변경 후 최종 helper의 CTest 5개와 실제 MPQ
+통합 테스트 5개를 통과했다. 현행 재개 지점은 [개발 계획](DEVELOPMENT_PLAN.md),
+새 검증 결과는 [새 맵 정책](NEW_MAP.md)을 따른다. 아래 목록은 문서 점검 당시 이력이다.
+
+## 문서 점검 당시의 개발 재개 지점
 
 **M6.4 New Map → 메모리 문서 → 새 MPQ Save As → 재열기**를 이어서 작업한다.
 

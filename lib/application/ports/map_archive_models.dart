@@ -50,7 +50,9 @@ class MapArchiveWriteRequest {
        ),
        scenarioChkBytes = _copyBytes(scenarioChkBytes) {
     _requireNonBlank(operationId, 'operationId');
-    _requireNonBlank(sourcePath, 'sourcePath');
+    if (sourcePath != null) {
+      _requireNonBlank(sourcePath!, 'sourcePath');
+    }
     _requireNonBlank(temporaryOutputPath, 'temporaryOutputPath');
     _requirePositiveTimeout(timeout);
 
@@ -64,7 +66,7 @@ class MapArchiveWriteRequest {
   }
 
   final String operationId;
-  final String sourcePath;
+  final String? sourcePath;
   final String temporaryOutputPath;
   final Uint8List scenarioChkBytes;
   final Map<String, List<int>?> resourceEdits;
@@ -161,11 +163,12 @@ class MapArchiveMetadata {
 
 class ExtractedMap {
   ExtractedMap({
-    required this.sourcePath,
+    required String sourcePath,
     required List<int> scenarioChkBytes,
     required this.metadata,
     this.scenarioLocale = 0,
-  }) : scenarioChkBytes = _copyBytes(scenarioChkBytes) {
+  }) : sourcePath = sourcePath,
+       scenarioChkBytes = _copyBytes(scenarioChkBytes) {
     _requireNonBlank(sourcePath, 'sourcePath');
     _requireUint32(scenarioLocale, 'scenarioLocale');
 
@@ -193,7 +196,19 @@ class ExtractedMap {
     }
   }
 
-  final String sourcePath;
+  ExtractedMap.inMemory({required List<int> scenarioChkBytes})
+    : sourcePath = null,
+      scenarioChkBytes = _copyBytes(scenarioChkBytes),
+      scenarioLocale = 0,
+      metadata = MapArchiveMetadata(
+        archiveSizeBytes: 0,
+        formatVersion: 1,
+        totalEntryCount: 0,
+        entries: const [],
+        listingComplete: true,
+      );
+
+  final String? sourcePath;
   final Uint8List scenarioChkBytes;
   final MapArchiveMetadata metadata;
   final int scenarioLocale;

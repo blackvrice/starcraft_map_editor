@@ -155,6 +155,7 @@ class SaveMapController {
         ),
       );
     }
+    final sourcePath = sourceSession.sourcePath;
     _isSaving = true;
 
     MapSaveWorkspace? workspace;
@@ -186,7 +187,7 @@ class SaveMapController {
       final selectedFromPicker = destinationPath == null;
       final selectedPath =
           destinationPath ??
-          await _selectDestinationPath(sourceSession.sourcePath);
+          await _selectDestinationPath(sourcePath ?? 'Untitled.scx');
       if (selectedPath == null) {
         return _state;
       }
@@ -202,20 +203,27 @@ class SaveMapController {
           ),
         );
       }
-      if (!_hasSupportedExtension(normalizedPath)) {
+      if (!_hasSupportedExtension(normalizedPath) ||
+          (sourceSession.isNewMap &&
+              !normalizedPath.toLowerCase().endsWith('.scx'))) {
         return _emitFailure(
           _diagnostic(
             code: SaveMapDiagnosticCodes.unsupportedExtension,
-            message: 'Save As supports only .scm and .scx map files.',
+            message: sourceSession.isNewMap
+                ? 'New Brood War maps must be saved as .scx.'
+                : 'Save As supports only .scm and .scx map files.',
             filePath: normalizedPath,
-            remediation: 'Choose a destination ending in .scm or .scx.',
+            remediation: sourceSession.isNewMap
+                ? 'Choose a destination ending in .scx.'
+                : 'Choose a destination ending in .scm or .scx.',
           ),
         );
       }
-      if (await saveFileGateway.refersToSameLocation(
-        sourceSession.sourcePath,
-        normalizedPath,
-      )) {
+      if (sourcePath != null &&
+          await saveFileGateway.refersToSameLocation(
+            sourcePath,
+            normalizedPath,
+          )) {
         return _emitFailure(
           _diagnostic(
             code: SaveMapDiagnosticCodes.sourceDestinationSame,
@@ -260,50 +268,55 @@ class SaveMapController {
       operationProgressController.start(
         operationId: operationId,
         label: 'Saving map as',
-        message: 'Checking source map',
+        message: sourceSession.isNewMap
+            ? 'Preparing new map'
+            : 'Checking source map',
         canCancel: false,
       );
 
       operationProgressController.update(
         operationId: operationId,
         phase: OperationPhase.validating,
-        message: 'Checking source map fingerprint',
+        message: sourceSession.isNewMap
+            ? 'Validating new map'
+            : 'Checking source map fingerprint',
         fraction: 0.1,
       );
-      late final MapFileFingerprint sourceFingerprintAtSaveStart;
-      try {
-        sourceFingerprintAtSaveStart = await fingerprintGateway.fingerprint(
-          sourceSession.sourcePath,
-        );
-      } on Object catch (error, stackTrace) {
-        return _failOperation(
-          operationId,
-          _sourceFingerprintFailureDiagnostic(
-            path: sourceSession.sourcePath,
-            error: error,
-            stackTrace: stackTrace,
-          ),
-        );
+      MapFileFingerprint? sourceFingerprintAtSaveStart;
+      if (sourcePath != null) {
+        try {
+          sourceFingerprintAtSaveStart = await fingerprintGateway.fingerprint(
+            sourcePath,
+          );
+        } on Object catch (error, stackTrace) {
+          return _failOperation(
+            operationId,
+            _sourceFingerprintFailureDiagnostic(
+              path: sourcePath,
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          );
+        }
+        if (sourceFingerprintAtSaveStart != sourceSession.sourceFingerprint) {
+          return _failOperation(
+            operationId,
+            _diagnostic(
+              code: SaveMapDiagnosticCodes.sourceChangedBeforeSave,
+              message:
+                  'The source map changed after it was opened, so Save As was '
+                  'stopped.',
+              filePath: sourcePath,
+              remediation:
+                  'Reopen the source map to review the external changes before '
+                  'saving.',
+              rawDetails:
+                  'opened=${sourceSession.sourceFingerprint}; '
+                  'current=$sourceFingerprintAtSaveStart',
+            ),
+          );
+        }
       }
-      if (sourceFingerprintAtSaveStart != sourceSession.sourceFingerprint) {
-        return _failOperation(
-          operationId,
-          _diagnostic(
-            code: SaveMapDiagnosticCodes.sourceChangedBeforeSave,
-            message:
-                'The source map changed after it was opened, so Save As was '
-                'stopped.',
-            filePath: sourceSession.sourcePath,
-            remediation:
-                'Reopen the source map to review the external changes before '
-                'saving.',
-            rawDetails:
-                'opened=${sourceSession.sourceFingerprint}; '
-                'current=$sourceFingerprintAtSaveStart',
-          ),
-        );
-      }
-
       MapFileFingerprint? destinationFingerprintAtSaveStart;
       if (destinationExistedAtSaveStart) {
         operationProgressController.update(
@@ -353,7 +366,7 @@ class SaveMapController {
       final writeResult = await archiveGateway.writeTemporary(
         MapArchiveWriteRequest(
           operationId: '$operationId-write',
-          sourcePath: sourceSession.sourcePath,
+          sourcePath: sourcePath,
           temporaryOutputPath: workspace.temporaryOutputPath,
           scenarioChkBytes: encodedChk,
           resourceEdits: sourceSession.resourceEdits,
@@ -490,40 +503,40 @@ class SaveMapController {
         message: 'Rechecking source map fingerprint',
         fraction: 0.88,
       );
-      late final MapFileFingerprint sourceFingerprintBeforePromotion;
-      try {
-        sourceFingerprintBeforePromotion = await fingerprintGateway.fingerprint(
-          sourceSession.sourcePath,
-        );
-      } on Object catch (error, stackTrace) {
-        return _failOperation(
-          operationId,
-          _sourceFingerprintFailureDiagnostic(
-            path: sourceSession.sourcePath,
-            error: error,
-            stackTrace: stackTrace,
-          ),
-        );
+      if (sourcePath != null) {
+        late final MapFileFingerprint sourceFingerprintBeforePromotion;
+        try {
+          sourceFingerprintBeforePromotion = await fingerprintGateway
+              .fingerprint(sourcePath);
+        } on Object catch (error, stackTrace) {
+          return _failOperation(
+            operationId,
+            _sourceFingerprintFailureDiagnostic(
+              path: sourcePath,
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          );
+        }
+        if (sourceFingerprintBeforePromotion != sourceFingerprintAtSaveStart) {
+          return _failOperation(
+            operationId,
+            _diagnostic(
+              code: SaveMapDiagnosticCodes.sourceChangedDuringSave,
+              message:
+                  'The source map changed during Save As, so the verified '
+                  'output was not promoted.',
+              filePath: sourcePath,
+              remediation:
+                  'Reopen the source map to review the external changes and '
+                  'retry with a new output name.',
+              rawDetails:
+                  'start=$sourceFingerprintAtSaveStart; '
+                  'beforePromotion=$sourceFingerprintBeforePromotion',
+            ),
+          );
+        }
       }
-      if (sourceFingerprintBeforePromotion != sourceFingerprintAtSaveStart) {
-        return _failOperation(
-          operationId,
-          _diagnostic(
-            code: SaveMapDiagnosticCodes.sourceChangedDuringSave,
-            message:
-                'The source map changed during Save As, so the verified '
-                'output was not promoted.',
-            filePath: sourceSession.sourcePath,
-            remediation:
-                'Reopen the source map to review the external changes and '
-                'retry with a new output name.',
-            rawDetails:
-                'start=$sourceFingerprintAtSaveStart; '
-                'beforePromotion=$sourceFingerprintBeforePromotion',
-          ),
-        );
-      }
-
       operationProgressController.update(
         operationId: operationId,
         phase: OperationPhase.verifying,

@@ -2,8 +2,9 @@
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
-클래스 선언 전체가 아니다. 새 맵의 원본 없는 세션·helper 0.5.0은 작업 중이며
-[인수인계](NEW_MAP.md)의 UI/통합 테스트를 마치기 전에는 완료로 취급하지 않는다.
+클래스 선언 전체가 아니다. 새 맵의 원본 없는 세션·helper 0.5.0 신규 MPQ 저장은
+[새 맵 계약](NEW_MAP.md)에 따라 UI와 실제 아카이브 왕복까지 연결했다.
+최종 helper 바이너리의 native CTest와 실제 MPQ 저장·재열기 검증을 통과했다.
 
 ## 1. 목표와 제약
 
@@ -200,10 +201,14 @@ DocumentSession
 ```
 
 `sourceFingerprint`는 외부 변경을 감지하기 위해 파일 크기, UTC 수정 시각,
-SHA-256을 조합한다. 현재 `OpenedMapSession`은 열기 전후 fingerprint가 같을
+SHA-256을 조합한다. 디스크에서 연 `OpenedMapSession`은 열기 전후 fingerprint가 같을
 때만 생성되고 Save As로 채택한 세션은 검증된 임시 출력의 fingerprint를
 이어받는다. Open/Save 재검증은 `ChkMetadataViews`, `ChkTerrainViews`,
 `ChkObjectViews`를 동시에 생성하고 세 계층의 구조 진단을 세션에 포함한다.
+
+새 맵은 `ExtractedMap.inMemory`로 디스크 원본 없이 생성한다. sourcePath와
+sourceFingerprint는 함께 null이며 isDirty는 항상 true다. 생성 시 모든 typed view와
+참조를 검증하고 첫 Save As 성공 뒤 저장 세션으로 교체한다.
 
 ### MapLayerController
 
@@ -754,10 +759,10 @@ operation ID, 원본 경로, timeout을 가지며 성공 결과는 추출된 CHK
 - 앱은 절대 경로의 helper를 셸 없이 실행하고 버전이 있는 UTF-8 JSON 요청을
   줄바꿈으로 끝나는 단일 stdin 레코드로 전달한다. helper는 EOF를 기다리지 않고
   첫 줄을 받은 즉시 처리한다.
-- 검증된 helper 0.4.0은 `extractScenario`, `replaceScenario`, `extractSound`를
+- helper 0.5.0은 `extractScenario`, `replaceScenario`, `extractSound`를
   제공한다. CHK와 제한된 WAV 리소스 추가/삭제/추출을 처리하며
   [리소스 관리](RESOURCE_MANAGEMENT.md)의 경로·PCM·크기 제한을 따른다.
-  작업 트리의 0.5.0 `createScenario`는 신규 MPQ 통합 중이다.
+  `createScenario`는 sourcePath 없이 신규 MPQ v1을 만들며 기존 출력은 거부한다.
 - 바이너리 CHK는 앱 소유 요청별 임시 디렉터리의 파일로 교환한다.
 - stdout의 구조화 응답과 stderr를 동시에 소비하고 종료 코드, 프로토콜,
   최종 응답을 모두 확인한다.
