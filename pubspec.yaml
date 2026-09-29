@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
 
   crypto: ^3.0.6
 
@@ -58,6 +61,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Generates lib/l10n/app_localizations*.dart from lib/l10n/*.arb.
+  # See l10n.yaml and docs/decisions/0013-localized-editor-ui.md.
+  generate: true
 
   # To add assets to your application, add an assets section, like this:
   # assets:

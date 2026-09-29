@@ -43,7 +43,9 @@ flutter run -d windows
 - Presentation은 파일/FFI/프로세스를 직접 호출하지 않는다.
 - 외부 도구는 포트 인터페이스 뒤에 둔다.
 - 바이너리 파서는 실패 위치와 안정적인 오류 코드를 반환한다.
-- 사용자에게 보이는 문자열은 향후 현지화를 고려해 분리한다.
+- 사용자에게 보이는 문자열은 `lib/l10n/app_en.arb`와 `app_ko.arb`에 함께 추가하고
+  `context.l10n`으로 읽는다. 진단 코드와 원시 로그는 번역하지 않는다
+  ([ADR-0013](decisions/0013-localized-editor-ui.md)).
 - 데이터 변경은 Undo/Redo 가능한 명령을 우선한다.
 - 지원하지 않는 필드를 기본값으로 덮어쓰지 않는다.
 

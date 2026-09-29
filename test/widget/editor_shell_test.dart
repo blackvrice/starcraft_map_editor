@@ -35,6 +35,7 @@ import 'package:starcraft_map_editor/application/ports/starcraft_data_asset_insp
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
+import 'package:starcraft_map_editor/application/settings/app_language_controller.dart';
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_tile_atlas_loader.dart';
@@ -1559,6 +1560,7 @@ void main() {
       find.text(StarCraftDataAssetDiagnosticCodes.filesMissing),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('problems-summary')), findsOneWidget);
   });
 
   testWidgets('routes toolbar commands through the dispatcher', (tester) async {
@@ -2002,6 +2004,7 @@ void main() {
     expect(find.byKey(const Key('map-layer-list')), findsOneWidget);
     expect(find.byKey(const Key('map-inspector')), findsOneWidget);
     expect(find.text('Editable'), findsOneWidget);
+    expect(find.byKey(const Key('workspace-rail')), findsOneWidget);
     expect(find.byKey(const Key('terrain-editing-toolbar')), findsOneWidget);
     expect(find.text('Select a source tile'), findsOneWidget);
     expect(
@@ -2492,6 +2495,28 @@ void main() {
       find.byKey(const Key('object-properties-inspector')),
       findsOneWidget,
     );
+    // Selecting an object layer must not relabel an editable map read-only.
+    expect(find.text('Editable'), findsOneWidget);
+    expect(find.text('Class ID'), findsNothing);
+    // Raw bytes stay available under an explicit, collapsed Advanced section.
+    final inspectorScrollable = find
+        .descendant(
+          of: find.byKey(const Key('object-properties-inspector')),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.ensureVisible(find.text('Advanced: preserved raw fields'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Advanced: preserved raw fields'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Class ID'),
+      80,
+      scrollable: inspectorScrollable,
+    );
+    expect(find.text('Class ID'), findsOneWidget);
+    await tester.drag(inspectorScrollable, const Offset(0, 3000));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('object-inspector-x')), '9999');
     await tester.tap(find.byKey(const Key('object-inspector-apply')));
     await tester.pump();
@@ -2592,6 +2617,86 @@ void main() {
     await tester.pump();
     expect(objectEditingController.state.isCreatingLocation, isFalse);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shows the saved Korean language on the start screen', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      _createTestApp(
+        settingsStore: InMemorySettingsStore({
+          AppLanguageController.settingsKey: 'ko',
+        }),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('맵을 열어 시작하세요'), findsOneWidget);
+    expect(find.text('프로젝트 / 레이어'), findsOneWidget);
+    expect(find.text('속성'), findsOneWidget);
+    expect(find.text('맵 열기'), findsOneWidget);
+    expect(find.text('Open a map to begin'), findsNothing);
+  });
+
+  testWidgets('follows a Korean system language and falls back to English', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    tester.platformDispatcher.localesTestValue = const [Locale('ko', 'KR')];
+
+    await tester.pumpWidget(_createTestApp());
+    await tester.pumpAndSettle();
+    expect(find.text('맵을 열어 시작하세요'), findsOneWidget);
+
+    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    await tester.pumpAndSettle();
+    expect(find.text('Open a map to begin'), findsOneWidget);
+  });
+
+  testWidgets('switches the display language and remembers the choice', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final settings = InMemorySettingsStore();
+
+    await tester.pumpWidget(_createTestApp(settingsStore: settings));
+    await tester.pumpAndSettle();
+    expect(find.text('Open a map to begin'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('toolbar-language')));
+    await tester.pumpAndSettle();
+    expect(find.text('System default (English)'), findsOneWidget);
+    expect(find.text('한국어'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toolbar-language-ko')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('맵을 열어 시작하세요'), findsOneWidget);
+    expect(find.text('StarCraft 맵 에디터'), findsOneWidget);
+    expect(await settings.readString(AppLanguageController.settingsKey), 'ko');
+
+    await tester.tap(find.byKey(const Key('toolbar-language')));
+    await tester.pumpAndSettle();
+    expect(find.text('시스템 언어 따르기 (English)'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toolbar-language-system')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open a map to begin'), findsOneWidget);
+    expect(
+      await settings.readString(AppLanguageController.settingsKey),
+      isNull,
+    );
   });
 }
 

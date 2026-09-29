@@ -1,0 +1,528 @@
+{
+  "@@locale": "en",
+  "appTitle": "StarCraft Map Editor",
+  "menuFile": "File",
+  "menuNewMap": "New Map…",
+  "menuOpenMap": "Open Map…",
+  "menuPrepareEudBuild": "Prepare EUD Build…",
+  "menuEudTools": "EUD Tools…",
+  "menuSaveAs": "Save As…",
+  "menuMapInformation": "Map Information…",
+  "menuPlayerSettings": "Player Settings…",
+  "menuForceSettings": "Force Settings…",
+  "menuUnitSettings": "Unit Settings…",
+  "menuUnitAvailability": "Unit Availability…",
+  "menuUpgradeSettings": "Upgrade Settings…",
+  "menuTechSettings": "Tech Settings…",
+  "menuMapSettings": "Map Settings…",
+  "menuClose": "Close",
+  "menuEdit": "Edit",
+  "menuUndo": "Undo",
+  "menuRedo": "Redo",
+  "menuSettings": "Settings…",
+  "menuLanguage": "Language",
+  "menuView": "View",
+  "menuResetLayout": "Reset Layout",
+  "menuEud": "EUD",
+  "menuNewEpScript": "New epScript",
+  "menuBuildEudMap": "Build EUD Map",
+  "menuCancelEudBuild": "Cancel EUD Build",
+  "menuHelp": "Help",
+  "menuDocumentation": "Documentation",
+  "menuAbout": "About",
+  "languageSystem": "System default ({language})",
+  "@languageSystem": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "languageTooltip": "Display language",
+  "languageSaveFailed": "The language applies now but could not be saved for next time.",
+  "toolbarOpenMap": "Open Map",
+  "toolbarSaveAs": "Save As",
+  "toolbarNewEpScript": "New epScript",
+  "toolbarBuildEud": "Build EUD",
+  "toolbarCancelBuild": "Cancel Build",
+  "documentUnsaved": "Unsaved changes",
+  "documentSaved": "No unsaved changes",
+  "assetsChecking": "Assets checking",
+  "assetsCheckingShort": "Checking",
+  "assetsReady": "Assets ready",
+  "assetsReadyShort": "Ready",
+  "assetsNotConfigured": "Assets not configured",
+  "assetsNotConfiguredShort": "Setup",
+  "assetsUnavailable": "Assets unavailable",
+  "assetsUnavailableShort": "Missing",
+  "environmentBadge": "Windows • SC:R • {status}",
+  "@environmentBadge": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "environmentBadgeCompact": "SC:R • {status}",
+  "@environmentBadgeCompact": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "environmentBadgeTooltip": "Open StarCraft data asset settings • {status}",
+  "@environmentBadgeTooltip": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "railLabel": "Workspaces",
+  "railMap": "Map",
+  "railCatalog": "Catalog",
+  "railMapSettings": "Map Settings",
+  "railTriggers": "Triggers",
+  "railResources": "Resources",
+  "railBriefing": "Briefing",
+  "railEudProject": "EUD Project",
+  "railUnsavedTooltip": "{name} • unsaved changes",
+  "@railUnsavedTooltip": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paneProjectSources": "Project / Sources",
+  "paneProjectLayers": "Project / Layers",
+  "paneLayersPalette": "Layers / Object Palette",
+  "paneInspector": "Inspector",
+  "emptyLayers": "Open a map to see its layers here.",
+  "emptyInspector": "Select something on the map to see and edit its properties.",
+  "sourceDraft": "Draft",
+  "sourceEpScript": "epScript source",
+  "inspectorFile": "File",
+  "inspectorLocation": "Location",
+  "inspectorLines": "Lines",
+  "inspectorCharacters": "Characters",
+  "inspectorRevision": "Revision",
+  "inspectorState": "State",
+  "stateModified": "Modified",
+  "stateClean": "Clean",
+  "inMemoryDraft": "In-memory draft",
+  "startTitle": "Open a map to begin",
+  "startBody": "Open an unprotected StarCraft: Remastered UMS map (.scm or .scx). Your original file is never overwritten; edits are saved with Save As.",
+  "startShortcutHint": "Shortcut: Ctrl+O",
+  "recentMaps": "Recent maps",
+  "recentMapsLoadFailed": "Recent maps could not be loaded.",
+  "recentMapsEmpty": "Maps you open will appear here.",
+  "recentMapsRemove": "Remove from recent maps",
+  "untitledMap": "Untitled map",
+  "notSavedYet": "Not saved yet",
+  "mapSizeUnavailable": "Size unavailable",
+  "mapTilesetUnavailable": "Tileset unavailable",
+  "mapTilesetRaw": "Tileset {value}",
+  "@mapTilesetRaw": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mapGeometryPreview": "Geometry preview",
+  "mapMtxmTiles": "{count} MTXM tiles",
+  "@mapMtxmTiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mapNavigationHelp": "Wheel zoom · Space/middle drag",
+  "mapPickPriority": "Pick {order}",
+  "@mapPickPriority": {
+    "placeholders": {
+      "order": {
+        "type": "String"
+      }
+    }
+  },
+  "mapPlacing": "Place {label} · Esc cancel",
+  "@mapPlacing": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "mapCreatingLocation": "Drag new location · Esc cancel",
+  "mapProblemCounts": "{blocking} blocking · {warnings} warning",
+  "@mapProblemCounts": {
+    "placeholders": {
+      "blocking": {
+        "type": "int"
+      },
+      "warnings": {
+        "type": "int"
+      }
+    }
+  },
+  "mapCanvasUnavailable": "A unique, non-zero DIM section is required for the canvas.",
+  "sessionRestricted": "Restricted",
+  "sessionModified": "Modified",
+  "sessionEditable": "Editable",
+  "sessionReadOnly": "Read-only preview",
+  "sessionRestrictedHelp": "Some map data could not be verified, so only safe edits are allowed.",
+  "sessionModifiedHelp": "You have edits that are not saved yet. Use Save As to keep them.",
+  "sessionEditableHelp": "This map can be edited. The original file is not changed until you save a copy.",
+  "sessionReadOnlyHelp": "This map is shown for viewing only.",
+  "objectCancelLocation": "Cancel location",
+  "objectNewLocation": "New location",
+  "objectDelete": "Delete",
+  "objectUndo": "Undo",
+  "objectRedo": "Redo",
+  "objectSelectHint": "Click or drag to select objects",
+  "objectSelectedMove": "{count} selected · drag selection to move",
+  "@objectSelectedMove": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "objectUndoAction": "Undo {label}",
+  "@objectUndoAction": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectRedoAction": "Redo {label}",
+  "@objectRedoAction": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "objectShortcutHint": "Ctrl/Shift click adds · Delete removes",
+  "terrainSelectSource": "Select a source tile",
+  "terrainRawTile": "Raw tile {raw} · group {group} · member {member}",
+  "@terrainRawTile": {
+    "placeholders": {
+      "raw": {
+        "type": "String"
+      },
+      "group": {
+        "type": "String"
+      },
+      "member": {
+        "type": "String"
+      }
+    }
+  },
+  "terrainUnsupportedSuffix": " · unsupported",
+  "terrainFromSuffix": " from {x},{y}",
+  "@terrainFromSuffix": {
+    "placeholders": {
+      "x": {
+        "type": "String"
+      },
+      "y": {
+        "type": "String"
+      }
+    }
+  },
+  "terrainToolSelect": "Select tile",
+  "terrainToolBrush": "Brush",
+  "terrainToolRectangle": "Rectangle",
+  "terrainScope": "MTXM only · TILE/ISOM preserved",
+  "paletteTitle": "Object Palette",
+  "paletteCatalogTooltip": "Place new Tile, Doodad, Unit or Sprite",
+  "paletteCancelTooltip": "Cancel placement (Esc)",
+  "paletteSearchHint": "Search type or #id",
+  "paletteClickToPlace": "{label}: click map to place",
+  "@paletteClickToPlace": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "paletteEmpty": "No map-local object templates.",
+  "paletteNoMatch": "No matching templates.",
+  "layerTerrain": "Terrain",
+  "layerLocations": "Locations",
+  "layerDoodads": "Doodads",
+  "layerSprites": "Sprites",
+  "layerUnits": "Units",
+  "layerItems": "{count} items",
+  "@layerItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "layerHide": "Hide {layer}",
+  "@layerHide": {
+    "placeholders": {
+      "layer": {
+        "type": "String"
+      }
+    }
+  },
+  "layerShow": "Show {layer}",
+  "@layerShow": {
+    "placeholders": {
+      "layer": {
+        "type": "String"
+      }
+    }
+  },
+  "layerLock": "Lock {layer}",
+  "@layerLock": {
+    "placeholders": {
+      "layer": {
+        "type": "String"
+      }
+    }
+  },
+  "layerUnlock": "Unlock {layer}",
+  "@layerUnlock": {
+    "placeholders": {
+      "layer": {
+        "type": "String"
+      }
+    }
+  },
+  "layerSelectionHint": "Click the canvas to inspect the first unlocked object.",
+  "layerObjectsSelected": "{count} objects selected",
+  "@layerObjectsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectorSourcePath": "Source path",
+  "inspectorMapSize": "Map size",
+  "inspectorTileset": "Tileset",
+  "inspectorMapVersion": "Map version",
+  "inspectorScenarioType": "Scenario type",
+  "inspectorTerrain": "Terrain",
+  "inspectorArchiveSize": "Archive size",
+  "inspectorEntries": "Entries",
+  "inspectorChkSize": "CHK size",
+  "inspectorChkSections": "CHK sections",
+  "inspectorDiagnostics": "Diagnostics",
+  "valueUnavailable": "Unavailable",
+  "valueUnknown": "Unknown ({value})",
+  "@valueUnknown": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "inspectorMtxmViews": "{count} MTXM views",
+  "@inspectorMtxmViews": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectorRawTiles": "{count} raw tiles",
+  "@inspectorRawTiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectorEntriesListed": "{listed} listed / {total}",
+  "@inspectorEntriesListed": {
+    "placeholders": {
+      "listed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "inspectorCommonLayers": "Common layers",
+  "inspectorMultiNotice": "Select one object to edit its properties. Movement and deletion still apply to the full selection.",
+  "objectKindUnit": "Unit",
+  "objectKindDoodad": "Doodad",
+  "objectKindSprite": "Sprite",
+  "objectKindLocation": "Location",
+  "fieldTypeId": "Type ID",
+  "objectPlacedOnlyNotice": "Placed object only. Use File → Map Settings for map-wide unit types, players and game settings.",
+  "fieldX": "X (px)",
+  "fieldY": "Y (px)",
+  "fieldOwnerRaw": "Owner (raw 0-255)",
+  "fieldHitpointPercent": "HP %",
+  "fieldShieldPercent": "Shield %",
+  "fieldEnergyPercent": "Energy %",
+  "fieldResourceAmount": "Resource amount",
+  "fieldHangarAmount": "Hangar amount",
+  "fieldDoodadEnabledRaw": "Enabled raw (0=yes, 1=no)",
+  "applyProperties": "Apply properties",
+  "enterWholeNumber": "Enter a whole number.",
+  "propertiesApplied": "Properties applied.",
+  "propertiesNoChanges": "No property changes.",
+  "fixHighlightedFields": "Fix the highlighted fields.",
+  "propertiesUnavailable": "Property editing is no longer available.",
+  "unlockToApply": "Unlock this layer and use an editable map to apply.",
+  "rawFieldsTitle": "Advanced: preserved raw fields",
+  "rawFieldsNotice": "Raw flags and reserved fields are read-only and remain byte-exact.",
+  "rawClassId": "Class ID",
+  "rawRelationFlags": "Relation flags",
+  "rawValidStateFlags": "Valid state flags",
+  "rawValidFieldFlags": "Valid field flags",
+  "rawStateFlags": "State flags",
+  "rawUnused": "Unused",
+  "rawRelationClassId": "Relation class ID",
+  "rawFlags": "Flags",
+  "locationTitle": "Location {id}",
+  "@locationTitle": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldName": "Name",
+  "fieldLeft": "Left",
+  "fieldTop": "Top",
+  "fieldRight": "Right",
+  "fieldBottom": "Bottom",
+  "applyLocation": "Apply location",
+  "locationApplied": "Location applied.",
+  "locationNoChanges": "No location changes.",
+  "locationUnavailable": "Location editing is no longer available.",
+  "inspectorStringId": "String ID",
+  "inspectorElevationFlags": "Elevation flags",
+  "locationNamingUnavailable": "Location naming is unavailable for this map.",
+  "locationRenameNotice": "Renaming allocates a new string ID so shared map strings remain unchanged.",
+  "tabProblems": "Problems",
+  "tabOutput": "Output",
+  "tabBuildLog": "Build Log",
+  "tabWithCount": "{label} ({count})",
+  "@tabWithCount": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "noProblems": "No problems detected",
+  "noOutput": "No operation output",
+  "severityError": "Error",
+  "severityWarning": "Warning",
+  "severityInfo": "Info",
+  "problemsSummary": "{errors} errors · {warnings} warnings · {infos} info",
+  "@problemsSummary": {
+    "placeholders": {
+      "errors": {
+        "type": "int"
+      },
+      "warnings": {
+        "type": "int"
+      },
+      "infos": {
+        "type": "int"
+      }
+    }
+  },
+  "buildNotConfigured": "Build settings are not ready",
+  "buildReady": "Ready to build",
+  "buildStarting": "Starting euddraft…",
+  "buildStopping": "Stopping euddraft…",
+  "buildFinalizing": "Validating and promoting output…",
+  "buildCompleted": "Build completed",
+  "buildFailedNoOutput": "Build failed without output",
+  "buildCancelled": "Build cancelled",
+  "logBuildId": "Build: {id}",
+  "@logBuildId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "logTool": "Tool: euddraft {version}",
+  "@logTool": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "logExitCode": "exit code {code}",
+  "@logExitCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "logExitCodeUnavailable": "exit code unavailable",
+  "logStarted": "Started: {time}",
+  "@logStarted": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "logCompleted": "Completed: {time}",
+  "@logCompleted": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "recordRunning": "Running",
+  "recordSucceeded": "Succeeded",
+  "recordFailed": "Failed",
+  "recordCancelled": "Cancelled",
+  "statusReady": "Ready",
+  "statusNoDocument": "No document",
+  "statusDocument": "{name} • {state}",
+  "@statusDocument": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "phaseQueued": "Queued",
+  "phaseReading": "Reading",
+  "phaseParsing": "Parsing",
+  "phaseValidating": "Validating",
+  "phaseWriting": "Writing",
+  "phaseCompiling": "Compiling",
+  "phaseVerifying": "Verifying",
+  "phaseSucceeded": "Completed",
+  "phaseFailed": "Failed",
+  "phaseCancelled": "Cancelled",
+  "triggersOrdinary": "Ordinary triggers",
+  "triggersEudExtensions": "EUD extensions",
+  "triggersOpenEudProject": "Open EUD Project to create, save or build rules",
+  "triggersUndoProject": "Undo project",
+  "triggersRedoProject": "Redo project",
+  "triggersEudUnavailable": "EUD project workspace unavailable."
+}
