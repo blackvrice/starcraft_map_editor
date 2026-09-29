@@ -958,3 +958,10 @@ Windows는 [관리형 euddraft](EUD_BUNDLED_TOOL.md)를 실행 파일 옆 버전
 읽어 검증된 참조 ID를 반환하게 한다. Application이 전체 228개 커버리지와
 설치·맵 수명 주기를 검증하고 Domain이 직접·서브유닛 참조를 탐색한다.
 UI는 파일이나 프로세스를 직접 읽지 않는다. [계약과 검증](UNIT_WEAPON_REFERENCES.md).
+
+### 맵 크기 변경
+
+`MapResizeEditor` → `MapResizeController` → `MapResizeDialog`로 구성하며,
+불변 미리보기 생성 후 세션 identity·진행 상태·재디코딩을 검증하고 한 번에
+채택한다. 전후 세션은 공통 history 한 명령으로 저장한다. 디스크 쓰기 없이
+미저장 리소스를 유지하며 [크기 변경 계약](MAP_RESIZE.md)을 따른다.
