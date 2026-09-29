@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
+import 'package:starcraft_map_editor/application/documents/opened_map_session.dart';
 import 'dart:typed_data';
 import 'package:starcraft_map_editor/application/ports/map_resource_gateway.dart';
 import 'package:starcraft_map_editor/presentation/resources/resources_pane.dart';
@@ -23,6 +25,150 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  test(
+    'map history undoes terrain, objects, briefing and sounds chronologically',
+    () async {
+      final fixture = await _openFixture(resourceGateway: _SoundGateway());
+      final open = fixture.openMapController;
+      final objects = fixture.objectEditingController;
+      final terrain = TerrainEditingController(openMapController: open)
+        ..synchronizeSession(open.state.session);
+      addTearDown(() async {
+        await terrain.dispose();
+        await fixture.dispose();
+      });
+      final original = open.state.session!;
+      terrain.selectCatalogTile(7);
+      terrain.beginBrushStroke();
+      terrain.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
+      terrain.paintTiles(const [TerrainTileCoordinate(x: 1, y: 0)]);
+      terrain.commitBrushStroke();
+      final painted = open.state.session!;
+      fixture.selectAllObjects();
+      objects.moveSelection(dx: 10, dy: 20);
+      final moved = open.state.session!;
+      objects.applyTriggers(
+        expectedDocument: moved.rawDocument,
+        records: [ChkTrigger.create(briefing: true)],
+        briefing: true,
+      );
+      final briefing = open.state.session!;
+      await objects.importSound();
+      final sound = open.state.session!;
+      expect(objects.state.undoDepth, 4);
+      expect(terrain.state.undoDepth, 4);
+      void sameDocument(OpenedMapSession expected) {
+        expect(
+          open.state.session!.rawDocument.sections,
+          orderedEquals(expected.rawDocument.sections),
+        );
+        expect(open.state.session!.resourceEdits, same(expected.resourceEdits));
+      }
+
+      // Both entry points always traverse the same document timeline.
+      for (final expected in [briefing, moved, painted, original]) {
+        expect(terrain.undo(), isTrue);
+        sameDocument(expected);
+      }
+      expect(open.state.session!.isDirty, isFalse);
+      for (final expected in [painted, moved, briefing, sound]) {
+        expect(objects.redo(), isTrue);
+        sameDocument(expected);
+      }
+      expect(objects.undo(), isTrue);
+      terrain.selectCatalogTile(9);
+      terrain.paintTiles(const [TerrainTileCoordinate(x: 2, y: 0)]);
+      expect(objects.canRedo, isFalse);
+      expect(terrain.canRedo, isFalse);
+    },
+  );
+
+  test(
+    'active brush blocks object edits and shared undo; cancel preserves redo',
+    () async {
+      final fixture = await _openFixture();
+      final open = fixture.openMapController;
+      final objects = fixture.objectEditingController;
+      final terrain = TerrainEditingController(openMapController: open)
+        ..synchronizeSession(open.state.session);
+      addTearDown(() async {
+        await terrain.dispose();
+        await fixture.dispose();
+      });
+      fixture.selectAllObjects();
+      objects.moveSelection(dx: 10, dy: 0);
+      objects.undo();
+      final before = open.state.session!;
+      terrain.selectCatalogTile(7);
+      terrain.beginBrushStroke();
+      terrain.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
+      fixture.selectAllObjects();
+      final preview = open.state.session!;
+      expect(() => objects.moveSelection(dx: 1, dy: 0), throwsStateError);
+      expect(open.state.session, same(preview));
+      expect(objects.undo(), isFalse);
+      expect(objects.redo(), isFalse);
+      expect(objects.state.canRedo, isFalse);
+      terrain.cancelBrushStroke();
+      expect(
+        open.state.session!.rawDocument.sections,
+        orderedEquals(before.rawDocument.sections),
+      );
+      expect(objects.redo(), isTrue);
+    },
+  );
+
+  test(
+    'stale whole-document history rejection preserves the command and document',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final open = fixture.openMapController;
+      final objects = fixture.objectEditingController;
+      fixture.selectAllObjects();
+      objects.moveSelection(dx: 10, dy: 0);
+      final expected = open.state.session!;
+      // An unrecorded resource mutation must reject even a UNIT-only undo.
+      final foreign = OpenedMapSession(
+        extractedMap: expected.extractedMap,
+        rawDocument: expected.rawDocument,
+        metadataViews: expected.metadataViews,
+        stringViews: expected.stringViews,
+        terrainViews: expected.terrainViews,
+        objectViews: expected.objectViews,
+        sourceFingerprint: expected.sourceFingerprint,
+        diagnostics: expected.diagnostics,
+        resourceEdits: {
+          'staredit\\wav\\foreign.wav': [1, 2],
+        },
+      );
+      open.adoptEditedSession(foreign);
+      expect(objects.undo, throwsStateError);
+      expect(open.state.session, same(foreign));
+      expect(objects.state.undoDepth, 1);
+      expect(objects.state.redoDepth, 0);
+      open.adoptEditedSession(expected);
+      expect(objects.undo(), isTrue);
+      open.adoptEditedSession(foreign);
+      expect(objects.redo, throwsStateError);
+      expect(objects.state.redoDepth, 1);
+      // A new document clears shared history without presentation listeners.
+      final terrain = TerrainEditingController(openMapController: open);
+      addTearDown(terrain.dispose);
+      terrain.selectCatalogTile(7);
+      terrain.beginBrushStroke();
+      terrain.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
+      final second = await _openFixture();
+      addTearDown(second.dispose);
+      await open.adoptSavedSession(second.openMapController.state.session!);
+      expect(terrain.state.isBrushStrokeActive, isFalse);
+      expect(terrain.commitBrushStroke(), isFalse);
+      expect(terrain.state.selectedRawTileValue, isNull);
+      expect(objects.canUndo, isFalse);
+      expect(objects.canRedo, isFalse);
+    },
+  );
+
   testWidgets(
     'briefing draft edits action duration and owners, cancel, duplicate and undo',
     (tester) async {

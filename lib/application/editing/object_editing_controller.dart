@@ -29,14 +29,16 @@ final class ObjectEditingState {
     this.undoDepth = 0,
     this.redoDepth = 0,
     this.isCreatingLocation = false,
+    this.isHistoryBlocked = false,
   });
 
   final int undoDepth;
   final int redoDepth;
   final bool isCreatingLocation;
+  final bool isHistoryBlocked;
 
-  bool get canUndo => undoDepth > 0;
-  bool get canRedo => redoDepth > 0;
+  bool get canUndo => undoDepth > 0 && !isHistoryBlocked;
+  bool get canRedo => redoDepth > 0 && !isHistoryBlocked;
 }
 
 class ObjectEditingController {
@@ -61,6 +63,14 @@ class ObjectEditingController {
         'The object edit history limit must be greater than zero.',
       );
     }
+    openMapController.editHistory.constrainLimit(historyLimit);
+    _historySubscription = openMapController.editHistory.changes.listen(
+      (_) => _emit(),
+    );
+    _sessionSubscription = openMapController.changes.listen(
+      (state) => synchronizeSession(state.session),
+    );
+    synchronizeSession(openMapController.state.session);
   }
 
   final OpenMapController openMapController;
@@ -196,8 +206,8 @@ class ObjectEditingController {
   final int historyLimit;
   final StreamController<ObjectEditingState> _changes =
       StreamController<ObjectEditingState>.broadcast(sync: true);
-  final List<_ObjectEditCommand> _undoStack = [];
-  final List<_ObjectEditCommand> _redoStack = [];
+  late final StreamSubscription<void> _historySubscription;
+  late final StreamSubscription<OpenMapState> _sessionSubscription;
 
   ObjectEditingState _state = const ObjectEditingState();
   Object? _trackedSourceSnapshot;
@@ -205,10 +215,10 @@ class ObjectEditingController {
 
   ObjectEditingState get state => _state;
   Stream<ObjectEditingState> get changes => _changes.stream;
-  bool get canUndo => _undoStack.isNotEmpty;
-  bool get canRedo => _redoStack.isNotEmpty;
-  String? get undoLabel => canUndo ? _undoStack.last.label : null;
-  String? get redoLabel => canRedo ? _redoStack.last.label : null;
+  bool get canUndo => openMapController.editHistory.canUndo;
+  bool get canRedo => openMapController.editHistory.canRedo;
+  String? get undoLabel => openMapController.editHistory.undoLabel;
+  String? get redoLabel => openMapController.editHistory.redoLabel;
 
   ChkTriggers get triggers {
     return readTriggers();
@@ -694,8 +704,7 @@ class ObjectEditingController {
     }
     _trackedSourceSnapshot = sourceSnapshot;
     _isCreatingLocation = false;
-    _undoStack.clear();
-    _redoStack.clear();
+    openMapController.editHistory.synchronizeSession(session);
     _emit();
   }
 
@@ -1373,43 +1382,9 @@ class ObjectEditingController {
     );
   }
 
-  bool undo() {
-    if (!canUndo) {
-      return false;
-    }
-    _isCreatingLocation = false;
-    final command = _undoStack.removeLast();
-    _applySections(
-      expected: command.afterSections,
-      replacements: command.beforeSections,
-      removedTrailingSections: command.appendedSections,
-      expectedResources: command.afterResources,
-      replacementResources: command.beforeResources,
-      clearSelection: true,
-    );
-    _redoStack.add(command);
-    _emit();
-    return true;
-  }
+  bool undo() => openMapController.editHistory.undo();
 
-  bool redo() {
-    if (!canRedo) {
-      return false;
-    }
-    _isCreatingLocation = false;
-    final command = _redoStack.removeLast();
-    _applySections(
-      expected: command.beforeSections,
-      replacements: command.afterSections,
-      appendedSections: command.appendedSections,
-      expectedResources: command.beforeResources,
-      replacementResources: command.afterResources,
-      clearSelection: true,
-    );
-    _undoStack.add(command);
-    _emit();
-    return true;
-  }
+  bool redo() => openMapController.editHistory.redo();
 
   List<MapLayerSelection> get _editableSelections => mapLayerController
       .state
@@ -2109,6 +2084,29 @@ class ObjectEditingController {
     _ObjectEditCommand command, {
     required bool clearSelection,
   }) {
+    openMapController.editHistory.ensureCanEdit(this);
+    final before = openMapController.state.session!;
+    void apply({required bool backwards}) {
+      _applySections(
+        expected: backwards ? command.afterSections : command.beforeSections,
+        replacements: backwards
+            ? command.beforeSections
+            : command.afterSections,
+        appendedSections: backwards ? const [] : command.appendedSections,
+        removedTrailingSections: backwards
+            ? command.appendedSections
+            : const [],
+        expectedResources: backwards
+            ? command.afterResources
+            : command.beforeResources,
+        replacementResources: backwards
+            ? command.beforeResources
+            : command.afterResources,
+        clearSelection: true,
+      );
+      _isCreatingLocation = false;
+    }
+
     _applySections(
       expected: command.beforeSections,
       replacements: command.afterSections,
@@ -2117,12 +2115,13 @@ class ObjectEditingController {
       expectedResources: command.beforeResources,
       replacementResources: command.afterResources,
     );
-    _undoStack.add(command);
-    if (_undoStack.length > historyLimit) {
-      _undoStack.removeAt(0);
-    }
-    _redoStack.clear();
-    _emit();
+    openMapController.editHistory.record(
+      label: command.label,
+      before: before,
+      after: openMapController.state.session!,
+      undo: () => apply(backwards: true),
+      redo: () => apply(backwards: false),
+    );
   }
 
   void _applySections({
@@ -2265,14 +2264,17 @@ class ObjectEditingController {
 
   void _emit() {
     _state = ObjectEditingState(
-      undoDepth: _undoStack.length,
-      redoDepth: _redoStack.length,
+      undoDepth: openMapController.editHistory.undoDepth,
+      redoDepth: openMapController.editHistory.redoDepth,
       isCreatingLocation: _isCreatingLocation,
+      isHistoryBlocked: openMapController.editHistory.isTransactionActive,
     );
     _changes.add(_state);
   }
 
   Future<void> dispose() async {
+    await _sessionSubscription.cancel();
+    await _historySubscription.cancel();
     await resourceGateway?.stopPreview();
     await _changes.close();
   }

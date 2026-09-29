@@ -2117,6 +2117,9 @@ void main() {
       isNotNull,
     );
 
+    // Map undo follows edit time even after switching to an object layer.
+    await tester.tap(find.byKey(const Key('map-layer-units')));
+    await tester.pump();
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
@@ -2129,6 +2132,8 @@ void main() {
     );
     expect(find.text('Raw fallback'), findsOneWidget);
     expect(openMapController.state.session!.isDirty, isFalse);
+    await tester.tap(find.byKey(const Key('map-layer-terrain')));
+    await tester.pump();
     expect(find.text('Editable'), findsOneWidget);
     expect(
       tester

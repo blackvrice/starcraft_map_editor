@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_resources.dart';
 import 'package:starcraft_map_editor/infrastructure/archive/process_map_archive_gateway.dart';
@@ -293,6 +294,12 @@ void _registerSettingsRoundtrip(bool realArchive) {
         3,
       );
 
+      final terrainEditing = TerrainEditingController(
+        openMapController: openController,
+      )..synchronizeSession(openController.state.session);
+      addTearDown(terrainEditing.dispose);
+      terrainEditing.selectCatalogTile(7);
+      terrainEditing.paintTiles(const [TerrainTileCoordinate(x: 0, y: 0)]);
       final beforeInfo = openController.state.session!.rawDocument;
       editingController.applyMapInformation(
         expectedDocument: beforeInfo,
@@ -310,6 +317,18 @@ void _registerSettingsRoundtrip(bool realArchive) {
       );
       editingController.undo();
       expect(editingController.mapInformation.title, 'Existing');
+      editingController.redo();
+      expect(editingController.mapInformation.description, '새 설명');
+      // A terrain toolbar undo first reverts the later settings command.
+      terrainEditing.undo();
+      expect(editingController.mapInformation.title, 'Existing');
+      editingController.undo();
+      expect(
+        openController.state.session!.terrainViews.tileMaps.single
+            .rawTileValueAt(x: 0, y: 0),
+        0,
+      );
+      terrainEditing.redo();
       editingController.redo();
       expect(editingController.mapInformation.description, '새 설명');
 
@@ -565,6 +584,14 @@ void _registerSettingsRoundtrip(bool realArchive) {
       }
       expect(openController.state.session!.sourcePath, outputPath);
       expect(openController.state.session!.isDirty, isFalse);
+      expect(terrainEditing.canUndo, isFalse);
+      expect(editingController.canRedo, isFalse);
+      expect(
+        openController.state.session!.terrainViews.tileMaps.single
+            .rawTileValueAt(x: 0, y: 0),
+        7,
+      );
+
       expect(sourceMap.scenarioChkBytes, sourceChk);
 
       final writtenBytes = Uint8List.fromList(

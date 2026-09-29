@@ -218,7 +218,7 @@ Doodads → Sprites → Units다. 선택은 활성 레이어가 표시·잠금 �
 ### ObjectEditingController
 
 `application/editing`의 `ObjectEditingController`는 `MapLayerController`의
-비지형 선택을 입력으로 받아 이동·삭제와 별도 Undo/Redo 기록을 관리한다. 한
+비지형 선택을 입력으로 받아 이동·삭제 명령을 문서 공통 Undo/Redo에 등록한다. 한
 동작이 여러 `UNIT`, `DD2 `, `THG2`, `MRGN` 섹션을 바꾸면 각 섹션의 전후
 `RawChkSection`을 한 명령에 보관한다. 적용 전 현재 섹션 identity가 명령과
 일치하는지 확인하고, 적용 뒤 `ChkObjectViewDecoder`로 모든 객체 섹션을 다시
@@ -566,7 +566,17 @@ abstract interface class EditorCommand {
 - 드래그처럼 이벤트가 많은 동작은 하나의 명령으로 병합한다.
 - 선택 변경과 화면 이동은 문서 변경 기록에 넣지 않는다.
 - 대량 삭제와 되돌릴 수 없는 변환은 실행 전 영향을 요약한다.
-- 저장은 Undo 기록을 지우지 않고 저장 기준점만 갱신한다.
+- `OpenMapController.editHistory`가 지형·객체·설정·트리거·브리핑·리소스의
+  명령을 시간순으로 관리한다. 각 컨트롤러와 도구 모음은 같은 기록을 사용한다.
+- Undo/Redo 전 원본 snapshot, fingerprint, 전체 CHK 섹션 identity와 보류 중인
+  리소스 snapshot을 검사한다. 실패하면 문서와 두 스택 모두 유지한다.
+- 브러시 드래그 동안 공통 Undo/Redo와 다른 컨트롤러의 편집을 막는다.
+  commit은 한 명령이며 cancel은 원래 섹션을 복원하고 기존 Redo를 보존한다.
+- 기본 상한은 문서당 100개다. 컨트롤러의 더 작은 historyLimit은 문서 전체에
+  적용된다. 선택·레이어 전환은 기록하지 않고 새 편집은 공통 Redo를 비운다.
+- 현재 Save As는 재검증한 출력을 새 원본 snapshot으로 채택하므로 기록을
+  초기화한다. 새 맵 열기도 같은 경계를 따른다. 저장 후 기록 유지와 clean
+  기준점 재설정은 향후 문서 수명주기 확장 범위다.
 
 ## 7. 포트 인터페이스
 

@@ -568,21 +568,15 @@ class _EditorShellState extends State<EditorShell> {
         widget.commandDispatcher.canDispatch(EditorCommandId.newEudSource)
         ? _newEudSource
         : null;
-    final objectLayerActive =
-        widget.mapLayerController.state.activeLayer != MapLayerType.terrain;
-    final undoEdit = _workspaceView != _WorkspaceView.map
-        ? null
-        : objectLayerActive && widget.objectEditingController.canUndo
-        ? widget.objectEditingController.undo
-        : !objectLayerActive && widget.terrainEditingController.canUndo
-        ? widget.terrainEditingController.undo
+    final undoEdit =
+        _workspaceView == _WorkspaceView.map &&
+            widget.openMapController.editHistory.canUndo
+        ? widget.openMapController.editHistory.undo
         : null;
-    final redoEdit = _workspaceView != _WorkspaceView.map
-        ? null
-        : objectLayerActive && widget.objectEditingController.canRedo
-        ? widget.objectEditingController.redo
-        : !objectLayerActive && widget.terrainEditingController.canRedo
-        ? widget.terrainEditingController.redo
+    final redoEdit =
+        _workspaceView == _WorkspaceView.map &&
+            widget.openMapController.editHistory.canRedo
+        ? widget.openMapController.editHistory.redo
         : null;
     final deleteObjects =
         _workspaceView == _WorkspaceView.map &&

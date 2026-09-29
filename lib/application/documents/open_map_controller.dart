@@ -10,6 +10,7 @@ import '../ports/map_file_picker.dart';
 import '../ports/map_file_fingerprint_gateway.dart';
 import '../recent_projects/recent_projects_service.dart';
 import 'opened_map_session.dart';
+import 'map_edit_history.dart';
 
 abstract final class OpenMapDiagnosticCodes {
   static const fileSelectionFailed = 'OPEN_MAP_FILE_SELECTION_FAILED';
@@ -97,6 +98,8 @@ class OpenMapController {
   final DateTime Function() _clock;
   final StreamController<OpenMapState> _changes =
       StreamController<OpenMapState>.broadcast(sync: true);
+
+  late final editHistory = MapEditHistory(currentSession: () => _state.session);
 
   OpenMapState _state = const OpenMapState.idle();
   bool _isOpening = false;
@@ -478,6 +481,7 @@ class OpenMapController {
 
   OpenMapState _emit(OpenMapState state) {
     _state = state;
+    editHistory.synchronizeSession(state.session);
     _changes.add(state);
     return state;
   }
@@ -496,5 +500,8 @@ class OpenMapController {
     return lowerPath.endsWith('.scm') || lowerPath.endsWith('.scx');
   }
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    await editHistory.dispose();
+    await _changes.close();
+  }
 }

@@ -86,6 +86,14 @@ class TerrainEditingController {
         'The terrain edit history limit must be greater than zero.',
       );
     }
+    openMapController.editHistory.constrainLimit(historyLimit);
+    _historySubscription = openMapController.editHistory.changes.listen(
+      (_) => _emitHistoryState(),
+    );
+    _sessionSubscription = openMapController.changes.listen(
+      (state) => synchronizeSession(state.session),
+    );
+    synchronizeSession(openMapController.state.session);
   }
 
   final OpenMapController openMapController;
@@ -93,8 +101,8 @@ class TerrainEditingController {
   final int historyLimit;
   final StreamController<TerrainEditingState> _changes =
       StreamController<TerrainEditingState>.broadcast(sync: true);
-  final List<_TerrainEditCommand> _undoStack = [];
-  final List<_TerrainEditCommand> _redoStack = [];
+  late final StreamSubscription<void> _historySubscription;
+  late final StreamSubscription<OpenMapState> _sessionSubscription;
 
   TerrainEditingState _state = const TerrainEditingState();
   ExtractedMap? _trackedSourceSnapshot;
@@ -105,13 +113,15 @@ class TerrainEditingController {
 
   Stream<TerrainEditingState> get changes => _changes.stream;
 
-  bool get canUndo => _undoStack.isNotEmpty && !_isBrushStrokeActive;
+  bool get canUndo =>
+      openMapController.editHistory.canUndo && !_isBrushStrokeActive;
 
-  bool get canRedo => _redoStack.isNotEmpty && !_isBrushStrokeActive;
+  bool get canRedo =>
+      openMapController.editHistory.canRedo && !_isBrushStrokeActive;
 
-  String? get undoLabel => canUndo ? _undoStack.last.label : null;
+  String? get undoLabel => openMapController.editHistory.undoLabel;
 
-  String? get redoLabel => canRedo ? _redoStack.last.label : null;
+  String? get redoLabel => openMapController.editHistory.redoLabel;
 
   bool get canSelectTiles => _activeTerrainView != null;
 
@@ -130,8 +140,7 @@ class TerrainEditingController {
     }
 
     _trackedSourceSnapshot = sourceSnapshot;
-    _undoStack.clear();
-    _redoStack.clear();
+    openMapController.editHistory.synchronizeSession(session);
     _pendingBrushCommand = null;
     _isBrushStrokeActive = false;
     _emit(const TerrainEditingState());
@@ -149,8 +158,8 @@ class TerrainEditingController {
         tool: tool,
         selectedRawTileValue: _state.selectedRawTileValue,
         selectedTile: _state.selectedTile,
-        undoDepth: _undoStack.length,
-        redoDepth: _redoStack.length,
+        undoDepth: openMapController.editHistory.undoDepth,
+        redoDepth: openMapController.editHistory.redoDepth,
       ),
     );
   }
@@ -169,8 +178,8 @@ class TerrainEditingController {
         tool: _state.tool,
         selectedRawTileValue: rawValue,
         selectedTile: coordinate,
-        undoDepth: _undoStack.length,
-        redoDepth: _redoStack.length,
+        undoDepth: openMapController.editHistory.undoDepth,
+        redoDepth: openMapController.editHistory.redoDepth,
         isBrushStrokeActive: _isBrushStrokeActive,
       ),
     );
@@ -193,8 +202,8 @@ class TerrainEditingController {
             : _state.tool,
         selectedRawTileValue: rawTileValue,
         selectedTile: null,
-        undoDepth: _undoStack.length,
-        redoDepth: _redoStack.length,
+        undoDepth: openMapController.editHistory.undoDepth,
+        redoDepth: openMapController.editHistory.redoDepth,
         isBrushStrokeActive: _isBrushStrokeActive,
       ),
     );
@@ -208,6 +217,7 @@ class TerrainEditingController {
       return false;
     }
 
+    openMapController.editHistory.beginTransaction(this);
     _isBrushStrokeActive = true;
     _pendingBrushCommand = null;
     _emitHistoryState();
@@ -222,6 +232,7 @@ class TerrainEditingController {
     final command = _pendingBrushCommand;
     _pendingBrushCommand = null;
     _isBrushStrokeActive = false;
+    openMapController.editHistory.endTransaction(this);
     if (command != null) {
       _pushUndo(command);
     } else {
@@ -244,6 +255,7 @@ class TerrainEditingController {
     }
     _pendingBrushCommand = null;
     _isBrushStrokeActive = false;
+    openMapController.editHistory.endTransaction(this);
     _emitHistoryState();
     return command != null;
   }
@@ -304,43 +316,17 @@ class TerrainEditingController {
         _replaceTerrainValues(terrain, values, label: 'Rectangle fill');
   }
 
-  bool undo() {
-    if (!canUndo) {
-      return false;
-    }
+  bool undo() => openMapController.editHistory.undo();
 
-    final command = _undoStack.last;
-    _replaceTerrainSection(
-      expectedSection: command.afterSection,
-      replacement: command.beforeSection,
-    );
-    _undoStack.removeLast();
-    _redoStack.add(command);
-    _emitHistoryState();
-    return true;
-  }
-
-  bool redo() {
-    if (!canRedo) {
-      return false;
-    }
-
-    final command = _redoStack.last;
-    _replaceTerrainSection(
-      expectedSection: command.beforeSection,
-      replacement: command.afterSection,
-    );
-    _redoStack.removeLast();
-    _undoStack.add(command);
-    _emitHistoryState();
-    return true;
-  }
+  bool redo() => openMapController.editHistory.redo();
 
   bool _replaceTerrainValues(
     ChkTerrainTileMapView terrain,
     List<int> values, {
     required String label,
   }) {
+    openMapController.editHistory.ensureCanEdit(this);
+    final before = openMapController.state.session!;
     final replacement = terrain.withRawTileValues(values);
     _replaceTerrainSection(
       expectedSection: terrain.rawSection,
@@ -348,6 +334,8 @@ class TerrainEditingController {
     );
     _recordCommand(
       _TerrainEditCommand(
+        before: before,
+        after: openMapController.state.session!,
         label: label,
         sectionIndex: terrain.sectionIndex,
         beforeSection: terrain.rawSection,
@@ -409,12 +397,19 @@ class TerrainEditingController {
   }
 
   void _pushUndo(_TerrainEditCommand command) {
-    _undoStack.add(command);
-    if (_undoStack.length > historyLimit) {
-      _undoStack.removeAt(0);
-    }
-    _redoStack.clear();
-    _emitHistoryState();
+    openMapController.editHistory.record(
+      label: command.label,
+      before: command.before,
+      after: command.after,
+      undo: () => _replaceTerrainSection(
+        expectedSection: command.afterSection,
+        replacement: command.beforeSection,
+      ),
+      redo: () => _replaceTerrainSection(
+        expectedSection: command.beforeSection,
+        replacement: command.afterSection,
+      ),
+    );
   }
 
   ChkTerrainTileMapView? get _activeTerrainView {
@@ -452,8 +447,8 @@ class TerrainEditingController {
         tool: _state.tool,
         selectedRawTileValue: _state.selectedRawTileValue,
         selectedTile: _state.selectedTile,
-        undoDepth: _undoStack.length,
-        redoDepth: _redoStack.length,
+        undoDepth: openMapController.editHistory.undoDepth,
+        redoDepth: openMapController.editHistory.redoDepth,
         isBrushStrokeActive: _isBrushStrokeActive,
       ),
     );
@@ -464,17 +459,24 @@ class TerrainEditingController {
     _changes.add(state);
   }
 
-  Future<void> dispose() => _changes.close();
+  Future<void> dispose() async {
+    await _sessionSubscription.cancel();
+    await _historySubscription.cancel();
+    await _changes.close();
+  }
 }
 
 final class _TerrainEditCommand {
   const _TerrainEditCommand({
+    required this.before,
+    required this.after,
     required this.label,
     required this.sectionIndex,
     required this.beforeSection,
     required this.afterSection,
   });
 
+  final OpenedMapSession before, after;
   final String label;
   final int sectionIndex;
   final RawChkSection beforeSection;
@@ -488,6 +490,8 @@ final class _TerrainEditCommand {
       );
     }
     return _TerrainEditCommand(
+      before: before,
+      after: next.after,
       label: label,
       sectionIndex: sectionIndex,
       beforeSection: beforeSection,
