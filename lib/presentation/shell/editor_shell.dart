@@ -1,3 +1,5 @@
+import '../../application/documents/map_resize_controller.dart';
+import '../documents/map_resize_dialog.dart';
 import '../../application/documents/new_map_controller.dart';
 import '../../application/terrain/tile_placement_catalog_loader.dart';
 import '../documents/new_map_dialog.dart';
@@ -131,6 +133,19 @@ class _EditorShellState extends State<EditorShell> {
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
   bool _settingsVisited = false;
+
+  Future<void> _resizeMap() async {
+    if (widget.openMapController.state.session == null) return;
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => MapResizeDialog(
+        controller: MapResizeController(widget.openMapController),
+      ),
+    );
+    if (changed == true && mounted) {
+      setState(() => _workspaceView = _WorkspaceView.map);
+    }
+  }
 
   Future<void> _newMap() async {
     final catalog = widget.placementCatalogController;
@@ -705,6 +720,11 @@ class _EditorShellState extends State<EditorShell> {
               children: [
                 _EditorMenuBar(
                   newMap: openMap == null ? null : _newMap,
+                  resizeMap:
+                      openMap == null ||
+                          widget.openMapController.state.session == null
+                      ? null
+                      : _resizeMap,
                   prepareEud:
                       widget.eudBuildPreparationController == null ||
                           eudBuildState.isActive
@@ -954,6 +974,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openPlayerSettings,
     required this.openMapInformation,
     required this.newMap,
+    required this.resizeMap,
     required this.openMap,
     required this.saveAs,
     required this.newEudSource,
@@ -965,6 +986,7 @@ class _EditorMenuBar extends StatelessWidget {
   });
 
   final VoidCallback? newMap;
+  final VoidCallback? resizeMap;
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
   final VoidCallback? prepareEud;
@@ -996,6 +1018,11 @@ class _EditorMenuBar extends StatelessWidget {
               child: const Text('New Map…'),
             ),
             MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
+            MenuItemButton(
+              key: const Key('menu-resize-map'),
+              onPressed: resizeMap,
+              child: const Text('Resize Map…'),
+            ),
             MenuItemButton(
               onPressed: prepareEud,
               child: const Text('Prepare EUD Build…'),

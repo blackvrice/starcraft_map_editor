@@ -5,7 +5,7 @@ Windows용 StarCraft: Remastered UMS 맵 에디터를 만드는 오픈 소스 �
 > 현재 상태(2026-09-29): 맵 입출력·배치·기본 설정, 일반 트리거·브리핑,
 > 문자열·사운드 관리와 문서 공통 Undo/Redo를 구현했습니다. 관리형 euddraft,
 > EUD 후보 필드 61개와 실행 규칙의 테스트 빌드도 연결되어 있습니다.
-> New Map·신규 MPQ 저장을 구현했으며 맵 크기 변경·등각 지형·안개·클립보드,
+> New Map·신규 MPQ 저장·raw 맵 크기 변경을 구현했으며 등각 지형·안개·클립보드,
 > 게임/멀티플레이 인수와 Windows 배포 검증이 남아 있습니다.
 > Python entry와 Lua는 후속 계획입니다. [개발 계획](docs/DEVELOPMENT_PLAN.md)과
 > [문서 점검 기록](docs/DOCUMENTATION_REVIEW.md)에서 구현과 검증 상태를 구분합니다.

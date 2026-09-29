@@ -106,6 +106,7 @@ class TerrainEditingController {
 
   TerrainEditingState _state = const TerrainEditingState();
   ExtractedMap? _trackedSourceSnapshot;
+  int? _trackedWidth, _trackedHeight;
   _TerrainEditCommand? _pendingBrushCommand;
   bool _isBrushStrokeActive = false;
 
@@ -135,11 +136,16 @@ class TerrainEditingController {
 
   void synchronizeSession(OpenedMapSession? session) {
     final sourceSnapshot = session?.extractedMap;
-    if (identical(sourceSnapshot, _trackedSourceSnapshot)) {
+    final terrain = session == null ? null : _activeTerrainViewFor(session);
+    if (identical(sourceSnapshot, _trackedSourceSnapshot) &&
+        terrain?.width == _trackedWidth &&
+        terrain?.height == _trackedHeight) {
       return;
     }
 
     _trackedSourceSnapshot = sourceSnapshot;
+    _trackedWidth = terrain?.width;
+    _trackedHeight = terrain?.height;
     openMapController.editHistory.synchronizeSession(session);
     _pendingBrushCommand = null;
     _isBrushStrokeActive = false;
