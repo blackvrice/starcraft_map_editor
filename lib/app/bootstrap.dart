@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
 import 'package:flutter/widgets.dart';
 import '../application/eud/eud_build_preparation_controller.dart';
@@ -20,6 +22,7 @@ import '../application/layers/map_layer_controller.dart';
 import '../application/operations/operation_progress_controller.dart';
 import '../application/objects/object_sprite_atlas_loader.dart';
 import '../application/recent_projects/recent_projects_service.dart';
+import '../application/settings/app_language_controller.dart';
 import '../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../application/terrain/terrain_editing_controller.dart';
 import '../application/terrain/terrain_tile_atlas_loader.dart';
@@ -45,6 +48,7 @@ void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
 
   final settingsStore = JsonFileSettingsStore.forCurrentUser();
+  final languageController = AppLanguageController(store: settingsStore);
   final eudToolInspector = BundledEudTool.inspector();
   final eudToolSettingsController = EudToolSettingsController(
     store: settingsStore,
@@ -189,7 +193,15 @@ void bootstrap() {
     placementCatalogController: placementCatalogController,
     terrainTileTextureController: terrainTileTextureController,
     objectSpriteTextureController: objectSpriteTextureController,
+    languageController: languageController,
   );
 
-  runApp(StarCraftMapEditorApp(dependencies: dependencies));
+  // Read the saved display language first so the first frame is already in
+  // the chosen language. Load never throws; unreadable settings mean
+  // "follow the system language".
+  unawaited(
+    languageController.load().then(
+      (_) => runApp(StarCraftMapEditorApp(dependencies: dependencies)),
+    ),
+  );
 }

@@ -967,6 +967,29 @@ ID를 보장하지 않는다. 기본 1700 슬롯 프로필만 대상으로 하�
 앱 시작 확인. 전체 포맷 비교는 기존 infrastructure 테스트 4개의 차이로 실패했고
 변경 파일은 통과했다. Flutter 3.47.2/Dart 3.13.2로 검증해 기준 SDK와 차이가 있다.
 
+## UX v2와 다국어 UI (2026-09-28)
+
+목표: 처음 사용하는 사람도 메인 화면에서 현재 위치·다음 행동·저장 상태를 이해하고,
+시스템 언어(한국어/영어)로 에디터를 사용한다. 결정은
+[ADR-0013](decisions/0013-localized-editor-ui.md), 화면 규칙은
+[에디터 UX 2.1절](EDITOR_UX.md#21-메인-화면-v2와-표시-언어)을 따른다.
+
+- [x] gen-l10n·ARB(en/ko) 기반, 시스템 언어 추종과 영어 대체
+- [x] `Edit → Language`·도구 모음 언어 선택, 즉시 적용과 `uiLanguage` 저장
+- [x] 메인 셸 문자열 번역(메뉴, 도구 모음, 레일, 레이어·팔레트, Inspector, 출력 패널, 상태 표시줄, 시작 화면)
+- [x] 작업 공간 레일, 문서 저장 상태 문장, 행동 안내 강조, Problems 심각도·요약, 원시 필드 접기
+- [ ] 설정 대화상자(Map/Unit/Player/Force/Tech/Upgrade/Availability, StarCraft 데이터, EUD 도구) 번역
+- [ ] Triggers·Resources·Briefing·EUD Project·epScript 편집기·카탈로그 번역
+- [ ] 애플리케이션/도메인 진단 메시지의 메시지 ID화와 번역(코드는 유지)
+- [ ] 한국어 글꼴 렌더링·긴 문자열 줄바꿈을 Windows 실제 화면에서 확인
+- [ ] 명령 검색(Ctrl+K), 캔버스 위 떠 있는 도구 막대 등 목업 v2의 나머지 요소 검토
+
+완료 확인(2026-09-28): 클라우드 Linux에서 Flutter 3.44.8로 `flutter analyze` 무이슈,
+새 테스트와 위젯 테스트 전부 통과. 전체 `flutter test`의 실패 12건은 변경 전과
+동일한 Windows 전용 infrastructure 테스트(Windows 경로·helper 실행)다. 포맷 검사는
+변경 전부터 Linux에서 차이가 나던 infrastructure 테스트 5개를 제외하고 통과했다.
+Windows 실제 실행과 빌드는 사용자 PC에서 확인해야 한다.
+
 ## M8. 안정화와 배포
 
 목표: 실제 제작에 시험 사용할 수 있는 Windows 프리뷰를 배포한다.

@@ -33,12 +33,14 @@ import '../../application/operations/operation_progress.dart';
 import '../../application/operations/operation_progress_controller.dart';
 import '../../application/recent_projects/recent_project.dart';
 import '../../application/recent_projects/recent_projects_service.dart';
+import '../../application/settings/app_language_controller.dart';
 import '../../application/settings/starcraft_data_asset_settings_controller.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../eud_editor/eud_source_editor.dart';
+import '../localization/l10n.dart';
 import '../map_canvas/map_canvas.dart';
 import '../map_canvas/object_sprite_texture_controller.dart';
 import '../map_canvas/terrain_tile_texture_controller.dart';
@@ -83,6 +85,7 @@ class EditorShell extends StatefulWidget {
     required this.placementCatalogController,
     required this.terrainTileTextureController,
     required this.objectSpriteTextureController,
+    this.languageController,
     super.key,
   });
 
@@ -106,6 +109,9 @@ class EditorShell extends StatefulWidget {
   final TerrainTileTextureController terrainTileTextureController;
   final ObjectSpriteTextureController objectSpriteTextureController;
 
+  /// Display language control. The language menu is hidden without it.
+  final AppLanguageController? languageController;
+
   @override
   State<EditorShell> createState() => _EditorShellState();
 }
@@ -117,6 +123,7 @@ class _EditorShellState extends State<EditorShell> {
   late StreamSubscription<EudBuildState> _eudBuildSubscription;
   late StreamSubscription<EudSourceState> _eudSourceSubscription;
   StreamSubscription<void>? _projectSubscription;
+  StreamSubscription<AppLanguagePreference>? _languageSubscription;
   late StreamSubscription<StarCraftDataAssetSettingsState>
   _starCraftDataAssetSettingsSubscription;
   late StreamSubscription<TerrainEditingState> _terrainEditingSubscription;
@@ -214,7 +221,34 @@ class _EditorShellState extends State<EditorShell> {
     );
     _synchronizeTerrainTextures();
     _synchronizeObjectTextures();
+    _languageSubscription = _listenForLanguage(widget.languageController);
     unawaited(widget.starCraftDataAssetSettingsController.load());
+  }
+
+  StreamSubscription<AppLanguagePreference>? _listenForLanguage(
+    AppLanguageController? controller,
+  ) {
+    return controller?.changes.listen((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  void _setLanguage(AppLanguagePreference preference) {
+    final controller = widget.languageController;
+    if (controller == null) {
+      return;
+    }
+    unawaited(
+      controller.setPreference(preference).then((_) {
+        if (mounted && controller.lastSaveFailed) {
+          ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+            SnackBar(content: Text(context.l10n.languageSaveFailed)),
+          );
+        }
+      }),
+    );
   }
 
   @override
@@ -225,6 +259,10 @@ class _EditorShellState extends State<EditorShell> {
       _projectSubscription = widget.eudProjectWorkspace?.changes.listen((_) {
         if (mounted) setState(() {});
       });
+    }
+    if (oldWidget.languageController != widget.languageController) {
+      unawaited(_languageSubscription?.cancel());
+      _languageSubscription = _listenForLanguage(widget.languageController);
     }
     var synchronizeTerrainTextures = false;
     var synchronizeObjectTextures = false;
@@ -498,6 +536,7 @@ class _EditorShellState extends State<EditorShell> {
     unawaited(_eudBuildSubscription.cancel());
     unawaited(_eudSourceSubscription.cancel());
     _projectSubscription?.cancel();
+    unawaited(_languageSubscription?.cancel());
     unawaited(_starCraftDataAssetSettingsSubscription.cancel());
     unawaited(_terrainEditingSubscription.cancel());
     unawaited(_mapLayerSubscription.cancel());
@@ -564,6 +603,23 @@ class _EditorShellState extends State<EditorShell> {
     setState(() {
       _recentProjects = widget.recentProjectsService.remove(project.path);
     });
+  }
+
+  String? _activeDocumentName() {
+    final eudDocument = widget.eudSourceController.state.document;
+    if (_workspaceView == _WorkspaceView.eud && eudDocument != null) {
+      return eudDocument.fileName;
+    }
+    final session = widget.openMapController.state.session;
+    return session == null ? null : _sessionName(context.l10n, session);
+  }
+
+  bool _activeDocumentDirty() {
+    final eudDocument = widget.eudSourceController.state.document;
+    if (_workspaceView == _WorkspaceView.eud && eudDocument != null) {
+      return eudDocument.isDirty;
+    }
+    return widget.openMapController.state.session?.isDirty ?? false;
   }
 
   void _showStarCraftDataAssetSettings() {
@@ -815,6 +871,10 @@ class _EditorShellState extends State<EditorShell> {
                   undo: undoEdit,
                   redo: redoEdit,
                   openSettings: _showStarCraftDataAssetSettings,
+                  languagePreference: widget.languageController?.preference,
+                  onLanguageSelected: widget.languageController == null
+                      ? null
+                      : _setLanguage,
                 ),
                 const Divider(height: 1),
                 _EditorToolbar(
@@ -826,6 +886,12 @@ class _EditorShellState extends State<EditorShell> {
                   eudBuildActive: eudBuildState.isActive,
                   starCraftDataAssetState: starCraftDataAssetState,
                   openSettings: _showStarCraftDataAssetSettings,
+                  documentName: _activeDocumentName(),
+                  documentDirty: _activeDocumentDirty(),
+                  languagePreference: widget.languageController?.preference,
+                  onLanguageSelected: widget.languageController == null
+                      ? null
+                      : _setLanguage,
                 ),
                 const Divider(height: 1),
                 Expanded(
@@ -962,6 +1028,8 @@ class _EditorMenuBar extends StatelessWidget {
     required this.undo,
     required this.redo,
     required this.openSettings,
+    required this.languagePreference,
+    required this.onLanguageSelected,
   });
 
   final VoidCallback? newMap;
@@ -983,9 +1051,12 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? undo;
   final VoidCallback? redo;
   final VoidCallback openSettings;
+  final AppLanguagePreference? languagePreference;
+  final ValueChanged<AppLanguagePreference>? onLanguageSelected;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return MenuBar(
       children: [
         SubmenuButton(
@@ -993,113 +1064,189 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               key: const Key('menu-new-map'),
               onPressed: newMap,
-              child: const Text('New Map…'),
-            ),
-            MenuItemButton(onPressed: openMap, child: const Text('Open Map…')),
-            MenuItemButton(
-              onPressed: prepareEud,
-              child: const Text('Prepare EUD Build…'),
-            ),
-            MenuItemButton(
-              onPressed: openEudTools,
-              child: const Text('EUD Tools…'),
-            ),
-            MenuItemButton(onPressed: saveAs, child: const Text('Save As…')),
-            MenuItemButton(
-              onPressed: openMapInformation,
-              child: const Text('Map Information…'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyN,
+                control: true,
+              ),
+              child: Text(l10n.menuNewMap),
             ),
             MenuItemButton(
-              onPressed: openPlayerSettings,
-              child: const Text('Player Settings…'),
+              onPressed: openMap,
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyO,
+                control: true,
+              ),
+              child: Text(l10n.menuOpenMap),
+            ),
+            MenuItemButton(
+              onPressed: saveAs,
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyS,
+                control: true,
+                shift: true,
+              ),
+              child: Text(l10n.menuSaveAs),
             ),
             const Divider(),
             MenuItemButton(
-              onPressed: openForceSettings,
-              child: const Text('Force Settings…'),
-            ),
-            MenuItemButton(
-              onPressed: openUnitSettings,
-              child: const Text('Unit Settings…'),
-            ),
-            MenuItemButton(
-              onPressed: openUnitAvailability,
-              child: const Text('Unit Availability…'),
-            ),
-            MenuItemButton(
-              onPressed: openUpgradeSettings,
-              child: const Text('Upgrade Settings…'),
-            ),
-            MenuItemButton(
-              onPressed: openTechSettings,
-              child: const Text('Tech Settings…'),
+              onPressed: openMapInformation,
+              child: Text(l10n.menuMapInformation),
             ),
             MenuItemButton(
               onPressed: openMapSettings,
-              child: const Text('Map Settings…'),
+              child: Text(l10n.menuMapSettings),
             ),
-            const MenuItemButton(onPressed: null, child: Text('Close')),
+            MenuItemButton(
+              onPressed: openPlayerSettings,
+              child: Text(l10n.menuPlayerSettings),
+            ),
+            MenuItemButton(
+              onPressed: openForceSettings,
+              child: Text(l10n.menuForceSettings),
+            ),
+            MenuItemButton(
+              onPressed: openUnitSettings,
+              child: Text(l10n.menuUnitSettings),
+            ),
+            MenuItemButton(
+              onPressed: openUnitAvailability,
+              child: Text(l10n.menuUnitAvailability),
+            ),
+            MenuItemButton(
+              onPressed: openUpgradeSettings,
+              child: Text(l10n.menuUpgradeSettings),
+            ),
+            MenuItemButton(
+              onPressed: openTechSettings,
+              child: Text(l10n.menuTechSettings),
+            ),
+            const Divider(),
+            MenuItemButton(
+              onPressed: prepareEud,
+              child: Text(l10n.menuPrepareEudBuild),
+            ),
+            MenuItemButton(
+              onPressed: openEudTools,
+              child: Text(l10n.menuEudTools),
+            ),
+            const Divider(),
+            MenuItemButton(onPressed: null, child: Text(l10n.menuClose)),
           ],
-          child: const Text('File'),
+          child: Text(l10n.menuFile),
         ),
         SubmenuButton(
           menuChildren: [
             MenuItemButton(
               key: const Key('menu-undo'),
               onPressed: undo,
-              child: const Text('Undo'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyZ,
+                control: true,
+              ),
+              child: Text(l10n.menuUndo),
             ),
             MenuItemButton(
               key: const Key('menu-redo'),
               onPressed: redo,
-              child: const Text('Redo'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyY,
+                control: true,
+              ),
+              child: Text(l10n.menuRedo),
             ),
             const Divider(),
             MenuItemButton(
               key: const Key('menu-settings'),
               onPressed: openSettings,
-              child: const Text('Settings…'),
+              child: Text(l10n.menuSettings),
             ),
+            if (onLanguageSelected case final onSelected?)
+              SubmenuButton(
+                key: const Key('menu-language'),
+                leadingIcon: const Icon(Icons.translate_rounded, size: 18),
+                menuChildren: [
+                  for (final preference in AppLanguagePreference.values)
+                    MenuItemButton(
+                      key: Key('menu-language-${preference.storageValue}'),
+                      leadingIcon: Icon(
+                        preference == languagePreference
+                            ? Icons.check_rounded
+                            : null,
+                        size: 18,
+                      ),
+                      onPressed: () => onSelected(preference),
+                      child: Text(_languageOptionLabel(l10n, preference)),
+                    ),
+                ],
+                child: Text(l10n.menuLanguage),
+              ),
           ],
-          child: const Text('Edit'),
+          child: Text(l10n.menuEdit),
         ),
         SubmenuButton(
-          menuChildren: const [
-            MenuItemButton(onPressed: null, child: Text('Reset Layout')),
+          menuChildren: [
+            MenuItemButton(onPressed: null, child: Text(l10n.menuResetLayout)),
           ],
-          child: const Text('View'),
+          child: Text(l10n.menuView),
         ),
         SubmenuButton(
           menuChildren: [
             MenuItemButton(
               onPressed: newEudSource,
-              child: const Text('New epScript'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyN,
+                control: true,
+                alt: true,
+              ),
+              child: Text(l10n.menuNewEpScript),
             ),
             const Divider(),
             MenuItemButton(
               key: const Key('menu-build-eud'),
               onPressed: buildEud,
-              child: const Text('Build EUD Map'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyB,
+                control: true,
+              ),
+              child: Text(l10n.menuBuildEudMap),
             ),
             MenuItemButton(
               key: const Key('menu-cancel-eud-build'),
               onPressed: cancelEudBuild,
-              child: const Text('Cancel EUD Build'),
+              shortcut: const SingleActivator(
+                LogicalKeyboardKey.keyB,
+                control: true,
+                shift: true,
+              ),
+              child: Text(l10n.menuCancelEudBuild),
             ),
           ],
-          child: const Text('EUD'),
+          child: Text(l10n.menuEud),
         ),
         SubmenuButton(
-          menuChildren: const [
-            MenuItemButton(onPressed: null, child: Text('Documentation')),
-            MenuItemButton(onPressed: null, child: Text('About')),
+          menuChildren: [
+            MenuItemButton(
+              onPressed: null,
+              child: Text(l10n.menuDocumentation),
+            ),
+            MenuItemButton(onPressed: null, child: Text(l10n.menuAbout)),
           ],
-          child: const Text('Help'),
+          child: Text(l10n.menuHelp),
         ),
       ],
     );
   }
 }
+
+String _languageOptionLabel(
+  AppLocalizations l10n,
+  AppLanguagePreference preference,
+) => switch (preference) {
+  AppLanguagePreference.system => l10n.languageSystem(
+    languageAutonym(AppLanguagePreference.system),
+  ),
+  _ => languageAutonym(preference),
+};
 
 class _EditorToolbar extends StatelessWidget {
   const _EditorToolbar({
@@ -1111,6 +1258,10 @@ class _EditorToolbar extends StatelessWidget {
     required this.eudBuildActive,
     required this.starCraftDataAssetState,
     required this.openSettings,
+    required this.documentName,
+    required this.documentDirty,
+    required this.languagePreference,
+    required this.onLanguageSelected,
   });
 
   final VoidCallback? openMap;
@@ -1121,17 +1272,23 @@ class _EditorToolbar extends StatelessWidget {
   final bool eudBuildActive;
   final StarCraftDataAssetSettingsState starCraftDataAssetState;
   final VoidCallback openSettings;
+  final String? documentName;
+  final bool documentDirty;
+  final AppLanguagePreference? languagePreference;
+  final ValueChanged<AppLanguagePreference>? onLanguageSelected;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return SizedBox(
       height: 56,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 1350;
+          final compact = constraints.maxWidth < 1420;
           final compactEnvironmentBadge =
               !compact && constraints.maxWidth < 1550;
           final showEnvironmentBadge = constraints.maxWidth >= 1000;
+          final documentName = this.documentName;
 
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -1139,9 +1296,12 @@ class _EditorToolbar extends StatelessWidget {
               children: [
                 const Icon(Icons.grid_view_rounded, color: Color(0xFF70A1FF)),
                 const SizedBox(width: 10),
-                const Text(
-                  'StarCraft Map Editor',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                Text(
+                  l10n.appTitle,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 if (showEnvironmentBadge) ...[
                   const SizedBox(width: 12),
@@ -1151,38 +1311,78 @@ class _EditorToolbar extends StatelessWidget {
                     compact: compactEnvironmentBadge,
                   ),
                 ],
-                const Spacer(),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: documentName == null
+                      ? const SizedBox.shrink()
+                      : LayoutBuilder(
+                          builder: (context, statusConstraints) =>
+                              statusConstraints.maxWidth < 96
+                              ? const SizedBox.shrink()
+                              : Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: _DocumentSaveStatus(
+                                    name: documentName,
+                                    dirty: documentDirty,
+                                  ),
+                                ),
+                        ),
+                ),
+                if (onLanguageSelected case final onSelected?)
+                  PopupMenuButton<AppLanguagePreference>(
+                    key: const Key('toolbar-language'),
+                    tooltip: l10n.languageTooltip,
+                    style: IconButton.styleFrom(
+                      fixedSize: const Size(36, 36),
+                      minimumSize: const Size(36, 36),
+                      padding: EdgeInsets.zero,
+                    ),
+                    icon: const Icon(Icons.translate_rounded, size: 20),
+                    initialValue: languagePreference,
+                    onSelected: onSelected,
+                    itemBuilder: (context) => [
+                      for (final preference in AppLanguagePreference.values)
+                        CheckedPopupMenuItem(
+                          key: Key(
+                            'toolbar-language-${preference.storageValue}',
+                          ),
+                          value: preference,
+                          checked: preference == languagePreference,
+                          child: Text(_languageOptionLabel(l10n, preference)),
+                        ),
+                    ],
+                  ),
                 if (compact) ...[
                   IconButton(
                     key: const Key('toolbar-open-map'),
                     onPressed: openMap,
-                    tooltip: 'Open Map',
+                    tooltip: l10n.toolbarOpenMap,
                     icon: const Icon(Icons.folder_open),
                   ),
                   IconButton(
                     key: const Key('toolbar-save-as'),
                     onPressed: saveAs,
-                    tooltip: 'Save As',
+                    tooltip: l10n.toolbarSaveAs,
                     icon: const Icon(Icons.save_outlined),
                   ),
                   IconButton(
                     key: const Key('toolbar-new-eud-source'),
                     onPressed: newEudSource,
-                    tooltip: 'New epScript',
+                    tooltip: l10n.toolbarNewEpScript,
                     icon: const Icon(Icons.code_rounded),
                   ),
                   if (eudBuildActive)
                     IconButton.filled(
                       key: const Key('toolbar-cancel-eud-build'),
                       onPressed: cancelEudBuild,
-                      tooltip: 'Cancel EUD Build',
+                      tooltip: l10n.menuCancelEudBuild,
                       icon: const Icon(Icons.stop_rounded),
                     )
                   else
                     IconButton.filled(
                       key: const Key('toolbar-build-eud'),
                       onPressed: buildEud,
-                      tooltip: 'Build EUD',
+                      tooltip: l10n.toolbarBuildEud,
                       icon: const Icon(Icons.play_arrow_rounded),
                     ),
                 ] else ...[
@@ -1190,21 +1390,21 @@ class _EditorToolbar extends StatelessWidget {
                     key: const Key('toolbar-open-map'),
                     onPressed: openMap,
                     icon: const Icon(Icons.folder_open),
-                    label: const Text('Open Map'),
+                    label: Text(l10n.toolbarOpenMap),
                   ),
                   const SizedBox(width: 4),
                   TextButton.icon(
                     key: const Key('toolbar-save-as'),
                     onPressed: saveAs,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Save As'),
+                    label: Text(l10n.toolbarSaveAs),
                   ),
                   const SizedBox(width: 4),
                   TextButton.icon(
                     key: const Key('toolbar-new-eud-source'),
                     onPressed: newEudSource,
                     icon: const Icon(Icons.code_rounded),
-                    label: const Text('New epScript'),
+                    label: Text(l10n.toolbarNewEpScript),
                   ),
                   const SizedBox(width: 8),
                   if (eudBuildActive)
@@ -1212,14 +1412,14 @@ class _EditorToolbar extends StatelessWidget {
                       key: const Key('toolbar-cancel-eud-build'),
                       onPressed: cancelEudBuild,
                       icon: const Icon(Icons.stop_rounded),
-                      label: const Text('Cancel Build'),
+                      label: Text(l10n.toolbarCancelBuild),
                     )
                   else
                     FilledButton.icon(
                       key: const Key('toolbar-build-eud'),
                       onPressed: buildEud,
                       icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Build EUD'),
+                      label: Text(l10n.toolbarBuildEud),
                     ),
                 ],
               ],
@@ -1227,6 +1427,45 @@ class _EditorToolbar extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// The active document and whether it still has unsaved edits, spelled out
+/// instead of relying on a bullet next to a tab.
+class _DocumentSaveStatus extends StatelessWidget {
+  const _DocumentSaveStatus({required this.name, required this.dirty});
+
+  final String name;
+  final bool dirty;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final color = dirty ? const Color(0xFFF6C85F) : const Color(0xFF8994A8);
+    return Row(
+      key: const Key('toolbar-document-status'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: dirty ? color : Colors.transparent,
+            shape: BoxShape.circle,
+            border: Border.all(color: color),
+          ),
+        ),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            '$name · ${dirty ? l10n.documentUnsaved : l10n.documentSaved}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: color, fontSize: 12),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1244,32 +1483,33 @@ class _EnvironmentBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final (label, compactLabel, color) = switch (assetState.status) {
       StarCraftDataAssetSettingsStatus.loading ||
       StarCraftDataAssetSettingsStatus.inspecting => (
-        'Assets checking',
-        'Checking',
+        l10n.assetsChecking,
+        l10n.assetsCheckingShort,
         const Color(0xFFAAC8FF),
       ),
       StarCraftDataAssetSettingsStatus.ready => (
-        'Assets ready',
-        'Ready',
+        l10n.assetsReady,
+        l10n.assetsReadyShort,
         const Color(0xFF7ADAA5),
       ),
       StarCraftDataAssetSettingsStatus.unconfigured => (
-        'Assets not configured',
-        'Setup',
+        l10n.assetsNotConfigured,
+        l10n.assetsNotConfiguredShort,
         const Color(0xFFFFC56E),
       ),
       StarCraftDataAssetSettingsStatus.unavailable => (
-        'Assets unavailable',
-        'Missing',
+        l10n.assetsUnavailable,
+        l10n.assetsUnavailableShort,
         const Color(0xFFFFB454),
       ),
     };
 
     return Tooltip(
-      message: 'Open StarCraft data asset settings • $label',
+      message: l10n.environmentBadgeTooltip(label),
       child: InkWell(
         key: const Key('starcraft-asset-environment-status'),
         onTap: onPressed,
@@ -1282,7 +1522,9 @@ class _EnvironmentBadge extends StatelessWidget {
             border: Border.all(color: const Color(0xFF33445F)),
           ),
           child: Text(
-            compact ? 'SC:R • $compactLabel' : 'Windows • SC:R • $label',
+            compact
+                ? l10n.environmentBadgeCompact(compactLabel)
+                : l10n.environmentBadge(label),
             style: TextStyle(color: color, fontSize: 12),
           ),
         ),
@@ -1360,25 +1602,45 @@ class _EditorWorkspace extends StatelessWidget {
         workspaceView == _WorkspaceView.project;
     final showingEud =
         workspaceView == _WorkspaceView.eud && eudDocument != null;
+    final l10n = context.l10n;
+    final showRail =
+        session != null || eudDocument != null || projectWorkspace != null;
 
     return Row(
       children: [
+        if (showRail) ...[
+          _WorkspaceRail(
+            session: session,
+            eudDocument: eudDocument,
+            workspaceView: workspaceView,
+            onShowMap: onShowMap,
+            onShowEud: onShowEud,
+            onShowCatalog: onShowCatalog,
+            onOpenSettings: onOpenSettings,
+            projectWorkspace: projectWorkspace,
+            onShowProject: onShowProject,
+            onShowTriggers: onShowTriggers,
+            onShowResources: onShowResources,
+            onShowBriefing: onShowBriefing,
+          ),
+          const VerticalDivider(width: 1),
+        ],
         SizedBox(
           width: fullWidth ? 0 : 210,
           child: Offstage(
             offstage: fullWidth,
             child: _EditorPane(
               title: showingEud
-                  ? 'Project / Sources'
+                  ? l10n.paneProjectSources
                   : session == null
-                  ? 'Project / Layers'
-                  : 'Layers / Object Palette',
+                  ? l10n.paneProjectLayers
+                  : l10n.paneLayersPalette,
               child: showingEud
                   ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
                   : session == null
-                  ? const _EmptyPaneMessage(
+                  ? _EmptyPaneMessage(
                       icon: Icons.layers_outlined,
-                      message: 'No map layers',
+                      message: l10n.emptyLayers,
                     )
                   : _MapLayersAndPalette(
                       session: session,
@@ -1403,23 +1665,6 @@ class _EditorWorkspace extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              if (session != null ||
-                  eudDocument != null ||
-                  projectWorkspace != null)
-                _DocumentTabs(
-                  session: session,
-                  eudDocument: eudDocument,
-                  workspaceView: workspaceView,
-                  onShowMap: onShowMap,
-                  onShowEud: onShowEud,
-                  onShowCatalog: onShowCatalog,
-                  onOpenSettings: onOpenSettings,
-                  projectWorkspace: projectWorkspace,
-                  onShowProject: onShowProject,
-                  onShowTriggers: onShowTriggers,
-                  onShowResources: onShowResources,
-                  onShowBriefing: onShowBriefing,
-                ),
               Expanded(
                 child: IndexedStack(
                   index: workspaceView == _WorkspaceView.briefing
@@ -1466,10 +1711,10 @@ class _EditorWorkspace extends StatelessWidget {
                       length: 2,
                       child: Column(
                         children: [
-                          const TabBar(
+                          TabBar(
                             tabs: [
-                              Tab(text: 'Ordinary triggers'),
-                              Tab(text: 'EUD extensions'),
+                              Tab(text: l10n.triggersOrdinary),
+                              Tab(text: l10n.triggersEudExtensions),
                             ],
                           ),
                           Expanded(
@@ -1489,8 +1734,8 @@ class _EditorWorkspace extends StatelessWidget {
                                         children: [
                                           TextButton(
                                             onPressed: onShowProject,
-                                            child: const Text(
-                                              'Open EUD Project to create, save or build rules',
+                                            child: Text(
+                                              l10n.triggersOpenEudProject,
                                             ),
                                           ),
                                           if (controller.project != null) ...[
@@ -1505,16 +1750,16 @@ class _EditorWorkspace extends StatelessWidget {
                                                   onPressed: controller.canUndo
                                                       ? controller.undo
                                                       : null,
-                                                  child: const Text(
-                                                    'Undo project',
+                                                  child: Text(
+                                                    l10n.triggersUndoProject,
                                                   ),
                                                 ),
                                                 TextButton(
                                                   onPressed: controller.canRedo
                                                       ? controller.redo
                                                       : null,
-                                                  child: const Text(
-                                                    'Redo project',
+                                                  child: Text(
+                                                    l10n.triggersRedoProject,
                                                   ),
                                                 ),
                                               ],
@@ -1525,9 +1770,7 @@ class _EditorWorkspace extends StatelessWidget {
                                     },
                                   )
                                 else
-                                  const Text(
-                                    'EUD project workspace unavailable.',
-                                  ),
+                                  Text(l10n.triggersEudUnavailable),
                               ],
                             ),
                           ),
@@ -1554,13 +1797,13 @@ class _EditorWorkspace extends StatelessWidget {
           child: Offstage(
             offstage: fullWidth,
             child: _EditorPane(
-              title: 'Inspector',
+              title: l10n.paneInspector,
               child: showingEud
                   ? _EudSourceInspector(document: eudDocument)
                   : session == null
-                  ? const _EmptyPaneMessage(
+                  ? _EmptyPaneMessage(
                       icon: Icons.tune,
-                      message: 'Nothing selected',
+                      message: l10n.emptyInspector,
                     )
                   : _MapInspector(
                       session: session,
@@ -1575,8 +1818,13 @@ class _EditorWorkspace extends StatelessWidget {
   }
 }
 
-class _DocumentTabs extends StatelessWidget {
-  const _DocumentTabs({
+/// Vertical navigation between the open map, its editors and EUD documents.
+///
+/// Each destination shows an icon and a short label so the user does not need
+/// to recognise document tabs by file name alone. The keys match the former
+/// document tabs so existing automation keeps working.
+class _WorkspaceRail extends StatelessWidget {
+  const _WorkspaceRail({
     required this.session,
     required this.eudDocument,
     required this.workspaceView,
@@ -1606,87 +1854,96 @@ class _DocumentTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final document = eudDocument;
-    return SizedBox(
-      height: 40,
-      child: ColoredBox(
-        color: const Color(0xFF171C24),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (session case final session?)
-                _DocumentTab(
-                  key: const Key('map-document-tab'),
-                  label: session.sourcePath == null
-                      ? 'Untitled map'
-                      : _fileName(session.sourcePath!),
-                  dirty: session.isDirty,
-                  icon: Icons.map_outlined,
-                  selected: workspaceView == _WorkspaceView.map,
-                  onPressed: onShowMap,
-                ),
-              if (session != null)
-                _DocumentTab(
-                  key: const Key('placement-catalog-tab'),
-                  label: 'Catalog',
-                  dirty: false,
-                  icon: Icons.grid_view_rounded,
-                  selected: workspaceView == _WorkspaceView.catalog,
-                  onPressed: onShowCatalog,
-                ),
-              if (session != null)
-                _DocumentTab(
-                  key: const Key('map-settings-tab'),
-                  label: 'Map Settings',
-                  icon: Icons.tune,
-                  selected: workspaceView == _WorkspaceView.settings,
-                  onPressed: onOpenSettings,
-                ),
-              if (document != null)
-                _DocumentTab(
-                  key: const Key('eud-source-tab'),
-                  label: document.fileName,
-                  dirty: document.isDirty,
-                  icon: Icons.code_rounded,
-                  selected: workspaceView == _WorkspaceView.eud,
-                  onPressed: onShowEud,
-                ),
-              if (session != null)
-                _DocumentTab(
-                  key: const Key('triggers-tab'),
-                  label: 'Triggers',
-                  icon: Icons.account_tree_outlined,
-                  selected: workspaceView == _WorkspaceView.triggers,
-                  onPressed: onShowTriggers,
-                ),
-              if (session != null)
-                _DocumentTab(
-                  key: const Key('resources-tab'),
-                  label: 'Resources',
-                  icon: Icons.library_music,
-                  selected: workspaceView == _WorkspaceView.resources,
-                  onPressed: onShowResources,
-                ),
-              if (session != null)
-                _DocumentTab(
-                  key: const Key('briefing-tab'),
-                  label: 'Briefing',
-                  icon: Icons.movie_outlined,
-                  selected: workspaceView == _WorkspaceView.briefing,
-                  onPressed: onShowBriefing,
-                ),
-              if (projectWorkspace != null)
-                _DocumentTab(
-                  key: const Key('eud-project-tab'),
-                  label: 'EUD Project',
-                  dirty: projectWorkspace!.projects.isDirty,
-                  icon: Icons.folder_open,
-                  selected: workspaceView == _WorkspaceView.project,
-                  onPressed: onShowProject,
-                ),
-            ],
+    final session = this.session;
+    return Semantics(
+      container: true,
+      label: l10n.railLabel,
+      child: SizedBox(
+        key: const Key('workspace-rail'),
+        width: 88,
+        child: ColoredBox(
+          color: const Color(0xFF12161D),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('map-document-tab'),
+                    label: l10n.railMap,
+                    tooltip: _sessionName(l10n, session),
+                    dirty: session.isDirty,
+                    icon: Icons.map_outlined,
+                    selected: workspaceView == _WorkspaceView.map,
+                    onPressed: onShowMap,
+                  ),
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('placement-catalog-tab'),
+                    label: l10n.railCatalog,
+                    icon: Icons.grid_view_rounded,
+                    selected: workspaceView == _WorkspaceView.catalog,
+                    onPressed: onShowCatalog,
+                  ),
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('map-settings-tab'),
+                    label: l10n.railMapSettings,
+                    icon: Icons.tune,
+                    selected: workspaceView == _WorkspaceView.settings,
+                    onPressed: onOpenSettings,
+                  ),
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('triggers-tab'),
+                    label: l10n.railTriggers,
+                    icon: Icons.account_tree_outlined,
+                    selected: workspaceView == _WorkspaceView.triggers,
+                    onPressed: onShowTriggers,
+                  ),
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('resources-tab'),
+                    label: l10n.railResources,
+                    icon: Icons.library_music,
+                    selected: workspaceView == _WorkspaceView.resources,
+                    onPressed: onShowResources,
+                  ),
+                if (session != null)
+                  _RailDestination(
+                    key: const Key('briefing-tab'),
+                    label: l10n.railBriefing,
+                    icon: Icons.movie_outlined,
+                    selected: workspaceView == _WorkspaceView.briefing,
+                    onPressed: onShowBriefing,
+                  ),
+                if (session != null &&
+                    (document != null || projectWorkspace != null))
+                  const Divider(height: 17, indent: 10, endIndent: 10),
+                if (document != null)
+                  _RailDestination(
+                    key: const Key('eud-source-tab'),
+                    label: document.fileName,
+                    tooltip: document.sourcePath ?? document.fileName,
+                    dirty: document.isDirty,
+                    icon: Icons.code_rounded,
+                    selected: workspaceView == _WorkspaceView.eud,
+                    onPressed: onShowEud,
+                  ),
+                if (projectWorkspace != null)
+                  _RailDestination(
+                    key: const Key('eud-project-tab'),
+                    label: l10n.railEudProject,
+                    dirty: projectWorkspace!.projects.isDirty,
+                    icon: Icons.folder_open,
+                    selected: workspaceView == _WorkspaceView.project,
+                    onPressed: onShowProject,
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1694,17 +1951,19 @@ class _DocumentTabs extends StatelessWidget {
   }
 }
 
-class _DocumentTab extends StatelessWidget {
-  const _DocumentTab({
+class _RailDestination extends StatelessWidget {
+  const _RailDestination({
     required this.label,
     required this.icon,
     required this.selected,
     required this.onPressed,
+    this.tooltip,
     this.dirty = false,
     super.key,
   });
 
   final String label;
+  final String? tooltip;
   final IconData icon;
   final bool selected;
   final VoidCallback onPressed;
@@ -1712,46 +1971,68 @@ class _DocumentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? const Color(0xFF0D1117) : Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 140, maxWidth: 220),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                width: 2,
-                color: selected ? const Color(0xFF70A1FF) : Colors.transparent,
-              ),
-              right: const BorderSide(color: Color(0xFF252C38)),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: selected
-                    ? const Color(0xFF8EB5FF)
-                    : const Color(0xFF778398),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  '$label${dirty ? ' •' : ''}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: selected
-                        ? const Color(0xFFE1E8F3)
-                        : const Color(0xFF9AA5B8),
-                    fontSize: 12,
+    final l10n = context.l10n;
+    final name = tooltip ?? label;
+    final foreground = selected
+        ? const Color(0xFFE1E8F3)
+        : const Color(0xFF9AA5B8);
+    return Tooltip(
+      message: dirty ? l10n.railUnsavedTooltip(name) : name,
+      waitDuration: const Duration(milliseconds: 400),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        child: Material(
+          color: selected ? const Color(0xFF223450) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        icon,
+                        size: 20,
+                        color: selected
+                            ? const Color(0xFF8EB5FF)
+                            : const Color(0xFF778398),
+                      ),
+                      if (dirty)
+                        Positioned(
+                          right: -4,
+                          top: -2,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF6C85F),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '$label${dirty ? ' •' : ''}',
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1786,7 +2067,11 @@ class _EudSourceList extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            subtitle: Text(document.isUntitled ? 'Draft' : 'epScript source'),
+            subtitle: Text(
+              document.isUntitled
+                  ? context.l10n.sourceDraft
+                  : context.l10n.sourceEpScript,
+            ),
             onTap: onSelected,
           ),
         ),
@@ -1802,21 +2087,31 @@ class _EudSourceInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ListView(
       key: const Key('eud-source-inspector'),
       padding: const EdgeInsets.all(12),
       children: [
-        _InspectorValue(label: 'File', value: document.fileName),
+        _InspectorValue(label: l10n.inspectorFile, value: document.fileName),
         _InspectorValue(
-          label: 'Location',
-          value: document.sourcePath ?? 'In-memory draft',
+          label: l10n.inspectorLocation,
+          value: document.sourcePath ?? l10n.inMemoryDraft,
         ),
-        _InspectorValue(label: 'Lines', value: '${document.lineCount}'),
-        _InspectorValue(label: 'Characters', value: '${document.text.length}'),
-        _InspectorValue(label: 'Revision', value: '${document.revision}'),
         _InspectorValue(
-          label: 'State',
-          value: document.isDirty ? 'Modified' : 'Clean',
+          label: l10n.inspectorLines,
+          value: '${document.lineCount}',
+        ),
+        _InspectorValue(
+          label: l10n.inspectorCharacters,
+          value: '${document.text.length}',
+        ),
+        _InspectorValue(
+          label: l10n.inspectorRevision,
+          value: '${document.revision}',
+        ),
+        _InspectorValue(
+          label: l10n.inspectorState,
+          value: document.isDirty ? l10n.stateModified : l10n.stateClean,
         ),
       ],
     );
@@ -1867,12 +2162,12 @@ class _EmptyPaneMessage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24, color: const Color(0xFF657086)),
-            const SizedBox(height: 8),
+            Icon(icon, size: 28, color: const Color(0xFF657086)),
+            const SizedBox(height: 10),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF8994A8), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF9AA5B8), fontSize: 13),
             ),
           ],
         ),
@@ -1955,6 +2250,7 @@ class _MapWorkspace extends StatelessWidget {
       );
     }
 
+    final l10n = context.l10n;
     return ColoredBox(
       key: const Key('map-workspace'),
       color: const Color(0xFF101319),
@@ -1974,22 +2270,32 @@ class _MapWorkspace extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   Text(
-                    'Open a map to begin',
+                    l10n.startTitle,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'The first release will support unprotected StarCraft: '
-                    'Remastered UMS maps.',
+                  Text(
+                    l10n.startBody,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF929DB0)),
+                    style: const TextStyle(
+                      color: Color(0xFFA3ADBF),
+                      height: 1.45,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     key: const Key('open-map-button'),
                     onPressed: openMap,
                     icon: const Icon(Icons.folder_open),
-                    label: const Text('Open Map'),
+                    label: Text(l10n.toolbarOpenMap),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.startShortcutHint,
+                    style: const TextStyle(
+                      color: Color(0xFF7F8BA0),
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   const Divider(),
@@ -1997,7 +2303,7 @@ class _MapWorkspace extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        'Recent maps',
+                        l10n.recentMaps,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ],
@@ -2009,14 +2315,14 @@ class _MapWorkspace extends StatelessWidget {
                       child: LinearProgressIndicator(),
                     )
                   else if (recentProjectsError)
-                    const _RecentProjectsMessage(
+                    _RecentProjectsMessage(
                       icon: Icons.warning_amber_rounded,
-                      message: 'Recent maps could not be loaded.',
+                      message: l10n.recentMapsLoadFailed,
                     )
                   else if (recentProjects.isEmpty)
-                    const _RecentProjectsMessage(
+                    _RecentProjectsMessage(
                       icon: Icons.history,
-                      message: 'Maps you open will appear here.',
+                      message: l10n.recentMapsEmpty,
                     )
                   else
                     for (final project in recentProjects)
@@ -2109,297 +2415,322 @@ class _OpenedMapWorkspace extends StatelessWidget {
     final blockingCount = diagnostics
         .where((diagnostic) => diagnostic.blocksOperation)
         .length;
+    final l10n = context.l10n;
 
     return ColoredBox(
       key: const Key('map-workspace'),
       color: const Color(0xFF101319),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            color: const Color(0xFF171C24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.map_outlined,
-                      color: Color(0xFF70A1FF),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Tooltip(
-                        message: session.sourcePath,
-                        child: Text(
-                          session.sourcePath == null
-                              ? 'Untitled map'
-                              : _fileName(session.sourcePath!),
-                          key: const Key('opened-map-name'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+      child: LayoutBuilder(
+        builder: (context, workspaceConstraints) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // On short windows the header scrolls instead of pushing the canvas
+            // out of view.
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: workspaceConstraints.maxHeight * 0.55,
+              ),
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+                  color: const Color(0xFF171C24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.map_outlined,
+                            color: Color(0xFF70A1FF),
+                            size: 22,
                           ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _SessionStatusChip(
-                      restricted: session.requiresRestrictedEditing,
-                      editable: canEditTerrain,
-                      dirty: session.isDirty,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: [
-                    _MapCanvasMetadata(
-                      key: const Key('map-canvas-size'),
-                      icon: Icons.aspect_ratio_rounded,
-                      value: dimensions == null
-                          ? 'Size unavailable'
-                          : '${dimensions.width} × ${dimensions.height}',
-                    ),
-                    _MapCanvasMetadata(
-                      icon: Icons.landscape_outlined,
-                      value: tileset == null
-                          ? 'Tileset unavailable'
-                          : tileset.knownTileset == null
-                          ? 'Tileset ${tileset.rawValue}'
-                          : _humanizeEnumName(tileset.knownTileset!.name),
-                    ),
-                    _MapCanvasMetadata(
-                      icon: rawTileValues == null
-                          ? Icons.border_all_rounded
-                          : Icons.texture_rounded,
-                      value: rawTileValues == null
-                          ? 'Geometry preview'
-                          : '${rawTileValues.length} MTXM tiles',
-                    ),
-                    const _MapCanvasMetadata(
-                      key: Key('map-canvas-navigation-help'),
-                      icon: Icons.pan_tool_alt_rounded,
-                      value: 'Wheel zoom · Space/middle drag',
-                    ),
-                    _MapCanvasMetadata(
-                      key: const Key('map-layer-selection-priority'),
-                      icon: Icons.layers_rounded,
-                      value:
-                          'Pick ${layerState.selectionPriority.map((layer) => layer.label).join(' → ')}',
-                    ),
-                    if (paletteState.selectedEntry case final entry?)
-                      _MapCanvasMetadata(
-                        key: const Key('object-placement-active'),
-                        icon: Icons.add_location_alt_outlined,
-                        value: 'Place ${entry.label} · Esc cancel',
-                      ),
-                    if (objectEditingController.state.isCreatingLocation)
-                      const _MapCanvasMetadata(
-                        key: Key('location-creation-active'),
-                        icon: Icons.crop_free_rounded,
-                        value: 'Drag new location · Esc cancel',
-                      ),
-                    if (blockingCount > 0 || warningCount > 0)
-                      _MapCanvasMetadata(
-                        icon: Icons.report_problem_outlined,
-                        value:
-                            '$blockingCount blocking · $warningCount warning',
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                if (layerState.activeLayer == MapLayerType.terrain)
-                  _TerrainEditingToolbar(
-                    state: editingState,
-                    unsupportedRawValues:
-                        terrainTileTextureState.unsupportedRawValues,
-                    canSelectTiles: canSelectTiles,
-                    canEditTerrain: canEditTerrain,
-                    onToolSelected: terrainEditingController.setTool,
-                    onUndo: editingState.canUndo
-                        ? terrainEditingController.undo
-                        : null,
-                    onRedo: editingState.canRedo
-                        ? terrainEditingController.redo
-                        : null,
-                  )
-                else
-                  _ObjectEditingToolbar(
-                    selectedCount: layerState.selections
-                        .where(
-                          (selection) =>
-                              selection.object.layer != MapLayerType.terrain,
-                        )
-                        .length,
-                    canEdit: objectEditingController.canEditSelection,
-                    undoLabel: objectEditingController.undoLabel,
-                    redoLabel: objectEditingController.redoLabel,
-                    onDelete: objectEditingController.canEditSelection
-                        ? () => deleteObjectsWithDoodadReview(
-                            context,
-                            objectEditingController,
-                            placementCatalogController,
-                          )
-                        : null,
-                    onUndo: objectEditingController.canUndo
-                        ? objectEditingController.undo
-                        : null,
-                    onRedo: objectEditingController.canRedo
-                        ? objectEditingController.redo
-                        : null,
-                    showLocationCreation:
-                        layerState.activeLayer == MapLayerType.locations,
-                    locationCreationActive:
-                        objectEditingController.state.isCreatingLocation,
-                    canCreateLocation:
-                        objectEditingController.canCreateLocation,
-                    onToggleLocationCreation: () {
-                      if (objectEditingController.state.isCreatingLocation) {
-                        objectEditingController.cancelLocationCreation();
-                      } else {
-                        objectPaletteController.cancelPlacement();
-                        objectEditingController.startLocationCreation();
-                      }
-                    },
-                  ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child:
-                dimensions == null ||
-                    dimensions.width == 0 ||
-                    dimensions.height == 0
-                ? const _MapCanvasUnavailable()
-                : MapCanvas(
-                    key: ObjectKey(session.extractedMap),
-                    mapWidth: dimensions.width,
-                    mapHeight: dimensions.height,
-                    rawTileValues: terrainLayer.isVisible
-                        ? rawTileValues
-                        : null,
-                    terrainTextureState: terrainTileTextureState,
-                    objectSpriteTextureState: objectSpriteTextureState,
-                    editingTool: editingState.tool,
-                    selectedTile: selectedTerrainTile,
-                    layerScene: layerScene,
-                    isObjectPlacementActive:
-                        paletteState.isPlacementActive ||
-                        placementCatalogController.state.isPlacementActive ||
-                        objectEditingController.state.isCreatingLocation,
-                    placementGhost: _placementGhostFor(
-                      placementCatalogController.state.selection,
-                    ),
-                    onSelectionRequested:
-                        editingState.tool == TerrainEditingTool.select
-                        ? (request) {
-                            if (placementCatalogController
-                                .state
-                                .isPlacementActive) {
-                              placementCatalogController.placeAt(
-                                pixelX: request.coordinate.pixelX,
-                                pixelY: request.coordinate.pixelY,
-                                tileX: request.coordinate.tileX,
-                                tileY: request.coordinate.tileY,
-                              );
-                              return;
-                            }
-                            if (paletteState.isPlacementActive) {
-                              objectPaletteController.placeSelected(
-                                pixelX: request.coordinate.pixelX,
-                                pixelY: request.coordinate.pixelY,
-                              );
-                              return;
-                            }
-                            if (objectEditingController
-                                .state
-                                .isCreatingLocation) {
-                              return;
-                            }
-                            final selection = mapLayerController.selectAt(
-                              session: session,
-                              pixelX: request.coordinate.pixelX,
-                              pixelY: request.coordinate.pixelY,
-                              additive: request.additive,
-                            );
-                            if (selection?.object.layer ==
-                                    MapLayerType.terrain &&
-                                canSelectTiles) {
-                              terrainEditingController.selectTileAt(
-                                TerrainTileCoordinate(
-                                  x: request.coordinate.tileX,
-                                  y: request.coordinate.tileY,
+                          const SizedBox(width: 9),
+                          Expanded(
+                            child: Tooltip(
+                              message: session.sourcePath ?? l10n.untitledMap,
+                              child: Text(
+                                _sessionName(l10n, session),
+                                key: const Key('opened-map-name'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              );
-                            }
-                          }
-                        : null,
-                    onSelectionRegionRequested:
-                        editingState.tool == TerrainEditingTool.select &&
-                            !placementCatalogController
-                                .state
-                                .isPlacementActive &&
-                            !paletteState.isPlacementActive
-                        ? (request) {
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          _SessionStatusChip(
+                            restricted: session.requiresRestrictedEditing,
+                            // Editability is a property of the map session, not of
+                            // the active layer: selecting Units must not make the
+                            // chip claim the map is read-only.
+                            editable: terrainEditingController.canEditTerrain,
+                            dirty: session.isDirty,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 9),
+                      Wrap(
+                        spacing: 7,
+                        runSpacing: 7,
+                        children: [
+                          _MapCanvasMetadata(
+                            key: const Key('map-canvas-size'),
+                            icon: Icons.aspect_ratio_rounded,
+                            value: dimensions == null
+                                ? l10n.mapSizeUnavailable
+                                : '${dimensions.width} × ${dimensions.height}',
+                          ),
+                          _MapCanvasMetadata(
+                            icon: Icons.landscape_outlined,
+                            value: tileset == null
+                                ? l10n.mapTilesetUnavailable
+                                : tileset.knownTileset == null
+                                ? l10n.mapTilesetRaw('${tileset.rawValue}')
+                                : _humanizeEnumName(tileset.knownTileset!.name),
+                          ),
+                          _MapCanvasMetadata(
+                            icon: rawTileValues == null
+                                ? Icons.border_all_rounded
+                                : Icons.texture_rounded,
+                            value: rawTileValues == null
+                                ? l10n.mapGeometryPreview
+                                : l10n.mapMtxmTiles(rawTileValues.length),
+                          ),
+                          _MapCanvasMetadata(
+                            key: const Key('map-canvas-navigation-help'),
+                            icon: Icons.pan_tool_alt_rounded,
+                            value: l10n.mapNavigationHelp,
+                          ),
+                          _MapCanvasMetadata(
+                            key: const Key('map-layer-selection-priority'),
+                            icon: Icons.layers_rounded,
+                            value: l10n.mapPickPriority(
+                              layerState.selectionPriority
+                                  .map((layer) => layer.localizedLabel(l10n))
+                                  .join(' → '),
+                            ),
+                          ),
+                          if (paletteState.selectedEntry case final entry?)
+                            _MapCanvasMetadata(
+                              key: const Key('object-placement-active'),
+                              icon: Icons.add_location_alt_outlined,
+                              value: l10n.mapPlacing(entry.label),
+                              highlighted: true,
+                            ),
+                          if (objectEditingController.state.isCreatingLocation)
+                            _MapCanvasMetadata(
+                              key: const Key('location-creation-active'),
+                              icon: Icons.crop_free_rounded,
+                              value: l10n.mapCreatingLocation,
+                              highlighted: true,
+                            ),
+                          if (blockingCount > 0 || warningCount > 0)
+                            _MapCanvasMetadata(
+                              icon: Icons.report_problem_outlined,
+                              value: l10n.mapProblemCounts(
+                                blockingCount,
+                                warningCount,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 9),
+                      if (layerState.activeLayer == MapLayerType.terrain)
+                        _TerrainEditingToolbar(
+                          state: editingState,
+                          unsupportedRawValues:
+                              terrainTileTextureState.unsupportedRawValues,
+                          canSelectTiles: canSelectTiles,
+                          canEditTerrain: canEditTerrain,
+                          onToolSelected: terrainEditingController.setTool,
+                          onUndo: editingState.canUndo
+                              ? terrainEditingController.undo
+                              : null,
+                          onRedo: editingState.canRedo
+                              ? terrainEditingController.redo
+                              : null,
+                        )
+                      else
+                        _ObjectEditingToolbar(
+                          selectedCount: layerState.selections
+                              .where(
+                                (selection) =>
+                                    selection.object.layer !=
+                                    MapLayerType.terrain,
+                              )
+                              .length,
+                          canEdit: objectEditingController.canEditSelection,
+                          undoLabel: objectEditingController.undoLabel,
+                          redoLabel: objectEditingController.redoLabel,
+                          onDelete: objectEditingController.canEditSelection
+                              ? () => deleteObjectsWithDoodadReview(
+                                  context,
+                                  objectEditingController,
+                                  placementCatalogController,
+                                )
+                              : null,
+                          onUndo: objectEditingController.canUndo
+                              ? objectEditingController.undo
+                              : null,
+                          onRedo: objectEditingController.canRedo
+                              ? objectEditingController.redo
+                              : null,
+                          showLocationCreation:
+                              layerState.activeLayer == MapLayerType.locations,
+                          locationCreationActive:
+                              objectEditingController.state.isCreatingLocation,
+                          canCreateLocation:
+                              objectEditingController.canCreateLocation,
+                          onToggleLocationCreation: () {
                             if (objectEditingController
                                 .state
                                 .isCreatingLocation) {
-                              objectEditingController.createLocation(
-                                request.region,
-                              );
+                              objectEditingController.cancelLocationCreation();
                             } else {
-                              mapLayerController.selectRegion(
+                              objectPaletteController.cancelPlacement();
+                              objectEditingController.startLocationCreation();
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child:
+                  dimensions == null ||
+                      dimensions.width == 0 ||
+                      dimensions.height == 0
+                  ? const _MapCanvasUnavailable()
+                  : MapCanvas(
+                      key: ObjectKey(session.extractedMap),
+                      mapWidth: dimensions.width,
+                      mapHeight: dimensions.height,
+                      rawTileValues: terrainLayer.isVisible
+                          ? rawTileValues
+                          : null,
+                      terrainTextureState: terrainTileTextureState,
+                      objectSpriteTextureState: objectSpriteTextureState,
+                      editingTool: editingState.tool,
+                      selectedTile: selectedTerrainTile,
+                      layerScene: layerScene,
+                      isObjectPlacementActive:
+                          paletteState.isPlacementActive ||
+                          placementCatalogController.state.isPlacementActive ||
+                          objectEditingController.state.isCreatingLocation,
+                      placementGhost: _placementGhostFor(
+                        placementCatalogController.state.selection,
+                      ),
+                      onSelectionRequested:
+                          editingState.tool == TerrainEditingTool.select
+                          ? (request) {
+                              if (placementCatalogController
+                                  .state
+                                  .isPlacementActive) {
+                                placementCatalogController.placeAt(
+                                  pixelX: request.coordinate.pixelX,
+                                  pixelY: request.coordinate.pixelY,
+                                  tileX: request.coordinate.tileX,
+                                  tileY: request.coordinate.tileY,
+                                );
+                                return;
+                              }
+                              if (paletteState.isPlacementActive) {
+                                objectPaletteController.placeSelected(
+                                  pixelX: request.coordinate.pixelX,
+                                  pixelY: request.coordinate.pixelY,
+                                );
+                                return;
+                              }
+                              if (objectEditingController
+                                  .state
+                                  .isCreatingLocation) {
+                                return;
+                              }
+                              final selection = mapLayerController.selectAt(
                                 session: session,
-                                region: request.region,
+                                pixelX: request.coordinate.pixelX,
+                                pixelY: request.coordinate.pixelY,
                                 additive: request.additive,
                               );
+                              if (selection?.object.layer ==
+                                      MapLayerType.terrain &&
+                                  canSelectTiles) {
+                                terrainEditingController.selectTileAt(
+                                  TerrainTileCoordinate(
+                                    x: request.coordinate.tileX,
+                                    y: request.coordinate.tileY,
+                                  ),
+                                );
+                              }
                             }
-                          }
-                        : null,
-                    onSelectedObjectsMoved:
-                        editingState.tool == TerrainEditingTool.select &&
-                            !placementCatalogController
-                                .state
-                                .isPlacementActive &&
-                            !paletteState.isPlacementActive &&
-                            !objectEditingController.state.isCreatingLocation &&
-                            objectEditingController.canEditSelection
-                        ? (request) => objectEditingController.moveSelection(
-                            dx: request.dx,
-                            dy: request.dy,
-                          )
-                        : null,
-                    onBrushStroke:
-                        canEditTerrain && editingState.hasSelectedTile
-                        ? terrainEditingController.paintTiles
-                        : null,
-                    onBrushStrokeStarted:
-                        canEditTerrain && editingState.hasSelectedTile
-                        ? terrainEditingController.beginBrushStroke
-                        : null,
-                    onBrushStrokeEnded:
-                        canEditTerrain && editingState.hasSelectedTile
-                        ? terrainEditingController.commitBrushStroke
-                        : null,
-                    onBrushStrokeCancelled:
-                        canEditTerrain && editingState.hasSelectedTile
-                        ? terrainEditingController.cancelBrushStroke
-                        : null,
-                    onRectangleFilled:
-                        canEditTerrain && editingState.hasSelectedTile
-                        ? terrainEditingController.fillRectangle
-                        : null,
-                  ),
-          ),
-        ],
+                          : null,
+                      onSelectionRegionRequested:
+                          editingState.tool == TerrainEditingTool.select &&
+                              !placementCatalogController
+                                  .state
+                                  .isPlacementActive &&
+                              !paletteState.isPlacementActive
+                          ? (request) {
+                              if (objectEditingController
+                                  .state
+                                  .isCreatingLocation) {
+                                objectEditingController.createLocation(
+                                  request.region,
+                                );
+                              } else {
+                                mapLayerController.selectRegion(
+                                  session: session,
+                                  region: request.region,
+                                  additive: request.additive,
+                                );
+                              }
+                            }
+                          : null,
+                      onSelectedObjectsMoved:
+                          editingState.tool == TerrainEditingTool.select &&
+                              !placementCatalogController
+                                  .state
+                                  .isPlacementActive &&
+                              !paletteState.isPlacementActive &&
+                              !objectEditingController
+                                  .state
+                                  .isCreatingLocation &&
+                              objectEditingController.canEditSelection
+                          ? (request) => objectEditingController.moveSelection(
+                              dx: request.dx,
+                              dy: request.dy,
+                            )
+                          : null,
+                      onBrushStroke:
+                          canEditTerrain && editingState.hasSelectedTile
+                          ? terrainEditingController.paintTiles
+                          : null,
+                      onBrushStrokeStarted:
+                          canEditTerrain && editingState.hasSelectedTile
+                          ? terrainEditingController.beginBrushStroke
+                          : null,
+                      onBrushStrokeEnded:
+                          canEditTerrain && editingState.hasSelectedTile
+                          ? terrainEditingController.commitBrushStroke
+                          : null,
+                      onBrushStrokeCancelled:
+                          canEditTerrain && editingState.hasSelectedTile
+                          ? terrainEditingController.cancelBrushStroke
+                          : null,
+                      onRectangleFilled:
+                          canEditTerrain && editingState.hasSelectedTile
+                          ? terrainEditingController.fillRectangle
+                          : null,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2426,31 +2757,52 @@ class _MapCanvasMetadata extends StatelessWidget {
   const _MapCanvasMetadata({
     required this.icon,
     required this.value,
+    this.highlighted = false,
     super.key,
   });
 
   final IconData icon;
   final String value;
 
+  /// Emphasises an instruction the user should act on now, such as an active
+  /// placement, instead of passive map information.
+  final bool highlighted;
+
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFF202733),
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(color: const Color(0xFF313C4F)),
+        color: highlighted ? const Color(0xFF173A4A) : const Color(0xFF202733),
+        borderRadius: BorderRadius.circular(highlighted ? 999 : 5),
+        border: Border.all(
+          color: highlighted
+              ? const Color(0xFF3E7A8E)
+              : const Color(0xFF313C4F),
+        ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12, color: const Color(0xFF91ACD8)),
+            Icon(
+              icon,
+              size: 13,
+              color: highlighted
+                  ? const Color(0xFF8FDCEB)
+                  : const Color(0xFF91ACD8),
+            ),
             const SizedBox(width: 5),
             Flexible(
               child: Text(
                 value,
-                style: const TextStyle(color: Color(0xFFC2CAD8), fontSize: 10),
+                style: TextStyle(
+                  color: highlighted
+                      ? const Color(0xFFD6F3F8)
+                      : const Color(0xFFC2CAD8),
+                  fontSize: 11,
+                  fontWeight: highlighted ? FontWeight.w600 : FontWeight.w400,
+                ),
               ),
             ),
           ],
@@ -2489,6 +2841,7 @@ class _ObjectEditingToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Wrap(
       key: const Key('object-editing-toolbar'),
       spacing: 7,
@@ -2498,7 +2851,9 @@ class _ObjectEditingToolbar extends StatelessWidget {
         if (showLocationCreation)
           _TerrainToolButton(
             key: const Key('object-create-location'),
-            label: locationCreationActive ? 'Cancel location' : 'New location',
+            label: locationCreationActive
+                ? l10n.objectCancelLocation
+                : l10n.objectNewLocation,
             icon: locationCreationActive
                 ? Icons.close_rounded
                 : Icons.crop_free_rounded,
@@ -2508,7 +2863,7 @@ class _ObjectEditingToolbar extends StatelessWidget {
           ),
         _TerrainToolButton(
           key: const Key('object-delete'),
-          label: 'Delete',
+          label: l10n.objectDelete,
           icon: Icons.delete_outline_rounded,
           selected: false,
           enabled: onDelete != null,
@@ -2516,7 +2871,7 @@ class _ObjectEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('object-undo'),
-          label: 'Undo',
+          label: l10n.objectUndo,
           icon: Icons.undo_rounded,
           selected: false,
           enabled: onUndo != null,
@@ -2524,7 +2879,7 @@ class _ObjectEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('object-redo'),
-          label: 'Redo',
+          label: l10n.objectRedo,
           icon: Icons.redo_rounded,
           selected: false,
           enabled: onRedo != null,
@@ -2536,17 +2891,16 @@ class _ObjectEditingToolbar extends StatelessWidget {
               ? Icons.info_outline_rounded
               : Icons.select_all_rounded,
           value: selectedCount == 0
-              ? 'Click or drag to select objects'
-              : '$selectedCount selected · drag selection to move',
+              ? l10n.objectSelectHint
+              : l10n.objectSelectedMove(selectedCount),
         ),
         _MapCanvasMetadata(
           key: const Key('object-editing-history'),
           icon: canEdit ? Icons.edit_outlined : Icons.lock_outline_rounded,
           value: [
-            if (undoLabel != null) 'Undo $undoLabel',
-            if (redoLabel != null) 'Redo $redoLabel',
-            if (undoLabel == null && redoLabel == null)
-              'Ctrl/Shift click adds · Delete removes',
+            if (undoLabel != null) l10n.objectUndoAction(undoLabel!),
+            if (redoLabel != null) l10n.objectRedoAction(redoLabel!),
+            if (undoLabel == null && redoLabel == null) l10n.objectShortcutHint,
           ].join(' · '),
         ),
       ],
@@ -2575,6 +2929,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final hasSelectedTile = state.hasSelectedTile;
     final selection = state.selectedTile;
     final selectedRawTileValue = state.selectedRawTileValue;
@@ -2585,12 +2940,16 @@ class _TerrainEditingToolbar extends StatelessWidget {
         selectedRawTileValue != null &&
         unsupportedRawValues.contains(selectedRawTileValue);
     final selectedLabel = selectedDisplayValue == null
-        ? 'Select a source tile'
-        : 'Raw tile ${selectedDisplayValue.rawValue} · '
-              'group ${selectedDisplayValue.groupIndex} · '
-              'member ${selectedDisplayValue.groupMember}'
-              '${selectedIsUnsupported ? ' · unsupported' : ''}'
-              '${selection == null ? '' : ' from ${selection.x},${selection.y}'}';
+        ? l10n.terrainSelectSource
+        : l10n.terrainRawTile(
+                '${selectedDisplayValue.rawValue}',
+                '${selectedDisplayValue.groupIndex}',
+                '${selectedDisplayValue.groupMember}',
+              ) +
+              (selectedIsUnsupported ? l10n.terrainUnsupportedSuffix : '') +
+              (selection == null
+                  ? ''
+                  : l10n.terrainFromSuffix('${selection.x}', '${selection.y}'));
 
     return Wrap(
       key: const Key('terrain-editing-toolbar'),
@@ -2600,7 +2959,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
       children: [
         _TerrainToolButton(
           key: const Key('terrain-tool-select'),
-          label: 'Select tile',
+          label: l10n.terrainToolSelect,
           icon: Icons.colorize_rounded,
           selected: state.tool == TerrainEditingTool.select,
           enabled: canSelectTiles,
@@ -2608,7 +2967,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('terrain-tool-brush'),
-          label: 'Brush',
+          label: l10n.terrainToolBrush,
           icon: Icons.brush_rounded,
           selected: state.tool == TerrainEditingTool.brush,
           enabled: canEditTerrain && hasSelectedTile,
@@ -2616,7 +2975,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('terrain-tool-rectangle'),
-          label: 'Rectangle',
+          label: l10n.terrainToolRectangle,
           icon: Icons.crop_square_rounded,
           selected: state.tool == TerrainEditingTool.rectangle,
           enabled: canEditTerrain && hasSelectedTile,
@@ -2624,7 +2983,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('terrain-undo'),
-          label: 'Undo',
+          label: l10n.objectUndo,
           icon: Icons.undo_rounded,
           selected: false,
           enabled: onUndo != null,
@@ -2632,7 +2991,7 @@ class _TerrainEditingToolbar extends StatelessWidget {
         ),
         _TerrainToolButton(
           key: const Key('terrain-redo'),
-          label: 'Redo',
+          label: l10n.objectRedo,
           icon: Icons.redo_rounded,
           selected: false,
           enabled: onRedo != null,
@@ -2645,10 +3004,10 @@ class _TerrainEditingToolbar extends StatelessWidget {
               : Icons.info_outline_rounded,
           value: selectedLabel,
         ),
-        const _MapCanvasMetadata(
-          key: Key('terrain-editing-scope'),
+        _MapCanvasMetadata(
+          key: const Key('terrain-editing-scope'),
           icon: Icons.shield_outlined,
-          value: 'MTXM only · TILE/ISOM preserved',
+          value: l10n.terrainScope,
         ),
       ],
     );
@@ -2674,10 +3033,10 @@ class _TerrainToolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 28,
+      height: 32,
       child: OutlinedButton.icon(
         onPressed: enabled ? onPressed : null,
-        icon: Icon(icon, size: 14),
+        icon: Icon(icon, size: 16),
         label: Text(label),
         style: OutlinedButton.styleFrom(
           foregroundColor: selected
@@ -2687,8 +3046,8 @@ class _TerrainToolButton extends StatelessWidget {
           side: BorderSide(
             color: selected ? const Color(0xFF70A1FF) : const Color(0xFF3A465A),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 9),
-          textStyle: const TextStyle(fontSize: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          textStyle: const TextStyle(fontSize: 12),
           visualDensity: VisualDensity.compact,
         ),
       ),
@@ -2701,13 +3060,13 @@ class _MapCanvasUnavailable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
-      key: Key('map-canvas-unavailable'),
-      color: Color(0xFF0C1016),
+    return ColoredBox(
+      key: const Key('map-canvas-unavailable'),
+      color: const Color(0xFF0C1016),
       child: Center(
         child: _EmptyPaneMessage(
           icon: Icons.grid_off_rounded,
-          message: 'A unique, non-zero DIM section is required for the canvas.',
+          message: context.l10n.mapCanvasUnavailable,
         ),
       ),
     );
@@ -2734,26 +3093,36 @@ class _SessionStatusChip extends StatelessWidget {
         : editable
         ? const Color(0xFF68D391)
         : const Color(0xFF91ACD8);
-    return Container(
-      key: const Key('opened-map-mode'),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Text(
-        restricted
-            ? 'Restricted'
-            : dirty
-            ? 'Modified'
-            : editable
-            ? 'Editable'
-            : 'Read-only preview',
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    final l10n = context.l10n;
+    return Tooltip(
+      message: restricted
+          ? l10n.sessionRestrictedHelp
+          : dirty
+          ? l10n.sessionModifiedHelp
+          : editable
+          ? l10n.sessionEditableHelp
+          : l10n.sessionReadOnlyHelp,
+      child: Container(
+        key: const Key('opened-map-mode'),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withValues(alpha: 0.55)),
+        ),
+        child: Text(
+          restricted
+              ? l10n.sessionRestricted
+              : dirty
+              ? l10n.sessionModified
+              : editable
+              ? l10n.sessionEditable
+              : l10n.sessionReadOnly,
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -2812,6 +3181,7 @@ class _ObjectPalettePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final state = controller.state;
     final selectedEntry = state.selectedEntry;
     return Column(
@@ -2830,15 +3200,18 @@ class _ObjectPalettePanel extends StatelessWidget {
                   color: Color(0xFF8DB4FF),
                 ),
                 const SizedBox(width: 7),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Object Palette',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    l10n.paletteTitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 IconButton(
                   key: const Key('placement-catalog-open'),
-                  tooltip: 'Place new Tile, Doodad, Unit or Sprite',
+                  tooltip: l10n.paletteCatalogTooltip,
                   visualDensity: VisualDensity.compact,
                   iconSize: 16,
                   icon: const Icon(Icons.add_box_outlined),
@@ -2850,7 +3223,7 @@ class _ObjectPalettePanel extends StatelessWidget {
                 if (selectedEntry != null)
                   IconButton(
                     key: const Key('object-palette-cancel'),
-                    tooltip: 'Cancel placement (Esc)',
+                    tooltip: l10n.paletteCancelTooltip,
                     onPressed: controller.cancelPlacement,
                     visualDensity: VisualDensity.compact,
                     iconSize: 16,
@@ -2867,12 +3240,12 @@ class _ObjectPalettePanel extends StatelessWidget {
             child: TextField(
               key: const Key('object-palette-search'),
               onChanged: controller.setQuery,
-              style: const TextStyle(fontSize: 11),
-              decoration: const InputDecoration(
-                hintText: 'Search type or #id',
-                prefixIcon: Icon(Icons.search_rounded, size: 16),
+              style: const TextStyle(fontSize: 12),
+              decoration: InputDecoration(
+                hintText: l10n.paletteSearchHint,
+                prefixIcon: const Icon(Icons.search_rounded, size: 16),
                 isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ),
           ),
@@ -2887,19 +3260,17 @@ class _ObjectPalettePanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              '${selectedEntry.label}: click map to place',
+              l10n.paletteClickToPlace(selectedEntry.label),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFFA9C7FF), fontSize: 10),
+              style: const TextStyle(color: Color(0xFFA9C7FF), fontSize: 11),
             ),
           ),
         Expanded(
           child: state.entries.isEmpty
-              ? const _ObjectPaletteMessage(
-                  message: 'No map-local object templates.',
-                )
+              ? _ObjectPaletteMessage(message: l10n.paletteEmpty)
               : state.visibleEntries.isEmpty
-              ? const _ObjectPaletteMessage(message: 'No matching templates.')
+              ? _ObjectPaletteMessage(message: l10n.paletteNoMatch)
               : ListView.builder(
                   key: const Key('object-palette-list'),
                   padding: const EdgeInsets.only(bottom: 6),
@@ -2929,13 +3300,13 @@ class _ObjectPalettePanel extends StatelessWidget {
                           entry.label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10),
+                          style: const TextStyle(fontSize: 12),
                         ),
                         trailing: Text(
                           '×${entry.count}',
                           style: const TextStyle(
-                            color: Color(0xFF7F8BA0),
-                            fontSize: 9,
+                            color: Color(0xFF8994A8),
+                            fontSize: 11,
                           ),
                         ),
                         onTap: canSelect
@@ -2964,7 +3335,7 @@ class _ObjectPaletteMessage extends StatelessWidget {
         child: Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Color(0xFF7F8BA0), fontSize: 10),
+          style: const TextStyle(color: Color(0xFF8994A8), fontSize: 12),
         ),
       ),
     );
@@ -2987,6 +3358,7 @@ class _MapLayerList extends StatelessWidget {
     final state = controller.state;
     final scene = controller.sceneFor(session);
     final selections = state.selections;
+    final l10n = context.l10n;
     return ListView(
       key: const Key('map-layer-list'),
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -3007,13 +3379,13 @@ class _MapLayerList extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             selections.isEmpty
-                ? 'Click the canvas to inspect the first unlocked object.'
+                ? l10n.layerSelectionHint
                 : selections.length == 1
                 ? '${selections.single.object.label} · '
                       '${selections.single.pixelX},${selections.single.pixelY}px'
-                : '${selections.length} objects selected',
+                : l10n.layerObjectsSelected(selections.length),
             key: const Key('map-layer-selection-summary'),
-            style: const TextStyle(color: Color(0xFF8F9BB0), fontSize: 10),
+            style: const TextStyle(color: Color(0xFF9AA5B8), fontSize: 12),
           ),
         ),
       ],
@@ -3042,13 +3414,15 @@ class _MapLayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final layerName = layer.localizedLabel(l10n);
     return Material(
       color: isActive ? const Color(0xFF23304A) : Colors.transparent,
       child: InkWell(
         key: Key('map-layer-${layer.name}'),
         onTap: onActivate,
         child: SizedBox(
-          height: 46,
+          height: 54,
           child: Row(
             children: [
               const SizedBox(width: 8),
@@ -3066,22 +3440,22 @@ class _MapLayerRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      layer.label,
+                      layerName,
                       style: TextStyle(
                         color: status.isVisible
                             ? const Color(0xFFD8DEE9)
                             : const Color(0xFF707A8E),
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: isActive
                             ? FontWeight.w600
                             : FontWeight.w400,
                       ),
                     ),
                     Text(
-                      '$objectCount items',
+                      l10n.layerItems(objectCount),
                       style: const TextStyle(
-                        color: Color(0xFF707C91),
-                        fontSize: 9,
+                        color: Color(0xFF8994A8),
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -3090,8 +3464,8 @@ class _MapLayerRow extends StatelessWidget {
               _MapLayerToggle(
                 key: Key('map-layer-${layer.name}-visible'),
                 tooltip: status.isVisible
-                    ? 'Hide ${layer.label}'
-                    : 'Show ${layer.label}',
+                    ? l10n.layerHide(layerName)
+                    : l10n.layerShow(layerName),
                 icon: status.isVisible
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
@@ -3101,8 +3475,8 @@ class _MapLayerRow extends StatelessWidget {
               _MapLayerToggle(
                 key: Key('map-layer-${layer.name}-locked'),
                 tooltip: status.isLocked
-                    ? 'Unlock ${layer.label}'
-                    : 'Lock ${layer.label}',
+                    ? l10n.layerUnlock(layerName)
+                    : l10n.layerLock(layerName),
                 icon: status.isLocked
                     ? Icons.lock_outline_rounded
                     : Icons.lock_open_rounded,
@@ -3209,72 +3583,73 @@ class _MapDocumentInspector extends StatelessWidget {
     final terrain = session.terrainViews.tileMaps.length == 1
         ? session.terrainViews.tileMaps.single
         : null;
+    final l10n = context.l10n;
     return ListView(
       key: const Key('map-inspector'),
       padding: const EdgeInsets.all(12),
       children: [
         _InspectorValue(
-          label: 'File',
-          value: session.sourcePath == null
-              ? 'Untitled map'
-              : _fileName(session.sourcePath!),
+          label: l10n.inspectorFile,
+          value: _sessionName(l10n, session),
         ),
         _InspectorValue(
-          label: 'Source path',
-          value: session.sourcePath ?? 'Not saved yet',
+          label: l10n.inspectorSourcePath,
+          value: session.sourcePath ?? l10n.notSavedYet,
         ),
         _InspectorValue(
-          label: 'Map size',
+          label: l10n.inspectorMapSize,
           value: dimensions == null
-              ? 'Unavailable'
+              ? l10n.valueUnavailable
               : '${dimensions.width} × ${dimensions.height}',
         ),
         _InspectorValue(
-          label: 'Tileset',
+          label: l10n.inspectorTileset,
           value: tileset == null
-              ? 'Unavailable'
+              ? l10n.valueUnavailable
               : tileset.knownTileset == null
-              ? 'Unknown (${tileset.rawValue})'
+              ? l10n.valueUnknown('${tileset.rawValue}')
               : _humanizeEnumName(tileset.knownTileset!.name),
         ),
         _InspectorValue(
-          label: 'Map version',
+          label: l10n.inspectorMapVersion,
           value: version == null
-              ? 'Unavailable'
+              ? l10n.valueUnavailable
               : version.knownVersion == null
-              ? 'Unknown (${version.rawValue})'
+              ? l10n.valueUnknown('${version.rawValue}')
               : '${_humanizeEnumName(version.knownVersion!.name)} '
                     '(${version.rawValue})',
         ),
         _InspectorValue(
-          label: 'Scenario type',
-          value: scenarioType?.fourCharacterCode ?? 'Unavailable',
+          label: l10n.inspectorScenarioType,
+          value: scenarioType?.fourCharacterCode ?? l10n.valueUnavailable,
         ),
         _InspectorValue(
-          label: 'Terrain',
+          label: l10n.inspectorTerrain,
           value: terrain == null
-              ? '${session.terrainViews.tileMaps.length} MTXM views'
-              : '${terrain.tileCount} raw tiles',
+              ? l10n.inspectorMtxmViews(session.terrainViews.tileMaps.length)
+              : l10n.inspectorRawTiles(terrain.tileCount),
         ),
         _InspectorValue(
-          label: 'Archive size',
+          label: l10n.inspectorArchiveSize,
           value: _formatBytes(archive.archiveSizeBytes),
         ),
         _InspectorValue(
-          label: 'Entries',
-          value:
-              '${archive.entries.length} listed / ${archive.totalEntryCount}',
+          label: l10n.inspectorEntries,
+          value: l10n.inspectorEntriesListed(
+            archive.entries.length,
+            archive.totalEntryCount,
+          ),
         ),
         _InspectorValue(
-          label: 'CHK size',
+          label: l10n.inspectorChkSize,
           value: _formatBytes(session.scenarioChkSizeBytes),
         ),
         _InspectorValue(
-          label: 'CHK sections',
+          label: l10n.inspectorChkSections,
           value: '${session.rawDocument.sections.length}',
         ),
         _InspectorValue(
-          label: 'Diagnostics',
+          label: l10n.inspectorDiagnostics,
           value: '${session.diagnostics.length}',
         ),
       ],
@@ -3289,8 +3664,10 @@ class _MultiObjectInspector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final layers = {
-      for (final selection in selections) selection.object.layer.label,
+      for (final selection in selections)
+        selection.object.layer.localizedLabel(l10n),
     }.join(', ');
     return ListView(
       key: const Key('multi-object-inspector'),
@@ -3303,16 +3680,15 @@ class _MultiObjectInspector extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          '${selections.length} objects selected',
+          l10n.layerObjectsSelected(selections.length),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 16),
-        _InspectorValue(label: 'Common layers', value: layers),
-        const _InspectorNotice(
+        _InspectorValue(label: l10n.inspectorCommonLayers, value: layers),
+        _InspectorNotice(
           icon: Icons.info_outline_rounded,
-          message:
-              'Select one object to edit its properties. Movement and deletion still apply to the full selection.',
+          message: l10n.inspectorMultiNotice,
         ),
       ],
     );
@@ -3388,6 +3764,7 @@ class _ObjectPropertiesInspectorState
       );
     }
     final canEdit = widget.controller.canEditProperties;
+    final l10n = context.l10n;
     return ListView(
       key: const Key('object-properties-inspector'),
       padding: const EdgeInsets.all(12),
@@ -3402,10 +3779,11 @@ class _ObjectPropertiesInspectorState
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${_objectKind(properties)} #${properties.object.recordIndex}',
+                '${_objectKind(l10n, properties)} '
+                '#${properties.object.recordIndex}',
                 key: const Key('object-inspector-title'),
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -3413,23 +3791,35 @@ class _ObjectPropertiesInspectorState
           ],
         ),
         const SizedBox(height: 12),
-        _integerField(ObjectPropertyFields.typeId, 'Type ID', canEdit),
-        const Text(
-          'Placed object only. Use File → Map Settings for map-wide unit types, players and game settings.',
+        _integerField(ObjectPropertyFields.typeId, l10n.fieldTypeId, canEdit),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            l10n.objectPlacedOnlyNotice,
+            style: const TextStyle(color: Color(0xFF9EABC0), fontSize: 11),
+          ),
         ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: _integerField(ObjectPropertyFields.x, 'X (px)', canEdit),
+              child: _integerField(
+                ObjectPropertyFields.x,
+                l10n.fieldX,
+                canEdit,
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _integerField(ObjectPropertyFields.y, 'Y (px)', canEdit),
+              child: _integerField(
+                ObjectPropertyFields.y,
+                l10n.fieldY,
+                canEdit,
+              ),
             ),
           ],
         ),
-        _integerField(ObjectPropertyFields.owner, 'Owner (raw 0-255)', canEdit),
+        _integerField(ObjectPropertyFields.owner, l10n.fieldOwnerRaw, canEdit),
         if (properties is UnitObjectProperties) ...[
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -3437,7 +3827,7 @@ class _ObjectPropertiesInspectorState
               Expanded(
                 child: _integerField(
                   ObjectPropertyFields.hitpointPercent,
-                  'HP %',
+                  l10n.fieldHitpointPercent,
                   canEdit,
                 ),
               ),
@@ -3445,7 +3835,7 @@ class _ObjectPropertiesInspectorState
               Expanded(
                 child: _integerField(
                   ObjectPropertyFields.shieldPercent,
-                  'Shield %',
+                  l10n.fieldShieldPercent,
                   canEdit,
                 ),
               ),
@@ -3453,7 +3843,7 @@ class _ObjectPropertiesInspectorState
               Expanded(
                 child: _integerField(
                   ObjectPropertyFields.energyPercent,
-                  'Energy %',
+                  l10n.fieldEnergyPercent,
                   canEdit,
                 ),
               ),
@@ -3461,19 +3851,19 @@ class _ObjectPropertiesInspectorState
           ),
           _integerField(
             ObjectPropertyFields.resourceAmount,
-            'Resource amount',
+            l10n.fieldResourceAmount,
             canEdit,
           ),
           _integerField(
             ObjectPropertyFields.hangarAmount,
-            'Hangar amount',
+            l10n.fieldHangarAmount,
             canEdit,
           ),
         ],
         if (properties is DoodadObjectProperties)
           _integerField(
             ObjectPropertyFields.enabledValue,
-            'Enabled raw (0=yes, 1=no)',
+            l10n.fieldDoodadEnabledRaw,
             canEdit,
           ),
         const SizedBox(height: 4),
@@ -3481,34 +3871,51 @@ class _ObjectPropertiesInspectorState
           key: const Key('object-inspector-apply'),
           onPressed: canEdit ? _apply : null,
           icon: const Icon(Icons.check_rounded, size: 16),
-          label: const Text('Apply properties'),
+          label: Text(l10n.applyProperties),
         ),
         if (_message != null) ...[
           const SizedBox(height: 8),
           Text(
             _message!,
             key: const Key('object-inspector-message'),
-            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 10),
+            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 12),
           ),
         ],
         if (!canEdit) ...[
           const SizedBox(height: 8),
-          const _InspectorNotice(
+          _InspectorNotice(
             icon: Icons.lock_outline_rounded,
-            message: 'Unlock this layer and use an editable map to apply.',
+            message: l10n.unlockToApply,
           ),
         ],
         const Divider(height: 24),
-        const Text(
-          'Preserved raw fields',
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        ..._rawValues(properties),
-        const _InspectorNotice(
-          icon: Icons.shield_outlined,
-          message:
-              'Raw flags and reserved fields are read-only and remain byte-exact.',
+        // Raw bytes are rarely needed while placing objects, so they start
+        // collapsed under an explicit "Advanced" heading.
+        Material(
+          type: MaterialType.transparency,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              key: const Key('object-inspector-raw-fields'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              expandedCrossAxisAlignment: CrossAxisAlignment.start,
+              title: Text(
+                l10n.rawFieldsTitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              children: [
+                ..._rawValues(l10n, properties),
+                _InspectorNotice(
+                  icon: Icons.shield_outlined,
+                  message: l10n.rawFieldsNotice,
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -3522,10 +3929,11 @@ class _ObjectPropertiesInspectorState
         controller: _fields[field],
         enabled: enabled,
         keyboardType: TextInputType.number,
-        style: const TextStyle(fontSize: 11),
+        style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
           labelText: label,
           errorText: _errors[field],
+          errorMaxLines: 3,
           isDense: true,
         ),
       ),
@@ -3533,12 +3941,13 @@ class _ObjectPropertiesInspectorState
   }
 
   void _apply() {
+    final l10n = context.l10n;
     final parseErrors = <String, String>{};
     final values = <String, int>{};
     for (final entry in _fields.entries) {
       final value = int.tryParse(entry.value.text.trim());
       if (value == null) {
-        parseErrors[entry.key] = 'Enter a whole number.';
+        parseErrors[entry.key] = l10n.enterWholeNumber;
       } else {
         values[entry.key] = value;
       }
@@ -3587,11 +3996,10 @@ class _ObjectPropertiesInspectorState
     setState(() {
       _errors = result.errors;
       _message = switch (result.status) {
-        ObjectPropertyEditStatus.applied => 'Properties applied.',
-        ObjectPropertyEditStatus.noChanges => 'No property changes.',
-        ObjectPropertyEditStatus.invalid => 'Fix the highlighted fields.',
-        ObjectPropertyEditStatus.unavailable =>
-          'Property editing is no longer available.',
+        ObjectPropertyEditStatus.applied => l10n.propertiesApplied,
+        ObjectPropertyEditStatus.noChanges => l10n.propertiesNoChanges,
+        ObjectPropertyEditStatus.invalid => l10n.fixHighlightedFields,
+        ObjectPropertyEditStatus.unavailable => l10n.propertiesUnavailable,
       };
     });
   }
@@ -3675,23 +4083,24 @@ class _LocationPropertiesInspectorState
   Widget build(BuildContext context) {
     final properties = widget.properties;
     final canEdit = widget.controller.canEditProperties;
+    final l10n = context.l10n;
     return ListView(
       key: const Key('location-properties-inspector'),
       padding: const EdgeInsets.all(12),
       children: [
         Text(
-          'Location ${properties.locationId}',
+          l10n.locationTitle('${properties.locationId}'),
           key: const Key('object-inspector-title'),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 14),
         TextField(
           key: const Key('location-inspector-name'),
           controller: _nameController,
           enabled: canEdit && properties.canRename,
-          style: const TextStyle(fontSize: 11),
+          style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
-            labelText: 'Name',
+            labelText: l10n.fieldName,
             errorText: _errors[ObjectPropertyFields.name],
             isDense: true,
           ),
@@ -3700,37 +4109,48 @@ class _LocationPropertiesInspectorState
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _boundField(ObjectPropertyFields.left, 'Left')),
+            Expanded(
+              child: _boundField(ObjectPropertyFields.left, l10n.fieldLeft),
+            ),
             const SizedBox(width: 7),
-            Expanded(child: _boundField(ObjectPropertyFields.top, 'Top')),
+            Expanded(
+              child: _boundField(ObjectPropertyFields.top, l10n.fieldTop),
+            ),
           ],
         ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _boundField(ObjectPropertyFields.right, 'Right')),
+            Expanded(
+              child: _boundField(ObjectPropertyFields.right, l10n.fieldRight),
+            ),
             const SizedBox(width: 7),
-            Expanded(child: _boundField(ObjectPropertyFields.bottom, 'Bottom')),
+            Expanded(
+              child: _boundField(ObjectPropertyFields.bottom, l10n.fieldBottom),
+            ),
           ],
         ),
         FilledButton.icon(
           key: const Key('location-inspector-apply'),
           onPressed: canEdit ? _apply : null,
           icon: const Icon(Icons.check_rounded, size: 16),
-          label: const Text('Apply location'),
+          label: Text(l10n.applyLocation),
         ),
         if (_message != null) ...[
           const SizedBox(height: 8),
           Text(
             _message!,
             key: const Key('location-inspector-message'),
-            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 10),
+            style: const TextStyle(color: Color(0xFFAFC7F5), fontSize: 12),
           ),
         ],
         const Divider(height: 24),
-        _InspectorValue(label: 'String ID', value: '${properties.stringId}'),
         _InspectorValue(
-          label: 'Elevation flags',
+          label: l10n.inspectorStringId,
+          value: '${properties.stringId}',
+        ),
+        _InspectorValue(
+          label: l10n.inspectorElevationFlags,
           value: _hex(properties.elevationFlags, 4),
         ),
         if (!properties.canRename)
@@ -3738,13 +4158,12 @@ class _LocationPropertiesInspectorState
             icon: Icons.info_outline_rounded,
             message:
                 properties.renameUnavailableReason ??
-                'Location naming is unavailable for this map.',
+                l10n.locationNamingUnavailable,
           )
         else
-          const _InspectorNotice(
+          _InspectorNotice(
             icon: Icons.shield_outlined,
-            message:
-                'Renaming allocates a new string ID so shared map strings remain unchanged.',
+            message: l10n.locationRenameNotice,
           ),
       ],
     );
@@ -3758,10 +4177,11 @@ class _LocationPropertiesInspectorState
         controller: _bounds[field],
         enabled: widget.controller.canEditProperties,
         keyboardType: TextInputType.number,
-        style: const TextStyle(fontSize: 11),
+        style: const TextStyle(fontSize: 13),
         decoration: InputDecoration(
           labelText: label,
           errorText: _errors[field],
+          errorMaxLines: 3,
           isDense: true,
         ),
       ),
@@ -3769,12 +4189,13 @@ class _LocationPropertiesInspectorState
   }
 
   void _apply() {
+    final l10n = context.l10n;
     final values = <String, int>{};
     final parseErrors = <String, String>{};
     for (final entry in _bounds.entries) {
       final value = int.tryParse(entry.value.text.trim());
       if (value == null) {
-        parseErrors[entry.key] = 'Enter a whole number.';
+        parseErrors[entry.key] = l10n.enterWholeNumber;
       } else {
         values[entry.key] = value;
       }
@@ -3799,11 +4220,10 @@ class _LocationPropertiesInspectorState
     setState(() {
       _errors = result.errors;
       _message = switch (result.status) {
-        ObjectPropertyEditStatus.applied => 'Location applied.',
-        ObjectPropertyEditStatus.noChanges => 'No location changes.',
-        ObjectPropertyEditStatus.invalid => 'Fix the highlighted fields.',
-        ObjectPropertyEditStatus.unavailable =>
-          'Location editing is no longer available.',
+        ObjectPropertyEditStatus.applied => l10n.locationApplied,
+        ObjectPropertyEditStatus.noChanges => l10n.locationNoChanges,
+        ObjectPropertyEditStatus.invalid => l10n.fixHighlightedFields,
+        ObjectPropertyEditStatus.unavailable => l10n.locationUnavailable,
       };
     });
   }
@@ -3839,7 +4259,7 @@ class _InspectorNotice extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(color: Color(0xFF9EABC0), fontSize: 10),
+              style: const TextStyle(color: Color(0xFFA9B5C8), fontSize: 11),
             ),
           ),
         ],
@@ -3896,42 +4316,46 @@ String _rawSignature(ObjectProperties properties) => switch (properties) {
         '${properties.elevationFlags}',
 };
 
-String _objectKind(ObjectProperties properties) => switch (properties) {
-  UnitObjectProperties() => 'Unit',
-  DoodadObjectProperties() => 'Doodad',
-  SpriteObjectProperties() => 'Sprite',
-  LocationObjectProperties() => 'Location',
-};
+String _objectKind(AppLocalizations l10n, ObjectProperties properties) =>
+    switch (properties) {
+      UnitObjectProperties() => l10n.objectKindUnit,
+      DoodadObjectProperties() => l10n.objectKindDoodad,
+      SpriteObjectProperties() => l10n.objectKindSprite,
+      LocationObjectProperties() => l10n.objectKindLocation,
+    };
 
-List<Widget> _rawValues(ObjectProperties properties) => switch (properties) {
+List<Widget> _rawValues(
+  AppLocalizations l10n,
+  ObjectProperties properties,
+) => switch (properties) {
   UnitObjectProperties() => [
-    _InspectorValue(label: 'Class ID', value: _hex(properties.classId, 8)),
+    _InspectorValue(label: l10n.rawClassId, value: _hex(properties.classId, 8)),
     _InspectorValue(
-      label: 'Relation flags',
+      label: l10n.rawRelationFlags,
       value: _hex(properties.relationFlags, 4),
     ),
     _InspectorValue(
-      label: 'Valid state flags',
+      label: l10n.rawValidStateFlags,
       value: _hex(properties.validStateFlags, 4),
     ),
     _InspectorValue(
-      label: 'Valid field flags',
+      label: l10n.rawValidFieldFlags,
       value: _hex(properties.validFieldFlags, 4),
     ),
     _InspectorValue(
-      label: 'State flags',
+      label: l10n.rawStateFlags,
       value: _hex(properties.stateFlags, 4),
     ),
-    _InspectorValue(label: 'Unused', value: _hex(properties.unused, 8)),
+    _InspectorValue(label: l10n.rawUnused, value: _hex(properties.unused, 8)),
     _InspectorValue(
-      label: 'Relation class ID',
+      label: l10n.rawRelationClassId,
       value: _hex(properties.relationClassId, 8),
     ),
   ],
   DoodadObjectProperties() => const [],
   SpriteObjectProperties() => [
-    _InspectorValue(label: 'Unused', value: _hex(properties.unused, 2)),
-    _InspectorValue(label: 'Flags', value: _hex(properties.flags, 4)),
+    _InspectorValue(label: l10n.rawUnused, value: _hex(properties.unused, 2)),
+    _InspectorValue(label: l10n.rawFlags, value: _hex(properties.flags, 4)),
   ],
   LocationObjectProperties() => const [],
 };
@@ -3954,14 +4378,14 @@ class _InspectorValue extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(color: Color(0xFF8994A8), fontSize: 11),
+            style: const TextStyle(color: Color(0xFF9AA5B8), fontSize: 11),
           ),
           const SizedBox(height: 3),
           Text(
             value,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 12),
+            style: const TextStyle(fontSize: 13),
           ),
         ],
       ),
@@ -4008,7 +4432,7 @@ class _RecentProjectTile extends StatelessWidget {
         ),
         trailing: IconButton(
           key: ValueKey('remove-recent-project-${project.path}'),
-          tooltip: 'Remove from recent maps',
+          tooltip: context.l10n.recentMapsRemove,
           onPressed: onRemove,
           icon: const Icon(Icons.close, size: 18),
         ),
@@ -4101,8 +4525,22 @@ class _OutputPanelState extends State<_OutputPanel> {
       ...widget.diagnostics,
       ...widget.eudBuildState.diagnostics,
     ];
+    final l10n = context.l10n;
+    final errorCount = diagnostics
+        .where(
+          (diagnostic) =>
+              diagnostic.severity == DiagnosticSeverity.error ||
+              diagnostic.severity == DiagnosticSeverity.fatal,
+        )
+        .length;
+    final warningCount = diagnostics
+        .where(
+          (diagnostic) => diagnostic.severity == DiagnosticSeverity.warning,
+        )
+        .length;
+    final infoCount = diagnostics.length - errorCount - warningCount;
     return SizedBox(
-      height: 128,
+      height: 150,
       child: ColoredBox(
         color: const Color(0xFF151A22),
         child: Column(
@@ -4116,7 +4554,7 @@ class _OutputPanelState extends State<_OutputPanel> {
                   children: [
                     _OutputPanelTabButton(
                       key: const Key('output-tab-problems'),
-                      label: 'Problems',
+                      label: l10n.tabProblems,
                       selected: _selectedTab == _OutputPanelTab.problems,
                       count: diagnostics.length,
                       onPressed: () {
@@ -4127,7 +4565,7 @@ class _OutputPanelState extends State<_OutputPanel> {
                     ),
                     _OutputPanelTabButton(
                       key: const Key('output-tab-output'),
-                      label: 'Output',
+                      label: l10n.tabOutput,
                       selected: _selectedTab == _OutputPanelTab.output,
                       onPressed: () {
                         setState(() {
@@ -4137,7 +4575,7 @@ class _OutputPanelState extends State<_OutputPanel> {
                     ),
                     _OutputPanelTabButton(
                       key: const Key('output-tab-build-log'),
-                      label: 'Build Log',
+                      label: l10n.tabBuildLog,
                       selected: _selectedTab == _OutputPanelTab.buildLog,
                       count:
                           widget.eudBuildState.latestRecord?.logEntries.length,
@@ -4147,6 +4585,31 @@ class _OutputPanelState extends State<_OutputPanel> {
                         });
                       },
                     ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: diagnostics.isEmpty
+                            ? const SizedBox.shrink()
+                            : _ProblemSummary(
+                                key: const Key('problems-summary'),
+                                errors: errorCount,
+                                warnings: warningCount,
+                                infos: infoCount,
+                                label: l10n.problemsSummary(
+                                  errorCount,
+                                  warningCount,
+                                  infoCount,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedTab = _OutputPanelTab.problems;
+                                  });
+                                },
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
                   ],
                 ),
               ),
@@ -4156,11 +4619,11 @@ class _OutputPanelState extends State<_OutputPanel> {
               child: switch (_selectedTab) {
                 _OutputPanelTab.problems =>
                   diagnostics.isEmpty
-                      ? const _OutputPanelMessage('No problems detected')
+                      ? _OutputPanelMessage(l10n.noProblems)
                       : _DiagnosticList(diagnostics: diagnostics),
                 _OutputPanelTab.output =>
                   widget.progress == null
-                      ? const _OutputPanelMessage('No operation output')
+                      ? _OutputPanelMessage(l10n.noOutput)
                       : _OperationSummary(progress: widget.progress!),
                 _OutputPanelTab.buildLog => _EudBuildLog(
                   state: widget.eudBuildState,
@@ -4202,7 +4665,71 @@ class _OutputPanelTabButton extends StatelessWidget {
           fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
-      child: Text(count == null || count == 0 ? label : '$label ($count)'),
+      child: Text(
+        count == null || count == 0
+            ? label
+            : context.l10n.tabWithCount(label, count),
+      ),
+    );
+  }
+}
+
+/// Error, warning and info counts at a glance; tapping opens Problems.
+class _ProblemSummary extends StatelessWidget {
+  const _ProblemSummary({
+    required this.errors,
+    required this.warnings,
+    required this.infos,
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final int errors;
+  final int warnings;
+  final int infos;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final severity = errors > 0
+        ? DiagnosticSeverity.error
+        : warnings > 0
+        ? DiagnosticSeverity.warning
+        : DiagnosticSeverity.info;
+    final color = _diagnosticColor(severity);
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(_diagnosticIcon(severity), size: 14, color: color),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: color, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -4215,7 +4742,7 @@ class _OutputPanelMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(message, style: const TextStyle(color: Color(0xFF8994A8))),
+      child: Text(message, style: const TextStyle(color: Color(0xFF9AA5B8))),
     );
   }
 }
@@ -4227,11 +4754,12 @@ class _EudBuildLog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final record = state.latestRecord;
     if (record == null) {
-      return _OutputPanelMessage(_emptyMessage(state.status));
+      return _OutputPanelMessage(_emptyMessage(l10n, state.status));
     }
-    final items = _buildLogItems(record);
+    final items = _buildLogItems(l10n, record);
 
     return ListView.builder(
       key: const Key('eud-build-log'),
@@ -4265,16 +4793,16 @@ class _EudBuildLog extends StatelessWidget {
   }
 }
 
-String _emptyMessage(EudBuildStatus status) {
+String _emptyMessage(AppLocalizations l10n, EudBuildStatus status) {
   return switch (status) {
-    EudBuildStatus.notConfigured => 'Build settings are not ready',
-    EudBuildStatus.ready => 'Ready to build',
-    EudBuildStatus.running => 'Starting euddraft…',
-    EudBuildStatus.cancelling => 'Stopping euddraft…',
-    EudBuildStatus.finalizing => 'Validating and promoting output…',
-    EudBuildStatus.succeeded => 'Build completed',
-    EudBuildStatus.failed => 'Build failed without output',
-    EudBuildStatus.cancelled => 'Build cancelled',
+    EudBuildStatus.notConfigured => l10n.buildNotConfigured,
+    EudBuildStatus.ready => l10n.buildReady,
+    EudBuildStatus.running => l10n.buildStarting,
+    EudBuildStatus.cancelling => l10n.buildStopping,
+    EudBuildStatus.finalizing => l10n.buildFinalizing,
+    EudBuildStatus.succeeded => l10n.buildCompleted,
+    EudBuildStatus.failed => l10n.buildFailedNoOutput,
+    EudBuildStatus.cancelled => l10n.buildCancelled,
   };
 }
 
@@ -4290,7 +4818,10 @@ final class _EudBuildLogItem {
   final String text;
 }
 
-List<_EudBuildLogItem> _buildLogItems(EudBuildRecord record) {
+List<_EudBuildLogItem> _buildLogItems(
+  AppLocalizations l10n,
+  EudBuildRecord record,
+) {
   const metadataColor = Color(0xFF8EA0BB);
   const stdoutColor = Color(0xFFAAB5C8);
   const stderrColor = Color(0xFFFFC66D);
@@ -4298,31 +4829,31 @@ List<_EudBuildLogItem> _buildLogItems(EudBuildRecord record) {
     _EudBuildLogItem(
       icon: Icons.tag_rounded,
       color: metadataColor,
-      text: 'Build: ${record.buildId}',
+      text: l10n.logBuildId(record.buildId),
     ),
     _EudBuildLogItem(
       icon: Icons.construction_rounded,
       color: metadataColor,
-      text: 'Tool: euddraft ${record.toolVersion}',
+      text: l10n.logTool('${record.toolVersion}'),
     ),
     if (record.isTerminal)
       _EudBuildLogItem(
         icon: _buildRecordStatusIcon(record.status),
         color: _buildRecordStatusColor(record.status),
         text:
-            '${_buildRecordStatusLabel(record.status)} • '
-            '${record.exitCode == null ? 'exit code unavailable' : 'exit code ${record.exitCode}'}',
+            '${_buildRecordStatusLabel(l10n, record.status)} • '
+            '${record.exitCode == null ? l10n.logExitCodeUnavailable : l10n.logExitCode('${record.exitCode}')}',
       ),
     _EudBuildLogItem(
       icon: Icons.schedule_rounded,
       color: metadataColor,
-      text: 'Started: ${record.startedAt.toIso8601String()}',
+      text: l10n.logStarted(record.startedAt.toIso8601String()),
     ),
     if (record.isTerminal)
       _EudBuildLogItem(
         icon: Icons.schedule_rounded,
         color: metadataColor,
-        text: 'Completed: ${record.completedAt!.toIso8601String()}',
+        text: l10n.logCompleted(record.completedAt!.toIso8601String()),
       ),
     for (final entry in record.logEntries)
       _EudBuildLogItem(
@@ -4346,12 +4877,15 @@ List<_EudBuildLogItem> _buildLogItems(EudBuildRecord record) {
   return items;
 }
 
-String _buildRecordStatusLabel(EudBuildRecordStatus status) {
+String _buildRecordStatusLabel(
+  AppLocalizations l10n,
+  EudBuildRecordStatus status,
+) {
   return switch (status) {
-    EudBuildRecordStatus.running => 'Running',
-    EudBuildRecordStatus.succeeded => 'Succeeded',
-    EudBuildRecordStatus.failed => 'Failed',
-    EudBuildRecordStatus.cancelled => 'Cancelled',
+    EudBuildRecordStatus.running => l10n.recordRunning,
+    EudBuildRecordStatus.succeeded => l10n.recordSucceeded,
+    EudBuildRecordStatus.failed => l10n.recordFailed,
+    EudBuildRecordStatus.cancelled => l10n.recordCancelled,
   };
 }
 
@@ -4380,56 +4914,82 @@ class _DiagnosticList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       itemCount: diagnostics.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 2),
+      separatorBuilder: (context, index) => const SizedBox(height: 4),
       itemBuilder: (context, index) {
         final diagnostic = diagnostics[index];
-        return Row(
-          key: ValueKey('diagnostic-${diagnostic.code}-$index'),
-          children: [
-            Icon(
-              _diagnosticIcon(diagnostic.severity),
-              size: 16,
-              color: _diagnosticColor(diagnostic.severity),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              diagnostic.code,
-              style: const TextStyle(
-                color: Color(0xFFAAB5C8),
-                fontFamily: 'monospace',
-                fontSize: 11,
+        final color = _diagnosticColor(diagnostic.severity);
+        return Tooltip(
+          message: diagnostic.message,
+          waitDuration: const Duration(milliseconds: 600),
+          child: Row(
+            key: ValueKey('diagnostic-${diagnostic.code}-$index'),
+            children: [
+              Icon(
+                _diagnosticIcon(diagnostic.severity),
+                size: 16,
+                color: color,
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                diagnostic.message,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-            if (_diagnosticLocationLabel(diagnostic) case final location?)
-              Padding(
-                padding: const EdgeInsets.only(left: 10),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 58,
                 child: Text(
-                  location,
-                  style: const TextStyle(
-                    color: Color(0xFF8994A8),
-                    fontFamily: 'monospace',
-                    fontSize: 11,
+                  _diagnosticSeverityLabel(l10n, diagnostic.severity),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-          ],
+              Expanded(
+                child: Text(
+                  diagnostic.message,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                diagnostic.code,
+                style: const TextStyle(
+                  color: Color(0xFF8994A8),
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                ),
+              ),
+              if (_diagnosticLocationLabel(diagnostic) case final location?)
+                Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text(
+                    location,
+                    style: const TextStyle(
+                      color: Color(0xFF8994A8),
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
   }
 }
+
+String _diagnosticSeverityLabel(
+  AppLocalizations l10n,
+  DiagnosticSeverity severity,
+) => switch (severity) {
+  DiagnosticSeverity.info => l10n.severityInfo,
+  DiagnosticSeverity.warning => l10n.severityWarning,
+  DiagnosticSeverity.error || DiagnosticSeverity.fatal => l10n.severityError,
+};
 
 String _diagnosticLocationPrefix(EditorDiagnostic diagnostic) {
   final location = _diagnosticLocationLabel(diagnostic);
@@ -4482,7 +5042,7 @@ class _OperationSummary extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              progress.message ?? _phaseLabel(progress.phase),
+              progress.message ?? _phaseLabel(context.l10n, progress.phase),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Color(0xFF8994A8)),
@@ -4517,6 +5077,7 @@ class _StatusBar extends StatelessWidget {
     final eudDocument = this.eudDocument;
     final showingEud =
         workspaceView == _WorkspaceView.eud && eudDocument != null;
+    final l10n = context.l10n;
 
     return SizedBox(
       height: 28,
@@ -4546,20 +5107,26 @@ class _StatusBar extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 currentProgress == null
-                    ? 'Ready'
+                    ? l10n.statusReady
                     : currentProgress.message ??
-                          _phaseLabel(currentProgress.phase),
+                          _phaseLabel(l10n, currentProgress.phase),
                 style: const TextStyle(fontSize: 12),
               ),
               const Spacer(),
               Text(
                 showingEud
-                    ? '${eudDocument.fileName}'
-                          '${eudDocument.isDirty ? ' • Modified' : ' • Clean'}'
+                    ? l10n.statusDocument(
+                        eudDocument.fileName,
+                        eudDocument.isDirty
+                            ? l10n.stateModified
+                            : l10n.stateClean,
+                      )
                     : session == null
-                    ? 'No document'
-                    : '${session.sourcePath == null ? 'Untitled map' : _fileName(session.sourcePath!)}'
-                          '${session.isDirty ? ' • Modified' : ' • Clean'}',
+                    ? l10n.statusNoDocument
+                    : l10n.statusDocument(
+                        _sessionName(l10n, session),
+                        session.isDirty ? l10n.stateModified : l10n.stateClean,
+                      ),
                 key: const Key('active-document-status'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -4582,18 +5149,18 @@ class _StatusBar extends StatelessWidget {
   }
 }
 
-String _phaseLabel(OperationPhase phase) {
+String _phaseLabel(AppLocalizations l10n, OperationPhase phase) {
   return switch (phase) {
-    OperationPhase.queued => 'Queued',
-    OperationPhase.reading => 'Reading',
-    OperationPhase.parsing => 'Parsing',
-    OperationPhase.validating => 'Validating',
-    OperationPhase.writing => 'Writing',
-    OperationPhase.compiling => 'Compiling',
-    OperationPhase.verifying => 'Verifying',
-    OperationPhase.succeeded => 'Completed',
-    OperationPhase.failed => 'Failed',
-    OperationPhase.cancelled => 'Cancelled',
+    OperationPhase.queued => l10n.phaseQueued,
+    OperationPhase.reading => l10n.phaseReading,
+    OperationPhase.parsing => l10n.phaseParsing,
+    OperationPhase.validating => l10n.phaseValidating,
+    OperationPhase.writing => l10n.phaseWriting,
+    OperationPhase.compiling => l10n.phaseCompiling,
+    OperationPhase.verifying => l10n.phaseVerifying,
+    OperationPhase.succeeded => l10n.phaseSucceeded,
+    OperationPhase.failed => l10n.phaseFailed,
+    OperationPhase.cancelled => l10n.phaseCancelled,
   };
 }
 
@@ -4630,6 +5197,11 @@ Color _diagnosticColor(DiagnosticSeverity severity) {
     DiagnosticSeverity.error ||
     DiagnosticSeverity.fatal => const Color(0xFFFF7B72),
   };
+}
+
+String _sessionName(AppLocalizations l10n, OpenedMapSession session) {
+  final path = session.sourcePath;
+  return path == null ? l10n.untitledMap : _fileName(path);
 }
 
 String _fileName(String path) {
