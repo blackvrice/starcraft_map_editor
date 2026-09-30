@@ -783,5 +783,162 @@
     }
   },
   "buildSummaryUnchanged": "The original map and earlier output were left unchanged.",
-  "buildSummaryRawLog": "Raw euddraft log below"
+  "buildSummaryRawLog": "Raw euddraft log below",
+  "trigTitle": "Triggers",
+  "trigBriefingTitle": "Briefing",
+  "trigCount": "{count} total",
+  "@trigCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigAdd": "Add trigger",
+  "trigAddBriefing": "Add briefing",
+  "trigUndo": "Undo",
+  "trigRedo": "Redo",
+  "trigValidate": "Validate references",
+  "trigSelectAll": "Select all / none",
+  "trigOwners": "Owners…",
+  "trigEnableSelected": "Enable selected",
+  "trigDisableSelected": "Disable selected",
+  "trigAddText": "Add text…",
+  "trigSwitchNames": "Switch names…",
+  "trigUnitProperties": "Unit properties…",
+  "trigSelectedCount": "{count} selected",
+  "@trigSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigHelp": "Each trigger runs its actions when all of its conditions are true. New triggers start with “Never”, so they do nothing until you change the condition. Save As writes applied changes.",
+  "trigBriefingHelp": "Briefing actions play in order before the game starts. Times are in milliseconds and portrait slots are 1–4. Add sounds in Resources.",
+  "trigEmpty": "No triggers yet. Add one to start.",
+  "trigItemTitle": "Trigger {count}",
+  "@trigItemTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigBriefingItemTitle": "Briefing {count}",
+  "@trigBriefingItemTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigOn": "On",
+  "trigOff": "Off",
+  "trigNoOwner": "No one runs it",
+  "trigWhen": "When",
+  "trigThen": "Then",
+  "trigNothing": "Nothing",
+  "trigMore": "+{count} more",
+  "@trigMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigMoveUp": "Move up",
+  "trigMoveDown": "Move down",
+  "trigDuplicate": "Duplicate trigger",
+  "trigDuplicateBriefing": "Duplicate briefing",
+  "trigDelete": "Delete trigger",
+  "trigDeleteBriefing": "Delete briefing",
+  "trigDeleteTitle": "Delete {name}?",
+  "@trigDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trigDeleteBody": "The entire record, including preserved unsupported slots, will be removed. Undo restores it.",
+  "trigCancel": "Cancel",
+  "trigDeleteConfirm": "Delete",
+  "trigClose": "Close",
+  "trigValidationTitle": "Trigger validation",
+  "trigValidationOk": "Supported slots have valid field values and references. Raw/EUD slots are not interpreted.",
+  "trigOwnersTitle": "Who runs the selected triggers?",
+  "trigOwnersBriefingTitle": "Who sees the selected briefings?",
+  "trigOwnersHelp": "“Unchanged” keeps each trigger’s current setting. Choose Add or Remove to change it.",
+  "trigOwnerUnchanged": "Unchanged",
+  "trigOwnerAdd": "Add",
+  "trigOwnerRemove": "Remove",
+  "trigApplyOwners": "Apply owners",
+  "trigEditTitle": "Edit trigger",
+  "trigEditBriefingTitle": "Edit briefing",
+  "trigDraftNote": "Changes stay in this draft until you press Apply to map. Unsupported slots and flags are preserved byte for byte.",
+  "trigWho": "Who runs it?",
+  "trigWhoHelp": "The trigger is checked separately for each selected player. “Current player” in conditions and actions means that player.",
+  "trigEnabledChip": "Trigger enabled",
+  "trigBriefingEnabledChip": "Briefing enabled",
+  "trigWhenAll": "all of these are true",
+  "trigThenInOrder": "run in this order",
+  "trigBriefingSteps": "Steps",
+  "trigSlotCount": "{current} / {total}",
+  "@trigSlotCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trigAddSlot": "Add",
+  "trigPreserved": "preserved as raw data",
+  "trigSlotEnabled": "Enabled",
+  "trigSlotUp": "Move slot up",
+  "trigSlotDown": "Move slot down",
+  "trigSlotDuplicate": "Duplicate slot",
+  "trigSlotRemove": "Remove slot",
+  "trigExplainTitle": "What it does",
+  "trigExplainOwners": "For {owners}:",
+  "@trigExplainOwners": {
+    "placeholders": {
+      "owners": {
+        "type": "String"
+      }
+    }
+  },
+  "trigExplainNoOwner": "No player runs this trigger yet, so it never runs.",
+  "trigExplainNever": "It has a “Never” condition, so it never runs.",
+  "trigExplainAlways": "It runs right away because the condition is “Always”.",
+  "trigExplainConditions": "When all {count} conditions are true,",
+  "@trigExplainConditions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigExplainNoConditions": "With no conditions,",
+  "trigExplainActions": "it runs {count} actions in order.",
+  "@trigExplainActions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigExplainOnce": "Without “Preserve trigger” it runs only once per player.",
+  "trigExplainPreserve": "“Preserve trigger” makes it run again every time the conditions are true.",
+  "trigExplainDisabled": "It is turned off and will not run.",
+  "trigRawRecord": "Advanced: raw record (read-only)",
+  "trigApply": "Apply to map",
+  "trigSlotAction": "Action",
+  "trigSlotCondition": "Condition",
+  "trigSlotReplaceNote": "Changing the type replaces this slot’s arguments when applied.",
+  "trigAlwaysDisplay": "Always display text",
+  "trigUseSlot": "Use slot"
 }

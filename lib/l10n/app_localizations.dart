@@ -2413,6 +2413,510 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Raw euddraft log below'**
   String get buildSummaryRawLog;
+
+  /// No description provided for @trigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Triggers'**
+  String get trigTitle;
+
+  /// No description provided for @trigBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefing'**
+  String get trigBriefingTitle;
+
+  /// No description provided for @trigCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total'**
+  String trigCount(int count);
+
+  /// No description provided for @trigAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add trigger'**
+  String get trigAdd;
+
+  /// No description provided for @trigAddBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Add briefing'**
+  String get trigAddBriefing;
+
+  /// No description provided for @trigUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get trigUndo;
+
+  /// No description provided for @trigRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get trigRedo;
+
+  /// No description provided for @trigValidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate references'**
+  String get trigValidate;
+
+  /// No description provided for @trigSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all / none'**
+  String get trigSelectAll;
+
+  /// No description provided for @trigOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'Owners…'**
+  String get trigOwners;
+
+  /// No description provided for @trigEnableSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable selected'**
+  String get trigEnableSelected;
+
+  /// No description provided for @trigDisableSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable selected'**
+  String get trigDisableSelected;
+
+  /// No description provided for @trigAddText.
+  ///
+  /// In en, this message translates to:
+  /// **'Add text…'**
+  String get trigAddText;
+
+  /// No description provided for @trigSwitchNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch names…'**
+  String get trigSwitchNames;
+
+  /// No description provided for @trigUnitProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit properties…'**
+  String get trigUnitProperties;
+
+  /// No description provided for @trigSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String trigSelectedCount(int count);
+
+  /// No description provided for @trigHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Each trigger runs its actions when all of its conditions are true. New triggers start with “Never”, so they do nothing until you change the condition. Save As writes applied changes.'**
+  String get trigHelp;
+
+  /// No description provided for @trigBriefingHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefing actions play in order before the game starts. Times are in milliseconds and portrait slots are 1–4. Add sounds in Resources.'**
+  String get trigBriefingHelp;
+
+  /// No description provided for @trigEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No triggers yet. Add one to start.'**
+  String get trigEmpty;
+
+  /// No description provided for @trigItemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger {count}'**
+  String trigItemTitle(int count);
+
+  /// No description provided for @trigBriefingItemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefing {count}'**
+  String trigBriefingItemTitle(int count);
+
+  /// No description provided for @trigOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get trigOn;
+
+  /// No description provided for @trigOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get trigOff;
+
+  /// No description provided for @trigNoOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'No one runs it'**
+  String get trigNoOwner;
+
+  /// No description provided for @trigWhen.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get trigWhen;
+
+  /// No description provided for @trigThen.
+  ///
+  /// In en, this message translates to:
+  /// **'Then'**
+  String get trigThen;
+
+  /// No description provided for @trigNothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing'**
+  String get trigNothing;
+
+  /// No description provided for @trigMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String trigMore(int count);
+
+  /// No description provided for @trigMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get trigMoveUp;
+
+  /// No description provided for @trigMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get trigMoveDown;
+
+  /// No description provided for @trigDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate trigger'**
+  String get trigDuplicate;
+
+  /// No description provided for @trigDuplicateBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate briefing'**
+  String get trigDuplicateBriefing;
+
+  /// No description provided for @trigDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete trigger'**
+  String get trigDelete;
+
+  /// No description provided for @trigDeleteBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete briefing'**
+  String get trigDeleteBriefing;
+
+  /// No description provided for @trigDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String trigDeleteTitle(String name);
+
+  /// No description provided for @trigDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The entire record, including preserved unsupported slots, will be removed. Undo restores it.'**
+  String get trigDeleteBody;
+
+  /// No description provided for @trigCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get trigCancel;
+
+  /// No description provided for @trigDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get trigDeleteConfirm;
+
+  /// No description provided for @trigClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get trigClose;
+
+  /// No description provided for @trigValidationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger validation'**
+  String get trigValidationTitle;
+
+  /// No description provided for @trigValidationOk.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported slots have valid field values and references. Raw/EUD slots are not interpreted.'**
+  String get trigValidationOk;
+
+  /// No description provided for @trigOwnersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who runs the selected triggers?'**
+  String get trigOwnersTitle;
+
+  /// No description provided for @trigOwnersBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Who sees the selected briefings?'**
+  String get trigOwnersBriefingTitle;
+
+  /// No description provided for @trigOwnersHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'“Unchanged” keeps each trigger’s current setting. Choose Add or Remove to change it.'**
+  String get trigOwnersHelp;
+
+  /// No description provided for @trigOwnerUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Unchanged'**
+  String get trigOwnerUnchanged;
+
+  /// No description provided for @trigOwnerAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get trigOwnerAdd;
+
+  /// No description provided for @trigOwnerRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get trigOwnerRemove;
+
+  /// No description provided for @trigApplyOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply owners'**
+  String get trigApplyOwners;
+
+  /// No description provided for @trigEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit trigger'**
+  String get trigEditTitle;
+
+  /// No description provided for @trigEditBriefingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit briefing'**
+  String get trigEditBriefingTitle;
+
+  /// No description provided for @trigDraftNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes stay in this draft until you press Apply to map. Unsupported slots and flags are preserved byte for byte.'**
+  String get trigDraftNote;
+
+  /// No description provided for @trigWho.
+  ///
+  /// In en, this message translates to:
+  /// **'Who runs it?'**
+  String get trigWho;
+
+  /// No description provided for @trigWhoHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The trigger is checked separately for each selected player. “Current player” in conditions and actions means that player.'**
+  String get trigWhoHelp;
+
+  /// No description provided for @trigEnabledChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger enabled'**
+  String get trigEnabledChip;
+
+  /// No description provided for @trigBriefingEnabledChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefing enabled'**
+  String get trigBriefingEnabledChip;
+
+  /// No description provided for @trigWhenAll.
+  ///
+  /// In en, this message translates to:
+  /// **'all of these are true'**
+  String get trigWhenAll;
+
+  /// No description provided for @trigThenInOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'run in this order'**
+  String get trigThenInOrder;
+
+  /// No description provided for @trigBriefingSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get trigBriefingSteps;
+
+  /// No description provided for @trigSlotCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {total}'**
+  String trigSlotCount(int current, int total);
+
+  /// No description provided for @trigAddSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get trigAddSlot;
+
+  /// No description provided for @trigPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'preserved as raw data'**
+  String get trigPreserved;
+
+  /// No description provided for @trigSlotEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get trigSlotEnabled;
+
+  /// No description provided for @trigSlotUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move slot up'**
+  String get trigSlotUp;
+
+  /// No description provided for @trigSlotDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move slot down'**
+  String get trigSlotDown;
+
+  /// No description provided for @trigSlotDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate slot'**
+  String get trigSlotDuplicate;
+
+  /// No description provided for @trigSlotRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove slot'**
+  String get trigSlotRemove;
+
+  /// No description provided for @trigExplainTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What it does'**
+  String get trigExplainTitle;
+
+  /// No description provided for @trigExplainOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'For {owners}:'**
+  String trigExplainOwners(String owners);
+
+  /// No description provided for @trigExplainNoOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'No player runs this trigger yet, so it never runs.'**
+  String get trigExplainNoOwner;
+
+  /// No description provided for @trigExplainNever.
+  ///
+  /// In en, this message translates to:
+  /// **'It has a “Never” condition, so it never runs.'**
+  String get trigExplainNever;
+
+  /// No description provided for @trigExplainAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'It runs right away because the condition is “Always”.'**
+  String get trigExplainAlways;
+
+  /// No description provided for @trigExplainConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'When all {count} conditions are true,'**
+  String trigExplainConditions(int count);
+
+  /// No description provided for @trigExplainNoConditions.
+  ///
+  /// In en, this message translates to:
+  /// **'With no conditions,'**
+  String get trigExplainNoConditions;
+
+  /// No description provided for @trigExplainActions.
+  ///
+  /// In en, this message translates to:
+  /// **'it runs {count} actions in order.'**
+  String trigExplainActions(int count);
+
+  /// No description provided for @trigExplainOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Without “Preserve trigger” it runs only once per player.'**
+  String get trigExplainOnce;
+
+  /// No description provided for @trigExplainPreserve.
+  ///
+  /// In en, this message translates to:
+  /// **'“Preserve trigger” makes it run again every time the conditions are true.'**
+  String get trigExplainPreserve;
+
+  /// No description provided for @trigExplainDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'It is turned off and will not run.'**
+  String get trigExplainDisabled;
+
+  /// No description provided for @trigRawRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced: raw record (read-only)'**
+  String get trigRawRecord;
+
+  /// No description provided for @trigApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to map'**
+  String get trigApply;
+
+  /// No description provided for @trigSlotAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get trigSlotAction;
+
+  /// No description provided for @trigSlotCondition.
+  ///
+  /// In en, this message translates to:
+  /// **'Condition'**
+  String get trigSlotCondition;
+
+  /// No description provided for @trigSlotReplaceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the type replaces this slot’s arguments when applied.'**
+  String get trigSlotReplaceNote;
+
+  /// No description provided for @trigAlwaysDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Always display text'**
+  String get trigAlwaysDisplay;
+
+  /// No description provided for @trigUseSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Use slot'**
+  String get trigUseSlot;
 }
 
 class _AppLocalizationsDelegate

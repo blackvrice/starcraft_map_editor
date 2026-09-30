@@ -1275,4 +1275,282 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get buildSummaryRawLog => '아래는 euddraft 원문 로그예요';
+
+  @override
+  String get trigTitle => '트리거';
+
+  @override
+  String get trigBriefingTitle => '브리핑';
+
+  @override
+  String trigCount(int count) {
+    return '$count개';
+  }
+
+  @override
+  String get trigAdd => '새 트리거';
+
+  @override
+  String get trigAddBriefing => '새 브리핑';
+
+  @override
+  String get trigUndo => '실행 취소';
+
+  @override
+  String get trigRedo => '다시 실행';
+
+  @override
+  String get trigValidate => '참조 검사';
+
+  @override
+  String get trigSelectAll => '전체 선택 / 해제';
+
+  @override
+  String get trigOwners => '실행 대상…';
+
+  @override
+  String get trigEnableSelected => '선택 항목 켜기';
+
+  @override
+  String get trigDisableSelected => '선택 항목 끄기';
+
+  @override
+  String get trigAddText => '문구 추가…';
+
+  @override
+  String get trigSwitchNames => '스위치 이름…';
+
+  @override
+  String get trigUnitProperties => '유닛 속성…';
+
+  @override
+  String trigSelectedCount(int count) {
+    return '$count개 선택됨';
+  }
+
+  @override
+  String get trigHelp =>
+      '트리거는 조건이 모두 맞을 때 액션을 실행해요. 새 트리거는 “실행 안 함” 조건으로 시작하므로 조건을 바꾸기 전에는 동작하지 않아요. 적용한 변경은 “다른 이름으로 저장”으로 저장돼요.';
+
+  @override
+  String get trigBriefingHelp =>
+      '브리핑 액션은 게임 시작 전에 순서대로 실행돼요. 시간은 밀리초, 초상화 칸은 1~4예요. 소리는 리소스에서 추가하세요.';
+
+  @override
+  String get trigEmpty => '아직 트리거가 없어요. 새로 만들어 시작하세요.';
+
+  @override
+  String trigItemTitle(int count) {
+    return '트리거 $count';
+  }
+
+  @override
+  String trigBriefingItemTitle(int count) {
+    return '브리핑 $count';
+  }
+
+  @override
+  String get trigOn => '켜짐';
+
+  @override
+  String get trigOff => '꺼짐';
+
+  @override
+  String get trigNoOwner => '실행 대상 없음';
+
+  @override
+  String get trigWhen => '언제';
+
+  @override
+  String get trigThen => '그러면';
+
+  @override
+  String get trigNothing => '없음';
+
+  @override
+  String trigMore(int count) {
+    return '외 $count개';
+  }
+
+  @override
+  String get trigMoveUp => '위로';
+
+  @override
+  String get trigMoveDown => '아래로';
+
+  @override
+  String get trigDuplicate => '트리거 복제';
+
+  @override
+  String get trigDuplicateBriefing => '브리핑 복제';
+
+  @override
+  String get trigDelete => '트리거 삭제';
+
+  @override
+  String get trigDeleteBriefing => '브리핑 삭제';
+
+  @override
+  String trigDeleteTitle(String name) {
+    return '$name을(를) 삭제할까요?';
+  }
+
+  @override
+  String get trigDeleteBody =>
+      '지원하지 않아 보존하던 칸까지 레코드 전체가 지워져요. 실행 취소로 되돌릴 수 있어요.';
+
+  @override
+  String get trigCancel => '취소';
+
+  @override
+  String get trigDeleteConfirm => '삭제';
+
+  @override
+  String get trigClose => '닫기';
+
+  @override
+  String get trigValidationTitle => '트리거 검사';
+
+  @override
+  String get trigValidationOk => '지원하는 칸의 값과 참조가 모두 올바라요. 원시/EUD 칸은 해석하지 않아요.';
+
+  @override
+  String get trigOwnersTitle => '선택한 트리거를 누가 실행할까요?';
+
+  @override
+  String get trigOwnersBriefingTitle => '선택한 브리핑을 누가 볼까요?';
+
+  @override
+  String get trigOwnersHelp =>
+      '“그대로”는 각 트리거의 현재 설정을 유지해요. 바꾸려면 추가 또는 제거를 고르세요.';
+
+  @override
+  String get trigOwnerUnchanged => '그대로';
+
+  @override
+  String get trigOwnerAdd => '추가';
+
+  @override
+  String get trigOwnerRemove => '제거';
+
+  @override
+  String get trigApplyOwners => '실행 대상 적용';
+
+  @override
+  String get trigEditTitle => '트리거 편집';
+
+  @override
+  String get trigEditBriefingTitle => '브리핑 편집';
+
+  @override
+  String get trigDraftNote =>
+      '“맵에 적용”을 누르기 전까지는 이 초안에만 남아요. 지원하지 않는 칸과 플래그는 바이트 그대로 보존돼요.';
+
+  @override
+  String get trigWho => '누구에게 실행할까요?';
+
+  @override
+  String get trigWhoHelp =>
+      '선택한 플레이어마다 따로 검사해요. 조건과 액션의 “현재 플레이어”는 그 플레이어를 뜻해요.';
+
+  @override
+  String get trigEnabledChip => '트리거 사용';
+
+  @override
+  String get trigBriefingEnabledChip => '브리핑 사용';
+
+  @override
+  String get trigWhenAll => '아래 조건이 모두 맞으면';
+
+  @override
+  String get trigThenInOrder => '순서대로 실행해요';
+
+  @override
+  String get trigBriefingSteps => '진행 순서';
+
+  @override
+  String trigSlotCount(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get trigAddSlot => '추가';
+
+  @override
+  String get trigPreserved => '원시 데이터로 보존';
+
+  @override
+  String get trigSlotEnabled => '사용';
+
+  @override
+  String get trigSlotUp => '위로';
+
+  @override
+  String get trigSlotDown => '아래로';
+
+  @override
+  String get trigSlotDuplicate => '복제';
+
+  @override
+  String get trigSlotRemove => '제거';
+
+  @override
+  String get trigExplainTitle => '이렇게 동작해요';
+
+  @override
+  String trigExplainOwners(String owners) {
+    return '$owners에게:';
+  }
+
+  @override
+  String get trigExplainNoOwner => '아직 실행 대상이 없어서 이 트리거는 실행되지 않아요.';
+
+  @override
+  String get trigExplainNever => '“실행 안 함” 조건이 있어서 실행되지 않아요.';
+
+  @override
+  String get trigExplainAlways => '조건이 “항상”이라 바로 실행돼요.';
+
+  @override
+  String trigExplainConditions(int count) {
+    return '조건 $count개가 모두 맞으면';
+  }
+
+  @override
+  String get trigExplainNoConditions => '조건이 없으므로';
+
+  @override
+  String trigExplainActions(int count) {
+    return '액션 $count개를 순서대로 실행해요.';
+  }
+
+  @override
+  String get trigExplainOnce => '“트리거 유지”가 없으면 플레이어마다 한 번만 실행돼요.';
+
+  @override
+  String get trigExplainPreserve => '“트리거 유지”가 있어서 조건이 맞을 때마다 다시 실행돼요.';
+
+  @override
+  String get trigExplainDisabled => '꺼져 있어서 실행되지 않아요.';
+
+  @override
+  String get trigRawRecord => '고급: 원시 레코드 (읽기 전용)';
+
+  @override
+  String get trigApply => '맵에 적용';
+
+  @override
+  String get trigSlotAction => '액션';
+
+  @override
+  String get trigSlotCondition => '조건';
+
+  @override
+  String get trigSlotReplaceNote => '종류를 바꾸면 적용할 때 이 칸의 값이 새로 바뀌어요.';
+
+  @override
+  String get trigAlwaysDisplay => '항상 문구 표시';
+
+  @override
+  String get trigUseSlot => '이 칸 사용';
 }

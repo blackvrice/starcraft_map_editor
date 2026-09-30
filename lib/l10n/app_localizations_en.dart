@@ -1303,4 +1303,289 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get buildSummaryRawLog => 'Raw euddraft log below';
+
+  @override
+  String get trigTitle => 'Triggers';
+
+  @override
+  String get trigBriefingTitle => 'Briefing';
+
+  @override
+  String trigCount(int count) {
+    return '$count total';
+  }
+
+  @override
+  String get trigAdd => 'Add trigger';
+
+  @override
+  String get trigAddBriefing => 'Add briefing';
+
+  @override
+  String get trigUndo => 'Undo';
+
+  @override
+  String get trigRedo => 'Redo';
+
+  @override
+  String get trigValidate => 'Validate references';
+
+  @override
+  String get trigSelectAll => 'Select all / none';
+
+  @override
+  String get trigOwners => 'Owners…';
+
+  @override
+  String get trigEnableSelected => 'Enable selected';
+
+  @override
+  String get trigDisableSelected => 'Disable selected';
+
+  @override
+  String get trigAddText => 'Add text…';
+
+  @override
+  String get trigSwitchNames => 'Switch names…';
+
+  @override
+  String get trigUnitProperties => 'Unit properties…';
+
+  @override
+  String trigSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get trigHelp =>
+      'Each trigger runs its actions when all of its conditions are true. New triggers start with “Never”, so they do nothing until you change the condition. Save As writes applied changes.';
+
+  @override
+  String get trigBriefingHelp =>
+      'Briefing actions play in order before the game starts. Times are in milliseconds and portrait slots are 1–4. Add sounds in Resources.';
+
+  @override
+  String get trigEmpty => 'No triggers yet. Add one to start.';
+
+  @override
+  String trigItemTitle(int count) {
+    return 'Trigger $count';
+  }
+
+  @override
+  String trigBriefingItemTitle(int count) {
+    return 'Briefing $count';
+  }
+
+  @override
+  String get trigOn => 'On';
+
+  @override
+  String get trigOff => 'Off';
+
+  @override
+  String get trigNoOwner => 'No one runs it';
+
+  @override
+  String get trigWhen => 'When';
+
+  @override
+  String get trigThen => 'Then';
+
+  @override
+  String get trigNothing => 'Nothing';
+
+  @override
+  String trigMore(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get trigMoveUp => 'Move up';
+
+  @override
+  String get trigMoveDown => 'Move down';
+
+  @override
+  String get trigDuplicate => 'Duplicate trigger';
+
+  @override
+  String get trigDuplicateBriefing => 'Duplicate briefing';
+
+  @override
+  String get trigDelete => 'Delete trigger';
+
+  @override
+  String get trigDeleteBriefing => 'Delete briefing';
+
+  @override
+  String trigDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get trigDeleteBody =>
+      'The entire record, including preserved unsupported slots, will be removed. Undo restores it.';
+
+  @override
+  String get trigCancel => 'Cancel';
+
+  @override
+  String get trigDeleteConfirm => 'Delete';
+
+  @override
+  String get trigClose => 'Close';
+
+  @override
+  String get trigValidationTitle => 'Trigger validation';
+
+  @override
+  String get trigValidationOk =>
+      'Supported slots have valid field values and references. Raw/EUD slots are not interpreted.';
+
+  @override
+  String get trigOwnersTitle => 'Who runs the selected triggers?';
+
+  @override
+  String get trigOwnersBriefingTitle => 'Who sees the selected briefings?';
+
+  @override
+  String get trigOwnersHelp =>
+      '“Unchanged” keeps each trigger’s current setting. Choose Add or Remove to change it.';
+
+  @override
+  String get trigOwnerUnchanged => 'Unchanged';
+
+  @override
+  String get trigOwnerAdd => 'Add';
+
+  @override
+  String get trigOwnerRemove => 'Remove';
+
+  @override
+  String get trigApplyOwners => 'Apply owners';
+
+  @override
+  String get trigEditTitle => 'Edit trigger';
+
+  @override
+  String get trigEditBriefingTitle => 'Edit briefing';
+
+  @override
+  String get trigDraftNote =>
+      'Changes stay in this draft until you press Apply to map. Unsupported slots and flags are preserved byte for byte.';
+
+  @override
+  String get trigWho => 'Who runs it?';
+
+  @override
+  String get trigWhoHelp =>
+      'The trigger is checked separately for each selected player. “Current player” in conditions and actions means that player.';
+
+  @override
+  String get trigEnabledChip => 'Trigger enabled';
+
+  @override
+  String get trigBriefingEnabledChip => 'Briefing enabled';
+
+  @override
+  String get trigWhenAll => 'all of these are true';
+
+  @override
+  String get trigThenInOrder => 'run in this order';
+
+  @override
+  String get trigBriefingSteps => 'Steps';
+
+  @override
+  String trigSlotCount(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get trigAddSlot => 'Add';
+
+  @override
+  String get trigPreserved => 'preserved as raw data';
+
+  @override
+  String get trigSlotEnabled => 'Enabled';
+
+  @override
+  String get trigSlotUp => 'Move slot up';
+
+  @override
+  String get trigSlotDown => 'Move slot down';
+
+  @override
+  String get trigSlotDuplicate => 'Duplicate slot';
+
+  @override
+  String get trigSlotRemove => 'Remove slot';
+
+  @override
+  String get trigExplainTitle => 'What it does';
+
+  @override
+  String trigExplainOwners(String owners) {
+    return 'For $owners:';
+  }
+
+  @override
+  String get trigExplainNoOwner =>
+      'No player runs this trigger yet, so it never runs.';
+
+  @override
+  String get trigExplainNever =>
+      'It has a “Never” condition, so it never runs.';
+
+  @override
+  String get trigExplainAlways =>
+      'It runs right away because the condition is “Always”.';
+
+  @override
+  String trigExplainConditions(int count) {
+    return 'When all $count conditions are true,';
+  }
+
+  @override
+  String get trigExplainNoConditions => 'With no conditions,';
+
+  @override
+  String trigExplainActions(int count) {
+    return 'it runs $count actions in order.';
+  }
+
+  @override
+  String get trigExplainOnce =>
+      'Without “Preserve trigger” it runs only once per player.';
+
+  @override
+  String get trigExplainPreserve =>
+      '“Preserve trigger” makes it run again every time the conditions are true.';
+
+  @override
+  String get trigExplainDisabled => 'It is turned off and will not run.';
+
+  @override
+  String get trigRawRecord => 'Advanced: raw record (read-only)';
+
+  @override
+  String get trigApply => 'Apply to map';
+
+  @override
+  String get trigSlotAction => 'Action';
+
+  @override
+  String get trigSlotCondition => 'Condition';
+
+  @override
+  String get trigSlotReplaceNote =>
+      'Changing the type replaces this slot’s arguments when applied.';
+
+  @override
+  String get trigAlwaysDisplay => 'Always display text';
+
+  @override
+  String get trigUseSlot => 'Use slot';
 }
