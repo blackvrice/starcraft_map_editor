@@ -965,3 +965,11 @@ UI는 파일이나 프로세스를 직접 읽지 않는다. [계약과 검증](U
 불변 미리보기 생성 후 세션 identity·진행 상태·재디코딩을 검증하고 한 번에
 채택한다. 전후 세션은 공통 history 한 명령으로 저장한다. 디스크 쓰기 없이
 미저장 리소스를 유지하며 [크기 변경 계약](MAP_RESIZE.md)을 따른다.
+
+### 에디터 지형 읽기 전용 투영 (2026-09-30)
+
+`ChkEditorTerrainDecoder`는 원시 TILE/ISOM과 게임 MTXM을 변경 없이 검사한다.
+`OpenedMapSession.editorTerrain`은 불변 세션별 지연 캐시로 결과를 제공하고,
+Inspector의 `TerrainDataPanel`은 해당 결과를 한글·영문으로 표시한다.
+검사 상태는 기존 편집 차단 진단과 분리하며 새 dirty/Undo 명령을 만들지 않는다.
+[등각 지형 계약](ISOMETRIC_TERRAIN.md)에 따라 구조 검사와 의미 검증을 구분한다.

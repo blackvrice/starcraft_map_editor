@@ -1,3 +1,4 @@
+import '../../domain/chk/typed/chk_editor_terrain.dart';
 import '../../domain/chk/chk.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../ports/map_archive_gateway.dart';
@@ -26,6 +27,11 @@ class OpenedMapSession {
 
   final ExtractedMap extractedMap;
   final RawChkDocument rawDocument;
+
+  // Cache per immutable session; raw edits/Undo create a fresh session report.
+  late final editorTerrain = const ChkEditorTerrainDecoder().decode(
+    rawDocument,
+  );
   final ChkMetadataViews metadataViews;
   final ChkStringViews stringViews;
   final ChkTerrainViews terrainViews;

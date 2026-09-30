@@ -841,4 +841,50 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get triggersEudUnavailable => 'EUD 프로젝트 작업 공간을 사용할 수 없어요.';
+
+  @override
+  String get terrainDataTitle => '에디터 지형 데이터';
+
+  @override
+  String get terrainDataProtected => 'EUD 보호 마커 — ISOM 격자가 아님';
+
+  @override
+  String get terrainDataIsomPresent => 'ISOM 있음 — 지형 생성 검증 전';
+
+  @override
+  String get terrainDataNoIsom => 'ISOM 없음 — 원시 타일 편집';
+
+  @override
+  String terrainDataBytes(int actual, String expected) {
+    return '$actual바이트 / 예상 $expected';
+  }
+
+  @override
+  String get terrainDataStructureOnly => '크기 일치 — 지형 의미는 검증하지 않음';
+
+  @override
+  String get terrainDataInvalidSize => '크기 불일치 — 원본 바이트 보존';
+
+  @override
+  String get terrainDataUnknownDimensions => '유일하고 유효한 DIM 섹션이 필요함';
+
+  @override
+  String terrainDataDuplicates(String names) {
+    return '중복 섹션: $names. 사용할 사본을 임의로 선택하지 않음.';
+  }
+
+  @override
+  String get terrainDataComparisonUnavailable => 'MTXM / TILE 비교 불가';
+
+  @override
+  String terrainDataDifference(int count) {
+    return 'MTXM / TILE 차이: $count칸. 차이가 있다고 손상된 것은 아닙니다.';
+  }
+
+  @override
+  String get terrainDataDoodads => '두다드가 있어 게임 지형과 에디터 타일이 다를 수 있습니다.';
+
+  @override
+  String get terrainDataReadOnly =>
+      '읽기 전용 검사입니다. 원시 브러시는 MTXM만 변경하고 TILE/ISOM은 보존합니다. 등각 지형·경사로 생성은 아직 지원하지 않습니다.';
 }

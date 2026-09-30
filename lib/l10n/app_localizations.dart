@@ -1615,6 +1615,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'EUD project workspace unavailable.'**
   String get triggersEudUnavailable;
+
+  /// No description provided for @terrainDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Editor terrain data'**
+  String get terrainDataTitle;
+
+  /// No description provided for @terrainDataProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD protection marker; not an ISOM grid'**
+  String get terrainDataProtected;
+
+  /// No description provided for @terrainDataIsomPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'ISOM present — generation not verified'**
+  String get terrainDataIsomPresent;
+
+  /// No description provided for @terrainDataNoIsom.
+  ///
+  /// In en, this message translates to:
+  /// **'No ISOM — raw tile editing'**
+  String get terrainDataNoIsom;
+
+  /// No description provided for @terrainDataBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'{actual} bytes / expected {expected}'**
+  String terrainDataBytes(int actual, String expected);
+
+  /// No description provided for @terrainDataStructureOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Size matches; terrain meaning is not validated'**
+  String get terrainDataStructureOnly;
+
+  /// No description provided for @terrainDataInvalidSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size mismatch — original bytes preserved'**
+  String get terrainDataInvalidSize;
+
+  /// No description provided for @terrainDataUnknownDimensions.
+  ///
+  /// In en, this message translates to:
+  /// **'A single valid DIM section is required'**
+  String get terrainDataUnknownDimensions;
+
+  /// No description provided for @terrainDataDuplicates.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate sections: {names}. No active copy selected.'**
+  String terrainDataDuplicates(String names);
+
+  /// No description provided for @terrainDataComparisonUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'MTXM / TILE comparison unavailable'**
+  String get terrainDataComparisonUnavailable;
+
+  /// No description provided for @terrainDataDifference.
+  ///
+  /// In en, this message translates to:
+  /// **'MTXM / TILE differ in {count} cells. Differences alone do not mean corruption.'**
+  String terrainDataDifference(int count);
+
+  /// No description provided for @terrainDataDoodads.
+  ///
+  /// In en, this message translates to:
+  /// **'Doodads exist; their terrain may differ from editor tiles.'**
+  String get terrainDataDoodads;
+
+  /// No description provided for @terrainDataReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only inspection. Raw brushes change MTXM only; TILE/ISOM are preserved. Isometric and ramp generation is not available yet.'**
+  String get terrainDataReadOnly;
 }
 
 class _AppLocalizationsDelegate

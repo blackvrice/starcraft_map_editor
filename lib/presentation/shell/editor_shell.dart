@@ -1,3 +1,4 @@
+import '../documents/terrain_data_panel.dart';
 import '../../application/documents/map_resize_controller.dart';
 import '../documents/map_resize_dialog.dart';
 import '../../application/documents/new_map_controller.dart';
@@ -3674,6 +3675,7 @@ class _MapDocumentInspector extends StatelessWidget {
           label: l10n.inspectorDiagnostics,
           value: '${session.diagnostics.length}',
         ),
+        TerrainDataPanel(report: session.editorTerrain),
       ],
     );
   }

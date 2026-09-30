@@ -852,4 +852,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get triggersEudUnavailable => 'EUD project workspace unavailable.';
+
+  @override
+  String get terrainDataTitle => 'Editor terrain data';
+
+  @override
+  String get terrainDataProtected => 'EUD protection marker; not an ISOM grid';
+
+  @override
+  String get terrainDataIsomPresent => 'ISOM present — generation not verified';
+
+  @override
+  String get terrainDataNoIsom => 'No ISOM — raw tile editing';
+
+  @override
+  String terrainDataBytes(int actual, String expected) {
+    return '$actual bytes / expected $expected';
+  }
+
+  @override
+  String get terrainDataStructureOnly =>
+      'Size matches; terrain meaning is not validated';
+
+  @override
+  String get terrainDataInvalidSize =>
+      'Size mismatch — original bytes preserved';
+
+  @override
+  String get terrainDataUnknownDimensions =>
+      'A single valid DIM section is required';
+
+  @override
+  String terrainDataDuplicates(String names) {
+    return 'Duplicate sections: $names. No active copy selected.';
+  }
+
+  @override
+  String get terrainDataComparisonUnavailable =>
+      'MTXM / TILE comparison unavailable';
+
+  @override
+  String terrainDataDifference(int count) {
+    return 'MTXM / TILE differ in $count cells. Differences alone do not mean corruption.';
+  }
+
+  @override
+  String get terrainDataDoodads =>
+      'Doodads exist; their terrain may differ from editor tiles.';
+
+  @override
+  String get terrainDataReadOnly =>
+      'Read-only inspection. Raw brushes change MTXM only; TILE/ISOM are preserved. Isometric and ramp generation is not available yet.';
 }

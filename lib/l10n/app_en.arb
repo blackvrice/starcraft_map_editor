@@ -524,5 +524,42 @@
   "triggersOpenEudProject": "Open EUD Project to create, save or build rules",
   "triggersUndoProject": "Undo project",
   "triggersRedoProject": "Redo project",
-  "triggersEudUnavailable": "EUD project workspace unavailable."
+  "triggersEudUnavailable": "EUD project workspace unavailable.",
+  "terrainDataTitle": "Editor terrain data",
+  "terrainDataProtected": "EUD protection marker; not an ISOM grid",
+  "terrainDataIsomPresent": "ISOM present — generation not verified",
+  "terrainDataNoIsom": "No ISOM — raw tile editing",
+  "terrainDataBytes": "{actual} bytes / expected {expected}",
+  "terrainDataStructureOnly": "Size matches; terrain meaning is not validated",
+  "terrainDataInvalidSize": "Size mismatch — original bytes preserved",
+  "terrainDataUnknownDimensions": "A single valid DIM section is required",
+  "terrainDataDuplicates": "Duplicate sections: {names}. No active copy selected.",
+  "terrainDataComparisonUnavailable": "MTXM / TILE comparison unavailable",
+  "terrainDataDifference": "MTXM / TILE differ in {count} cells. Differences alone do not mean corruption.",
+  "terrainDataDoodads": "Doodads exist; their terrain may differ from editor tiles.",
+  "terrainDataReadOnly": "Read-only inspection. Raw brushes change MTXM only; TILE/ISOM are preserved. Isometric and ramp generation is not available yet.",
+  "@terrainDataBytes": {
+    "placeholders": {
+      "actual": {
+        "type": "int"
+      },
+      "expected": {
+        "type": "String"
+      }
+    }
+  },
+  "@terrainDataDuplicates": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "@terrainDataDifference": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
