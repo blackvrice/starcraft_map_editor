@@ -561,5 +561,885 @@
         "type": "int"
       }
     }
-  }
+  },
+  "newMapTitle": "New Map",
+  "newMapStepBasics": "Size and terrain",
+  "newMapStepPlayers": "Players",
+  "newMapStepReview": "Review and create",
+  "newMapStepCurrent": "Current step",
+  "newMapSideNote": "You can resize the map later from File → Resize Map. A new map is saved for the first time with Save As.",
+  "newMapName": "Map title",
+  "newMapDefaultTitle": "Untitled Scenario",
+  "newMapDescription": "Description (optional)",
+  "newMapSize": "Size",
+  "newMapSizeSmall": "Small",
+  "newMapSizeSmallNote": "1 vs 1 practice",
+  "newMapSizeCompact": "Compact",
+  "newMapSizeCompactNote": "2 players",
+  "newMapSizeMedium": "Medium",
+  "newMapSizeMediumNote": "Recommended for 4",
+  "newMapSizeLarge": "Large",
+  "newMapSizeLargeNote": "6–8 players",
+  "newMapSizeHuge": "Huge",
+  "newMapSizeHugeNote": "Large UMS",
+  "newMapSizeCustom": "Custom",
+  "newMapSizeCustomNote": "Up to 256",
+  "newMapWidth": "Width (tiles)",
+  "newMapHeight": "Height (tiles)",
+  "newMapSizeValue": "{width} × {height}",
+  "@newMapSizeValue": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapTileset": "Tileset",
+  "newMapTilesetHint": "The look of the whole map. It cannot be changed after creation.",
+  "tilesetBadlands": "Badlands",
+  "tilesetSpacePlatform": "Space Platform",
+  "tilesetInstallation": "Installation",
+  "tilesetAshworld": "Ashworld",
+  "tilesetJungle": "Jungle",
+  "tilesetDesert": "Desert",
+  "tilesetIce": "Ice",
+  "tilesetTwilight": "Twilight",
+  "newMapInitialTile": "Starting tile",
+  "newMapInitialTileHint": "The whole map is filled with this raw tile. ISOM terrain is not generated, so walkability is not guaranteed.",
+  "newMapTileRequired": "Pick a starting tile to create the map.",
+  "newMapTilesLoading": "Loading tiles from StarCraft data…",
+  "newMapTilePage": "{first}–{last} of {total}",
+  "@newMapTilePage": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "last": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapPrevious": "Previous",
+  "newMapNext": "Next",
+  "newMapReload": "Reload",
+  "newMapPlayersTitle": "How many people will play?",
+  "newMapPlayersHint": "Each human player gets a Terran start location. You can change races and slots later in Player Settings.",
+  "newMapPlayersValue": "{players} players",
+  "@newMapPlayersValue": {
+    "placeholders": {
+      "players": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapReviewTitle": "Ready to create",
+  "newMapReviewFormat": "Brood War UMS (.scx)",
+  "newMapReviewNoTriggers": "No victory or resource triggers are added. Add them in Triggers.",
+  "newMapReviewTile": "Starting tile #{tile}",
+  "@newMapReviewTile": {
+    "placeholders": {
+      "tile": {
+        "type": "String"
+      }
+    }
+  },
+  "newMapReviewNoTile": "No starting tile yet",
+  "newMapCancel": "Cancel",
+  "newMapBack": "Back",
+  "newMapContinue": "Next",
+  "newMapCreate": "Create",
+  "newMapDiscardTitle": "Discard unsaved map changes?",
+  "newMapDiscardBody": "Creating a new map replaces the current document. Save it first if you want to keep these changes.",
+  "newMapKeepCurrent": "Keep current map",
+  "newMapDiscardAndCreate": "Discard and create",
+  "catalogTitle": "What to place",
+  "catalogKindTile": "Terrain tiles",
+  "catalogKindDoodad": "Doodads",
+  "catalogKindUnit": "Units",
+  "catalogKindSprite": "Sprites",
+  "catalogKindSpriteUnit": "Sprite-units",
+  "catalogCategories": "Categories",
+  "catalogCategoryAll": "All",
+  "catalogTilesetTitle": "{tileset} map",
+  "@catalogTilesetTitle": {
+    "placeholders": {
+      "tileset": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogTilesetHint": "Only entries that match this map's tileset are shown.",
+  "catalogSearchHint": "Search by name, #ID or type (e.g. Bunker, #125)",
+  "catalogBackToMap": "Back to map",
+  "catalogPlaceableOnly": "Placeable only",
+  "catalogShownCount": "{count} shown",
+  "@catalogShownCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogEmpty": "No catalog entry matches this search.",
+  "catalogDetailEmpty": "Select an entry to see its details and place it.",
+  "catalogFootprint": "Footprint {width} × {height} tiles",
+  "@catalogFootprint": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogFootprintOverlay": "Footprint {width} × {height} tiles + overlay",
+  "@catalogFootprintOverlay": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogOwner": "Who owns it?",
+  "catalogOwnerPlayer": "Player {count}",
+  "@catalogOwnerPlayer": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogKeepPlacing": "Keep placing on each click",
+  "catalogHowTo": "How to place",
+  "catalogHowTo1": "1. Press the button below to return to the map.",
+  "catalogHowTo2": "2. Click where the outline is shown to place it.",
+  "catalogHowTo3": "3. A red outline is outside the map. Press Esc to cancel.",
+  "catalogPlace": "Place on map",
+  "catalogCannotPlace": "This entry cannot be placed.",
+  "catalogIssueRelation": "Add-ons and similar units need another building, so they cannot be placed on their own.",
+  "catalogIssueCapability": "The unit data could not be read from the local game files, so placement is locked.",
+  "catalogIssueGraphic": "The graphic could not be loaded, so the entry is locked to avoid invisible objects.",
+  "catalogIssueRecipe": "The doodad layout data is incomplete, so it cannot be placed safely.",
+  "catalogIssueCode": "Code: {code}",
+  "@catalogIssueCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "buildStepsLabel": "Steps to an EUD map",
+  "buildStepMap": "Save the map",
+  "buildStepMapNone": "No map is open",
+  "buildStepMapDirty": "Unsaved changes · use Save As",
+  "buildStepMapSaved": "Saved",
+  "buildStepSource": "Save the script",
+  "buildStepSourceUntitled": "Save it as a file to build",
+  "buildStepSourceDirty": "Not saved yet",
+  "buildStepSourceSaved": "Saved",
+  "buildStepPrepare": "Prepare the build",
+  "buildStepPrepareNeeded": "Choose input and output files",
+  "buildStepPrepareReady": "Ready",
+  "buildStepPrepareAction": "Prepare…",
+  "buildStepRun": "Build",
+  "buildStepRunReady": "Ready to run",
+  "buildStepRunBusy": "Building…",
+  "buildStepRunSucceeded": "Succeeded",
+  "buildStepRunFailed": "Failed · see the result below",
+  "buildStepRunCancelled": "Cancelled",
+  "buildStepRunBlocked": "Finish the earlier steps first",
+  "buildSafetyNote": "The original map is never overwritten",
+  "buildSummarySucceeded": "The EUD map was built",
+  "buildSummaryFailed": "The build did not finish",
+  "buildSummaryCancelled": "The build was cancelled",
+  "buildSummaryRunning": "Building with euddraft…",
+  "buildSummaryFirstError": "First problem: {message}",
+  "@buildSummaryFirstError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "buildSummaryAt": "{location}: {message}",
+  "@buildSummaryAt": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "buildSummaryUnchanged": "The original map and earlier output were left unchanged.",
+  "buildSummaryRawLog": "Raw euddraft log below",
+  "trigTitle": "Triggers",
+  "trigBriefingTitle": "Briefing",
+  "trigCount": "{count} total",
+  "@trigCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigAdd": "Add trigger",
+  "trigAddBriefing": "Add briefing",
+  "trigUndo": "Undo",
+  "trigRedo": "Redo",
+  "trigValidate": "Validate references",
+  "trigSelectAll": "Select all / none",
+  "trigOwners": "Owners…",
+  "trigEnableSelected": "Enable selected",
+  "trigDisableSelected": "Disable selected",
+  "trigAddText": "Add text…",
+  "trigSwitchNames": "Switch names…",
+  "trigUnitProperties": "Unit properties…",
+  "trigSelectedCount": "{count} selected",
+  "@trigSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigHelp": "Each trigger runs its actions when all of its conditions are true. New triggers start with “Never”, so they do nothing until you change the condition. Save As writes applied changes.",
+  "trigBriefingHelp": "Briefing actions play in order before the game starts. Times are in milliseconds and portrait slots are 1–4. Add sounds in Resources.",
+  "trigEmpty": "No triggers yet. Add one to start.",
+  "trigItemTitle": "Trigger {count}",
+  "@trigItemTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigBriefingItemTitle": "Briefing {count}",
+  "@trigBriefingItemTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigOn": "On",
+  "trigOff": "Off",
+  "trigNoOwner": "No one runs it",
+  "trigWhen": "When",
+  "trigThen": "Then",
+  "trigNothing": "Nothing",
+  "trigMore": "+{count} more",
+  "@trigMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigMoveUp": "Move up",
+  "trigMoveDown": "Move down",
+  "trigDuplicate": "Duplicate trigger",
+  "trigDuplicateBriefing": "Duplicate briefing",
+  "trigDelete": "Delete trigger",
+  "trigDeleteBriefing": "Delete briefing",
+  "trigDeleteTitle": "Delete {name}?",
+  "@trigDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "trigDeleteBody": "The entire record, including preserved unsupported slots, will be removed. Undo restores it.",
+  "trigCancel": "Cancel",
+  "trigDeleteConfirm": "Delete",
+  "trigClose": "Close",
+  "trigValidationTitle": "Trigger validation",
+  "trigValidationOk": "Supported slots have valid field values and references. Raw/EUD slots are not interpreted.",
+  "trigOwnersTitle": "Who runs the selected triggers?",
+  "trigOwnersBriefingTitle": "Who sees the selected briefings?",
+  "trigOwnersHelp": "“Unchanged” keeps each trigger’s current setting. Choose Add or Remove to change it.",
+  "trigOwnerUnchanged": "Unchanged",
+  "trigOwnerAdd": "Add",
+  "trigOwnerRemove": "Remove",
+  "trigApplyOwners": "Apply owners",
+  "trigEditTitle": "Edit trigger",
+  "trigEditBriefingTitle": "Edit briefing",
+  "trigDraftNote": "Changes stay in this draft until you press Apply to map. Unsupported slots and flags are preserved byte for byte.",
+  "trigWho": "Who runs it?",
+  "trigWhoHelp": "The trigger is checked separately for each selected player. “Current player” in conditions and actions means that player.",
+  "trigEnabledChip": "Trigger enabled",
+  "trigBriefingEnabledChip": "Briefing enabled",
+  "trigWhenAll": "all of these are true",
+  "trigThenInOrder": "run in this order",
+  "trigBriefingSteps": "Steps",
+  "trigSlotCount": "{current} / {total}",
+  "@trigSlotCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "trigAddSlot": "Add",
+  "trigPreserved": "preserved as raw data",
+  "trigSlotEnabled": "Enabled",
+  "trigSlotUp": "Move slot up",
+  "trigSlotDown": "Move slot down",
+  "trigSlotDuplicate": "Duplicate slot",
+  "trigSlotRemove": "Remove slot",
+  "trigExplainTitle": "What it does",
+  "trigExplainOwners": "For {owners}:",
+  "@trigExplainOwners": {
+    "placeholders": {
+      "owners": {
+        "type": "String"
+      }
+    }
+  },
+  "trigExplainNoOwner": "No player runs this trigger yet, so it never runs.",
+  "trigExplainNever": "It has a “Never” condition, so it never runs.",
+  "trigExplainAlways": "It runs right away because the condition is “Always”.",
+  "trigExplainConditions": "When all {count} conditions are true,",
+  "@trigExplainConditions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigExplainNoConditions": "With no conditions,",
+  "trigExplainActions": "it runs {count} actions in order.",
+  "@trigExplainActions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trigExplainOnce": "Without “Preserve trigger” it runs only once per player.",
+  "trigExplainPreserve": "“Preserve trigger” makes it run again every time the conditions are true.",
+  "trigExplainDisabled": "It is turned off and will not run.",
+  "trigRawRecord": "Advanced: raw record (read-only)",
+  "trigApply": "Apply to map",
+  "trigSlotAction": "Action",
+  "trigSlotCondition": "Condition",
+  "trigSlotReplaceNote": "Changing the type replaces this slot’s arguments when applied.",
+  "trigAlwaysDisplay": "Always display text",
+  "trigUseSlot": "Use slot",
+  "eudProjectTitle": "EUD Project",
+  "eudProjectUnsavedSuffix": " • Unsaved",
+  "eudProjectLead": "Change unit, weapon, upgrade and player settings that ordinary map editing cannot reach. Values live in a separate project file and reach the game only through an EUD build.",
+  "eudNewFromMap": "New from current map",
+  "eudOpenProject": "Open Project",
+  "eudSaveProject": "Save Project",
+  "eudSaveProjectAs": "Save Project As",
+  "eudUndoProject": "Undo project",
+  "eudRedoProject": "Redo project",
+  "eudCloseProject": "Close Project",
+  "eudGenerationPreview": "Generation preview",
+  "eudGenerationPreviewTitle": "EUD generation preview",
+  "eudGenerationPreviewNote": "Settings initialize before user initialization. Rules run at their selected before/after trigger hook. Instance rules affect only their guarded bound unit. Game compatibility is unverified.",
+  "eudClose": "Close",
+  "eudCancel": "Cancel",
+  "eudDiscard": "Discard",
+  "eudDiscardTitle": "Discard EUD project changes?",
+  "eudDiscardBody": "The EUD project has unsaved changes. Save Project As before continuing to keep them.",
+  "eudWelcomeTitle": "What an EUD project does",
+  "eudWelcomeChoose": "Pick new values for units, weapons, upgrades, technologies and players.",
+  "eudWelcomeSave": "Save them in a project file. The map file is not touched.",
+  "eudWelcomeBuild": "Build a new EUD map to try them. The original map stays as it is.",
+  "eudProjectSaveNote": "Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.",
+  "eudAllFieldsNote": "All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Prepare EUD Build can include these settings in an unverified test build. Save Project keeps a recovery backup.",
+  "eudBindingUnchecked": "Map connection has not been verified. Use Verify current map.",
+  "eudBindingNoMap": "Open a map to connect an EUD project.",
+  "eudBindingUnsaved": "The map has unsaved changes. Save the map before connecting.",
+  "eudBindingRestricted": "This map is restricted and cannot be connected for editing.",
+  "eudBindingMatched": "Current map matches the project (verified snapshot).",
+  "eudBindingMismatch": "Current map differs from the project. Open the linked map or explicitly connect this map.",
+  "eudBindingDiskChanged": "The map changed on disk. Reopen it before connecting.",
+  "eudConnectionTitle": "Connected map",
+  "eudVerifyMap": "Verify current map",
+  "eudConnectMap": "Connect current map",
+  "eudProjectInfo": "Project: {project}\nMap: {map}\nSHA-256: {sha}",
+  "@eudProjectInfo": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "map": {
+        "type": "String"
+      },
+      "sha": {
+        "type": "String"
+      }
+    }
+  },
+  "eudNotSaved": "Not saved",
+  "eudChangesTitle": "Changed values",
+  "eudChangesCount": "{count} stored overrides • Runtime unverified",
+  "@eudChangesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudChangesEmpty": "No values changed yet. Open All EUD field extensions to choose some.",
+  "eudAllFields": "All EUD field extensions",
+  "eudBaselineLine": "Baseline: {value}",
+  "@eudBaselineLine": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudPlannedLine": "Requested EUD: {requested} • Planned EUD value: {planned}",
+  "@eudPlannedLine": {
+    "placeholders": {
+      "requested": {
+        "type": "String"
+      },
+      "planned": {
+        "type": "String"
+      }
+    }
+  },
+  "eudUnresolved": "Unresolved",
+  "eudExplicitChk": "Explicit CHK override",
+  "eudPreviewOnlyNote": "Preview only, not applied in game. Verify current map after changes. Project validation errors block all planned values.",
+  "eudRevert": "Back to the original value",
+  "eudBaselineUnverified": "Unverified map",
+  "eudBaselineGameDefault": "Game default (unknown; {detail})",
+  "@eudBaselineGameDefault": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "eudBaselineUnavailable": "Unavailable ({detail})",
+  "@eudBaselineUnavailable": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "eudBaselineNotInChk": "Not stored in CHK; {detail}",
+  "@eudBaselineNotInChk": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "eudStepsTitle": "Getting it into the game",
+  "eudStepChoose": "Choose values",
+  "eudStepChooseDone": "{count} values changed",
+  "@eudStepChooseDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudStepChooseNone": "Nothing changed yet",
+  "eudStepSave": "Save the project",
+  "eudStepSaveDone": "Saved · the map file is untouched",
+  "eudStepSaveNeeded": "Not saved yet · the map file is untouched",
+  "eudStepVerify": "Check the map",
+  "eudStepBuild": "EUD build",
+  "eudStepBuildHint": "To test these settings, save and verify the map, then use Prepare EUD Build and enable the project settings test build.",
+  "eudStepBuildIdle": "Builds a new map file. The original stays as it is.",
+  "eudRecoveryBackup": "Recovery backup: {path}",
+  "@eudRecoveryBackup": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "eudSavedPill": "Saved",
+  "eudUnsavedPill": "Unsaved",
+  "eudRuntimeUnverified": "Runtime unverified",
+  "eudTechnical": "Technical details",
+  "eudProblems": "Needs attention",
+  "eudRulesTitle": "Execution rules",
+  "eudRulesCount": "{current} / {total}",
+  "@eudRulesCount": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "eudRulesHelp": "Rules change player resources and other game state while the map runs. They execute before ordinary triggers, and periods count trigger cycles, not seconds. Save Project, then Prepare EUD Build to test.",
+  "eudRulesHelp2": "One enabled writer per target. Review user code and ordinary triggers separately. Extended rules support variables, player state, locations, guarded units and local display.",
+  "eudRulesEmpty": "No rules yet.",
+  "eudRuleAdd": "Add execution rule",
+  "eudRuleEditTitle": "Edit execution rule",
+  "eudRuleDisabled": "Off",
+  "eudRuleMoveUp": "Move rule up",
+  "eudRuleMoveDown": "Move rule down",
+  "eudRuleEdit": "Edit rule",
+  "eudRuleDelete": "Delete rule",
+  "eudRulePlayerN": "Player {number}",
+  "@eudRulePlayerN": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "eudRuleWhenThen": "When {condition} → {action}",
+  "@eudRuleWhenThen": {
+    "placeholders": {
+      "condition": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "eudCmpAtLeastSentence": "{resource} is at least {value}",
+  "@eudCmpAtLeastSentence": {
+    "placeholders": {
+      "resource": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudCmpAtMostSentence": "{resource} is at most {value}",
+  "@eudCmpAtMostSentence": {
+    "placeholders": {
+      "resource": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudCmpExactlySentence": "{resource} is exactly {value}",
+  "@eudCmpExactlySentence": {
+    "placeholders": {
+      "resource": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudOpSetToSentence": "set to {amount}",
+  "@eudOpSetToSentence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "eudOpAddSentence": "add {amount}",
+  "@eudOpAddSentence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "eudOpSubtractSentence": "subtract {amount}",
+  "@eudOpSubtractSentence": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "eudRuleOnce": "Once on first match",
+  "eudRuleEvery": "Every {count} cycles",
+  "@eudRuleEvery": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudRulePeriodic": "Periodic",
+  "eudResMinerals": "Minerals",
+  "eudResGas": "Gas",
+  "eudCmpAtLeast": "At least",
+  "eudCmpAtMost": "At most",
+  "eudCmpExactly": "Exactly",
+  "eudOpSetTo": "Set to",
+  "eudOpAdd": "Add",
+  "eudOpSubtract": "Subtract",
+  "eudRuleDefaultName": "Resource rule",
+  "eudRuleName": "Rule name",
+  "eudRulePlayer": "Player",
+  "eudRuleResource": "Resource (condition and action)",
+  "eudRuleComparison": "Comparison",
+  "eudRuleThreshold": "Threshold (0–2147483647)",
+  "eudRuleAction": "Action",
+  "eudRuleAmount": "Amount (0–2147483647)",
+  "eudRuleSchedule": "Schedule",
+  "eudRuleInterval": "Interval (12–86400 trigger cycles)",
+  "eudRuleEnabled": "Enabled",
+  "eudRuleApply": "Apply rule",
+  "eudExtTitle": "Extended execution rule",
+  "eudExtHelp": "Values: unsigned 16-bit, clamped to 0–65535. Variables 0–15 start at zero. Formula: source × factor + offset. Non-resource actions set their value.",
+  "eudExtTargetAction": "Target action",
+  "eudExtTargetId": "Target ID: variable 0–15, upgrade 0–60, tech 0–43, location 1–255 (except 64), sound string ID; otherwise 0",
+  "eudExtUnitType": "Unit type ID (0–227; instance/follow actions)",
+  "eudExtUnitBindHelp": "Binds the first living unit of this type owned by the selected player. Death, morph or ownership change invalidates the binding permanently. It never acquires a replacement unit. At most four unit rules.",
+  "eudExtTextPrefix": "Text prefix (selected player only)",
+  "eudExtSoundHelp": "Use a registered WAV string ID from Resources. Only the selected player hears the sound.",
+  "eudExtTiming": "Execution timing",
+  "eudExtLeft": "Condition left",
+  "eudExtRight": "Condition right",
+  "eudExtValue": "Action value",
+  "eudExtX": "X",
+  "eudExtY": "Y",
+  "eudExtWidth": "Width",
+  "eudExtHeight": "Height",
+  "eudExtConstantId": "Constant / ID",
+  "eudExtPlayerRange": "Player 1–8",
+  "eudExtFactor": "× (0–255)",
+  "eudExtOffset": "+ offset",
+  "eudActVariable": "Variable",
+  "eudActMinerals": "Minerals",
+  "eudActGas": "Gas",
+  "eudActUpgrade": "Upgrade level",
+  "eudActTechnology": "Technology",
+  "eudActLocation": "Location",
+  "eudActUnitHp": "Unit hit points",
+  "eudActUnitShields": "Unit shields",
+  "eudActUnitEnergy": "Unit energy",
+  "eudActFollowUnit": "Follow unit",
+  "eudActText": "Show text",
+  "eudActSound": "Play sound",
+  "eudTimingBefore": "Before triggers",
+  "eudTimingAfter": "After triggers",
+  "eudSrcConstant": "Constant",
+  "eudSrcVariable": "Variable",
+  "eudSrcMinerals": "Minerals",
+  "eudSrcGas": "Gas",
+  "eudSrcUpgrade": "Upgrade level",
+  "eudSrcTechnology": "Technology",
+  "eudApplyToProject": "Apply to project",
+  "eudProjectChanged": "Project changed. Cancel and reopen this editor.",
+  "eudWeaponCardTitle": "Weapons",
+  "eudWeaponCardHelp": "Range and damage type belong to the weapon, so every unit that uses it changes together.",
+  "eudWeaponEdit": "Edit weapon EUD settings",
+  "eudWeaponSharedHelp": "Shared weapon ID for ground/air users. Review Static unit / weapon impact after applying. This does not reassign a unit’s weapon.",
+  "eudWeaponRawHelp": "Distances are raw integers; tile conversion and runtime support are unverified. Blank removes the override; game defaults remain unknown. Applying changes only the project, not the game.",
+  "eudWeaponMinRange": "Minimum range (raw)",
+  "eudWeaponMaxRange": "Maximum range (raw)",
+  "eudWeaponNoDamage": "No damage type override",
+  "eudWeaponUnsupported": "Unsupported: {value}",
+  "@eudWeaponUnsupported": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudWeaponReferenceChanged": "Weapon reference source changed. Cancel and reload references.",
+  "eudWeaponWholeNumber": "{field}: enter a whole number from 0 to 4294967295.",
+  "@eudWeaponWholeNumber": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "eudDamageIndependent": "Independent",
+  "eudDamageExplosive": "Explosive",
+  "eudDamageConcussive": "Concussive",
+  "eudDamageNormal": "Normal",
+  "eudDamageIgnoreArmor": "IgnoreArmor",
+  "eudImpactTitle": "Static unit / weapon impact",
+  "eudImpactHelp": "Base DAT references only; proposed reference changes, spells and actual attack behavior are not resolved. Type settings are global; player fields affect the selected slot.",
+  "eudImpactLoad": "Load weapon impact",
+  "eudImpactUnavailable": "Weapon references unavailable. Load or reload to analyze.",
+  "eudImpactSource": "Reference source: {source}",
+  "@eudImpactSource": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactChooseUnit": "Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.",
+  "eudImpactEditShields": "Edit unit EUD shields",
+  "eudImpactGround": "Ground",
+  "eudImpactAir": "Air",
+  "eudImpactNoWeapon": "{slot} weapon: None (#130)",
+  "@eudImpactNoWeapon": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactEditWeapon": "{slot}: {weapon} — Edit EUD",
+  "@eudImpactEditWeapon": {
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "weapon": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactSubunits": "Subunit IDs: {subunit1}, {subunit2} (228 = None)",
+  "@eudImpactSubunits": {
+    "placeholders": {
+      "subunit1": {
+        "type": "String"
+      },
+      "subunit2": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactCannotAnalyze": "Cannot analyze: {reason}",
+  "@eudImpactCannotAnalyze": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactUnknownWeapon": "Impact unknown: weapon references unavailable.",
+  "eudImpactPlayerOnly": "Player {number} only; runtime behavior unverified.",
+  "@eudImpactPlayerOnly": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactUnknownShared": "Impact unknown: shared references for this table are unavailable.",
+  "eudImpactUnits": "Direct units: {direct}\nVia subunits: {subunits}",
+  "@eudImpactUnits": {
+    "placeholders": {
+      "direct": {
+        "type": "String"
+      },
+      "subunits": {
+        "type": "String"
+      }
+    }
+  },
+  "eudImpactNone": "None in static references",
+  "eudShieldTitle": "{unit} — Shields",
+  "@eudShieldTitle": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "eudShieldHelp": "Activation and maximum are independent type settings shared by all players. Blank maximum or No override removes that setting; defaults are unknown.",
+  "eudShieldNoOverride": "No activation override",
+  "eudShieldEnabled": "Shields enabled",
+  "eudShieldDisabled": "Shields disabled",
+  "eudShieldUnsupported": "Unsupported imported activation",
+  "eudShieldMaximum": "Maximum shields (0–65535)",
+  "eudShieldOverrideChk": "Explicitly override CHK maximum shields",
+  "eudShieldInitNote": "Initialization is not implemented: existing placed units keep their CHK shield percentages; no current-shield refill, clamp or recurring write is generated. New-unit initialization requires runtime verification. Applying saves project intent only; EUD build integration is pending.",
+  "eudShieldChooseSupported": "Choose a supported shield activation value.",
+  "eudShieldWholeNumber": "Maximum shields require a whole number from 0 to 65535.",
+  "eudFieldsTitle": "EUD field extensions",
+  "eudFieldsIntro": "Candidate settings • Runtime unverified. Add each edit to the draft, then apply the draft to the project. Unsaved input is discarded when changing selection.",
+  "eudFieldsField": "What to change",
+  "eudFieldsSearch": "Find target by name or ID",
+  "eudFieldsTarget": "Which one",
+  "eudFieldsPlayerNote": "Selected player slot only. Supply uses half-points (400 = 200 supply).",
+  "eudFieldsGlobalNote": "Global type setting, shared across players. DAT defaults are not loaded. Shared-reference impact is not resolved for this editor.",
+  "eudFieldsApi": "Candidate API: {member} • {unit}",
+  "@eudFieldsApi": {
+    "placeholders": {
+      "member": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "eudFieldsStorage": "Storage input: 0–{maximum}{mask}. Gameplay limits are unverified.",
+  "@eudFieldsStorage": {
+    "placeholders": {
+      "maximum": {
+        "type": "String"
+      },
+      "mask": {
+        "type": "String"
+      }
+    }
+  },
+  "eudFieldsMask": " • Allowed mask: {mask}",
+  "@eudFieldsMask": {
+    "placeholders": {
+      "mask": {
+        "type": "String"
+      }
+    }
+  },
+  "eudFieldsValue": "Value (decimal integer)",
+  "eudFieldsChoose": "Choose a value",
+  "eudFieldsUnsupported": "Unsupported stored value: {value}",
+  "@eudFieldsUnsupported": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudFieldsYes": "Yes (true)",
+  "eudFieldsNo": "No (false)",
+  "eudFieldsOverrideChk": "Explicitly override ordinary CHK settings",
+  "eudFieldsStage": "Add / update draft",
+  "eudFieldsRemove": "Remove from draft",
+  "eudFieldsDraftSummary": "{count} draft overrides • Current: {value}",
+  "@eudFieldsDraftSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "eudFieldsNoOverride": "No override",
+  "eudFieldsApply": "Apply draft to project",
+  "eudFieldsNeedChk": "This value also changes an ordinary map (CHK) setting. Tick the box above to allow it.",
+  "eudFieldsOutOfRange": "The value is outside the allowed range.",
+  "eudFieldsInvalid": "This value cannot be used for the selected field."
 }

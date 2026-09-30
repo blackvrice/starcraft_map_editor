@@ -3,6 +3,8 @@ import 'eud_rule_extension_form.dart';
 import '../../application/eud/eud_project_controller.dart';
 import '../../domain/eud/eud_execution_rule.dart';
 import '../../domain/eud/eud_project.dart';
+import '../localization/l10n.dart';
+import 'eud_rule_labels.dart';
 
 class EudRulesEditor extends StatelessWidget {
   const EudRulesEditor({
@@ -54,78 +56,136 @@ class EudRulesEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final project = controller.project!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
+            const Icon(Icons.bolt_rounded, size: 18, color: Color(0xFFE3A64A)),
+            const SizedBox(width: 8),
             Text(
-              'EUD execution rules (${project.rules.length}/${EudProject.maxRules})',
-              style: Theme.of(context).textTheme.titleMedium,
+              l10n.eudRulesTitle,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
-            const Text(
-              'Synchronized player resources • Executes before ordinary triggers. Periods count trigger cycles, not seconds. Save Project, then Prepare EUD Build to test.',
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFF23272C),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                l10n.eudRulesCount(project.rules.length, EudProject.maxRules),
+                style: const TextStyle(fontSize: 11.5),
+              ),
             ),
-            const Text(
-              'One enabled writer per target. Review user code and ordinary triggers separately. Extended rules support variables, player state, locations, guarded units and local display.',
-            ),
-            OutlinedButton.icon(
+            const Spacer(),
+            FilledButton.tonalIcon(
               key: const Key('eud-rule-add'),
               onPressed: enabled && project.rules.length < EudProject.maxRules
                   ? () => _edit(context, null)
                   : null,
               icon: const Icon(Icons.add),
-              label: const Text('Add execution rule'),
+              label: Text(l10n.eudRuleAdd),
             ),
-            for (final rule in project.rules)
-              ListTile(
-                title: Text('${rule.name}${rule.enabled ? '' : ' (disabled)'}'),
-                subtitle: Text(
-                  rule.extension != null
-                      ? '${rule.extension!.action.name} #${rule.extension!.target} • Player ${rule.player + 1} • ${rule.extension!.timing.name} • ${rule.schedule.name} / ${rule.interval} cycles'
-                      : 'Player ${rule.player + 1} • ${rule.resource.name} ${rule.comparison.name} ${rule.threshold} → ${rule.operation.name} ${rule.amount} • ${rule.schedule == EudRuleSchedule.once ? 'Once on first match' : 'Every ${rule.interval} cycles'}',
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Move rule up',
-                      onPressed: enabled && project.rules.first != rule
-                          ? () => _move(context, project, rule, -1)
-                          : null,
-                      icon: const Icon(Icons.arrow_upward),
-                    ),
-                    IconButton(
-                      tooltip: 'Move rule down',
-                      onPressed: enabled && project.rules.last != rule
-                          ? () => _move(context, project, rule, 1)
-                          : null,
-                      icon: const Icon(Icons.arrow_downward),
-                    ),
-                    IconButton(
-                      tooltip: 'Edit rule',
-                      onPressed: enabled ? () => _edit(context, rule) : null,
-                      icon: const Icon(Icons.edit),
-                    ),
-                    IconButton(
-                      tooltip: 'Delete rule',
-                      onPressed: enabled
-                          ? () => _replace(
-                              context,
-                              project,
-                              project.rules.where((r) => r.id != rule.id),
-                            )
-                          : null,
-                      icon: const Icon(Icons.delete_outline),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        Text(
+          l10n.eudRulesHelp,
+          style: const TextStyle(fontSize: 12.5, color: Color(0xFFA7AFB8)),
+        ),
+        Text(
+          l10n.eudRulesHelp2,
+          style: const TextStyle(fontSize: 12, color: Color(0xFFA7AFB8)),
+        ),
+        if (project.rules.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(l10n.eudRulesEmpty),
+          ),
+        for (final (index, rule) in project.rules.indexed)
+          Container(
+            key: ValueKey(('eud-rule', rule.id)),
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF16191D),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2C3238)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: const Color(0xFF2A2418),
+                  child: Text(
+                    '${index + 1}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFFE3A64A),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Opacity(
+                    opacity: rule.enabled ? 1 : 0.6,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          rule.enabled
+                              ? rule.name
+                              : '${rule.name} · ${l10n.eudRuleDisabled}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          '${l10n.eudRulePlayerN('${rule.player + 1}')} · '
+                          '${EudRuleLabels.sentence(l10n, rule)} · '
+                          '${EudRuleLabels.schedule(l10n, rule)}',
+                          style: const TextStyle(fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: l10n.eudRuleMoveUp,
+                  onPressed: enabled && project.rules.first != rule
+                      ? () => _move(context, project, rule, -1)
+                      : null,
+                  icon: const Icon(Icons.arrow_upward),
+                ),
+                IconButton(
+                  tooltip: l10n.eudRuleMoveDown,
+                  onPressed: enabled && project.rules.last != rule
+                      ? () => _move(context, project, rule, 1)
+                      : null,
+                  icon: const Icon(Icons.arrow_downward),
+                ),
+                IconButton(
+                  tooltip: l10n.eudRuleEdit,
+                  onPressed: enabled ? () => _edit(context, rule) : null,
+                  icon: const Icon(Icons.edit),
+                ),
+                IconButton(
+                  tooltip: l10n.eudRuleDelete,
+                  onPressed: enabled
+                      ? () => _replace(
+                          context,
+                          project,
+                          project.rules.where((r) => r.id != rule.id),
+                        )
+                      : null,
+                  icon: const Icon(Icons.delete_outline),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
@@ -144,9 +204,7 @@ class _RuleDialog extends StatefulWidget {
 }
 
 class _RuleDialogState extends State<_RuleDialog> {
-  late final _name = TextEditingController(
-    text: widget.original?.name ?? 'Resource rule',
-  );
+  late final _name = TextEditingController(text: widget.original?.name);
   late final _threshold = TextEditingController(
     text: '${widget.original?.threshold ?? 100}',
   );
@@ -168,6 +226,14 @@ class _RuleDialogState extends State<_RuleDialog> {
   late bool _enabled = widget.original?.enabled ?? true;
   String? _error;
   final _extension = GlobalKey<EudRuleExtensionFormState>();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.original == null && _name.text.isEmpty) {
+      _name.text = context.l10n.eudRuleDefaultName;
+    }
+  }
 
   @override
   void dispose() {
@@ -227,108 +293,106 @@ class _RuleDialogState extends State<_RuleDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      widget.original == null ? 'Add execution rule' : 'Edit execution rule',
-    ),
-    content: SizedBox(
-      width: 520,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Rule name'),
-            ),
-            _choices(
-              'Player',
-              _player,
-              List.generate(8, (i) => i),
-              (p) => 'Player ${p + 1}',
-              (p) => _player = p,
-            ),
-            if (!_isExtended)
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(
+        widget.original == null ? l10n.eudRuleAdd : l10n.eudRuleEditTitle,
+      ),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _name,
+                decoration: InputDecoration(labelText: l10n.eudRuleName),
+              ),
               _choices(
-                'Resource (condition and action)',
-                _resource,
-                EudResource.values,
-                (r) => r == EudResource.ore ? 'Minerals' : 'Gas',
-                (r) => _resource = r,
+                l10n.eudRulePlayer,
+                _player,
+                List.generate(8, (i) => i),
+                (p) => l10n.eudRulePlayerN('${p + 1}'),
+                (p) => _player = p,
               ),
-            _choices(
-              'Comparison',
-              _comparison,
-              EudComparison.values,
-              (v) => v.name,
-              (v) => _comparison = v,
-            ),
-            if (!_isExtended)
-              TextField(
-                controller: _threshold,
-                decoration: const InputDecoration(
-                  labelText: 'Threshold (0–2147483647)',
+              if (!_isExtended)
+                _choices(
+                  l10n.eudRuleResource,
+                  _resource,
+                  EudResource.values,
+                  (r) => EudRuleLabels.resource(l10n, r),
+                  (r) => _resource = r,
                 ),
+              _choices(
+                l10n.eudRuleComparison,
+                _comparison,
+                EudComparison.values,
+                (v) => EudRuleLabels.comparison(l10n, v),
+                (v) => _comparison = v,
               ),
-            _choices(
-              'Action',
-              _operation,
-              EudResourceOperation.values,
-              (v) => v.name,
-              (v) => _operation = v,
-            ),
-            if (!_isExtended)
-              TextField(
-                controller: _amount,
-                decoration: const InputDecoration(
-                  labelText: 'Amount (0–2147483647)',
+              if (!_isExtended)
+                TextField(
+                  controller: _threshold,
+                  decoration: InputDecoration(labelText: l10n.eudRuleThreshold),
                 ),
+              _choices(
+                l10n.eudRuleAction,
+                _operation,
+                EudResourceOperation.values,
+                (v) => EudRuleLabels.operation(l10n, v),
+                (v) => _operation = v,
               ),
-            EudRuleExtensionForm(
-              key: _extension,
-              initial: widget.original?.extension,
-              onEnabledChanged: (value) => setState(() => _isExtended = value),
-            ),
-            _choices(
-              'Schedule',
-              _schedule,
-              EudRuleSchedule.values,
-              (v) => v == EudRuleSchedule.once
-                  ? 'Once on first match'
-                  : 'Periodic',
-              (v) => _schedule = v,
-            ),
-            TextField(
-              controller: _interval,
-              enabled: _schedule == EudRuleSchedule.periodic,
-              decoration: const InputDecoration(
-                labelText: 'Interval (12–86400 trigger cycles)',
+              if (!_isExtended)
+                TextField(
+                  controller: _amount,
+                  decoration: InputDecoration(labelText: l10n.eudRuleAmount),
+                ),
+              EudRuleExtensionForm(
+                key: _extension,
+                initial: widget.original?.extension,
+                onEnabledChanged: (value) =>
+                    setState(() => _isExtended = value),
               ),
-            ),
-            SwitchListTile(
-              title: const Text('Enabled'),
-              value: _enabled,
-              onChanged: (v) => setState(() => _enabled = v),
-            ),
-            if (_error != null)
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              _choices(
+                l10n.eudRuleSchedule,
+                _schedule,
+                EudRuleSchedule.values,
+                (v) => v == EudRuleSchedule.once
+                    ? l10n.eudRuleOnce
+                    : l10n.eudRulePeriodic,
+                (v) => _schedule = v,
               ),
-          ],
+              TextField(
+                controller: _interval,
+                enabled: _schedule == EudRuleSchedule.periodic,
+                decoration: InputDecoration(labelText: l10n.eudRuleInterval),
+              ),
+              SwitchListTile(
+                title: Text(l10n.eudRuleEnabled),
+                value: _enabled,
+                onChanged: (v) => setState(() => _enabled = v),
+              ),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+            ],
+          ),
         ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
-      ),
-      FilledButton(
-        key: const Key('eud-rule-apply'),
-        onPressed: _apply,
-        child: const Text('Apply rule'),
-      ),
-    ],
-  );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.eudCancel),
+        ),
+        FilledButton(
+          key: const Key('eud-rule-apply'),
+          onPressed: _apply,
+          child: Text(l10n.eudRuleApply),
+        ),
+      ],
+    );
+  }
 }

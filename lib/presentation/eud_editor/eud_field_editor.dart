@@ -5,6 +5,8 @@ import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_project.dart';
 import '../settings/default_settings_names.dart';
 import '../settings/default_unit_names.dart';
+import '../localization/l10n.dart';
+import 'eud_field_labels.dart';
 
 String eudTargetName(EudTable table, int id) {
   final names = switch (table) {
@@ -97,7 +99,7 @@ class _FieldEditorState extends State<_FieldEditor> {
   void _apply() {
     try {
       if (!identical(widget.controller.project, _base)) {
-        throw StateError('Project changed. Reopen the editor.');
+        throw StateError(context.l10n.eudProjectChanged);
       }
       widget.controller.replaceOverrides(_draft.values);
       Navigator.pop(context);
@@ -108,6 +110,16 @@ class _FieldEditorState extends State<_FieldEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final locale = l10n.localeName;
+    final friendlyError = switch (_error) {
+      'explicitChkOverrideRequired' => l10n.eudFieldsNeedChk,
+      'outOfRange' => l10n.eudFieldsOutOfRange,
+      'invalidType' ||
+      'invalidEnum' ||
+      'invalidTarget' => l10n.eudFieldsInvalid,
+      _ => null,
+    };
     final fields = EudFieldManifest.fields
         .where((f) => f.table == _table)
         .toList();
@@ -122,7 +134,7 @@ class _FieldEditorState extends State<_FieldEditor> {
             .toSet()
           ..add(_target);
     return AlertDialog(
-      title: const Text('EUD field extensions'),
+      title: Text(l10n.eudFieldsTitle),
       content: SizedBox(
         width: 760,
         height: 590,
@@ -130,16 +142,21 @@ class _FieldEditorState extends State<_FieldEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Candidate settings • Runtime unverified. Add each edit to the draft, then apply the draft to the project. Unsaved input is discarded when changing selection.',
+              Text(
+                l10n.eudFieldsIntro,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFFA7AFB8),
+                ),
               ),
+              const SizedBox(height: 10),
               Wrap(
                 spacing: 6,
                 children: [
                   for (final table in EudTable.values)
                     ChoiceChip(
                       key: Key('eud-category-${table.name}'),
-                      label: Text(table.name),
+                      label: Text(EudFieldLabels.group(locale, table.name)),
                       selected: _table == table,
                       onSelected: (_) => setState(() {
                         _table = table;
@@ -153,13 +170,23 @@ class _FieldEditorState extends State<_FieldEditor> {
                     ),
                 ],
               ),
+              const SizedBox(height: 10),
+              Text(
+                l10n.eudFieldsField,
+                style: const TextStyle(fontSize: 12, color: Color(0xFFA7AFB8)),
+              ),
               DropdownButton<EudFieldDefinition>(
                 key: const Key('eud-extension-field'),
                 isExpanded: true,
                 value: _field,
                 items: [
                   for (final f in fields)
-                    DropdownMenuItem(value: f, child: Text(f.key)),
+                    DropdownMenuItem(
+                      value: f,
+                      child: Text(
+                        '${EudFieldLabels.label(locale, f.key)} · ${f.key}',
+                      ),
+                    ),
                 ],
                 onChanged: (field) => setState(() {
                   _field = field!;
@@ -169,10 +196,16 @@ class _FieldEditorState extends State<_FieldEditor> {
               ),
               TextField(
                 key: ValueKey('eud-target-search-${_table.name}'),
-                decoration: const InputDecoration(
-                  labelText: 'Find target by name or ID',
+                decoration: InputDecoration(
+                  labelText: l10n.eudFieldsSearch,
+                  prefixIcon: const Icon(Icons.search_rounded),
                 ),
                 onChanged: (value) => setState(() => _search = value),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.eudFieldsTarget,
+                style: const TextStyle(fontSize: 12, color: Color(0xFFA7AFB8)),
               ),
               DropdownButton<int>(
                 key: const Key('eud-extension-target'),
@@ -192,20 +225,33 @@ class _FieldEditorState extends State<_FieldEditor> {
               ),
               Text(
                 _table == EudTable.player
-                    ? 'Selected player slot only. Supply uses half-points (400 = 200 supply).'
-                    : 'Global type setting, shared across players. DAT defaults are not loaded. Shared-reference impact is not resolved for this editor.',
+                    ? l10n.eudFieldsPlayerNote
+                    : l10n.eudFieldsGlobalNote,
+                style: const TextStyle(fontSize: 12.5),
               ),
-              Text('Candidate API: ${_field.member} • ${_field.unit.name}'),
+              Text(
+                l10n.eudFieldsApi(_field.member, _field.unit.name),
+                style: const TextStyle(fontSize: 12, color: Color(0xFFA7AFB8)),
+              ),
               if (_field.type == EudValueType.unsignedInteger) ...[
                 Text(
-                  'Storage input: 0–${_field.valueMaximum}${_field.allowedBits == null ? '' : ' • Allowed mask: 0x${_field.allowedBits!.toRadixString(16)}'}. Gameplay limits are unverified.',
+                  l10n.eudFieldsStorage(
+                    '${_field.valueMaximum}',
+                    _field.allowedBits == null
+                        ? ''
+                        : l10n.eudFieldsMask(
+                            '0x${_field.allowedBits!.toRadixString(16)}',
+                          ),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFA7AFB8),
+                  ),
                 ),
                 TextField(
                   key: const Key('eud-extension-number'),
                   controller: _number,
-                  decoration: const InputDecoration(
-                    labelText: 'Value (decimal integer)',
-                  ),
+                  decoration: InputDecoration(labelText: l10n.eudFieldsValue),
                   keyboardType: TextInputType.number,
                 ),
               ] else
@@ -214,8 +260,8 @@ class _FieldEditorState extends State<_FieldEditor> {
                   isExpanded: true,
                   hint: Text(
                     _value == null
-                        ? 'Choose a value'
-                        : 'Unsupported stored value: $_value',
+                        ? l10n.eudFieldsChoose
+                        : l10n.eudFieldsUnsupported('$_value'),
                   ),
                   value:
                       (_field.type == EudValueType.boolean
@@ -229,7 +275,16 @@ class _FieldEditorState extends State<_FieldEditor> {
                         in _field.type == EudValueType.boolean
                             ? <Object>[true, false]
                             : _field.choices)
-                      DropdownMenuItem(value: value, child: Text('$value')),
+                      DropdownMenuItem(
+                        value: value,
+                        child: Text(
+                          value == true
+                              ? l10n.eudFieldsYes
+                              : value == false
+                              ? l10n.eudFieldsNo
+                              : '$value',
+                        ),
+                      ),
                   ],
                   onChanged: (value) => setState(() => _value = value),
                 ),
@@ -237,9 +292,7 @@ class _FieldEditorState extends State<_FieldEditor> {
                 CheckboxListTile(
                   key: const Key('eud-extension-override-chk'),
                   contentPadding: EdgeInsets.zero,
-                  title: const Text(
-                    'Explicitly override ordinary CHK settings',
-                  ),
+                  title: Text(l10n.eudFieldsOverrideChk),
                   value: _overrideChk,
                   onChanged: (value) => setState(() => _overrideChk = value!),
                 ),
@@ -251,7 +304,7 @@ class _FieldEditorState extends State<_FieldEditor> {
                     onPressed: () => setState(() {
                       _stage();
                     }),
-                    child: const Text('Add / update draft'),
+                    child: Text(l10n.eudFieldsStage),
                   ),
                   TextButton(
                     key: const Key('eud-extension-remove'),
@@ -260,17 +313,25 @@ class _FieldEditorState extends State<_FieldEditor> {
                             _stage(remove: true);
                           })
                         : null,
-                    child: const Text('Remove from draft'),
+                    child: Text(l10n.eudFieldsRemove),
                   ),
                 ],
               ),
               Text(
-                '${_draft.length} draft overrides • Current: ${_draft[_identity]?.value ?? 'No override'}',
+                l10n.eudFieldsDraftSummary(
+                  _draft.length,
+                  '${_draft[_identity]?.value ?? l10n.eudFieldsNoOverride}',
+                ),
               ),
               if (_error != null)
                 Text(
                   _error!,
                   key: const Key('eud-extension-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              if (friendlyError != null)
+                Text(
+                  friendlyError,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
             ],
@@ -280,12 +341,12 @@ class _FieldEditorState extends State<_FieldEditor> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.eudCancel),
         ),
         FilledButton(
           key: const Key('eud-extension-apply'),
           onPressed: _apply,
-          child: const Text('Apply draft to project'),
+          child: Text(l10n.eudFieldsApply),
         ),
       ],
     );

@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_resources.dart';
+import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/presentation/triggers/trigger_pane.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
@@ -530,6 +531,39 @@ void main() {
     await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
     expect(controller.triggers.records, hasLength(1));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('trigger list and editor read as Korean sentences', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    final controller = fixture.objectEditingController;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('ko'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: Scaffold(body: TriggerPane(controller: controller)),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('trigger-add')));
+    await tester.pumpAndSettle();
+    expect(find.text('트리거 1'), findsOneWidget);
+    expect(find.textContaining('실행 안 함'), findsWidgets);
+    await tester.tap(find.byKey(const ValueKey(('trigger', 0))));
+    await tester.pumpAndSettle();
+    expect(find.text('누구에게 실행할까요?'), findsOneWidget);
+    expect(find.byKey(const Key('trigger-explanation')), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilterChip, '플레이어 2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('trigger-apply')));
+    await tester.pumpAndSettle();
+    expect(controller.triggers.records.single.bytes[2373], 1);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });

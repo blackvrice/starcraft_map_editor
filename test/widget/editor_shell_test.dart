@@ -50,6 +50,26 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets('shows the remaining build steps above a new epScript', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(_createTestApp());
+    await tester.tap(find.byKey(const Key('toolbar-new-eud-source')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('eud-build-steps')), findsOneWidget);
+    expect(find.text('No map is open'), findsOneWidget);
+    expect(find.text('Save it as a file to build'), findsOneWidget);
+    expect(find.text('Finish the earlier steps first'), findsOneWidget);
+    expect(find.text('The original map is never overwritten'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'EUD project tab retains a dirty project across map tab switches',
     (tester) async {
@@ -1747,6 +1767,7 @@ void main() {
 
     expect(find.byKey(const Key('eud-build-log')), findsOneWidget);
     expect(find.text('Tool: euddraft 0.10.2.5'), findsOneWidget);
+    expect(find.byKey(const Key('eud-build-summary')), findsOneWidget);
     expect(find.text('Succeeded • exit code 0'), findsOneWidget);
     await tester.drag(
       find.byKey(const Key('eud-build-log')),

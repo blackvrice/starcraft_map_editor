@@ -1,6 +1,7 @@
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/domain/eud/eud_project.dart';
 import 'package:starcraft_map_editor/presentation/eud_editor/eud_project_pane.dart';
 import '../fixtures/eud_project_workspace_fixture.dart';
@@ -162,6 +163,48 @@ void main() {
       await tester.pumpAndSettle();
       expect(await exit, AppExitResponse.cancel);
       expect(fixture.projects.isDirty, isTrue);
+    },
+  );
+
+  testWidgets(
+    'Korean project cards explain steps and revert one changed value',
+    (tester) async {
+      tester.view.physicalSize = const Size(1300, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final fixture = EudWorkspaceFixture();
+      addTearDown(fixture.dispose);
+      await fixture.maps.open();
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('ko'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: Scaffold(body: EudProjectPane(workspace: fixture.workspace)),
+        ),
+      );
+      expect(find.text('EUD 프로젝트로 할 수 있는 일'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('eud-project-new')));
+      await tester.pumpAndSettle();
+      fixture.projects.replaceOverrides([
+        EudOverride(field: 'unit.hasShield', targetId: 0, value: true),
+        EudOverride(field: 'unit.sightRange', targetId: 0, value: 9),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.text('게임에 넣기까지'), findsOneWidget);
+      expect(find.text('바꾼 값'), findsOneWidget);
+      expect(find.text('실드 사용'), findsOneWidget);
+      expect(find.text('시야'), findsOneWidget);
+      expect(find.text('2개를 바꿨어요'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey(('eud-override-revert', 0))));
+      await tester.pumpAndSettle();
+      expect(fixture.projects.project!.overrides.map((o) => o.field), [
+        'unit.sightRange',
+      ]);
+      expect(find.text('실드 사용'), findsNothing);
+      expect(fixture.projects.canUndo, isTrue);
+      expect(tester.takeException(), isNull);
     },
   );
 }

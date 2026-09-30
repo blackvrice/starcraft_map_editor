@@ -1006,7 +1006,9 @@ ID를 보장하지 않는다. 기본 1700 슬롯 프로필만 대상으로 하�
 - [x] 메인 셸 문자열 번역(메뉴, 도구 모음, 레일, 레이어·팔레트, Inspector, 출력 패널, 상태 표시줄, 시작 화면)
 - [x] 작업 공간 레일, 문서 저장 상태 문장, 행동 안내 강조, Problems 심각도·요약, 원시 필드 접기
 - [ ] 설정 대화상자(Map/Unit/Player/Force/Tech/Upgrade/Availability, StarCraft 데이터, EUD 도구) 번역
-- [ ] Triggers·Resources·Briefing·EUD Project·epScript 편집기·카탈로그 번역
+- [x] 새 맵 마법사·배치 카탈로그·EUD 빌드 단계·트리거·EUD 확장 프로젝트 화면 v2와 번역(2026-09-30, [에디터 UX 2.2절](EDITOR_UX.md#22-작업-화면-v2-2026-09-30))
+- [ ] Resources·Briefing 세부 대화상자·epScript 편집기 내부 문구 번역
+- [ ] EUD 확장 목업의 유닛 중심 필드 편집(유닛 목록·생존력/공격 묶음·범위 막대) 검토
 - [ ] 애플리케이션/도메인 진단 메시지의 메시지 ID화와 번역(코드는 유지)
 - [ ] 한국어 글꼴 렌더링·긴 문자열 줄바꿈을 Windows 실제 화면에서 확인
 - [ ] 명령 검색(Ctrl+K), 캔버스 위 떠 있는 도구 막대 등 목업 v2의 나머지 요소 검토
@@ -1016,6 +1018,11 @@ ID를 보장하지 않는다. 기본 1700 슬롯 프로필만 대상으로 하�
 동일한 Windows 전용 infrastructure 테스트(Windows 경로·helper 실행)다. 포맷 검사는
 변경 전부터 Linux에서 차이가 나던 infrastructure 테스트 5개를 제외하고 통과했다.
 Windows 실제 실행과 빌드는 사용자 PC에서 확인해야 한다.
+
+작업 화면 v2 확인(2026-09-30): `flutter analyze` 무이슈, 트리거·EUD·카탈로그·새 맵
+위젯 테스트 전부 통과(한국어 트리거·EUD 프로젝트 테스트 추가). 전체 `flutter test`
+실패 17건은 위 12건과 새로 들어온 Windows 경로 전용
+`process_terrain_connection_snapshot_gateway_test` 5건이다.
 
 ## M8. 안정화와 배포
 

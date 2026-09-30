@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../localization/l10n.dart';
 import '../../application/eud/eud_project_controller.dart';
 import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_project.dart';
@@ -52,47 +53,75 @@ class _EudWeaponEditorState extends State<EudWeaponEditor> {
   }
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 8,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    children: [
-      SizedBox(
-        width: 320,
-        child: DropdownButton<int>(
-          key: const Key('eud-weapon-selector'),
-          isExpanded: true,
-          value: _weapon,
-          items: [
-            for (var i = 0; i < 130; i++)
-              DropdownMenuItem(
-                value: i,
-                child: Text('${defaultWeaponNames[i]} (#$i)'),
-              ),
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.gps_fixed_rounded,
+              size: 18,
+              color: Color(0xFFE3A64A),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              l10n.eudWeaponCardTitle,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
           ],
-          onChanged: widget.enabled
-              ? (value) => setState(() => _weapon = value!)
-              : null,
         ),
-      ),
-      OutlinedButton(
-        onPressed: widget.enabled
-            ? () async {
-                widget.onEditingChanged(true);
-                try {
-                  await showEudWeaponEditor(
-                    context,
-                    controller: widget.controller,
-                    weapon: _weapon,
-                  );
-                } finally {
-                  if (mounted) widget.onEditingChanged(false);
-                }
-              }
-            : null,
-        child: const Text('Edit weapon EUD settings'),
-      ),
-    ],
-  );
+        const SizedBox(height: 6),
+        Text(
+          l10n.eudWeaponCardHelp,
+          style: const TextStyle(fontSize: 12.5, color: Color(0xFFA7AFB8)),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: 320,
+              child: DropdownButton<int>(
+                key: const Key('eud-weapon-selector'),
+                isExpanded: true,
+                value: _weapon,
+                items: [
+                  for (var i = 0; i < 130; i++)
+                    DropdownMenuItem(
+                      value: i,
+                      child: Text('${defaultWeaponNames[i]} (#$i)'),
+                    ),
+                ],
+                onChanged: widget.enabled
+                    ? (value) => setState(() => _weapon = value!)
+                    : null,
+              ),
+            ),
+            OutlinedButton(
+              onPressed: widget.enabled
+                  ? () async {
+                      widget.onEditingChanged(true);
+                      try {
+                        await showEudWeaponEditor(
+                          context,
+                          controller: widget.controller,
+                          weapon: _weapon,
+                        );
+                      } finally {
+                        if (mounted) widget.onEditingChanged(false);
+                      }
+                    }
+                  : null,
+              child: Text(l10n.eudWeaponEdit),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _WeaponDialog extends StatefulWidget {
@@ -142,12 +171,10 @@ class _WeaponDialogState extends State<_WeaponDialog> {
   void _apply() {
     try {
       if (widget.referenceIsCurrent?.call() == false) {
-        throw StateError(
-          'Weapon reference source changed. Cancel and reload references.',
-        );
+        throw StateError(context.l10n.eudWeaponReferenceChanged);
       }
       if (!identical(_base, widget.controller.project)) {
-        throw StateError('Project changed. Cancel and reopen this editor.');
+        throw StateError(context.l10n.eudProjectChanged);
       }
       final values = [
         for (final item in _base.overrides)
@@ -158,9 +185,7 @@ class _WeaponDialogState extends State<_WeaponDialog> {
         final text = pair.$2.trim();
         if (text.isEmpty) continue;
         if (!RegExp(r'^\d{1,10}$').hasMatch(text)) {
-          throw FormatException(
-            '${pair.$1}: enter a whole number from 0 to 4294967295.',
-          );
+          throw FormatException(context.l10n.eudWeaponWholeNumber(pair.$1));
         }
         values.add(
           EudOverride(
@@ -188,7 +213,16 @@ class _WeaponDialogState extends State<_WeaponDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final choices = EudFieldManifest.find(fields[2])!.choices;
+    String damage(String value) => switch (value) {
+      'Independent' => l10n.eudDamageIndependent,
+      'Explosive' => l10n.eudDamageExplosive,
+      'Concussive' => l10n.eudDamageConcussive,
+      'Normal' => l10n.eudDamageNormal,
+      'IgnoreArmor' => l10n.eudDamageIgnoreArmor,
+      _ => value,
+    };
     return AlertDialog(
       title: Text(
         '${defaultWeaponNames[widget.weapon]} (#${widget.weapon}) — EUD',
@@ -200,41 +234,40 @@ class _WeaponDialogState extends State<_WeaponDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Shared weapon ID for ground/air users. Review Static unit / weapon impact after applying. This does not reassign a unit’s weapon.',
-              ),
-              const Text(
-                'Distances are raw integers; tile conversion and runtime support are unverified. Blank removes the override; game defaults remain unknown. Applying changes only the project, not the game.',
+              Text(l10n.eudWeaponSharedHelp),
+              const SizedBox(height: 6),
+              Text(
+                l10n.eudWeaponRawHelp,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFFA7AFB8),
+                ),
               ),
               TextField(
                 key: const Key('eud-min-range'),
                 controller: _min,
-                decoration: const InputDecoration(
-                  labelText: 'Minimum range (raw)',
-                ),
+                decoration: InputDecoration(labelText: l10n.eudWeaponMinRange),
               ),
               TextField(
                 key: const Key('eud-max-range'),
                 controller: _max,
-                decoration: const InputDecoration(
-                  labelText: 'Maximum range (raw)',
-                ),
+                decoration: InputDecoration(labelText: l10n.eudWeaponMaxRange),
               ),
               DropdownButton<String>(
                 key: const Key('eud-damage-type'),
                 isExpanded: true,
                 value: _damage,
                 items: [
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: '',
-                    child: Text('No damage type override'),
+                    child: Text(l10n.eudWeaponNoDamage),
                   ),
                   for (final value in choices)
-                    DropdownMenuItem(value: value, child: Text(value)),
+                    DropdownMenuItem(value: value, child: Text(damage(value))),
                   if (_damage.isNotEmpty && !choices.contains(_damage))
                     DropdownMenuItem(
                       value: _damage,
-                      child: Text('Unsupported: $_damage'),
+                      child: Text(l10n.eudWeaponUnsupported(_damage)),
                     ),
                 ],
                 onChanged: (value) => setState(() => _damage = value!),
@@ -251,9 +284,9 @@ class _WeaponDialogState extends State<_WeaponDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.eudCancel),
         ),
-        FilledButton(onPressed: _apply, child: const Text('Apply to project')),
+        FilledButton(onPressed: _apply, child: Text(l10n.eudApplyToProject)),
       ],
     );
   }
