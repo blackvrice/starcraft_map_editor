@@ -1588,4 +1588,779 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trigUseSlot => 'Use slot';
+
+  @override
+  String get eudProjectTitle => 'EUD Project';
+
+  @override
+  String get eudProjectUnsavedSuffix => ' • Unsaved';
+
+  @override
+  String get eudProjectLead =>
+      'Change unit, weapon, upgrade and player settings that ordinary map editing cannot reach. Values live in a separate project file and reach the game only through an EUD build.';
+
+  @override
+  String get eudNewFromMap => 'New from current map';
+
+  @override
+  String get eudOpenProject => 'Open Project';
+
+  @override
+  String get eudSaveProject => 'Save Project';
+
+  @override
+  String get eudSaveProjectAs => 'Save Project As';
+
+  @override
+  String get eudUndoProject => 'Undo project';
+
+  @override
+  String get eudRedoProject => 'Redo project';
+
+  @override
+  String get eudCloseProject => 'Close Project';
+
+  @override
+  String get eudGenerationPreview => 'Generation preview';
+
+  @override
+  String get eudGenerationPreviewTitle => 'EUD generation preview';
+
+  @override
+  String get eudGenerationPreviewNote =>
+      'Settings initialize before user initialization. Rules run at their selected before/after trigger hook. Instance rules affect only their guarded bound unit. Game compatibility is unverified.';
+
+  @override
+  String get eudClose => 'Close';
+
+  @override
+  String get eudCancel => 'Cancel';
+
+  @override
+  String get eudDiscard => 'Discard';
+
+  @override
+  String get eudDiscardTitle => 'Discard EUD project changes?';
+
+  @override
+  String get eudDiscardBody =>
+      'The EUD project has unsaved changes. Save Project As before continuing to keep them.';
+
+  @override
+  String get eudWelcomeTitle => 'What an EUD project does';
+
+  @override
+  String get eudWelcomeChoose =>
+      'Pick new values for units, weapons, upgrades, technologies and players.';
+
+  @override
+  String get eudWelcomeSave =>
+      'Save them in a project file. The map file is not touched.';
+
+  @override
+  String get eudWelcomeBuild =>
+      'Build a new EUD map to try them. The original map stays as it is.';
+
+  @override
+  String get eudProjectSaveNote =>
+      'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.';
+
+  @override
+  String get eudAllFieldsNote =>
+      'All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Prepare EUD Build can include these settings in an unverified test build. Save Project keeps a recovery backup.';
+
+  @override
+  String get eudBindingUnchecked =>
+      'Map connection has not been verified. Use Verify current map.';
+
+  @override
+  String get eudBindingNoMap => 'Open a map to connect an EUD project.';
+
+  @override
+  String get eudBindingUnsaved =>
+      'The map has unsaved changes. Save the map before connecting.';
+
+  @override
+  String get eudBindingRestricted =>
+      'This map is restricted and cannot be connected for editing.';
+
+  @override
+  String get eudBindingMatched =>
+      'Current map matches the project (verified snapshot).';
+
+  @override
+  String get eudBindingMismatch =>
+      'Current map differs from the project. Open the linked map or explicitly connect this map.';
+
+  @override
+  String get eudBindingDiskChanged =>
+      'The map changed on disk. Reopen it before connecting.';
+
+  @override
+  String get eudConnectionTitle => 'Connected map';
+
+  @override
+  String get eudVerifyMap => 'Verify current map';
+
+  @override
+  String get eudConnectMap => 'Connect current map';
+
+  @override
+  String eudProjectInfo(String project, String map, String sha) {
+    return 'Project: $project\nMap: $map\nSHA-256: $sha';
+  }
+
+  @override
+  String get eudNotSaved => 'Not saved';
+
+  @override
+  String get eudChangesTitle => 'Changed values';
+
+  @override
+  String eudChangesCount(int count) {
+    return '$count stored overrides • Runtime unverified';
+  }
+
+  @override
+  String get eudChangesEmpty =>
+      'No values changed yet. Open All EUD field extensions to choose some.';
+
+  @override
+  String get eudAllFields => 'All EUD field extensions';
+
+  @override
+  String eudBaselineLine(String value) {
+    return 'Baseline: $value';
+  }
+
+  @override
+  String eudPlannedLine(String requested, String planned) {
+    return 'Requested EUD: $requested • Planned EUD value: $planned';
+  }
+
+  @override
+  String get eudUnresolved => 'Unresolved';
+
+  @override
+  String get eudExplicitChk => 'Explicit CHK override';
+
+  @override
+  String get eudPreviewOnlyNote =>
+      'Preview only, not applied in game. Verify current map after changes. Project validation errors block all planned values.';
+
+  @override
+  String get eudRevert => 'Back to the original value';
+
+  @override
+  String get eudBaselineUnverified => 'Unverified map';
+
+  @override
+  String eudBaselineGameDefault(String detail) {
+    return 'Game default (unknown; $detail)';
+  }
+
+  @override
+  String eudBaselineUnavailable(String detail) {
+    return 'Unavailable ($detail)';
+  }
+
+  @override
+  String eudBaselineNotInChk(String detail) {
+    return 'Not stored in CHK; $detail';
+  }
+
+  @override
+  String get eudStepsTitle => 'Getting it into the game';
+
+  @override
+  String get eudStepChoose => 'Choose values';
+
+  @override
+  String eudStepChooseDone(int count) {
+    return '$count values changed';
+  }
+
+  @override
+  String get eudStepChooseNone => 'Nothing changed yet';
+
+  @override
+  String get eudStepSave => 'Save the project';
+
+  @override
+  String get eudStepSaveDone => 'Saved · the map file is untouched';
+
+  @override
+  String get eudStepSaveNeeded => 'Not saved yet · the map file is untouched';
+
+  @override
+  String get eudStepVerify => 'Check the map';
+
+  @override
+  String get eudStepBuild => 'EUD build';
+
+  @override
+  String get eudStepBuildHint =>
+      'To test these settings, save and verify the map, then use Prepare EUD Build and enable the project settings test build.';
+
+  @override
+  String get eudStepBuildIdle =>
+      'Builds a new map file. The original stays as it is.';
+
+  @override
+  String eudRecoveryBackup(String path) {
+    return 'Recovery backup: $path';
+  }
+
+  @override
+  String get eudSavedPill => 'Saved';
+
+  @override
+  String get eudUnsavedPill => 'Unsaved';
+
+  @override
+  String get eudRuntimeUnverified => 'Runtime unverified';
+
+  @override
+  String get eudTechnical => 'Technical details';
+
+  @override
+  String get eudProblems => 'Needs attention';
+
+  @override
+  String get eudRulesTitle => 'Execution rules';
+
+  @override
+  String eudRulesCount(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get eudRulesHelp =>
+      'Rules change player resources and other game state while the map runs. They execute before ordinary triggers, and periods count trigger cycles, not seconds. Save Project, then Prepare EUD Build to test.';
+
+  @override
+  String get eudRulesHelp2 =>
+      'One enabled writer per target. Review user code and ordinary triggers separately. Extended rules support variables, player state, locations, guarded units and local display.';
+
+  @override
+  String get eudRulesEmpty => 'No rules yet.';
+
+  @override
+  String get eudRuleAdd => 'Add execution rule';
+
+  @override
+  String get eudRuleEditTitle => 'Edit execution rule';
+
+  @override
+  String get eudRuleDisabled => 'Off';
+
+  @override
+  String get eudRuleMoveUp => 'Move rule up';
+
+  @override
+  String get eudRuleMoveDown => 'Move rule down';
+
+  @override
+  String get eudRuleEdit => 'Edit rule';
+
+  @override
+  String get eudRuleDelete => 'Delete rule';
+
+  @override
+  String eudRulePlayerN(String number) {
+    return 'Player $number';
+  }
+
+  @override
+  String eudRuleWhenThen(String condition, String action) {
+    return 'When $condition → $action';
+  }
+
+  @override
+  String eudCmpAtLeastSentence(String resource, String value) {
+    return '$resource is at least $value';
+  }
+
+  @override
+  String eudCmpAtMostSentence(String resource, String value) {
+    return '$resource is at most $value';
+  }
+
+  @override
+  String eudCmpExactlySentence(String resource, String value) {
+    return '$resource is exactly $value';
+  }
+
+  @override
+  String eudOpSetToSentence(String amount) {
+    return 'set to $amount';
+  }
+
+  @override
+  String eudOpAddSentence(String amount) {
+    return 'add $amount';
+  }
+
+  @override
+  String eudOpSubtractSentence(String amount) {
+    return 'subtract $amount';
+  }
+
+  @override
+  String get eudRuleOnce => 'Once on first match';
+
+  @override
+  String eudRuleEvery(int count) {
+    return 'Every $count cycles';
+  }
+
+  @override
+  String get eudRulePeriodic => 'Periodic';
+
+  @override
+  String get eudResMinerals => 'Minerals';
+
+  @override
+  String get eudResGas => 'Gas';
+
+  @override
+  String get eudCmpAtLeast => 'At least';
+
+  @override
+  String get eudCmpAtMost => 'At most';
+
+  @override
+  String get eudCmpExactly => 'Exactly';
+
+  @override
+  String get eudOpSetTo => 'Set to';
+
+  @override
+  String get eudOpAdd => 'Add';
+
+  @override
+  String get eudOpSubtract => 'Subtract';
+
+  @override
+  String get eudRuleDefaultName => 'Resource rule';
+
+  @override
+  String get eudRuleName => 'Rule name';
+
+  @override
+  String get eudRulePlayer => 'Player';
+
+  @override
+  String get eudRuleResource => 'Resource (condition and action)';
+
+  @override
+  String get eudRuleComparison => 'Comparison';
+
+  @override
+  String get eudRuleThreshold => 'Threshold (0–2147483647)';
+
+  @override
+  String get eudRuleAction => 'Action';
+
+  @override
+  String get eudRuleAmount => 'Amount (0–2147483647)';
+
+  @override
+  String get eudRuleSchedule => 'Schedule';
+
+  @override
+  String get eudRuleInterval => 'Interval (12–86400 trigger cycles)';
+
+  @override
+  String get eudRuleEnabled => 'Enabled';
+
+  @override
+  String get eudRuleApply => 'Apply rule';
+
+  @override
+  String get eudExtTitle => 'Extended execution rule';
+
+  @override
+  String get eudExtHelp =>
+      'Values: unsigned 16-bit, clamped to 0–65535. Variables 0–15 start at zero. Formula: source × factor + offset. Non-resource actions set their value.';
+
+  @override
+  String get eudExtTargetAction => 'Target action';
+
+  @override
+  String get eudExtTargetId =>
+      'Target ID: variable 0–15, upgrade 0–60, tech 0–43, location 1–255 (except 64), sound string ID; otherwise 0';
+
+  @override
+  String get eudExtUnitType => 'Unit type ID (0–227; instance/follow actions)';
+
+  @override
+  String get eudExtUnitBindHelp =>
+      'Binds the first living unit of this type owned by the selected player. Death, morph or ownership change invalidates the binding permanently. It never acquires a replacement unit. At most four unit rules.';
+
+  @override
+  String get eudExtTextPrefix => 'Text prefix (selected player only)';
+
+  @override
+  String get eudExtSoundHelp =>
+      'Use a registered WAV string ID from Resources. Only the selected player hears the sound.';
+
+  @override
+  String get eudExtTiming => 'Execution timing';
+
+  @override
+  String get eudExtLeft => 'Condition left';
+
+  @override
+  String get eudExtRight => 'Condition right';
+
+  @override
+  String get eudExtValue => 'Action value';
+
+  @override
+  String get eudExtX => 'X';
+
+  @override
+  String get eudExtY => 'Y';
+
+  @override
+  String get eudExtWidth => 'Width';
+
+  @override
+  String get eudExtHeight => 'Height';
+
+  @override
+  String get eudExtConstantId => 'Constant / ID';
+
+  @override
+  String get eudExtPlayerRange => 'Player 1–8';
+
+  @override
+  String get eudExtFactor => '× (0–255)';
+
+  @override
+  String get eudExtOffset => '+ offset';
+
+  @override
+  String get eudActVariable => 'Variable';
+
+  @override
+  String get eudActMinerals => 'Minerals';
+
+  @override
+  String get eudActGas => 'Gas';
+
+  @override
+  String get eudActUpgrade => 'Upgrade level';
+
+  @override
+  String get eudActTechnology => 'Technology';
+
+  @override
+  String get eudActLocation => 'Location';
+
+  @override
+  String get eudActUnitHp => 'Unit hit points';
+
+  @override
+  String get eudActUnitShields => 'Unit shields';
+
+  @override
+  String get eudActUnitEnergy => 'Unit energy';
+
+  @override
+  String get eudActFollowUnit => 'Follow unit';
+
+  @override
+  String get eudActText => 'Show text';
+
+  @override
+  String get eudActSound => 'Play sound';
+
+  @override
+  String get eudTimingBefore => 'Before triggers';
+
+  @override
+  String get eudTimingAfter => 'After triggers';
+
+  @override
+  String get eudSrcConstant => 'Constant';
+
+  @override
+  String get eudSrcVariable => 'Variable';
+
+  @override
+  String get eudSrcMinerals => 'Minerals';
+
+  @override
+  String get eudSrcGas => 'Gas';
+
+  @override
+  String get eudSrcUpgrade => 'Upgrade level';
+
+  @override
+  String get eudSrcTechnology => 'Technology';
+
+  @override
+  String get eudApplyToProject => 'Apply to project';
+
+  @override
+  String get eudProjectChanged =>
+      'Project changed. Cancel and reopen this editor.';
+
+  @override
+  String get eudWeaponCardTitle => 'Weapons';
+
+  @override
+  String get eudWeaponCardHelp =>
+      'Range and damage type belong to the weapon, so every unit that uses it changes together.';
+
+  @override
+  String get eudWeaponEdit => 'Edit weapon EUD settings';
+
+  @override
+  String get eudWeaponSharedHelp =>
+      'Shared weapon ID for ground/air users. Review Static unit / weapon impact after applying. This does not reassign a unit’s weapon.';
+
+  @override
+  String get eudWeaponRawHelp =>
+      'Distances are raw integers; tile conversion and runtime support are unverified. Blank removes the override; game defaults remain unknown. Applying changes only the project, not the game.';
+
+  @override
+  String get eudWeaponMinRange => 'Minimum range (raw)';
+
+  @override
+  String get eudWeaponMaxRange => 'Maximum range (raw)';
+
+  @override
+  String get eudWeaponNoDamage => 'No damage type override';
+
+  @override
+  String eudWeaponUnsupported(String value) {
+    return 'Unsupported: $value';
+  }
+
+  @override
+  String get eudWeaponReferenceChanged =>
+      'Weapon reference source changed. Cancel and reload references.';
+
+  @override
+  String eudWeaponWholeNumber(String field) {
+    return '$field: enter a whole number from 0 to 4294967295.';
+  }
+
+  @override
+  String get eudDamageIndependent => 'Independent';
+
+  @override
+  String get eudDamageExplosive => 'Explosive';
+
+  @override
+  String get eudDamageConcussive => 'Concussive';
+
+  @override
+  String get eudDamageNormal => 'Normal';
+
+  @override
+  String get eudDamageIgnoreArmor => 'IgnoreArmor';
+
+  @override
+  String get eudImpactTitle => 'Static unit / weapon impact';
+
+  @override
+  String get eudImpactHelp =>
+      'Base DAT references only; proposed reference changes, spells and actual attack behavior are not resolved. Type settings are global; player fields affect the selected slot.';
+
+  @override
+  String get eudImpactLoad => 'Load weapon impact';
+
+  @override
+  String get eudImpactUnavailable =>
+      'Weapon references unavailable. Load or reload to analyze.';
+
+  @override
+  String eudImpactSource(String source) {
+    return 'Reference source: $source';
+  }
+
+  @override
+  String get eudImpactChooseUnit =>
+      'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.';
+
+  @override
+  String get eudImpactEditShields => 'Edit unit EUD shields';
+
+  @override
+  String get eudImpactGround => 'Ground';
+
+  @override
+  String get eudImpactAir => 'Air';
+
+  @override
+  String eudImpactNoWeapon(String slot) {
+    return '$slot weapon: None (#130)';
+  }
+
+  @override
+  String eudImpactEditWeapon(String slot, String weapon) {
+    return '$slot: $weapon — Edit EUD';
+  }
+
+  @override
+  String eudImpactSubunits(String subunit1, String subunit2) {
+    return 'Subunit IDs: $subunit1, $subunit2 (228 = None)';
+  }
+
+  @override
+  String eudImpactCannotAnalyze(String reason) {
+    return 'Cannot analyze: $reason';
+  }
+
+  @override
+  String get eudImpactUnknownWeapon =>
+      'Impact unknown: weapon references unavailable.';
+
+  @override
+  String eudImpactPlayerOnly(String number) {
+    return 'Player $number only; runtime behavior unverified.';
+  }
+
+  @override
+  String get eudImpactUnknownShared =>
+      'Impact unknown: shared references for this table are unavailable.';
+
+  @override
+  String eudImpactUnits(String direct, String subunits) {
+    return 'Direct units: $direct\nVia subunits: $subunits';
+  }
+
+  @override
+  String get eudImpactNone => 'None in static references';
+
+  @override
+  String eudShieldTitle(String unit) {
+    return '$unit — Shields';
+  }
+
+  @override
+  String get eudShieldHelp =>
+      'Activation and maximum are independent type settings shared by all players. Blank maximum or No override removes that setting; defaults are unknown.';
+
+  @override
+  String get eudShieldNoOverride => 'No activation override';
+
+  @override
+  String get eudShieldEnabled => 'Shields enabled';
+
+  @override
+  String get eudShieldDisabled => 'Shields disabled';
+
+  @override
+  String get eudShieldUnsupported => 'Unsupported imported activation';
+
+  @override
+  String get eudShieldMaximum => 'Maximum shields (0–65535)';
+
+  @override
+  String get eudShieldOverrideChk => 'Explicitly override CHK maximum shields';
+
+  @override
+  String get eudShieldInitNote =>
+      'Initialization is not implemented: existing placed units keep their CHK shield percentages; no current-shield refill, clamp or recurring write is generated. New-unit initialization requires runtime verification. Applying saves project intent only; EUD build integration is pending.';
+
+  @override
+  String get eudShieldChooseSupported =>
+      'Choose a supported shield activation value.';
+
+  @override
+  String get eudShieldWholeNumber =>
+      'Maximum shields require a whole number from 0 to 65535.';
+
+  @override
+  String get eudFieldsTitle => 'EUD field extensions';
+
+  @override
+  String get eudFieldsIntro =>
+      'Candidate settings • Runtime unverified. Add each edit to the draft, then apply the draft to the project. Unsaved input is discarded when changing selection.';
+
+  @override
+  String get eudFieldsField => 'What to change';
+
+  @override
+  String get eudFieldsSearch => 'Find target by name or ID';
+
+  @override
+  String get eudFieldsTarget => 'Which one';
+
+  @override
+  String get eudFieldsPlayerNote =>
+      'Selected player slot only. Supply uses half-points (400 = 200 supply).';
+
+  @override
+  String get eudFieldsGlobalNote =>
+      'Global type setting, shared across players. DAT defaults are not loaded. Shared-reference impact is not resolved for this editor.';
+
+  @override
+  String eudFieldsApi(String member, String unit) {
+    return 'Candidate API: $member • $unit';
+  }
+
+  @override
+  String eudFieldsStorage(String maximum, String mask) {
+    return 'Storage input: 0–$maximum$mask. Gameplay limits are unverified.';
+  }
+
+  @override
+  String eudFieldsMask(String mask) {
+    return ' • Allowed mask: $mask';
+  }
+
+  @override
+  String get eudFieldsValue => 'Value (decimal integer)';
+
+  @override
+  String get eudFieldsChoose => 'Choose a value';
+
+  @override
+  String eudFieldsUnsupported(String value) {
+    return 'Unsupported stored value: $value';
+  }
+
+  @override
+  String get eudFieldsYes => 'Yes (true)';
+
+  @override
+  String get eudFieldsNo => 'No (false)';
+
+  @override
+  String get eudFieldsOverrideChk =>
+      'Explicitly override ordinary CHK settings';
+
+  @override
+  String get eudFieldsStage => 'Add / update draft';
+
+  @override
+  String get eudFieldsRemove => 'Remove from draft';
+
+  @override
+  String eudFieldsDraftSummary(int count, String value) {
+    return '$count draft overrides • Current: $value';
+  }
+
+  @override
+  String get eudFieldsNoOverride => 'No override';
+
+  @override
+  String get eudFieldsApply => 'Apply draft to project';
+
+  @override
+  String get eudFieldsNeedChk =>
+      'This value also changes an ordinary map (CHK) setting. Tick the box above to allow it.';
+
+  @override
+  String get eudFieldsOutOfRange => 'The value is outside the allowed range.';
+
+  @override
+  String get eudFieldsInvalid =>
+      'This value cannot be used for the selected field.';
 }

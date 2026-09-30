@@ -2917,6 +2917,1332 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use slot'**
   String get trigUseSlot;
+
+  /// No description provided for @eudProjectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD Project'**
+  String get eudProjectTitle;
+
+  /// No description provided for @eudProjectUnsavedSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **' • Unsaved'**
+  String get eudProjectUnsavedSuffix;
+
+  /// No description provided for @eudProjectLead.
+  ///
+  /// In en, this message translates to:
+  /// **'Change unit, weapon, upgrade and player settings that ordinary map editing cannot reach. Values live in a separate project file and reach the game only through an EUD build.'**
+  String get eudProjectLead;
+
+  /// No description provided for @eudNewFromMap.
+  ///
+  /// In en, this message translates to:
+  /// **'New from current map'**
+  String get eudNewFromMap;
+
+  /// No description provided for @eudOpenProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Project'**
+  String get eudOpenProject;
+
+  /// No description provided for @eudSaveProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Project'**
+  String get eudSaveProject;
+
+  /// No description provided for @eudSaveProjectAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Project As'**
+  String get eudSaveProjectAs;
+
+  /// No description provided for @eudUndoProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo project'**
+  String get eudUndoProject;
+
+  /// No description provided for @eudRedoProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo project'**
+  String get eudRedoProject;
+
+  /// No description provided for @eudCloseProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Project'**
+  String get eudCloseProject;
+
+  /// No description provided for @eudGenerationPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation preview'**
+  String get eudGenerationPreview;
+
+  /// No description provided for @eudGenerationPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD generation preview'**
+  String get eudGenerationPreviewTitle;
+
+  /// No description provided for @eudGenerationPreviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings initialize before user initialization. Rules run at their selected before/after trigger hook. Instance rules affect only their guarded bound unit. Game compatibility is unverified.'**
+  String get eudGenerationPreviewNote;
+
+  /// No description provided for @eudClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get eudClose;
+
+  /// No description provided for @eudCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get eudCancel;
+
+  /// No description provided for @eudDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get eudDiscard;
+
+  /// No description provided for @eudDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard EUD project changes?'**
+  String get eudDiscardTitle;
+
+  /// No description provided for @eudDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD project has unsaved changes. Save Project As before continuing to keep them.'**
+  String get eudDiscardBody;
+
+  /// No description provided for @eudWelcomeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What an EUD project does'**
+  String get eudWelcomeTitle;
+
+  /// No description provided for @eudWelcomeChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick new values for units, weapons, upgrades, technologies and players.'**
+  String get eudWelcomeChoose;
+
+  /// No description provided for @eudWelcomeSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save them in a project file. The map file is not touched.'**
+  String get eudWelcomeSave;
+
+  /// No description provided for @eudWelcomeBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a new EUD map to try them. The original map stays as it is.'**
+  String get eudWelcomeBuild;
+
+  /// No description provided for @eudProjectSaveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Project saving preserves EUD settings; it does not compile a map. Map Save As saves ordinary map changes.'**
+  String get eudProjectSaveNote;
+
+  /// No description provided for @eudAllFieldsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'All EUD field extensions opens unit, weapon, movement, upgrade, technology, player and graphics settings. Prepare EUD Build can include these settings in an unverified test build. Save Project keeps a recovery backup.'**
+  String get eudAllFieldsNote;
+
+  /// No description provided for @eudBindingUnchecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Map connection has not been verified. Use Verify current map.'**
+  String get eudBindingUnchecked;
+
+  /// No description provided for @eudBindingNoMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a map to connect an EUD project.'**
+  String get eudBindingNoMap;
+
+  /// No description provided for @eudBindingUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'The map has unsaved changes. Save the map before connecting.'**
+  String get eudBindingUnsaved;
+
+  /// No description provided for @eudBindingRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'This map is restricted and cannot be connected for editing.'**
+  String get eudBindingRestricted;
+
+  /// No description provided for @eudBindingMatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Current map matches the project (verified snapshot).'**
+  String get eudBindingMatched;
+
+  /// No description provided for @eudBindingMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Current map differs from the project. Open the linked map or explicitly connect this map.'**
+  String get eudBindingMismatch;
+
+  /// No description provided for @eudBindingDiskChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed on disk. Reopen it before connecting.'**
+  String get eudBindingDiskChanged;
+
+  /// No description provided for @eudConnectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected map'**
+  String get eudConnectionTitle;
+
+  /// No description provided for @eudVerifyMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify current map'**
+  String get eudVerifyMap;
+
+  /// No description provided for @eudConnectMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect current map'**
+  String get eudConnectMap;
+
+  /// No description provided for @eudProjectInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Project: {project}\nMap: {map}\nSHA-256: {sha}'**
+  String eudProjectInfo(String project, String map, String sha);
+
+  /// No description provided for @eudNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved'**
+  String get eudNotSaved;
+
+  /// No description provided for @eudChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed values'**
+  String get eudChangesTitle;
+
+  /// No description provided for @eudChangesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} stored overrides • Runtime unverified'**
+  String eudChangesCount(int count);
+
+  /// No description provided for @eudChangesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No values changed yet. Open All EUD field extensions to choose some.'**
+  String get eudChangesEmpty;
+
+  /// No description provided for @eudAllFields.
+  ///
+  /// In en, this message translates to:
+  /// **'All EUD field extensions'**
+  String get eudAllFields;
+
+  /// No description provided for @eudBaselineLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline: {value}'**
+  String eudBaselineLine(String value);
+
+  /// No description provided for @eudPlannedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Requested EUD: {requested} • Planned EUD value: {planned}'**
+  String eudPlannedLine(String requested, String planned);
+
+  /// No description provided for @eudUnresolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Unresolved'**
+  String get eudUnresolved;
+
+  /// No description provided for @eudExplicitChk.
+  ///
+  /// In en, this message translates to:
+  /// **'Explicit CHK override'**
+  String get eudExplicitChk;
+
+  /// No description provided for @eudPreviewOnlyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview only, not applied in game. Verify current map after changes. Project validation errors block all planned values.'**
+  String get eudPreviewOnlyNote;
+
+  /// No description provided for @eudRevert.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to the original value'**
+  String get eudRevert;
+
+  /// No description provided for @eudBaselineUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Unverified map'**
+  String get eudBaselineUnverified;
+
+  /// No description provided for @eudBaselineGameDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Game default (unknown; {detail})'**
+  String eudBaselineGameDefault(String detail);
+
+  /// No description provided for @eudBaselineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable ({detail})'**
+  String eudBaselineUnavailable(String detail);
+
+  /// No description provided for @eudBaselineNotInChk.
+  ///
+  /// In en, this message translates to:
+  /// **'Not stored in CHK; {detail}'**
+  String eudBaselineNotInChk(String detail);
+
+  /// No description provided for @eudStepsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting it into the game'**
+  String get eudStepsTitle;
+
+  /// No description provided for @eudStepChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose values'**
+  String get eudStepChoose;
+
+  /// No description provided for @eudStepChooseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} values changed'**
+  String eudStepChooseDone(int count);
+
+  /// No description provided for @eudStepChooseNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing changed yet'**
+  String get eudStepChooseNone;
+
+  /// No description provided for @eudStepSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the project'**
+  String get eudStepSave;
+
+  /// No description provided for @eudStepSaveDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved · the map file is untouched'**
+  String get eudStepSaveDone;
+
+  /// No description provided for @eudStepSaveNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved yet · the map file is untouched'**
+  String get eudStepSaveNeeded;
+
+  /// No description provided for @eudStepVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the map'**
+  String get eudStepVerify;
+
+  /// No description provided for @eudStepBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD build'**
+  String get eudStepBuild;
+
+  /// No description provided for @eudStepBuildHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To test these settings, save and verify the map, then use Prepare EUD Build and enable the project settings test build.'**
+  String get eudStepBuildHint;
+
+  /// No description provided for @eudStepBuildIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Builds a new map file. The original stays as it is.'**
+  String get eudStepBuildIdle;
+
+  /// No description provided for @eudRecoveryBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery backup: {path}'**
+  String eudRecoveryBackup(String path);
+
+  /// No description provided for @eudSavedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get eudSavedPill;
+
+  /// No description provided for @eudUnsavedPill.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved'**
+  String get eudUnsavedPill;
+
+  /// No description provided for @eudRuntimeUnverified.
+  ///
+  /// In en, this message translates to:
+  /// **'Runtime unverified'**
+  String get eudRuntimeUnverified;
+
+  /// No description provided for @eudTechnical.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical details'**
+  String get eudTechnical;
+
+  /// No description provided for @eudProblems.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get eudProblems;
+
+  /// No description provided for @eudRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution rules'**
+  String get eudRulesTitle;
+
+  /// No description provided for @eudRulesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{current} / {total}'**
+  String eudRulesCount(int current, int total);
+
+  /// No description provided for @eudRulesHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules change player resources and other game state while the map runs. They execute before ordinary triggers, and periods count trigger cycles, not seconds. Save Project, then Prepare EUD Build to test.'**
+  String get eudRulesHelp;
+
+  /// No description provided for @eudRulesHelp2.
+  ///
+  /// In en, this message translates to:
+  /// **'One enabled writer per target. Review user code and ordinary triggers separately. Extended rules support variables, player state, locations, guarded units and local display.'**
+  String get eudRulesHelp2;
+
+  /// No description provided for @eudRulesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No rules yet.'**
+  String get eudRulesEmpty;
+
+  /// No description provided for @eudRuleAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add execution rule'**
+  String get eudRuleAdd;
+
+  /// No description provided for @eudRuleEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit execution rule'**
+  String get eudRuleEditTitle;
+
+  /// No description provided for @eudRuleDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get eudRuleDisabled;
+
+  /// No description provided for @eudRuleMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move rule up'**
+  String get eudRuleMoveUp;
+
+  /// No description provided for @eudRuleMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move rule down'**
+  String get eudRuleMoveDown;
+
+  /// No description provided for @eudRuleEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rule'**
+  String get eudRuleEdit;
+
+  /// No description provided for @eudRuleDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete rule'**
+  String get eudRuleDelete;
+
+  /// No description provided for @eudRulePlayerN.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {number}'**
+  String eudRulePlayerN(String number);
+
+  /// No description provided for @eudRuleWhenThen.
+  ///
+  /// In en, this message translates to:
+  /// **'When {condition} → {action}'**
+  String eudRuleWhenThen(String condition, String action);
+
+  /// No description provided for @eudCmpAtLeastSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'{resource} is at least {value}'**
+  String eudCmpAtLeastSentence(String resource, String value);
+
+  /// No description provided for @eudCmpAtMostSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'{resource} is at most {value}'**
+  String eudCmpAtMostSentence(String resource, String value);
+
+  /// No description provided for @eudCmpExactlySentence.
+  ///
+  /// In en, this message translates to:
+  /// **'{resource} is exactly {value}'**
+  String eudCmpExactlySentence(String resource, String value);
+
+  /// No description provided for @eudOpSetToSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'set to {amount}'**
+  String eudOpSetToSentence(String amount);
+
+  /// No description provided for @eudOpAddSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'add {amount}'**
+  String eudOpAddSentence(String amount);
+
+  /// No description provided for @eudOpSubtractSentence.
+  ///
+  /// In en, this message translates to:
+  /// **'subtract {amount}'**
+  String eudOpSubtractSentence(String amount);
+
+  /// No description provided for @eudRuleOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Once on first match'**
+  String get eudRuleOnce;
+
+  /// No description provided for @eudRuleEvery.
+  ///
+  /// In en, this message translates to:
+  /// **'Every {count} cycles'**
+  String eudRuleEvery(int count);
+
+  /// No description provided for @eudRulePeriodic.
+  ///
+  /// In en, this message translates to:
+  /// **'Periodic'**
+  String get eudRulePeriodic;
+
+  /// No description provided for @eudResMinerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Minerals'**
+  String get eudResMinerals;
+
+  /// No description provided for @eudResGas.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas'**
+  String get eudResGas;
+
+  /// No description provided for @eudCmpAtLeast.
+  ///
+  /// In en, this message translates to:
+  /// **'At least'**
+  String get eudCmpAtLeast;
+
+  /// No description provided for @eudCmpAtMost.
+  ///
+  /// In en, this message translates to:
+  /// **'At most'**
+  String get eudCmpAtMost;
+
+  /// No description provided for @eudCmpExactly.
+  ///
+  /// In en, this message translates to:
+  /// **'Exactly'**
+  String get eudCmpExactly;
+
+  /// No description provided for @eudOpSetTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Set to'**
+  String get eudOpSetTo;
+
+  /// No description provided for @eudOpAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get eudOpAdd;
+
+  /// No description provided for @eudOpSubtract.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtract'**
+  String get eudOpSubtract;
+
+  /// No description provided for @eudRuleDefaultName.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource rule'**
+  String get eudRuleDefaultName;
+
+  /// No description provided for @eudRuleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Rule name'**
+  String get eudRuleName;
+
+  /// No description provided for @eudRulePlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get eudRulePlayer;
+
+  /// No description provided for @eudRuleResource.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource (condition and action)'**
+  String get eudRuleResource;
+
+  /// No description provided for @eudRuleComparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Comparison'**
+  String get eudRuleComparison;
+
+  /// No description provided for @eudRuleThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold (0–2147483647)'**
+  String get eudRuleThreshold;
+
+  /// No description provided for @eudRuleAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Action'**
+  String get eudRuleAction;
+
+  /// No description provided for @eudRuleAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (0–2147483647)'**
+  String get eudRuleAmount;
+
+  /// No description provided for @eudRuleSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get eudRuleSchedule;
+
+  /// No description provided for @eudRuleInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval (12–86400 trigger cycles)'**
+  String get eudRuleInterval;
+
+  /// No description provided for @eudRuleEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get eudRuleEnabled;
+
+  /// No description provided for @eudRuleApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply rule'**
+  String get eudRuleApply;
+
+  /// No description provided for @eudExtTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Extended execution rule'**
+  String get eudExtTitle;
+
+  /// No description provided for @eudExtHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Values: unsigned 16-bit, clamped to 0–65535. Variables 0–15 start at zero. Formula: source × factor + offset. Non-resource actions set their value.'**
+  String get eudExtHelp;
+
+  /// No description provided for @eudExtTargetAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Target action'**
+  String get eudExtTargetAction;
+
+  /// No description provided for @eudExtTargetId.
+  ///
+  /// In en, this message translates to:
+  /// **'Target ID: variable 0–15, upgrade 0–60, tech 0–43, location 1–255 (except 64), sound string ID; otherwise 0'**
+  String get eudExtTargetId;
+
+  /// No description provided for @eudExtUnitType.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit type ID (0–227; instance/follow actions)'**
+  String get eudExtUnitType;
+
+  /// No description provided for @eudExtUnitBindHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Binds the first living unit of this type owned by the selected player. Death, morph or ownership change invalidates the binding permanently. It never acquires a replacement unit. At most four unit rules.'**
+  String get eudExtUnitBindHelp;
+
+  /// No description provided for @eudExtTextPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Text prefix (selected player only)'**
+  String get eudExtTextPrefix;
+
+  /// No description provided for @eudExtSoundHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a registered WAV string ID from Resources. Only the selected player hears the sound.'**
+  String get eudExtSoundHelp;
+
+  /// No description provided for @eudExtTiming.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution timing'**
+  String get eudExtTiming;
+
+  /// No description provided for @eudExtLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Condition left'**
+  String get eudExtLeft;
+
+  /// No description provided for @eudExtRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Condition right'**
+  String get eudExtRight;
+
+  /// No description provided for @eudExtValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Action value'**
+  String get eudExtValue;
+
+  /// No description provided for @eudExtX.
+  ///
+  /// In en, this message translates to:
+  /// **'X'**
+  String get eudExtX;
+
+  /// No description provided for @eudExtY.
+  ///
+  /// In en, this message translates to:
+  /// **'Y'**
+  String get eudExtY;
+
+  /// No description provided for @eudExtWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Width'**
+  String get eudExtWidth;
+
+  /// No description provided for @eudExtHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height'**
+  String get eudExtHeight;
+
+  /// No description provided for @eudExtConstantId.
+  ///
+  /// In en, this message translates to:
+  /// **'Constant / ID'**
+  String get eudExtConstantId;
+
+  /// No description provided for @eudExtPlayerRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Player 1–8'**
+  String get eudExtPlayerRange;
+
+  /// No description provided for @eudExtFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'× (0–255)'**
+  String get eudExtFactor;
+
+  /// No description provided for @eudExtOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'+ offset'**
+  String get eudExtOffset;
+
+  /// No description provided for @eudActVariable.
+  ///
+  /// In en, this message translates to:
+  /// **'Variable'**
+  String get eudActVariable;
+
+  /// No description provided for @eudActMinerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Minerals'**
+  String get eudActMinerals;
+
+  /// No description provided for @eudActGas.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas'**
+  String get eudActGas;
+
+  /// No description provided for @eudActUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade level'**
+  String get eudActUpgrade;
+
+  /// No description provided for @eudActTechnology.
+  ///
+  /// In en, this message translates to:
+  /// **'Technology'**
+  String get eudActTechnology;
+
+  /// No description provided for @eudActLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get eudActLocation;
+
+  /// No description provided for @eudActUnitHp.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit hit points'**
+  String get eudActUnitHp;
+
+  /// No description provided for @eudActUnitShields.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit shields'**
+  String get eudActUnitShields;
+
+  /// No description provided for @eudActUnitEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit energy'**
+  String get eudActUnitEnergy;
+
+  /// No description provided for @eudActFollowUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow unit'**
+  String get eudActFollowUnit;
+
+  /// No description provided for @eudActText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show text'**
+  String get eudActText;
+
+  /// No description provided for @eudActSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Play sound'**
+  String get eudActSound;
+
+  /// No description provided for @eudTimingBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Before triggers'**
+  String get eudTimingBefore;
+
+  /// No description provided for @eudTimingAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'After triggers'**
+  String get eudTimingAfter;
+
+  /// No description provided for @eudSrcConstant.
+  ///
+  /// In en, this message translates to:
+  /// **'Constant'**
+  String get eudSrcConstant;
+
+  /// No description provided for @eudSrcVariable.
+  ///
+  /// In en, this message translates to:
+  /// **'Variable'**
+  String get eudSrcVariable;
+
+  /// No description provided for @eudSrcMinerals.
+  ///
+  /// In en, this message translates to:
+  /// **'Minerals'**
+  String get eudSrcMinerals;
+
+  /// No description provided for @eudSrcGas.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas'**
+  String get eudSrcGas;
+
+  /// No description provided for @eudSrcUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade level'**
+  String get eudSrcUpgrade;
+
+  /// No description provided for @eudSrcTechnology.
+  ///
+  /// In en, this message translates to:
+  /// **'Technology'**
+  String get eudSrcTechnology;
+
+  /// No description provided for @eudApplyToProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to project'**
+  String get eudApplyToProject;
+
+  /// No description provided for @eudProjectChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Project changed. Cancel and reopen this editor.'**
+  String get eudProjectChanged;
+
+  /// No description provided for @eudWeaponCardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapons'**
+  String get eudWeaponCardTitle;
+
+  /// No description provided for @eudWeaponCardHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Range and damage type belong to the weapon, so every unit that uses it changes together.'**
+  String get eudWeaponCardHelp;
+
+  /// No description provided for @eudWeaponEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit weapon EUD settings'**
+  String get eudWeaponEdit;
+
+  /// No description provided for @eudWeaponSharedHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared weapon ID for ground/air users. Review Static unit / weapon impact after applying. This does not reassign a unit’s weapon.'**
+  String get eudWeaponSharedHelp;
+
+  /// No description provided for @eudWeaponRawHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Distances are raw integers; tile conversion and runtime support are unverified. Blank removes the override; game defaults remain unknown. Applying changes only the project, not the game.'**
+  String get eudWeaponRawHelp;
+
+  /// No description provided for @eudWeaponMinRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum range (raw)'**
+  String get eudWeaponMinRange;
+
+  /// No description provided for @eudWeaponMaxRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum range (raw)'**
+  String get eudWeaponMaxRange;
+
+  /// No description provided for @eudWeaponNoDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'No damage type override'**
+  String get eudWeaponNoDamage;
+
+  /// No description provided for @eudWeaponUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported: {value}'**
+  String eudWeaponUnsupported(String value);
+
+  /// No description provided for @eudWeaponReferenceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon reference source changed. Cancel and reload references.'**
+  String get eudWeaponReferenceChanged;
+
+  /// No description provided for @eudWeaponWholeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'{field}: enter a whole number from 0 to 4294967295.'**
+  String eudWeaponWholeNumber(String field);
+
+  /// No description provided for @eudDamageIndependent.
+  ///
+  /// In en, this message translates to:
+  /// **'Independent'**
+  String get eudDamageIndependent;
+
+  /// No description provided for @eudDamageExplosive.
+  ///
+  /// In en, this message translates to:
+  /// **'Explosive'**
+  String get eudDamageExplosive;
+
+  /// No description provided for @eudDamageConcussive.
+  ///
+  /// In en, this message translates to:
+  /// **'Concussive'**
+  String get eudDamageConcussive;
+
+  /// No description provided for @eudDamageNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get eudDamageNormal;
+
+  /// No description provided for @eudDamageIgnoreArmor.
+  ///
+  /// In en, this message translates to:
+  /// **'IgnoreArmor'**
+  String get eudDamageIgnoreArmor;
+
+  /// No description provided for @eudImpactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Static unit / weapon impact'**
+  String get eudImpactTitle;
+
+  /// No description provided for @eudImpactHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Base DAT references only; proposed reference changes, spells and actual attack behavior are not resolved. Type settings are global; player fields affect the selected slot.'**
+  String get eudImpactHelp;
+
+  /// No description provided for @eudImpactLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load weapon impact'**
+  String get eudImpactLoad;
+
+  /// No description provided for @eudImpactUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon references unavailable. Load or reload to analyze.'**
+  String get eudImpactUnavailable;
+
+  /// No description provided for @eudImpactSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference source: {source}'**
+  String eudImpactSource(String source);
+
+  /// No description provided for @eudImpactChooseUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.'**
+  String get eudImpactChooseUnit;
+
+  /// No description provided for @eudImpactEditShields.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit unit EUD shields'**
+  String get eudImpactEditShields;
+
+  /// No description provided for @eudImpactGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground'**
+  String get eudImpactGround;
+
+  /// No description provided for @eudImpactAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Air'**
+  String get eudImpactAir;
+
+  /// No description provided for @eudImpactNoWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'{slot} weapon: None (#130)'**
+  String eudImpactNoWeapon(String slot);
+
+  /// No description provided for @eudImpactEditWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'{slot}: {weapon} — Edit EUD'**
+  String eudImpactEditWeapon(String slot, String weapon);
+
+  /// No description provided for @eudImpactSubunits.
+  ///
+  /// In en, this message translates to:
+  /// **'Subunit IDs: {subunit1}, {subunit2} (228 = None)'**
+  String eudImpactSubunits(String subunit1, String subunit2);
+
+  /// No description provided for @eudImpactCannotAnalyze.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot analyze: {reason}'**
+  String eudImpactCannotAnalyze(String reason);
+
+  /// No description provided for @eudImpactUnknownWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact unknown: weapon references unavailable.'**
+  String get eudImpactUnknownWeapon;
+
+  /// No description provided for @eudImpactPlayerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {number} only; runtime behavior unverified.'**
+  String eudImpactPlayerOnly(String number);
+
+  /// No description provided for @eudImpactUnknownShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact unknown: shared references for this table are unavailable.'**
+  String get eudImpactUnknownShared;
+
+  /// No description provided for @eudImpactUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct units: {direct}\nVia subunits: {subunits}'**
+  String eudImpactUnits(String direct, String subunits);
+
+  /// No description provided for @eudImpactNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None in static references'**
+  String get eudImpactNone;
+
+  /// No description provided for @eudShieldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{unit} — Shields'**
+  String eudShieldTitle(String unit);
+
+  /// No description provided for @eudShieldHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Activation and maximum are independent type settings shared by all players. Blank maximum or No override removes that setting; defaults are unknown.'**
+  String get eudShieldHelp;
+
+  /// No description provided for @eudShieldNoOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'No activation override'**
+  String get eudShieldNoOverride;
+
+  /// No description provided for @eudShieldEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Shields enabled'**
+  String get eudShieldEnabled;
+
+  /// No description provided for @eudShieldDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Shields disabled'**
+  String get eudShieldDisabled;
+
+  /// No description provided for @eudShieldUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported imported activation'**
+  String get eudShieldUnsupported;
+
+  /// No description provided for @eudShieldMaximum.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum shields (0–65535)'**
+  String get eudShieldMaximum;
+
+  /// No description provided for @eudShieldOverrideChk.
+  ///
+  /// In en, this message translates to:
+  /// **'Explicitly override CHK maximum shields'**
+  String get eudShieldOverrideChk;
+
+  /// No description provided for @eudShieldInitNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Initialization is not implemented: existing placed units keep their CHK shield percentages; no current-shield refill, clamp or recurring write is generated. New-unit initialization requires runtime verification. Applying saves project intent only; EUD build integration is pending.'**
+  String get eudShieldInitNote;
+
+  /// No description provided for @eudShieldChooseSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a supported shield activation value.'**
+  String get eudShieldChooseSupported;
+
+  /// No description provided for @eudShieldWholeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum shields require a whole number from 0 to 65535.'**
+  String get eudShieldWholeNumber;
+
+  /// No description provided for @eudFieldsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD field extensions'**
+  String get eudFieldsTitle;
+
+  /// No description provided for @eudFieldsIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate settings • Runtime unverified. Add each edit to the draft, then apply the draft to the project. Unsaved input is discarded when changing selection.'**
+  String get eudFieldsIntro;
+
+  /// No description provided for @eudFieldsField.
+  ///
+  /// In en, this message translates to:
+  /// **'What to change'**
+  String get eudFieldsField;
+
+  /// No description provided for @eudFieldsSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find target by name or ID'**
+  String get eudFieldsSearch;
+
+  /// No description provided for @eudFieldsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Which one'**
+  String get eudFieldsTarget;
+
+  /// No description provided for @eudFieldsPlayerNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected player slot only. Supply uses half-points (400 = 200 supply).'**
+  String get eudFieldsPlayerNote;
+
+  /// No description provided for @eudFieldsGlobalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Global type setting, shared across players. DAT defaults are not loaded. Shared-reference impact is not resolved for this editor.'**
+  String get eudFieldsGlobalNote;
+
+  /// No description provided for @eudFieldsApi.
+  ///
+  /// In en, this message translates to:
+  /// **'Candidate API: {member} • {unit}'**
+  String eudFieldsApi(String member, String unit);
+
+  /// No description provided for @eudFieldsStorage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage input: 0–{maximum}{mask}. Gameplay limits are unverified.'**
+  String eudFieldsStorage(String maximum, String mask);
+
+  /// No description provided for @eudFieldsMask.
+  ///
+  /// In en, this message translates to:
+  /// **' • Allowed mask: {mask}'**
+  String eudFieldsMask(String mask);
+
+  /// No description provided for @eudFieldsValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Value (decimal integer)'**
+  String get eudFieldsValue;
+
+  /// No description provided for @eudFieldsChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a value'**
+  String get eudFieldsChoose;
+
+  /// No description provided for @eudFieldsUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported stored value: {value}'**
+  String eudFieldsUnsupported(String value);
+
+  /// No description provided for @eudFieldsYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes (true)'**
+  String get eudFieldsYes;
+
+  /// No description provided for @eudFieldsNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No (false)'**
+  String get eudFieldsNo;
+
+  /// No description provided for @eudFieldsOverrideChk.
+  ///
+  /// In en, this message translates to:
+  /// **'Explicitly override ordinary CHK settings'**
+  String get eudFieldsOverrideChk;
+
+  /// No description provided for @eudFieldsStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add / update draft'**
+  String get eudFieldsStage;
+
+  /// No description provided for @eudFieldsRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from draft'**
+  String get eudFieldsRemove;
+
+  /// No description provided for @eudFieldsDraftSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} draft overrides • Current: {value}'**
+  String eudFieldsDraftSummary(int count, String value);
+
+  /// No description provided for @eudFieldsNoOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'No override'**
+  String get eudFieldsNoOverride;
+
+  /// No description provided for @eudFieldsApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply draft to project'**
+  String get eudFieldsApply;
+
+  /// No description provided for @eudFieldsNeedChk.
+  ///
+  /// In en, this message translates to:
+  /// **'This value also changes an ordinary map (CHK) setting. Tick the box above to allow it.'**
+  String get eudFieldsNeedChk;
+
+  /// No description provided for @eudFieldsOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'The value is outside the allowed range.'**
+  String get eudFieldsOutOfRange;
+
+  /// No description provided for @eudFieldsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This value cannot be used for the selected field.'**
+  String get eudFieldsInvalid;
 }
 
 class _AppLocalizationsDelegate

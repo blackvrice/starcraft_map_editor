@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../localization/l10n.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/eud/eud_override_impact.dart';
 import '../../domain/eud/eud_field_manifest.dart';
@@ -78,31 +79,50 @@ class _EudImpactPaneState extends State<EudImpactPane> {
   Widget build(BuildContext context) => StreamBuilder<PlacementCatalogState>(
     stream: widget.catalog?.changes,
     builder: (context, _) {
+      final l10n = context.l10n;
       final epoch = widget.catalog?.weaponReferenceEpoch;
       final snapshot = _snapshot?.epoch == epoch ? _snapshot : null;
       return SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Static unit / weapon impact'),
-            const Text(
-              'Base DAT references only; proposed reference changes, spells and actual attack behavior are not resolved. Type settings are global; player fields affect the selected slot.',
+            Row(
+              children: [
+                const Icon(
+                  Icons.account_tree_outlined,
+                  size: 18,
+                  color: Color(0xFFA7AFB8),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.eudImpactTitle,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                OutlinedButton(
+                  onPressed: widget.catalog == null || _loading ? null : _load,
+                  child: Text(l10n.eudImpactLoad),
+                ),
+              ],
             ),
-            OutlinedButton(
-              onPressed: widget.catalog == null || _loading ? null : _load,
-              child: const Text('Load weapon impact'),
+            const SizedBox(height: 6),
+            Text(
+              l10n.eudImpactHelp,
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFFA7AFB8)),
             ),
+            const SizedBox(height: 6),
             if (_loading) const LinearProgressIndicator(),
             if (snapshot == null)
-              const Text(
-                'Weapon references unavailable. Load or reload to analyze.',
-              )
+              Text(l10n.eudImpactUnavailable)
             else
-              Text('Reference source: ${snapshot.source}'),
+              Text(l10n.eudImpactSource(snapshot.source)),
             if (_error != null && _errorEpoch == epoch) Text(_error!),
-            const Text(
-              'Choose a unit to edit its direct ground / air weapon. Subunit weapons are separate; select that subunit explicitly.',
-            ),
+            const SizedBox(height: 8),
+            Text(l10n.eudImpactChooseUnit),
             SizedBox(
               width: 360,
               child: DropdownButton<int>(
@@ -129,21 +149,32 @@ class _EudImpactPaneState extends State<EudImpactPane> {
               onPressed: widget.onEditShields == null
                   ? null
                   : () => widget.onEditShields!(_unit),
-              child: const Text('Edit unit EUD shields'),
+              child: Text(l10n.eudImpactEditShields),
             ),
             if (snapshot != null) ...[
               _weaponLink(
-                'Ground',
+                l10n,
+                'ground',
+                l10n.eudImpactGround,
                 snapshot.index.units[_unit].ground,
                 snapshot,
               ),
-              _weaponLink('Air', snapshot.index.units[_unit].air, snapshot),
+              _weaponLink(
+                l10n,
+                'air',
+                l10n.eudImpactAir,
+                snapshot.index.units[_unit].air,
+                snapshot,
+              ),
               Text(
-                'Subunit IDs: ${snapshot.index.units[_unit].subunit1}, ${snapshot.index.units[_unit].subunit2} (228 = None)',
+                l10n.eudImpactSubunits(
+                  '${snapshot.index.units[_unit].subunit1}',
+                  '${snapshot.index.units[_unit].subunit2}',
+                ),
               ),
             ],
             for (final override in widget.project.overrides)
-              _row(override, snapshot),
+              _row(l10n, override, snapshot),
           ],
         ),
       );
@@ -151,13 +182,15 @@ class _EudImpactPaneState extends State<EudImpactPane> {
   );
 
   Widget _weaponLink(
+    AppLocalizations l10n,
+    String id,
     String slot,
     int weapon,
     WeaponReferenceSnapshot snapshot,
   ) {
-    if (weapon == 130) return Text('$slot weapon: None (#130)');
+    if (weapon == 130) return Text(l10n.eudImpactNoWeapon(slot));
     return OutlinedButton(
-      key: Key('eud-reference-${slot.toLowerCase()}'),
+      key: Key('eud-reference-$id'),
       onPressed: widget.onEditWeapon == null
           ? null
           : () {
@@ -165,11 +198,20 @@ class _EudImpactPaneState extends State<EudImpactPane> {
                 widget.onEditWeapon!(weapon, snapshot.epoch);
               }
             },
-      child: Text('$slot: ${defaultWeaponNames[weapon]} (#$weapon) — Edit EUD'),
+      child: Text(
+        l10n.eudImpactEditWeapon(
+          slot,
+          '${defaultWeaponNames[weapon]} (#$weapon)',
+        ),
+      ),
     );
   }
 
-  Widget _row(EudOverride override, WeaponReferenceSnapshot? snapshot) {
+  Widget _row(
+    AppLocalizations l10n,
+    EudOverride override,
+    WeaponReferenceSnapshot? snapshot,
+  ) {
     final impact = EudOverrideImpact.analyze(
       override,
       references: snapshot?.index,
@@ -178,19 +220,19 @@ class _EudImpactPaneState extends State<EudImpactPane> {
       padding: const EdgeInsets.only(top: 8),
       child: Text(
         '${override.identity}\n${impact.error != null
-            ? 'Cannot analyze: ${impact.error!.name}'
+            ? l10n.eudImpactCannotAnalyze(impact.error!.name)
             : impact.directUnits == null
             ? EudFieldManifest.find(override.field)?.table == EudTable.weapon
-                  ? 'Impact unknown: weapon references unavailable.'
+                  ? l10n.eudImpactUnknownWeapon
                   : EudFieldManifest.find(override.field)?.table == EudTable.player
-                  ? 'Player ${override.targetId + 1} only; runtime behavior unverified.'
-                  : 'Impact unknown: shared references for this table are unavailable.'
-            : 'Direct units: ${_names(impact.directUnits!)}\nVia subunits: ${_names(impact.subunitUnits!)}'}',
+                  ? l10n.eudImpactPlayerOnly('${override.targetId + 1}')
+                  : l10n.eudImpactUnknownShared
+            : l10n.eudImpactUnits(_names(l10n, impact.directUnits!), _names(l10n, impact.subunitUnits!))}',
       ),
     );
   }
 
-  String _names(List<int> ids) => ids.isEmpty
-      ? 'None in static references'
+  String _names(AppLocalizations l10n, List<int> ids) => ids.isEmpty
+      ? l10n.eudImpactNone
       : ids.map((id) => '${defaultUnitNames[id]} (#$id)').join(', ');
 }

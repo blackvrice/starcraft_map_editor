@@ -1553,4 +1553,757 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get trigUseSlot => '이 칸 사용';
+
+  @override
+  String get eudProjectTitle => 'EUD 확장 프로젝트';
+
+  @override
+  String get eudProjectUnsavedSuffix => ' • 저장 안 됨';
+
+  @override
+  String get eudProjectLead =>
+      '일반 맵 편집으로는 바꿀 수 없는 유닛·무기·업그레이드·플레이어 설정을 바꿔요. 값은 별도 프로젝트 파일에 저장되고 EUD 빌드를 거쳐야 게임에 들어가요.';
+
+  @override
+  String get eudNewFromMap => '현재 맵으로 새로 만들기';
+
+  @override
+  String get eudOpenProject => '프로젝트 열기';
+
+  @override
+  String get eudSaveProject => '프로젝트 저장';
+
+  @override
+  String get eudSaveProjectAs => '다른 이름으로 저장';
+
+  @override
+  String get eudUndoProject => '실행 취소';
+
+  @override
+  String get eudRedoProject => '다시 실행';
+
+  @override
+  String get eudCloseProject => '프로젝트 닫기';
+
+  @override
+  String get eudGenerationPreview => '생성 코드 미리보기';
+
+  @override
+  String get eudGenerationPreviewTitle => 'EUD 생성 코드 미리보기';
+
+  @override
+  String get eudGenerationPreviewNote =>
+      '설정은 사용자 초기화보다 먼저 적용돼요. 규칙은 고른 트리거 전/후 시점에 실행되고, 개별 유닛 규칙은 지정한 유닛에만 적용돼요. 실제 게임 호환성은 아직 확인되지 않았어요.';
+
+  @override
+  String get eudClose => '닫기';
+
+  @override
+  String get eudCancel => '취소';
+
+  @override
+  String get eudDiscard => '버리기';
+
+  @override
+  String get eudDiscardTitle => 'EUD 프로젝트 변경을 버릴까요?';
+
+  @override
+  String get eudDiscardBody =>
+      'EUD 프로젝트에 저장하지 않은 변경이 있어요. 남기려면 먼저 “다른 이름으로 저장”을 하세요.';
+
+  @override
+  String get eudWelcomeTitle => 'EUD 프로젝트로 할 수 있는 일';
+
+  @override
+  String get eudWelcomeChoose => '유닛·무기·업그레이드·테크·플레이어 값을 새로 골라요.';
+
+  @override
+  String get eudWelcomeSave => '프로젝트 파일에 저장해요. 맵 파일은 건드리지 않아요.';
+
+  @override
+  String get eudWelcomeBuild => 'EUD 맵을 새로 빌드해서 확인해요. 원본 맵은 그대로예요.';
+
+  @override
+  String get eudProjectSaveNote =>
+      '프로젝트 저장은 EUD 설정만 보관하고 맵을 만들지 않아요. 일반 맵 변경은 맵의 “다른 이름으로 저장”으로 저장해요.';
+
+  @override
+  String get eudAllFieldsNote =>
+      '“모든 EUD 필드 편집”에서 유닛·무기·이동·업그레이드·테크·플레이어·그래픽 설정을 열 수 있어요. EUD 빌드 준비에서 이 설정을 검증 전 테스트 빌드에 넣을 수 있고, 프로젝트를 저장하면 복구용 백업도 남아요.';
+
+  @override
+  String get eudBindingUnchecked => '맵 연결을 아직 확인하지 않았어요. “현재 맵 확인”을 눌러 주세요.';
+
+  @override
+  String get eudBindingNoMap => 'EUD 프로젝트를 연결하려면 맵을 여세요.';
+
+  @override
+  String get eudBindingUnsaved => '맵에 저장하지 않은 변경이 있어요. 연결하기 전에 맵을 저장하세요.';
+
+  @override
+  String get eudBindingRestricted => '편집이 제한된 맵이라 연결할 수 없어요.';
+
+  @override
+  String get eudBindingMatched => '현재 맵이 프로젝트와 일치해요 (확인된 스냅샷).';
+
+  @override
+  String get eudBindingMismatch => '현재 맵이 프로젝트와 달라요. 연결된 맵을 열거나 이 맵을 직접 연결하세요.';
+
+  @override
+  String get eudBindingDiskChanged => '디스크의 맵 파일이 바뀌었어요. 다시 연 다음 연결하세요.';
+
+  @override
+  String get eudConnectionTitle => '연결된 맵';
+
+  @override
+  String get eudVerifyMap => '현재 맵 확인';
+
+  @override
+  String get eudConnectMap => '현재 맵 연결';
+
+  @override
+  String eudProjectInfo(String project, String map, String sha) {
+    return '프로젝트: $project\n맵: $map\nSHA-256: $sha';
+  }
+
+  @override
+  String get eudNotSaved => '저장 안 됨';
+
+  @override
+  String get eudChangesTitle => '바꾼 값';
+
+  @override
+  String eudChangesCount(int count) {
+    return '저장된 변경 $count개 • 게임 동작 미검증';
+  }
+
+  @override
+  String get eudChangesEmpty => '아직 바꾼 값이 없어요. “모든 EUD 필드 편집”에서 골라 보세요.';
+
+  @override
+  String get eudAllFields => '모든 EUD 필드 편집';
+
+  @override
+  String eudBaselineLine(String value) {
+    return '원래 값: $value';
+  }
+
+  @override
+  String eudPlannedLine(String requested, String planned) {
+    return '요청한 값: $requested • 적용 예정 값: $planned';
+  }
+
+  @override
+  String get eudUnresolved => '확인 전';
+
+  @override
+  String get eudExplicitChk => 'CHK 값도 직접 변경';
+
+  @override
+  String get eudPreviewOnlyNote =>
+      '미리보기일 뿐 게임에는 아직 적용되지 않아요. 바꾼 뒤에는 현재 맵을 다시 확인하세요. 프로젝트 검사 오류가 있으면 적용 예정 값이 모두 막혀요.';
+
+  @override
+  String get eudRevert => '원래 값으로';
+
+  @override
+  String get eudBaselineUnverified => '확인 안 된 맵';
+
+  @override
+  String eudBaselineGameDefault(String detail) {
+    return '게임 기본값 (알 수 없음; $detail)';
+  }
+
+  @override
+  String eudBaselineUnavailable(String detail) {
+    return '사용할 수 없음 ($detail)';
+  }
+
+  @override
+  String eudBaselineNotInChk(String detail) {
+    return 'CHK에 저장되지 않음; $detail';
+  }
+
+  @override
+  String get eudStepsTitle => '게임에 넣기까지';
+
+  @override
+  String get eudStepChoose => '값 고르기';
+
+  @override
+  String eudStepChooseDone(int count) {
+    return '$count개를 바꿨어요';
+  }
+
+  @override
+  String get eudStepChooseNone => '아직 바꾼 값이 없어요';
+
+  @override
+  String get eudStepSave => '프로젝트 저장';
+
+  @override
+  String get eudStepSaveDone => '저장됨 · 맵 파일은 건드리지 않아요';
+
+  @override
+  String get eudStepSaveNeeded => '아직 저장 안 됨 · 맵 파일은 건드리지 않아요';
+
+  @override
+  String get eudStepVerify => '맵 확인';
+
+  @override
+  String get eudStepBuild => 'EUD 빌드';
+
+  @override
+  String get eudStepBuildHint =>
+      '이 설정을 시험하려면 맵을 저장하고 확인한 뒤, EUD 빌드 준비에서 “프로젝트 설정 테스트 빌드”를 켜세요.';
+
+  @override
+  String get eudStepBuildIdle => '새 맵 파일을 만들어요. 원본은 그대로예요.';
+
+  @override
+  String eudRecoveryBackup(String path) {
+    return '복구용 백업: $path';
+  }
+
+  @override
+  String get eudSavedPill => '저장됨';
+
+  @override
+  String get eudUnsavedPill => '저장 안 됨';
+
+  @override
+  String get eudRuntimeUnverified => '게임 동작 미검증';
+
+  @override
+  String get eudTechnical => '기술 정보';
+
+  @override
+  String get eudProblems => '확인이 필요해요';
+
+  @override
+  String get eudRulesTitle => '실행 규칙';
+
+  @override
+  String eudRulesCount(int current, int total) {
+    return '$current / $total';
+  }
+
+  @override
+  String get eudRulesHelp =>
+      '규칙은 게임이 진행되는 동안 자원 같은 값을 바꿔요. 일반 트리거보다 먼저 실행되고, 주기는 초가 아니라 트리거 주기 단위예요. 프로젝트를 저장한 뒤 EUD 빌드 준비에서 시험하세요.';
+
+  @override
+  String get eudRulesHelp2 =>
+      '같은 대상을 쓰는 규칙은 하나만 켤 수 있어요. 직접 작성한 코드와 일반 트리거는 따로 확인하세요. 확장 규칙은 변수, 플레이어 상태, 로케이션, 지정 유닛, 개인 표시를 지원해요.';
+
+  @override
+  String get eudRulesEmpty => '아직 규칙이 없어요.';
+
+  @override
+  String get eudRuleAdd => '실행 규칙 추가';
+
+  @override
+  String get eudRuleEditTitle => '실행 규칙 편집';
+
+  @override
+  String get eudRuleDisabled => '꺼짐';
+
+  @override
+  String get eudRuleMoveUp => '위로';
+
+  @override
+  String get eudRuleMoveDown => '아래로';
+
+  @override
+  String get eudRuleEdit => '규칙 편집';
+
+  @override
+  String get eudRuleDelete => '규칙 삭제';
+
+  @override
+  String eudRulePlayerN(String number) {
+    return '플레이어 $number';
+  }
+
+  @override
+  String eudRuleWhenThen(String condition, String action) {
+    return '$condition이면 → $action';
+  }
+
+  @override
+  String eudCmpAtLeastSentence(String resource, String value) {
+    return '$resource $value 이상';
+  }
+
+  @override
+  String eudCmpAtMostSentence(String resource, String value) {
+    return '$resource $value 이하';
+  }
+
+  @override
+  String eudCmpExactlySentence(String resource, String value) {
+    return '$resource 정확히 $value';
+  }
+
+  @override
+  String eudOpSetToSentence(String amount) {
+    return '$amount(으)로 설정';
+  }
+
+  @override
+  String eudOpAddSentence(String amount) {
+    return '$amount 더하기';
+  }
+
+  @override
+  String eudOpSubtractSentence(String amount) {
+    return '$amount 빼기';
+  }
+
+  @override
+  String get eudRuleOnce => '처음 맞을 때 한 번';
+
+  @override
+  String eudRuleEvery(int count) {
+    return '$count주기마다';
+  }
+
+  @override
+  String get eudRulePeriodic => '주기적으로';
+
+  @override
+  String get eudResMinerals => '미네랄';
+
+  @override
+  String get eudResGas => '가스';
+
+  @override
+  String get eudCmpAtLeast => '이상';
+
+  @override
+  String get eudCmpAtMost => '이하';
+
+  @override
+  String get eudCmpExactly => '정확히';
+
+  @override
+  String get eudOpSetTo => '값으로 설정';
+
+  @override
+  String get eudOpAdd => '더하기';
+
+  @override
+  String get eudOpSubtract => '빼기';
+
+  @override
+  String get eudRuleDefaultName => '자원 규칙';
+
+  @override
+  String get eudRuleName => '규칙 이름';
+
+  @override
+  String get eudRulePlayer => '플레이어';
+
+  @override
+  String get eudRuleResource => '자원 (조건과 액션 공통)';
+
+  @override
+  String get eudRuleComparison => '비교';
+
+  @override
+  String get eudRuleThreshold => '기준 값 (0–2147483647)';
+
+  @override
+  String get eudRuleAction => '액션';
+
+  @override
+  String get eudRuleAmount => '양 (0–2147483647)';
+
+  @override
+  String get eudRuleSchedule => '실행 방식';
+
+  @override
+  String get eudRuleInterval => '주기 (12–86400 트리거 주기)';
+
+  @override
+  String get eudRuleEnabled => '사용';
+
+  @override
+  String get eudRuleApply => '규칙 적용';
+
+  @override
+  String get eudExtTitle => '확장 실행 규칙';
+
+  @override
+  String get eudExtHelp =>
+      '값은 부호 없는 16비트이며 0–65535로 제한돼요. 변수 0–15는 0에서 시작해요. 계산식: 원본 × 배수 + 더할 값. 자원이 아닌 액션은 값을 그대로 설정해요.';
+
+  @override
+  String get eudExtTargetAction => '대상 액션';
+
+  @override
+  String get eudExtTargetId =>
+      '대상 ID: 변수 0–15, 업그레이드 0–60, 테크 0–43, 로케이션 1–255 (64 제외), 소리 문자열 ID, 그 밖에는 0';
+
+  @override
+  String get eudExtUnitType => '유닛 종류 ID (0–227, 개별 유닛/따라가기 액션)';
+
+  @override
+  String get eudExtUnitBindHelp =>
+      '선택한 플레이어가 가진 이 종류의 첫 번째 살아 있는 유닛에 연결돼요. 유닛이 죽거나 변태하거나 소유자가 바뀌면 연결이 영구히 끊기고, 다른 유닛으로 바꾸지 않아요. 유닛 규칙은 최대 4개예요.';
+
+  @override
+  String get eudExtTextPrefix => '앞에 붙일 문구 (선택한 플레이어에게만)';
+
+  @override
+  String get eudExtSoundHelp => '리소스에 등록한 WAV 문자열 ID를 쓰세요. 선택한 플레이어만 소리를 들어요.';
+
+  @override
+  String get eudExtTiming => '실행 시점';
+
+  @override
+  String get eudExtLeft => '조건 왼쪽 값';
+
+  @override
+  String get eudExtRight => '조건 오른쪽 값';
+
+  @override
+  String get eudExtValue => '액션 값';
+
+  @override
+  String get eudExtX => 'X';
+
+  @override
+  String get eudExtY => 'Y';
+
+  @override
+  String get eudExtWidth => '너비';
+
+  @override
+  String get eudExtHeight => '높이';
+
+  @override
+  String get eudExtConstantId => '상수 / ID';
+
+  @override
+  String get eudExtPlayerRange => '플레이어 1–8';
+
+  @override
+  String get eudExtFactor => '× (0–255)';
+
+  @override
+  String get eudExtOffset => '+ 더할 값';
+
+  @override
+  String get eudActVariable => '변수';
+
+  @override
+  String get eudActMinerals => '미네랄';
+
+  @override
+  String get eudActGas => '가스';
+
+  @override
+  String get eudActUpgrade => '업그레이드 레벨';
+
+  @override
+  String get eudActTechnology => '테크';
+
+  @override
+  String get eudActLocation => '로케이션';
+
+  @override
+  String get eudActUnitHp => '유닛 체력';
+
+  @override
+  String get eudActUnitShields => '유닛 실드';
+
+  @override
+  String get eudActUnitEnergy => '유닛 에너지';
+
+  @override
+  String get eudActFollowUnit => '유닛 따라가기';
+
+  @override
+  String get eudActText => '문구 표시';
+
+  @override
+  String get eudActSound => '소리 재생';
+
+  @override
+  String get eudTimingBefore => '트리거 전';
+
+  @override
+  String get eudTimingAfter => '트리거 후';
+
+  @override
+  String get eudSrcConstant => '상수';
+
+  @override
+  String get eudSrcVariable => '변수';
+
+  @override
+  String get eudSrcMinerals => '미네랄';
+
+  @override
+  String get eudSrcGas => '가스';
+
+  @override
+  String get eudSrcUpgrade => '업그레이드 레벨';
+
+  @override
+  String get eudSrcTechnology => '테크';
+
+  @override
+  String get eudApplyToProject => '프로젝트에 적용';
+
+  @override
+  String get eudProjectChanged => '프로젝트가 바뀌었어요. 취소하고 이 창을 다시 여세요.';
+
+  @override
+  String get eudWeaponCardTitle => '무기';
+
+  @override
+  String get eudWeaponCardHelp =>
+      '사거리와 피해 유형은 무기에 속해서, 그 무기를 쓰는 유닛이 모두 함께 바뀌어요.';
+
+  @override
+  String get eudWeaponEdit => '무기 EUD 설정 편집';
+
+  @override
+  String get eudWeaponSharedHelp =>
+      '지상·공중 무기로 이 무기를 쓰는 유닛이 함께 바뀌어요. 적용한 뒤 “유닛 / 무기 영향”을 확인하세요. 유닛의 무기를 다른 무기로 바꾸지는 않아요.';
+
+  @override
+  String get eudWeaponRawHelp =>
+      '거리는 원시 정수 값이에요 (32 = 타일 1칸, 실제 동작은 미검증). 비워 두면 변경이 지워져요. 적용해도 프로젝트만 바뀌고 게임은 바뀌지 않아요.';
+
+  @override
+  String get eudWeaponMinRange => '최소 사거리 (원시 값)';
+
+  @override
+  String get eudWeaponMaxRange => '최대 사거리 (원시 값)';
+
+  @override
+  String get eudWeaponNoDamage => '피해 유형 그대로';
+
+  @override
+  String eudWeaponUnsupported(String value) {
+    return '지원하지 않음: $value';
+  }
+
+  @override
+  String get eudWeaponReferenceChanged => '무기 참조 정보가 바뀌었어요. 취소하고 다시 불러오세요.';
+
+  @override
+  String eudWeaponWholeNumber(String field) {
+    return '$field: 0부터 4294967295 사이의 정수를 입력하세요.';
+  }
+
+  @override
+  String get eudDamageIndependent => '독립형';
+
+  @override
+  String get eudDamageExplosive => '폭발형';
+
+  @override
+  String get eudDamageConcussive => '진동형';
+
+  @override
+  String get eudDamageNormal => '일반형';
+
+  @override
+  String get eudDamageIgnoreArmor => '방어 무시';
+
+  @override
+  String get eudImpactTitle => '유닛 / 무기 영향';
+
+  @override
+  String get eudImpactHelp =>
+      '기본 DAT 참조만 봐요. 바꾸려는 참조, 마법, 실제 공격 동작은 반영하지 않아요. 종류 설정은 모든 플레이어에 적용되고, 플레이어 값은 해당 슬롯에만 적용돼요.';
+
+  @override
+  String get eudImpactLoad => '무기 영향 불러오기';
+
+  @override
+  String get eudImpactUnavailable => '무기 참조가 없어요. 불러오면 분석할 수 있어요.';
+
+  @override
+  String eudImpactSource(String source) {
+    return '참조 출처: $source';
+  }
+
+  @override
+  String get eudImpactChooseUnit =>
+      '유닛을 고르면 그 유닛의 지상 / 공중 무기를 바로 편집할 수 있어요. 서브유닛의 무기는 따로 있으니 서브유닛을 직접 고르세요.';
+
+  @override
+  String get eudImpactEditShields => '유닛 실드 EUD 편집';
+
+  @override
+  String get eudImpactGround => '지상';
+
+  @override
+  String get eudImpactAir => '공중';
+
+  @override
+  String eudImpactNoWeapon(String slot) {
+    return '$slot 무기: 없음 (#130)';
+  }
+
+  @override
+  String eudImpactEditWeapon(String slot, String weapon) {
+    return '$slot: $weapon — EUD 편집';
+  }
+
+  @override
+  String eudImpactSubunits(String subunit1, String subunit2) {
+    return '서브유닛 ID: $subunit1, $subunit2 (228 = 없음)';
+  }
+
+  @override
+  String eudImpactCannotAnalyze(String reason) {
+    return '분석할 수 없음: $reason';
+  }
+
+  @override
+  String get eudImpactUnknownWeapon => '영향 알 수 없음: 무기 참조가 없어요.';
+
+  @override
+  String eudImpactPlayerOnly(String number) {
+    return '플레이어 $number에게만 적용 · 실제 동작 미검증.';
+  }
+
+  @override
+  String get eudImpactUnknownShared => '영향 알 수 없음: 이 표의 공유 참조가 없어요.';
+
+  @override
+  String eudImpactUnits(String direct, String subunits) {
+    return '직접 사용 유닛: $direct\n서브유닛을 통해: $subunits';
+  }
+
+  @override
+  String get eudImpactNone => '정적 참조에는 없음';
+
+  @override
+  String eudShieldTitle(String unit) {
+    return '$unit — 실드';
+  }
+
+  @override
+  String get eudShieldHelp =>
+      '실드 사용 여부와 최대 실드는 따로 설정되고 모든 플레이어에게 똑같이 적용돼요. 최대값을 비우거나 “그대로”를 고르면 그 설정이 지워져요.';
+
+  @override
+  String get eudShieldNoOverride => '실드 사용 그대로';
+
+  @override
+  String get eudShieldEnabled => '실드 켜기';
+
+  @override
+  String get eudShieldDisabled => '실드 끄기';
+
+  @override
+  String get eudShieldUnsupported => '지원하지 않는 가져온 값';
+
+  @override
+  String get eudShieldMaximum => '최대 실드 (0–65535)';
+
+  @override
+  String get eudShieldOverrideChk => '맵(CHK)의 최대 실드 값도 직접 바꾸기';
+
+  @override
+  String get eudShieldInitNote =>
+      '이미 배치된 유닛은 맵(CHK)의 실드 비율을 그대로 유지해요. 현재 실드를 채우거나 제한하는 코드는 만들지 않고, 새 유닛에 대한 적용은 실제 게임 확인이 필요해요. 적용하면 프로젝트에만 저장돼요.';
+
+  @override
+  String get eudShieldChooseSupported => '지원하는 실드 사용 값을 고르세요.';
+
+  @override
+  String get eudShieldWholeNumber => '최대 실드는 0부터 65535 사이의 정수여야 해요.';
+
+  @override
+  String get eudFieldsTitle => 'EUD 필드 편집';
+
+  @override
+  String get eudFieldsIntro =>
+      '검증 전 설정이에요. 값을 고를 때마다 “초안에 추가”를 누르고, 마지막에 “초안을 프로젝트에 적용”을 누르세요. 추가하지 않은 입력은 다른 항목을 고르면 사라져요.';
+
+  @override
+  String get eudFieldsField => '바꿀 항목';
+
+  @override
+  String get eudFieldsSearch => '이름 또는 ID로 대상 찾기';
+
+  @override
+  String get eudFieldsTarget => '대상';
+
+  @override
+  String get eudFieldsPlayerNote =>
+      '선택한 플레이어 슬롯에만 적용돼요. 인구수는 절반 단위예요 (400 = 인구 200).';
+
+  @override
+  String get eudFieldsGlobalNote =>
+      '모든 플레이어에게 똑같이 적용되는 종류 설정이에요. DAT 기본값은 불러오지 않고, 같은 값을 쓰는 다른 대상에 대한 영향은 여기서 분석하지 않아요.';
+
+  @override
+  String eudFieldsApi(String member, String unit) {
+    return '후보 API: $member • $unit';
+  }
+
+  @override
+  String eudFieldsStorage(String maximum, String mask) {
+    return '입력 범위: 0–$maximum$mask. 게임 안에서의 한계는 확인되지 않았어요.';
+  }
+
+  @override
+  String eudFieldsMask(String mask) {
+    return ' • 허용 비트: $mask';
+  }
+
+  @override
+  String get eudFieldsValue => '값 (10진 정수)';
+
+  @override
+  String get eudFieldsChoose => '값을 고르세요';
+
+  @override
+  String eudFieldsUnsupported(String value) {
+    return '지원하지 않는 저장 값: $value';
+  }
+
+  @override
+  String get eudFieldsYes => '예 (true)';
+
+  @override
+  String get eudFieldsNo => '아니요 (false)';
+
+  @override
+  String get eudFieldsOverrideChk => '일반 맵(CHK) 설정도 직접 바꾸기';
+
+  @override
+  String get eudFieldsStage => '초안에 추가 / 갱신';
+
+  @override
+  String get eudFieldsRemove => '초안에서 빼기';
+
+  @override
+  String eudFieldsDraftSummary(int count, String value) {
+    return '초안 변경 $count개 • 현재: $value';
+  }
+
+  @override
+  String get eudFieldsNoOverride => '변경 없음';
+
+  @override
+  String get eudFieldsApply => '초안을 프로젝트에 적용';
+
+  @override
+  String get eudFieldsNeedChk => '이 값은 일반 맵(CHK) 설정도 바꿔요. 허용하려면 위 확인란을 체크하세요.';
+
+  @override
+  String get eudFieldsOutOfRange => '허용 범위를 벗어난 값이에요.';
+
+  @override
+  String get eudFieldsInvalid => '선택한 항목에 쓸 수 없는 값이에요.';
 }

@@ -1776,10 +1776,25 @@ class _EditorWorkspace extends StatelessWidget {
                                             ),
                                           ),
                                           if (controller.project != null) ...[
-                                            EudRulesEditor(
-                                              controller: controller,
-                                              enabled:
-                                                  !projectWorkspace!.isBusy,
+                                            Material(
+                                              color: const Color(0xFF1B1F24),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                side: const BorderSide(
+                                                  color: Color(0xFF2C3238),
+                                                ),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  16,
+                                                ),
+                                                child: EudRulesEditor(
+                                                  controller: controller,
+                                                  enabled:
+                                                      !projectWorkspace!.isBusy,
+                                                ),
+                                              ),
                                             ),
                                             Wrap(
                                               children: [

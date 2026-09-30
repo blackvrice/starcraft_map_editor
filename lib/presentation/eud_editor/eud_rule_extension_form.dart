@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/eud/eud_rule_expression.dart';
+import '../localization/l10n.dart';
+import 'eud_rule_labels.dart';
 
 class EudRuleExtensionForm extends StatefulWidget {
   const EudRuleExtensionForm({this.initial, this.onEnabledChanged, super.key});
@@ -48,108 +50,108 @@ class EudRuleExtensionFormState extends State<EudRuleExtensionForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      SwitchListTile(
-        title: const Text('Extended execution rule'),
-        value: _enabled,
-        onChanged: (v) {
-          setState(() => _enabled = v);
-          widget.onEnabledChanged?.call(v);
-        },
-      ),
-      if (_enabled) ...[
-        const Text(
-          'Values: unsigned 16-bit, clamped to 0–65535. Variables 0–15 start at zero. Formula: source × factor + offset. Non-resource actions set their value.',
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Column(
+      children: [
+        SwitchListTile(
+          title: Text(l10n.eudExtTitle),
+          value: _enabled,
+          onChanged: (v) {
+            setState(() => _enabled = v);
+            widget.onEnabledChanged?.call(v);
+          },
         ),
-        DropdownButtonFormField<EudRuleAction>(
-          initialValue: _action,
-          decoration: const InputDecoration(labelText: 'Target action'),
-          items: [
-            for (final a in EudRuleAction.values)
-              DropdownMenuItem(value: a, child: Text(a.name)),
-          ],
-          onChanged: (a) => setState(() {
-            _action = a!;
-            _target.text =
-                {
-                  EudRuleAction.location,
-                  EudRuleAction.followUnit,
-                  EudRuleAction.sound,
-                }.contains(a)
-                ? '1'
-                : '0';
-          }),
-        ),
-        TextField(
-          controller: _target,
-          decoration: const InputDecoration(
-            labelText:
-                'Target ID: variable 0–15, upgrade 0–60, tech 0–43, location 1–255 (except 64), sound string ID; otherwise 0',
+        if (_enabled) ...[
+          Text(l10n.eudExtHelp),
+          DropdownButtonFormField<EudRuleAction>(
+            initialValue: _action,
+            decoration: InputDecoration(labelText: l10n.eudExtTargetAction),
+            items: [
+              for (final a in EudRuleAction.values)
+                DropdownMenuItem(
+                  value: a,
+                  child: Text(EudRuleLabels.action(l10n, a)),
+                ),
+            ],
+            onChanged: (a) => setState(() {
+              _action = a!;
+              _target.text =
+                  {
+                    EudRuleAction.location,
+                    EudRuleAction.followUnit,
+                    EudRuleAction.sound,
+                  }.contains(a)
+                  ? '1'
+                  : '0';
+            }),
           ),
-        ),
-        TextField(
-          controller: _unit,
-          decoration: const InputDecoration(
-            labelText: 'Unit type ID (0–227; instance/follow actions)',
-          ),
-        ),
-        if ({
-          EudRuleAction.unitHp,
-          EudRuleAction.unitShields,
-          EudRuleAction.unitEnergy,
-          EudRuleAction.followUnit,
-        }.contains(_action))
-          const Text(
-            'Binds the first living unit of this type owned by the selected player. Death, morph or ownership change invalidates the binding permanently. It never acquires a replacement unit. At most four unit rules.',
-          ),
-        if (_action == EudRuleAction.text)
           TextField(
-            controller: _text,
-            decoration: const InputDecoration(
-              labelText: 'Text prefix (selected player only)',
-            ),
+            controller: _target,
+            decoration: InputDecoration(labelText: l10n.eudExtTargetId),
           ),
-        if (_action == EudRuleAction.sound)
-          const Text(
-            'Use a registered WAV string ID from Resources. Only the selected player hears the sound.',
+          TextField(
+            controller: _unit,
+            decoration: InputDecoration(labelText: l10n.eudExtUnitType),
           ),
-        DropdownButtonFormField<EudRuleTiming>(
-          initialValue: _timing,
-          decoration: const InputDecoration(labelText: 'Execution timing'),
-          items: [
-            for (final t in EudRuleTiming.values)
-              DropdownMenuItem(value: t, child: Text(t.name)),
-          ],
-          onChanged: (t) => setState(() => _timing = t!),
-        ),
-        _ValueForm(
-          key: _values[0],
-          label: 'Condition left',
-          initial: widget.initial?.left,
-        ),
-        _ValueForm(
-          key: _values[1],
-          label: 'Condition right',
-          initial: widget.initial?.right,
-        ),
-        _ValueForm(
-          key: _values[2],
-          label: 'Action value',
-          initial: widget.initial?.value,
-        ),
-        if (_action == EudRuleAction.location)
-          for (var i = 0; i < 4; i++)
-            _ValueForm(
-              key: _values[i + 3],
-              label: ['X', 'Y', 'Width', 'Height'][i],
-              initial: widget.initial?.coordinates.length == 4
-                  ? widget.initial!.coordinates[i]
-                  : null,
+          if ({
+            EudRuleAction.unitHp,
+            EudRuleAction.unitShields,
+            EudRuleAction.unitEnergy,
+            EudRuleAction.followUnit,
+          }.contains(_action))
+            Text(l10n.eudExtUnitBindHelp),
+          if (_action == EudRuleAction.text)
+            TextField(
+              controller: _text,
+              decoration: InputDecoration(labelText: l10n.eudExtTextPrefix),
             ),
+          if (_action == EudRuleAction.sound) Text(l10n.eudExtSoundHelp),
+          DropdownButtonFormField<EudRuleTiming>(
+            initialValue: _timing,
+            decoration: InputDecoration(labelText: l10n.eudExtTiming),
+            items: [
+              for (final t in EudRuleTiming.values)
+                DropdownMenuItem(
+                  value: t,
+                  child: Text(EudRuleLabels.timing(l10n, t)),
+                ),
+            ],
+            onChanged: (t) => setState(() => _timing = t!),
+          ),
+          _ValueForm(
+            key: _values[0],
+            label: l10n.eudExtLeft,
+            initial: widget.initial?.left,
+          ),
+          _ValueForm(
+            key: _values[1],
+            label: l10n.eudExtRight,
+            initial: widget.initial?.right,
+          ),
+          _ValueForm(
+            key: _values[2],
+            label: l10n.eudExtValue,
+            initial: widget.initial?.value,
+          ),
+          if (_action == EudRuleAction.location)
+            for (var i = 0; i < 4; i++)
+              _ValueForm(
+                key: _values[i + 3],
+                label: [
+                  l10n.eudExtX,
+                  l10n.eudExtY,
+                  l10n.eudExtWidth,
+                  l10n.eudExtHeight,
+                ][i],
+                initial: widget.initial?.coordinates.length == 4
+                    ? widget.initial!.coordinates[i]
+                    : null,
+              ),
+        ],
       ],
-    ],
-  );
+    );
+  }
 }
 
 class _ValueForm extends StatefulWidget {
@@ -191,39 +193,45 @@ class _ValueFormState extends State<_ValueForm> {
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 6),
-    child: Column(
-      children: [
-        Text(widget.label, style: Theme.of(context).textTheme.titleSmall),
-        DropdownButtonFormField<EudValueSource>(
-          initialValue: _source,
-          items: [
-            for (final s in EudValueSource.values)
-              DropdownMenuItem(value: s, child: Text(s.name)),
-          ],
-          onChanged: (s) => setState(() {
-            _source = s!;
-            _index.text = '0';
-          }),
-        ),
-        Row(
-          children: [
-            for (final item in [
-              (_index, 'Constant / ID'),
-              (_player, 'Player 1–8'),
-              (_factor, '× (0–255)'),
-              (_offset, '+ offset'),
-            ])
-              Expanded(
-                child: TextField(
-                  controller: item.$1,
-                  decoration: InputDecoration(labelText: item.$2),
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        children: [
+          Text(widget.label, style: Theme.of(context).textTheme.titleSmall),
+          DropdownButtonFormField<EudValueSource>(
+            initialValue: _source,
+            items: [
+              for (final s in EudValueSource.values)
+                DropdownMenuItem(
+                  value: s,
+                  child: Text(EudRuleLabels.source(l10n, s)),
                 ),
-              ),
-          ],
-        ),
-      ],
-    ),
-  );
+            ],
+            onChanged: (s) => setState(() {
+              _source = s!;
+              _index.text = '0';
+            }),
+          ),
+          Row(
+            children: [
+              for (final item in [
+                (_index, l10n.eudExtConstantId),
+                (_player, l10n.eudExtPlayerRange),
+                (_factor, l10n.eudExtFactor),
+                (_offset, l10n.eudExtOffset),
+              ])
+                Expanded(
+                  child: TextField(
+                    controller: item.$1,
+                    decoration: InputDecoration(labelText: item.$2),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }
