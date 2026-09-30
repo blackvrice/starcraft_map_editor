@@ -42,6 +42,7 @@ import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
+import '../eud_editor/eud_build_steps.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../localization/l10n.dart';
 import '../map_canvas/map_canvas.dart';
@@ -712,6 +713,39 @@ class _EditorShellState extends State<EditorShell> {
       ...objectSpriteTextureState.diagnostics,
     ];
 
+    final VoidCallback? prepareEud =
+        widget.eudBuildPreparationController == null || eudBuildState.isActive
+        ? null
+        : () => showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => EudBuildPreparationDialog(
+              controller: widget.eudBuildPreparationController!,
+              baseMap: widget.openMapController.state.session?.sourcePath ?? '',
+              entrySource:
+                  widget.eudSourceController.state.document?.sourcePath ?? '',
+            ),
+          );
+    final activeSession = widget.openMapController.state.session;
+    final activeEudDocument = widget.eudSourceController.state.document;
+    final eudBuildSteps = activeEudDocument == null
+        ? null
+        : EudBuildSteps(
+            map: activeSession == null
+                ? EudBuildMapStep.none
+                : activeSession.isDirty || activeSession.sourcePath == null
+                ? EudBuildMapStep.dirty
+                : EudBuildMapStep.saved,
+            source: activeEudDocument.isUntitled
+                ? EudBuildSourceStep.untitled
+                : activeEudDocument.isDirty
+                ? EudBuildSourceStep.dirty
+                : EudBuildSourceStep.saved,
+            status: eudBuildState.status,
+            onPrepare: prepareEud,
+            onBuild: buildEud,
+          );
+
     final shortcuts = <ShortcutActivator, VoidCallback>{};
     if (openMap != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyN, control: true)] =
@@ -782,31 +816,7 @@ class _EditorShellState extends State<EditorShell> {
                           widget.openMapController.state.session == null
                       ? null
                       : _resizeMap,
-                  prepareEud:
-                      widget.eudBuildPreparationController == null ||
-                          eudBuildState.isActive
-                      ? null
-                      : () => showDialog<void>(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => EudBuildPreparationDialog(
-                            controller: widget.eudBuildPreparationController!,
-                            baseMap:
-                                widget
-                                    .openMapController
-                                    .state
-                                    .session
-                                    ?.sourcePath ??
-                                '',
-                            entrySource:
-                                widget
-                                    .eudSourceController
-                                    .state
-                                    .document
-                                    ?.sourcePath ??
-                                '',
-                          ),
-                        ),
+                  prepareEud: prepareEud,
                   openEudTools: widget.eudToolSettingsController == null
                       ? null
                       : () => showDialog<void>(
@@ -924,6 +934,7 @@ class _EditorShellState extends State<EditorShell> {
                         future: _recentProjects,
                         builder: (context, recentProjectsSnapshot) {
                           return _EditorWorkspace(
+                            eudBuildSteps: eudBuildSteps,
                             openMap: openMap,
                             openMapState:
                                 openMapSnapshot.data ??
@@ -1558,6 +1569,7 @@ class _EnvironmentBadge extends StatelessWidget {
 
 class _EditorWorkspace extends StatelessWidget {
   const _EditorWorkspace({
+    this.eudBuildSteps,
     required this.openMap,
     required this.openMapState,
     required this.recentProjects,
@@ -1586,6 +1598,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onShowBriefing,
   });
 
+  final Widget? eudBuildSteps;
   final VoidCallback? openMap;
   final OpenMapState openMapState;
   final List<RecentProject> recentProjects;
@@ -1703,6 +1716,7 @@ class _EditorWorkspace extends StatelessWidget {
                       : 0,
                   children: [
                     _MapWorkspace(
+                      eudBuildSteps: eudBuildSteps,
                       openMap: openMap,
                       openMapState: openMapState,
                       recentProjects: recentProjects,
@@ -2201,6 +2215,7 @@ class _EmptyPaneMessage extends StatelessWidget {
 
 class _MapWorkspace extends StatelessWidget {
   const _MapWorkspace({
+    this.eudBuildSteps,
     required this.openMap,
     required this.openMapState,
     required this.recentProjects,
@@ -2220,6 +2235,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.onShowMap,
   });
 
+  final Widget? eudBuildSteps;
   final VoidCallback? openMap;
   final OpenMapState openMapState;
   final List<RecentProject> recentProjects;
@@ -2243,10 +2259,21 @@ class _MapWorkspace extends StatelessWidget {
     final session = openMapState.session;
     final eudDocument = eudSourceController.state.document;
     if (workspaceView == _WorkspaceView.eud && eudDocument != null) {
-      return EudSourceEditor(
+      final editor = EudSourceEditor(
         document: eudDocument,
         sourceController: eudSourceController,
       );
+      final steps = eudBuildSteps;
+      return steps == null
+          ? editor
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                steps,
+                const Divider(height: 1),
+                Expanded(child: editor),
+              ],
+            );
     }
     if (workspaceView == _WorkspaceView.catalog && session != null) {
       return PlacementCatalogPane(
@@ -4785,6 +4812,19 @@ class _EudBuildLog extends StatelessWidget {
     }
     final items = _buildLogItems(l10n, record);
 
+    // A plain-language result sits beside the raw euddraft log so users see
+    // what happened first and can still read every original line.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: 340, child: _EudBuildSummary(record: record)),
+        const VerticalDivider(width: 1),
+        Expanded(child: _rawLog(items)),
+      ],
+    );
+  }
+
+  Widget _rawLog(List<_EudBuildLogItem> items) {
     return ListView.builder(
       key: const Key('eud-build-log'),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -4828,6 +4868,119 @@ String _emptyMessage(AppLocalizations l10n, EudBuildStatus status) {
     EudBuildStatus.failed => l10n.buildFailedNoOutput,
     EudBuildStatus.cancelled => l10n.buildCancelled,
   };
+}
+
+class _EudBuildSummary extends StatelessWidget {
+  const _EudBuildSummary({required this.record});
+
+  final EudBuildRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final (icon, color, headline) = switch (record.status) {
+      EudBuildRecordStatus.running => (
+        Icons.pending_outlined,
+        const Color(0xFF8EA0BB),
+        l10n.buildSummaryRunning,
+      ),
+      EudBuildRecordStatus.succeeded => (
+        Icons.check_circle_outline,
+        const Color(0xFF7ADAA5),
+        l10n.buildSummarySucceeded,
+      ),
+      EudBuildRecordStatus.failed => (
+        Icons.error_outline,
+        const Color(0xFFFF7B86),
+        l10n.buildSummaryFailed,
+      ),
+      EudBuildRecordStatus.cancelled => (
+        Icons.stop_circle_outlined,
+        const Color(0xFFF0B85A),
+        l10n.buildSummaryCancelled,
+      ),
+    };
+    final firstProblem = record.diagnostics
+        .where(
+          (diagnostic) =>
+              diagnostic.severity == DiagnosticSeverity.error ||
+              diagnostic.severity == DiagnosticSeverity.fatal,
+        )
+        .firstOrNull;
+    final problemLocation = firstProblem == null
+        ? null
+        : _diagnosticLocationLabel(firstProblem);
+    return SingleChildScrollView(
+      key: const Key('eud-build-summary'),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  headline,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (firstProblem != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              l10n.buildSummaryFirstError(
+                problemLocation == null
+                    ? firstProblem.message
+                    : l10n.buildSummaryAt(
+                        problemLocation,
+                        firstProblem.message,
+                      ),
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, height: 1.4),
+            ),
+          ],
+          if (record.status == EudBuildRecordStatus.failed ||
+              record.status == EudBuildRecordStatus.cancelled) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.shield_outlined,
+                  size: 14,
+                  color: Color(0xFF9FDCB2),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.buildSummaryUnchanged,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9FDCB2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            l10n.buildSummaryRawLog,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF8994A8)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 final class _EudBuildLogItem {

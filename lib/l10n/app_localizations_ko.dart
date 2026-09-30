@@ -887,4 +887,392 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get terrainDataReadOnly =>
       '읽기 전용 검사입니다. 원시 브러시는 MTXM만 변경하고 TILE/ISOM은 보존합니다. 등각 지형·경사로 생성은 아직 지원하지 않습니다.';
+
+  @override
+  String get newMapTitle => '새 맵 만들기';
+
+  @override
+  String get newMapStepBasics => '크기와 지형';
+
+  @override
+  String get newMapStepPlayers => '플레이어';
+
+  @override
+  String get newMapStepReview => '확인하고 만들기';
+
+  @override
+  String get newMapStepCurrent => '지금 단계';
+
+  @override
+  String get newMapSideNote =>
+      '크기는 나중에 파일 → 맵 크기 변경에서 바꿀 수 있어요. 새 맵은 “다른 이름으로 저장”으로 처음 저장해요.';
+
+  @override
+  String get newMapName => '맵 이름';
+
+  @override
+  String get newMapDefaultTitle => '제목 없는 시나리오';
+
+  @override
+  String get newMapDescription => '설명 (선택)';
+
+  @override
+  String get newMapSize => '크기';
+
+  @override
+  String get newMapSizeSmall => '작게';
+
+  @override
+  String get newMapSizeSmallNote => '1:1 연습';
+
+  @override
+  String get newMapSizeCompact => '조금 작게';
+
+  @override
+  String get newMapSizeCompactNote => '2인';
+
+  @override
+  String get newMapSizeMedium => '보통';
+
+  @override
+  String get newMapSizeMediumNote => '4인 추천';
+
+  @override
+  String get newMapSizeLarge => '크게';
+
+  @override
+  String get newMapSizeLargeNote => '6~8인';
+
+  @override
+  String get newMapSizeHuge => '아주 크게';
+
+  @override
+  String get newMapSizeHugeNote => '대형 UMS';
+
+  @override
+  String get newMapSizeCustom => '직접 입력';
+
+  @override
+  String get newMapSizeCustomNote => '최대 256';
+
+  @override
+  String get newMapWidth => '가로 (타일)';
+
+  @override
+  String get newMapHeight => '세로 (타일)';
+
+  @override
+  String newMapSizeValue(int width, int height) {
+    return '$width × $height';
+  }
+
+  @override
+  String get newMapTileset => '타일셋';
+
+  @override
+  String get newMapTilesetHint => '맵 전체의 분위기예요. 만든 뒤에는 바꿀 수 없어요.';
+
+  @override
+  String get tilesetBadlands => '배드랜드';
+
+  @override
+  String get tilesetSpacePlatform => '우주 정거장';
+
+  @override
+  String get tilesetInstallation => '설치 기지';
+
+  @override
+  String get tilesetAshworld => '잿빛 세계';
+
+  @override
+  String get tilesetJungle => '정글';
+
+  @override
+  String get tilesetDesert => '사막';
+
+  @override
+  String get tilesetIce => '얼음';
+
+  @override
+  String get tilesetTwilight => '황혼';
+
+  @override
+  String get newMapInitialTile => '처음 깔 타일';
+
+  @override
+  String get newMapInitialTileHint =>
+      '맵 전체를 이 원시 타일로 채워요. ISOM 지형은 만들지 않으므로 이동 가능 여부는 보장되지 않아요.';
+
+  @override
+  String get newMapTileRequired => '맵을 만들려면 처음 깔 타일을 골라 주세요.';
+
+  @override
+  String get newMapTilesLoading => 'StarCraft 데이터에서 타일을 불러오는 중…';
+
+  @override
+  String newMapTilePage(int first, int last, int total) {
+    return '$total개 중 $first–$last';
+  }
+
+  @override
+  String get newMapPrevious => '이전';
+
+  @override
+  String get newMapNext => '다음';
+
+  @override
+  String get newMapReload => '다시 불러오기';
+
+  @override
+  String get newMapPlayersTitle => '몇 명이 플레이하나요?';
+
+  @override
+  String get newMapPlayersHint =>
+      '사람 플레이어마다 테란 시작 위치를 만들어요. 종족과 슬롯은 나중에 플레이어 설정에서 바꿀 수 있어요.';
+
+  @override
+  String newMapPlayersValue(int players) {
+    return '$players명';
+  }
+
+  @override
+  String get newMapReviewTitle => '이렇게 만들어요';
+
+  @override
+  String get newMapReviewFormat => '브루드 워 UMS (.scx)';
+
+  @override
+  String get newMapReviewNoTriggers => '승리·자원 트리거는 넣지 않아요. 트리거 화면에서 추가하세요.';
+
+  @override
+  String newMapReviewTile(String tile) {
+    return '처음 타일 #$tile';
+  }
+
+  @override
+  String get newMapReviewNoTile => '처음 타일을 아직 고르지 않았어요';
+
+  @override
+  String get newMapCancel => '취소';
+
+  @override
+  String get newMapBack => '이전';
+
+  @override
+  String get newMapContinue => '다음';
+
+  @override
+  String get newMapCreate => '만들기';
+
+  @override
+  String get newMapDiscardTitle => '저장 안 된 맵 변경을 버릴까요?';
+
+  @override
+  String get newMapDiscardBody => '새 맵을 만들면 지금 문서가 바뀌어요. 변경을 남기려면 먼저 저장하세요.';
+
+  @override
+  String get newMapKeepCurrent => '지금 맵 유지';
+
+  @override
+  String get newMapDiscardAndCreate => '버리고 만들기';
+
+  @override
+  String get catalogTitle => '배치할 항목';
+
+  @override
+  String get catalogKindTile => '지형 타일';
+
+  @override
+  String get catalogKindDoodad => '두다드';
+
+  @override
+  String get catalogKindUnit => '유닛';
+
+  @override
+  String get catalogKindSprite => '스프라이트';
+
+  @override
+  String get catalogKindSpriteUnit => '스프라이트 유닛';
+
+  @override
+  String get catalogCategories => '분류';
+
+  @override
+  String get catalogCategoryAll => '전체';
+
+  @override
+  String catalogTilesetTitle(String tileset) {
+    return '$tileset 맵';
+  }
+
+  @override
+  String get catalogTilesetHint => '이 맵의 타일셋에 맞는 항목만 보여줘요.';
+
+  @override
+  String get catalogSearchHint => '이름, #ID, 종류로 찾기 (예: 벙커, #125)';
+
+  @override
+  String get catalogBackToMap => '맵으로 돌아가기';
+
+  @override
+  String get catalogPlaceableOnly => '배치 가능한 것만';
+
+  @override
+  String catalogShownCount(int count) {
+    return '$count개 표시';
+  }
+
+  @override
+  String get catalogEmpty => '검색과 맞는 항목이 없어요.';
+
+  @override
+  String get catalogDetailEmpty => '항목을 고르면 자세한 정보와 배치 버튼이 보여요.';
+
+  @override
+  String catalogFootprint(int width, int height) {
+    return '크기 $width × $height 타일';
+  }
+
+  @override
+  String catalogFootprintOverlay(int width, int height) {
+    return '크기 $width × $height 타일 + 오버레이';
+  }
+
+  @override
+  String get catalogOwner => '누구의 것인가요?';
+
+  @override
+  String catalogOwnerPlayer(int count) {
+    return '플레이어 $count';
+  }
+
+  @override
+  String get catalogKeepPlacing => '클릭할 때마다 계속 배치';
+
+  @override
+  String get catalogHowTo => '배치 방법';
+
+  @override
+  String get catalogHowTo1 => '① 아래 버튼을 누르면 맵으로 돌아가요.';
+
+  @override
+  String get catalogHowTo2 => '② 윤곽이 보이는 곳을 클릭해 놓아요.';
+
+  @override
+  String get catalogHowTo3 => '③ 빨간 윤곽은 맵 밖이라 놓을 수 없어요. Esc로 취소해요.';
+
+  @override
+  String get catalogPlace => '맵에 배치하기';
+
+  @override
+  String get catalogCannotPlace => '이 항목은 배치할 수 없어요.';
+
+  @override
+  String get catalogIssueRelation => '애드온처럼 다른 건물이 필요한 유닛은 단독으로 배치할 수 없어요.';
+
+  @override
+  String get catalogIssueCapability => '로컬 게임 파일에서 유닛 정보를 읽지 못해 배치를 막아 두었어요.';
+
+  @override
+  String get catalogIssueGraphic =>
+      '그래픽을 불러오지 못해, 보이지 않는 오브젝트가 생기지 않도록 막아 두었어요.';
+
+  @override
+  String get catalogIssueRecipe => '두다드 배치 정보가 불완전해 안전하게 놓을 수 없어요.';
+
+  @override
+  String catalogIssueCode(String code) {
+    return '코드: $code';
+  }
+
+  @override
+  String get buildStepsLabel => 'EUD 맵을 만드는 단계';
+
+  @override
+  String get buildStepMap => '맵 저장';
+
+  @override
+  String get buildStepMapNone => '열린 맵이 없어요';
+
+  @override
+  String get buildStepMapDirty => '저장 안 된 변경 · 다른 이름으로 저장';
+
+  @override
+  String get buildStepMapSaved => '저장됨';
+
+  @override
+  String get buildStepSource => '스크립트 저장';
+
+  @override
+  String get buildStepSourceUntitled => '파일로 저장해야 빌드할 수 있어요';
+
+  @override
+  String get buildStepSourceDirty => '아직 저장 안 됨';
+
+  @override
+  String get buildStepSourceSaved => '저장됨';
+
+  @override
+  String get buildStepPrepare => '빌드 준비';
+
+  @override
+  String get buildStepPrepareNeeded => '입력·출력 파일을 골라 주세요';
+
+  @override
+  String get buildStepPrepareReady => '준비됨';
+
+  @override
+  String get buildStepPrepareAction => '준비…';
+
+  @override
+  String get buildStepRun => '빌드';
+
+  @override
+  String get buildStepRunReady => '실행할 수 있어요';
+
+  @override
+  String get buildStepRunBusy => '빌드 중…';
+
+  @override
+  String get buildStepRunSucceeded => '성공';
+
+  @override
+  String get buildStepRunFailed => '실패 · 아래 결과를 확인하세요';
+
+  @override
+  String get buildStepRunCancelled => '취소됨';
+
+  @override
+  String get buildStepRunBlocked => '앞 단계를 먼저 마쳐 주세요';
+
+  @override
+  String get buildSafetyNote => '원본 맵은 절대 덮어쓰지 않아요';
+
+  @override
+  String get buildSummarySucceeded => 'EUD 맵을 만들었어요';
+
+  @override
+  String get buildSummaryFailed => '빌드하지 못했어요';
+
+  @override
+  String get buildSummaryCancelled => '빌드를 취소했어요';
+
+  @override
+  String get buildSummaryRunning => 'euddraft로 빌드하는 중…';
+
+  @override
+  String buildSummaryFirstError(String message) {
+    return '첫 번째 문제: $message';
+  }
+
+  @override
+  String buildSummaryAt(String location, String message) {
+    return '$location: $message';
+  }
+
+  @override
+  String get buildSummaryUnchanged => '원본 맵과 이전 출력 파일은 그대로예요.';
+
+  @override
+  String get buildSummaryRawLog => '아래는 euddraft 원문 로그예요';
 }

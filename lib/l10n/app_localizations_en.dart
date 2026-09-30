@@ -903,4 +903,404 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get terrainDataReadOnly =>
       'Read-only inspection. Raw brushes change MTXM only; TILE/ISOM are preserved. Isometric and ramp generation is not available yet.';
+
+  @override
+  String get newMapTitle => 'New Map';
+
+  @override
+  String get newMapStepBasics => 'Size and terrain';
+
+  @override
+  String get newMapStepPlayers => 'Players';
+
+  @override
+  String get newMapStepReview => 'Review and create';
+
+  @override
+  String get newMapStepCurrent => 'Current step';
+
+  @override
+  String get newMapSideNote =>
+      'You can resize the map later from File → Resize Map. A new map is saved for the first time with Save As.';
+
+  @override
+  String get newMapName => 'Map title';
+
+  @override
+  String get newMapDefaultTitle => 'Untitled Scenario';
+
+  @override
+  String get newMapDescription => 'Description (optional)';
+
+  @override
+  String get newMapSize => 'Size';
+
+  @override
+  String get newMapSizeSmall => 'Small';
+
+  @override
+  String get newMapSizeSmallNote => '1 vs 1 practice';
+
+  @override
+  String get newMapSizeCompact => 'Compact';
+
+  @override
+  String get newMapSizeCompactNote => '2 players';
+
+  @override
+  String get newMapSizeMedium => 'Medium';
+
+  @override
+  String get newMapSizeMediumNote => 'Recommended for 4';
+
+  @override
+  String get newMapSizeLarge => 'Large';
+
+  @override
+  String get newMapSizeLargeNote => '6–8 players';
+
+  @override
+  String get newMapSizeHuge => 'Huge';
+
+  @override
+  String get newMapSizeHugeNote => 'Large UMS';
+
+  @override
+  String get newMapSizeCustom => 'Custom';
+
+  @override
+  String get newMapSizeCustomNote => 'Up to 256';
+
+  @override
+  String get newMapWidth => 'Width (tiles)';
+
+  @override
+  String get newMapHeight => 'Height (tiles)';
+
+  @override
+  String newMapSizeValue(int width, int height) {
+    return '$width × $height';
+  }
+
+  @override
+  String get newMapTileset => 'Tileset';
+
+  @override
+  String get newMapTilesetHint =>
+      'The look of the whole map. It cannot be changed after creation.';
+
+  @override
+  String get tilesetBadlands => 'Badlands';
+
+  @override
+  String get tilesetSpacePlatform => 'Space Platform';
+
+  @override
+  String get tilesetInstallation => 'Installation';
+
+  @override
+  String get tilesetAshworld => 'Ashworld';
+
+  @override
+  String get tilesetJungle => 'Jungle';
+
+  @override
+  String get tilesetDesert => 'Desert';
+
+  @override
+  String get tilesetIce => 'Ice';
+
+  @override
+  String get tilesetTwilight => 'Twilight';
+
+  @override
+  String get newMapInitialTile => 'Starting tile';
+
+  @override
+  String get newMapInitialTileHint =>
+      'The whole map is filled with this raw tile. ISOM terrain is not generated, so walkability is not guaranteed.';
+
+  @override
+  String get newMapTileRequired => 'Pick a starting tile to create the map.';
+
+  @override
+  String get newMapTilesLoading => 'Loading tiles from StarCraft data…';
+
+  @override
+  String newMapTilePage(int first, int last, int total) {
+    return '$first–$last of $total';
+  }
+
+  @override
+  String get newMapPrevious => 'Previous';
+
+  @override
+  String get newMapNext => 'Next';
+
+  @override
+  String get newMapReload => 'Reload';
+
+  @override
+  String get newMapPlayersTitle => 'How many people will play?';
+
+  @override
+  String get newMapPlayersHint =>
+      'Each human player gets a Terran start location. You can change races and slots later in Player Settings.';
+
+  @override
+  String newMapPlayersValue(int players) {
+    return '$players players';
+  }
+
+  @override
+  String get newMapReviewTitle => 'Ready to create';
+
+  @override
+  String get newMapReviewFormat => 'Brood War UMS (.scx)';
+
+  @override
+  String get newMapReviewNoTriggers =>
+      'No victory or resource triggers are added. Add them in Triggers.';
+
+  @override
+  String newMapReviewTile(String tile) {
+    return 'Starting tile #$tile';
+  }
+
+  @override
+  String get newMapReviewNoTile => 'No starting tile yet';
+
+  @override
+  String get newMapCancel => 'Cancel';
+
+  @override
+  String get newMapBack => 'Back';
+
+  @override
+  String get newMapContinue => 'Next';
+
+  @override
+  String get newMapCreate => 'Create';
+
+  @override
+  String get newMapDiscardTitle => 'Discard unsaved map changes?';
+
+  @override
+  String get newMapDiscardBody =>
+      'Creating a new map replaces the current document. Save it first if you want to keep these changes.';
+
+  @override
+  String get newMapKeepCurrent => 'Keep current map';
+
+  @override
+  String get newMapDiscardAndCreate => 'Discard and create';
+
+  @override
+  String get catalogTitle => 'What to place';
+
+  @override
+  String get catalogKindTile => 'Terrain tiles';
+
+  @override
+  String get catalogKindDoodad => 'Doodads';
+
+  @override
+  String get catalogKindUnit => 'Units';
+
+  @override
+  String get catalogKindSprite => 'Sprites';
+
+  @override
+  String get catalogKindSpriteUnit => 'Sprite-units';
+
+  @override
+  String get catalogCategories => 'Categories';
+
+  @override
+  String get catalogCategoryAll => 'All';
+
+  @override
+  String catalogTilesetTitle(String tileset) {
+    return '$tileset map';
+  }
+
+  @override
+  String get catalogTilesetHint =>
+      'Only entries that match this map\'s tileset are shown.';
+
+  @override
+  String get catalogSearchHint =>
+      'Search by name, #ID or type (e.g. Bunker, #125)';
+
+  @override
+  String get catalogBackToMap => 'Back to map';
+
+  @override
+  String get catalogPlaceableOnly => 'Placeable only';
+
+  @override
+  String catalogShownCount(int count) {
+    return '$count shown';
+  }
+
+  @override
+  String get catalogEmpty => 'No catalog entry matches this search.';
+
+  @override
+  String get catalogDetailEmpty =>
+      'Select an entry to see its details and place it.';
+
+  @override
+  String catalogFootprint(int width, int height) {
+    return 'Footprint $width × $height tiles';
+  }
+
+  @override
+  String catalogFootprintOverlay(int width, int height) {
+    return 'Footprint $width × $height tiles + overlay';
+  }
+
+  @override
+  String get catalogOwner => 'Who owns it?';
+
+  @override
+  String catalogOwnerPlayer(int count) {
+    return 'Player $count';
+  }
+
+  @override
+  String get catalogKeepPlacing => 'Keep placing on each click';
+
+  @override
+  String get catalogHowTo => 'How to place';
+
+  @override
+  String get catalogHowTo1 => '1. Press the button below to return to the map.';
+
+  @override
+  String get catalogHowTo2 =>
+      '2. Click where the outline is shown to place it.';
+
+  @override
+  String get catalogHowTo3 =>
+      '3. A red outline is outside the map. Press Esc to cancel.';
+
+  @override
+  String get catalogPlace => 'Place on map';
+
+  @override
+  String get catalogCannotPlace => 'This entry cannot be placed.';
+
+  @override
+  String get catalogIssueRelation =>
+      'Add-ons and similar units need another building, so they cannot be placed on their own.';
+
+  @override
+  String get catalogIssueCapability =>
+      'The unit data could not be read from the local game files, so placement is locked.';
+
+  @override
+  String get catalogIssueGraphic =>
+      'The graphic could not be loaded, so the entry is locked to avoid invisible objects.';
+
+  @override
+  String get catalogIssueRecipe =>
+      'The doodad layout data is incomplete, so it cannot be placed safely.';
+
+  @override
+  String catalogIssueCode(String code) {
+    return 'Code: $code';
+  }
+
+  @override
+  String get buildStepsLabel => 'Steps to an EUD map';
+
+  @override
+  String get buildStepMap => 'Save the map';
+
+  @override
+  String get buildStepMapNone => 'No map is open';
+
+  @override
+  String get buildStepMapDirty => 'Unsaved changes · use Save As';
+
+  @override
+  String get buildStepMapSaved => 'Saved';
+
+  @override
+  String get buildStepSource => 'Save the script';
+
+  @override
+  String get buildStepSourceUntitled => 'Save it as a file to build';
+
+  @override
+  String get buildStepSourceDirty => 'Not saved yet';
+
+  @override
+  String get buildStepSourceSaved => 'Saved';
+
+  @override
+  String get buildStepPrepare => 'Prepare the build';
+
+  @override
+  String get buildStepPrepareNeeded => 'Choose input and output files';
+
+  @override
+  String get buildStepPrepareReady => 'Ready';
+
+  @override
+  String get buildStepPrepareAction => 'Prepare…';
+
+  @override
+  String get buildStepRun => 'Build';
+
+  @override
+  String get buildStepRunReady => 'Ready to run';
+
+  @override
+  String get buildStepRunBusy => 'Building…';
+
+  @override
+  String get buildStepRunSucceeded => 'Succeeded';
+
+  @override
+  String get buildStepRunFailed => 'Failed · see the result below';
+
+  @override
+  String get buildStepRunCancelled => 'Cancelled';
+
+  @override
+  String get buildStepRunBlocked => 'Finish the earlier steps first';
+
+  @override
+  String get buildSafetyNote => 'The original map is never overwritten';
+
+  @override
+  String get buildSummarySucceeded => 'The EUD map was built';
+
+  @override
+  String get buildSummaryFailed => 'The build did not finish';
+
+  @override
+  String get buildSummaryCancelled => 'The build was cancelled';
+
+  @override
+  String get buildSummaryRunning => 'Building with euddraft…';
+
+  @override
+  String buildSummaryFirstError(String message) {
+    return 'First problem: $message';
+  }
+
+  @override
+  String buildSummaryAt(String location, String message) {
+    return '$location: $message';
+  }
+
+  @override
+  String get buildSummaryUnchanged =>
+      'The original map and earlier output were left unchanged.';
+
+  @override
+  String get buildSummaryRawLog => 'Raw euddraft log below';
 }

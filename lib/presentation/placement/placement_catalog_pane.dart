@@ -4,22 +4,77 @@ import 'package:flutter/material.dart';
 
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
+import '../../domain/assets/starcraft_data_asset_manifest.dart';
+import '../localization/l10n.dart';
 import 'catalog_thumbnail.dart';
 
 const _kinds = <StarCraftPlacementKind>[
-  StarCraftPlacementKind.tile,
-  StarCraftPlacementKind.doodad,
   StarCraftPlacementKind.unit,
+  StarCraftPlacementKind.doodad,
   StarCraftPlacementKind.pureSprite,
+  StarCraftPlacementKind.tile,
 ];
 
-String _tabLabel(StarCraftPlacementKind kind) => switch (kind) {
-  StarCraftPlacementKind.tile => 'Tiles',
-  StarCraftPlacementKind.doodad => 'Doodads',
-  StarCraftPlacementKind.unit => 'Units',
-  StarCraftPlacementKind.pureSprite => 'Sprites',
-  StarCraftPlacementKind.spriteUnit => 'Sprite-units',
+/// Player colours used for owner buttons. The number is always shown as well,
+/// so colour is never the only cue.
+const _playerColors = <Color>[
+  Color(0xFFD8434B),
+  Color(0xFF3A6FE0),
+  Color(0xFF2FB7A6),
+  Color(0xFF9A5AD0),
+  Color(0xFFE38A2F),
+  Color(0xFF6B4A2E),
+  Color(0xFFE9E9E9),
+  Color(0xFFE8D34A),
+  Color(0xFF8A8F96),
+  Color(0xFF5A7F3A),
+  Color(0xFF7E8FB0),
+  Color(0xFF3AA6D0),
+];
+
+String _kindLabel(AppLocalizations l10n, StarCraftPlacementKind kind) =>
+    switch (kind) {
+      StarCraftPlacementKind.tile => l10n.catalogKindTile,
+      StarCraftPlacementKind.doodad => l10n.catalogKindDoodad,
+      StarCraftPlacementKind.unit => l10n.catalogKindUnit,
+      StarCraftPlacementKind.pureSprite => l10n.catalogKindSprite,
+      StarCraftPlacementKind.spriteUnit => l10n.catalogKindSpriteUnit,
+    };
+
+IconData _kindIcon(StarCraftPlacementKind kind) => switch (kind) {
+  StarCraftPlacementKind.tile => Icons.grid_4x4_rounded,
+  StarCraftPlacementKind.doodad => Icons.park_outlined,
+  StarCraftPlacementKind.unit => Icons.adjust_rounded,
+  StarCraftPlacementKind.pureSprite ||
+  StarCraftPlacementKind.spriteUnit => Icons.auto_awesome_outlined,
 };
+
+String _tilesetLabel(AppLocalizations l10n, StarCraftTilesetAssetSet t) =>
+    switch (t) {
+      StarCraftTilesetAssetSet.badlands => l10n.tilesetBadlands,
+      StarCraftTilesetAssetSet.spacePlatform => l10n.tilesetSpacePlatform,
+      StarCraftTilesetAssetSet.installation => l10n.tilesetInstallation,
+      StarCraftTilesetAssetSet.ashworld => l10n.tilesetAshworld,
+      StarCraftTilesetAssetSet.jungle => l10n.tilesetJungle,
+      StarCraftTilesetAssetSet.desert => l10n.tilesetDesert,
+      StarCraftTilesetAssetSet.ice => l10n.tilesetIce,
+      StarCraftTilesetAssetSet.twilight => l10n.tilesetTwilight,
+    };
+
+/// A plain-language reason for a locked entry. The stable code is still shown
+/// underneath for bug reports.
+String _issueText(AppLocalizations l10n, PlacementCatalogItem item) {
+  final code = item.issueCode ?? '';
+  if (code.endsWith('UNIT_RELATION_REQUIRED')) return l10n.catalogIssueRelation;
+  if (code.endsWith('UNIT_CAPABILITY_UNAVAILABLE')) {
+    return l10n.catalogIssueCapability;
+  }
+  if (code.endsWith('OBJECT_GRAPHIC_UNAVAILABLE')) {
+    return l10n.catalogIssueGraphic;
+  }
+  if (code.endsWith('DOODAD_RECIPE_INVALID')) return l10n.catalogIssueRecipe;
+  return item.issueMessage ?? l10n.catalogCannotPlace;
+}
 
 /// The placement catalog as a workspace tab.
 ///
@@ -51,6 +106,7 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
   late StreamSubscription<PlacementCatalogState> _subscription;
   final TextEditingController _search = TextEditingController();
   String? _category;
+  bool _placeableOnly = false;
 
   @override
   void initState() {
@@ -83,31 +139,25 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
   @override
   Widget build(BuildContext context) {
     final state = widget.controller.state;
-    // A Material ancestor is required so the tab list and grid can paint
-    // their selection and ink effects.
+    // A Material ancestor is required so the lists and grid can paint their
+    // selection and ink effects.
     return Material(
       key: const Key('placement-catalog-pane'),
       color: const Color(0xFF101319),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _header(state),
-          const Divider(height: 1),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(width: 170, child: _kindList(state)),
-                const VerticalDivider(width: 1),
-                Expanded(child: _grid(state)),
-                const VerticalDivider(width: 1),
-                SizedBox(width: 260, child: _detail(state)),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          _footer(state),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final narrow = constraints.maxWidth < 900;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(width: narrow ? 176 : 220, child: _kindList(state)),
+              const VerticalDivider(width: 1),
+              Expanded(child: _browser(state)),
+              const VerticalDivider(width: 1),
+              SizedBox(width: narrow ? 250 : 320, child: _detail(state)),
+            ],
+          );
+        },
       ),
     );
   }
@@ -125,111 +175,194 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
 
   List<PlacementCatalogItem> _filtered(PlacementCatalogState state) {
     final category = _category;
-    if (category == null) {
-      return state.visibleItems;
-    }
     return state.visibleItems
         .where(
           (item) =>
-              item.entry.categoryPath.isNotEmpty &&
-              item.entry.categoryPath.first == category,
+              (category == null ||
+                  (item.entry.categoryPath.isNotEmpty &&
+                      item.entry.categoryPath.first == category)) &&
+              (!_placeableOnly || item.isPlaceable),
         )
         .toList(growable: false);
   }
 
-  Widget _header(PlacementCatalogState state) => Padding(
-    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-    child: Row(
-      children: [
-        const Icon(Icons.grid_view_rounded, size: 18),
-        const SizedBox(width: 8),
-        const Text(
-          'Place from catalog',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        if (state.tileset != null) ...[
-          const SizedBox(width: 10),
-          Chip(
-            key: const Key('placement-catalog-tileset'),
-            visualDensity: VisualDensity.compact,
-            label: Text(
-              state.tileset!.displayName,
-              style: const TextStyle(fontSize: 10),
-            ),
-          ),
-        ],
-        const Spacer(),
-        SizedBox(
-          width: 220,
-          height: 34,
-          child: TextField(
-            key: const Key('placement-catalog-search'),
-            controller: _search,
-            onChanged: widget.controller.setQuery,
-            style: const TextStyle(fontSize: 11),
-            decoration: const InputDecoration(
-              hintText: 'Search name or #id',
-              prefixIcon: Icon(Icons.search_rounded, size: 16),
-              isDense: true,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
   Widget _kindList(PlacementCatalogState state) {
+    final l10n = context.l10n;
     final categories = _categories(state);
-    return ListView(
-      key: const Key('placement-catalog-kinds'),
-      children: [
-        for (final kind in _kinds)
-          ListTile(
-            key: Key('placement-catalog-tab-${kind.wireName}'),
-            dense: true,
-            selected: state.kind == kind,
-            title: Text(_tabLabel(kind), style: const TextStyle(fontSize: 11)),
-            onTap: state.kind == kind
-                ? null
-                : () {
-                    setState(() => _category = null);
-                    unawaited(widget.controller.load(kind));
-                  },
-          ),
-        if (categories.isNotEmpty) ...[
-          const Divider(height: 1),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 8, 4),
+    final tileset = state.tileset;
+    return Material(
+      color: const Color(0xFF1B1E22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             child: Text(
-              'Categories',
-              style: TextStyle(fontSize: 9, color: Color(0xFF7F8BA0)),
+              l10n.catalogTitle,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-          ListTile(
-            key: const Key('placement-catalog-category-all'),
-            dense: true,
-            selected: _category == null,
-            title: const Text('All', style: TextStyle(fontSize: 10)),
-            onTap: () => setState(() => _category = null),
+          Expanded(
+            child: ListView(
+              key: const Key('placement-catalog-kinds'),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              children: [
+                for (final kind in _kinds) ...[
+                  _NavTile(
+                    key: Key('placement-catalog-tab-${kind.wireName}'),
+                    icon: _kindIcon(kind),
+                    label: _kindLabel(l10n, kind),
+                    selected: state.kind == kind,
+                    onTap: state.kind == kind
+                        ? null
+                        : () {
+                            setState(() => _category = null);
+                            unawaited(widget.controller.load(kind));
+                          },
+                  ),
+                  if (state.kind == kind && categories.isNotEmpty) ...[
+                    _NavTile(
+                      key: const Key('placement-catalog-category-all'),
+                      label: l10n.catalogCategoryAll,
+                      indent: 26,
+                      selected: _category == null,
+                      onTap: () => setState(() => _category = null),
+                    ),
+                    for (final category in categories)
+                      _NavTile(
+                        key: Key('placement-catalog-category-$category'),
+                        label: category,
+                        indent: 26,
+                        selected: _category == category,
+                        onTap: () => setState(() => _category = category),
+                      ),
+                  ],
+                ],
+              ],
+            ),
           ),
-          for (final category in categories)
-            ListTile(
-              key: Key('placement-catalog-category-$category'),
-              dense: true,
-              selected: _category == category,
-              title: Text(category, style: const TextStyle(fontSize: 10)),
-              onTap: () => setState(() => _category = category),
+          if (tileset != null)
+            Container(
+              key: const Key('placement-catalog-tileset'),
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF121417),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF262A30)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, size: 15),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          l10n.catalogTilesetTitle(
+                            _tilesetLabel(l10n, tileset),
+                          ),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.catalogTilesetHint,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFA7AFB8),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
-      ],
+      ),
     );
   }
 
-  Widget _grid(PlacementCatalogState state) {
+  Widget _browser(PlacementCatalogState state) {
+    final l10n = context.l10n;
+    final items = _filtered(state);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('placement-catalog-search'),
+                  controller: _search,
+                  onChanged: widget.controller.setQuery,
+                  decoration: InputDecoration(
+                    hintText: l10n.catalogSearchHint,
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    isDense: true,
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: OutlinedButton.icon(
+                  key: const Key('placement-catalog-close'),
+                  onPressed: widget.onClose,
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: Text(
+                    l10n.catalogBackToMap,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 12,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              FilterChip(
+                key: const Key('placement-catalog-placeable-only'),
+                label: Text(l10n.catalogPlaceableOnly),
+                selected: _placeableOnly,
+                onSelected: (value) => setState(() => _placeableOnly = value),
+              ),
+              if (state.diagnostics.isEmpty && state.items.isNotEmpty)
+                Text(
+                  l10n.catalogShownCount(items.length),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFA7AFB8),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Expanded(child: _grid(state, items)),
+        ],
+      ),
+    );
+  }
+
+  Widget _grid(PlacementCatalogState state, List<PlacementCatalogItem> items) {
     if (state.diagnostics.isNotEmpty) {
       return _message(
         key: const Key('placement-catalog-blocked'),
         text: state.diagnostics.first.message,
+        icon: Icons.warning_amber_rounded,
       );
     }
     if (state.isLoading && state.items.isEmpty) {
@@ -242,21 +375,21 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
         ),
       );
     }
-    final items = _filtered(state);
     if (items.isEmpty) {
       return _message(
         key: const Key('placement-catalog-empty'),
-        text: 'No catalog entry matches this search.',
+        text: context.l10n.catalogEmpty,
+        icon: Icons.search_off_rounded,
       );
     }
     return GridView.builder(
       key: const Key('placement-catalog-grid'),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.only(bottom: 16),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 96,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 0.82,
+        maxCrossAxisExtent: 150,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.86,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -279,49 +412,92 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
       widget.controller.requestThumbnail(item.key);
     }
     final isPreviewed = state.previewKey == item.key;
-    return InkWell(
-      key: Key('placement-catalog-item-${item.key.stableId}'),
-      onTap: () => widget.controller.preview(item.key),
-      onDoubleTap: item.isPlaceable ? () => _confirm(item) : null,
-      child: Opacity(
-        opacity: item.isPlaceable ? 1 : 0.45,
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isPreviewed
-                  ? const Color(0xFF8DB4FF)
-                  : const Color(0xFF2A3446),
-            ),
-            borderRadius: BorderRadius.circular(4),
+    return Tooltip(
+      message: item.isPlaceable
+          ? item.displayName
+          : '${item.displayName}\n${_issueText(context.l10n, item)}',
+      waitDuration: const Duration(milliseconds: 500),
+      child: Material(
+        color: isPreviewed ? const Color(0xFF1E2A2E) : const Color(0xFF1B1E22),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: isPreviewed
+                ? const Color(0xFF56C2D6)
+                : const Color(0xFF2C3137),
+            width: 1.5,
           ),
-          padding: const EdgeInsets.all(4),
-          child: Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: item.hasThumbnail
-                      ? CatalogThumbnail(
-                          rgbaBytes: item.thumbnailRgba!,
-                          width: item.thumbnailWidth,
-                          height: item.thumbnailHeight,
-                        )
-                      : Text(
-                          '#${item.key.id}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF7F8BA0),
+        ),
+        child: InkWell(
+          key: Key('placement-catalog-item-${item.key.stableId}'),
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => widget.controller.preview(item.key),
+          onDoubleTap: item.isPlaceable ? () => _confirm(item) : null,
+          child: Opacity(
+            opacity: item.isPlaceable ? 1 : 0.5,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF121417),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: item.hasThumbnail
+                                  ? CatalogThumbnail(
+                                      rgbaBytes: item.thumbnailRgba!,
+                                      width: item.thumbnailWidth,
+                                      height: item.thumbnailHeight,
+                                    )
+                                  : Icon(
+                                      _kindIcon(item.key.kind),
+                                      size: 22,
+                                      color: const Color(0xFF6B737D),
+                                    ),
+                            ),
                           ),
                         ),
-                ),
+                        if (!item.isPlaceable)
+                          const Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Icon(
+                              Icons.lock_outline_rounded,
+                              size: 14,
+                              color: Color(0xFFA7AFB8),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    '#${item.key.id}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF8B939C),
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                item.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 9),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -329,124 +505,211 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
   }
 
   Widget _detail(PlacementCatalogState state) {
+    final l10n = context.l10n;
     final item = state.previewItem;
     if (item?.key.kind == StarCraftPlacementKind.tile) {
       widget.controller.requestThumbnail(item!.key);
     }
-    if (item == null) {
-      return _message(
-        key: const Key('placement-catalog-detail-empty'),
-        text: 'Select an entry to see its details.',
-      );
-    }
-    return ListView(
-      key: const Key('placement-catalog-detail'),
-      padding: const EdgeInsets.all(12),
-      children: [
-        SizedBox(
-          height: 96,
-          child: Center(
-            child: item.hasThumbnail
-                ? CatalogThumbnail(
-                    rgbaBytes: item.thumbnailRgba!,
-                    width: item.thumbnailWidth,
-                    height: item.thumbnailHeight,
-                    scale: 2,
-                  )
-                : const Icon(Icons.image_not_supported_outlined, size: 28),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          item.displayName,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${item.key.kind.fallbackLabel} #${item.key.id}',
-          style: const TextStyle(fontSize: 10, color: Color(0xFF7F8BA0)),
-        ),
-        if (item.entry.doodadRecipe case final recipe?) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Footprint ${recipe.width} × ${recipe.height} tiles'
-            '${recipe.overlay == null ? '' : ' + overlay'}',
-            style: const TextStyle(fontSize: 10, color: Color(0xFF7F8BA0)),
-          ),
-        ],
-        if (!item.isPlaceable) ...[
-          const SizedBox(height: 10),
-          Container(
-            key: const Key('placement-catalog-detail-issue'),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3A2A2A),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '${item.issueMessage ?? 'This entry cannot be placed.'}\n'
-              '${item.issueCode ?? ''}',
-              style: const TextStyle(fontSize: 9, color: Color(0xFFFFC2C2)),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _footer(PlacementCatalogState state) {
-    final item = state.previewItem;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: Row(
+    return Material(
+      color: const Color(0xFF1B1E22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Owner', style: TextStyle(fontSize: 10)),
-          const SizedBox(width: 6),
-          DropdownButton<int>(
-            key: const Key('placement-catalog-owner'),
-            value: state.owner,
-            isDense: true,
-            style: const TextStyle(fontSize: 11),
-            items: [
-              for (var player = 0; player < 12; player++)
-                DropdownMenuItem(
-                  value: player,
-                  child: Text('Player ${player + 1}'),
-                ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                widget.controller.setOwner(value);
-              }
-            },
+          Expanded(
+            child: item == null
+                ? _message(
+                    key: const Key('placement-catalog-detail-empty'),
+                    text: l10n.catalogDetailEmpty,
+                    icon: Icons.touch_app_outlined,
+                  )
+                : ListView(
+                    key: const Key('placement-catalog-detail'),
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Container(
+                        height: 150,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF121417),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2C3137)),
+                        ),
+                        child: Center(
+                          child: item.hasThumbnail
+                              ? CatalogThumbnail(
+                                  rgbaBytes: item.thumbnailRgba!,
+                                  width: item.thumbnailWidth,
+                                  height: item.thumbnailHeight,
+                                  scale: 2,
+                                )
+                              : const Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 28,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        item.displayName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_kindLabel(l10n, item.key.kind)} · #${item.key.id}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFA7AFB8),
+                        ),
+                      ),
+                      if (item.entry.doodadRecipe case final recipe?) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          recipe.overlay == null
+                              ? l10n.catalogFootprint(
+                                  recipe.width,
+                                  recipe.height,
+                                )
+                              : l10n.catalogFootprintOverlay(
+                                  recipe.width,
+                                  recipe.height,
+                                ),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFFA7AFB8),
+                          ),
+                        ),
+                      ],
+                      if (!item.isPlaceable) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          key: const Key('placement-catalog-detail-issue'),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E1C16),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF3D3622)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.lock_outline_rounded,
+                                size: 18,
+                                color: Color(0xFFE3C267),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _issueText(l10n, item),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                    if (item.issueCode case final code?)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          l10n.catalogIssueCode(code),
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF8B939C),
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 18),
+                      Text(
+                        l10n.catalogOwner,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFA7AFB8),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _OwnerPicker(
+                        owner: state.owner,
+                        onChanged: widget.controller.setOwner,
+                      ),
+                      const SizedBox(height: 10),
+                      SwitchListTile(
+                        key: const Key('placement-catalog-continuous'),
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        value: state.isContinuous,
+                        title: Text(
+                          l10n.catalogKeepPlacing,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        onChanged: widget.controller.setContinuous,
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF121417),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF262A30)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.catalogHowTo,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            for (final step in [
+                              l10n.catalogHowTo1,
+                              l10n.catalogHowTo2,
+                              l10n.catalogHowTo3,
+                            ])
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 3),
+                                child: Text(
+                                  step,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFA7AFB8),
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-          const SizedBox(width: 16),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Checkbox(
-                key: const Key('placement-catalog-continuous'),
-                value: state.isContinuous,
-                visualDensity: VisualDensity.compact,
-                onChanged: (value) =>
-                    widget.controller.setContinuous(value ?? false),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              height: 44,
+              child: FilledButton.icon(
+                key: const Key('placement-catalog-place'),
+                onPressed: item != null && item.isPlaceable
+                    ? () => _confirm(item)
+                    : null,
+                icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                label: Text(l10n.catalogPlace),
               ),
-              const Text('Keep placing', style: TextStyle(fontSize: 10)),
-            ],
-          ),
-          const Spacer(),
-          TextButton(
-            key: const Key('placement-catalog-close'),
-            onPressed: widget.onClose,
-            child: const Text('Back to map'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            key: const Key('placement-catalog-place'),
-            onPressed: item != null && item.isPlaceable
-                ? () => _confirm(item)
-                : null,
-            child: const Text('Place'),
+            ),
           ),
         ],
       ),
@@ -461,15 +724,147 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
     }
   }
 
-  Widget _message({required Key key, required String text}) => Center(
+  Widget _message({
+    required Key key,
+    required String text,
+    required IconData icon,
+  }) => Center(
     key: key,
     child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 11, color: Color(0xFF7F8BA0)),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 28, color: const Color(0xFF6B737D)),
+          const SizedBox(height: 10),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, color: Color(0xFFA7AFB8)),
+          ),
+        ],
       ),
     ),
   );
+}
+
+class _NavTile extends StatelessWidget {
+  const _NavTile({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.indent = 0,
+    super.key,
+  });
+
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final VoidCallback? onTap;
+  final double indent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Material(
+        color: selected ? const Color(0xFF23343A) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(10 + indent, 9, 10, 9),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 18,
+                    color: selected
+                        ? const Color(0xFF56C2D6)
+                        : const Color(0xFF8B939C),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: selected
+                          ? const Color(0xFFCFEEF4)
+                          : const Color(0xFFDFE3E8),
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnerPicker extends StatelessWidget {
+  const _OwnerPicker({required this.owner, required this.onChanged});
+
+  final int owner;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Wrap(
+      key: const Key('placement-catalog-owner'),
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (var player = 0; player < 12; player++)
+          Tooltip(
+            message: l10n.catalogOwnerPlayer(player + 1),
+            child: Semantics(
+              button: true,
+              selected: owner == player,
+              label: l10n.catalogOwnerPlayer(player + 1),
+              child: InkWell(
+                key: Key('placement-catalog-owner-$player'),
+                onTap: () => onChanged(player),
+                borderRadius: BorderRadius.circular(7),
+                child: Container(
+                  width: 36,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _playerColors[player],
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(
+                      color: owner == player
+                          ? const Color(0xFFFFFFFF)
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Text(
+                    '${player + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: _playerColors[player].computeLuminance() > 0.45
+                          ? const Color(0xFF121417)
+                          : const Color(0xFFFFFFFF),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }

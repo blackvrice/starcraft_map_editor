@@ -1693,6 +1693,726 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Read-only inspection. Raw brushes change MTXM only; TILE/ISOM are preserved. Isometric and ramp generation is not available yet.'**
   String get terrainDataReadOnly;
+
+  /// No description provided for @newMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New Map'**
+  String get newMapTitle;
+
+  /// No description provided for @newMapStepBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Size and terrain'**
+  String get newMapStepBasics;
+
+  /// No description provided for @newMapStepPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get newMapStepPlayers;
+
+  /// No description provided for @newMapStepReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review and create'**
+  String get newMapStepReview;
+
+  /// No description provided for @newMapStepCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current step'**
+  String get newMapStepCurrent;
+
+  /// No description provided for @newMapSideNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can resize the map later from File → Resize Map. A new map is saved for the first time with Save As.'**
+  String get newMapSideNote;
+
+  /// No description provided for @newMapName.
+  ///
+  /// In en, this message translates to:
+  /// **'Map title'**
+  String get newMapName;
+
+  /// No description provided for @newMapDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled Scenario'**
+  String get newMapDefaultTitle;
+
+  /// No description provided for @newMapDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get newMapDescription;
+
+  /// No description provided for @newMapSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get newMapSize;
+
+  /// No description provided for @newMapSizeSmall.
+  ///
+  /// In en, this message translates to:
+  /// **'Small'**
+  String get newMapSizeSmall;
+
+  /// No description provided for @newMapSizeSmallNote.
+  ///
+  /// In en, this message translates to:
+  /// **'1 vs 1 practice'**
+  String get newMapSizeSmallNote;
+
+  /// No description provided for @newMapSizeCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact'**
+  String get newMapSizeCompact;
+
+  /// No description provided for @newMapSizeCompactNote.
+  ///
+  /// In en, this message translates to:
+  /// **'2 players'**
+  String get newMapSizeCompactNote;
+
+  /// No description provided for @newMapSizeMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get newMapSizeMedium;
+
+  /// No description provided for @newMapSizeMediumNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended for 4'**
+  String get newMapSizeMediumNote;
+
+  /// No description provided for @newMapSizeLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Large'**
+  String get newMapSizeLarge;
+
+  /// No description provided for @newMapSizeLargeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'6–8 players'**
+  String get newMapSizeLargeNote;
+
+  /// No description provided for @newMapSizeHuge.
+  ///
+  /// In en, this message translates to:
+  /// **'Huge'**
+  String get newMapSizeHuge;
+
+  /// No description provided for @newMapSizeHugeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Large UMS'**
+  String get newMapSizeHugeNote;
+
+  /// No description provided for @newMapSizeCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get newMapSizeCustom;
+
+  /// No description provided for @newMapSizeCustomNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to 256'**
+  String get newMapSizeCustomNote;
+
+  /// No description provided for @newMapWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Width (tiles)'**
+  String get newMapWidth;
+
+  /// No description provided for @newMapHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height (tiles)'**
+  String get newMapHeight;
+
+  /// No description provided for @newMapSizeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{width} × {height}'**
+  String newMapSizeValue(int width, int height);
+
+  /// No description provided for @newMapTileset.
+  ///
+  /// In en, this message translates to:
+  /// **'Tileset'**
+  String get newMapTileset;
+
+  /// No description provided for @newMapTilesetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The look of the whole map. It cannot be changed after creation.'**
+  String get newMapTilesetHint;
+
+  /// No description provided for @tilesetBadlands.
+  ///
+  /// In en, this message translates to:
+  /// **'Badlands'**
+  String get tilesetBadlands;
+
+  /// No description provided for @tilesetSpacePlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Space Platform'**
+  String get tilesetSpacePlatform;
+
+  /// No description provided for @tilesetInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation'**
+  String get tilesetInstallation;
+
+  /// No description provided for @tilesetAshworld.
+  ///
+  /// In en, this message translates to:
+  /// **'Ashworld'**
+  String get tilesetAshworld;
+
+  /// No description provided for @tilesetJungle.
+  ///
+  /// In en, this message translates to:
+  /// **'Jungle'**
+  String get tilesetJungle;
+
+  /// No description provided for @tilesetDesert.
+  ///
+  /// In en, this message translates to:
+  /// **'Desert'**
+  String get tilesetDesert;
+
+  /// No description provided for @tilesetIce.
+  ///
+  /// In en, this message translates to:
+  /// **'Ice'**
+  String get tilesetIce;
+
+  /// No description provided for @tilesetTwilight.
+  ///
+  /// In en, this message translates to:
+  /// **'Twilight'**
+  String get tilesetTwilight;
+
+  /// No description provided for @newMapInitialTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting tile'**
+  String get newMapInitialTile;
+
+  /// No description provided for @newMapInitialTileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The whole map is filled with this raw tile. ISOM terrain is not generated, so walkability is not guaranteed.'**
+  String get newMapInitialTileHint;
+
+  /// No description provided for @newMapTileRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a starting tile to create the map.'**
+  String get newMapTileRequired;
+
+  /// No description provided for @newMapTilesLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tiles from StarCraft data…'**
+  String get newMapTilesLoading;
+
+  /// No description provided for @newMapTilePage.
+  ///
+  /// In en, this message translates to:
+  /// **'{first}–{last} of {total}'**
+  String newMapTilePage(int first, int last, int total);
+
+  /// No description provided for @newMapPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get newMapPrevious;
+
+  /// No description provided for @newMapNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get newMapNext;
+
+  /// No description provided for @newMapReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get newMapReload;
+
+  /// No description provided for @newMapPlayersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How many people will play?'**
+  String get newMapPlayersTitle;
+
+  /// No description provided for @newMapPlayersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Each human player gets a Terran start location. You can change races and slots later in Player Settings.'**
+  String get newMapPlayersHint;
+
+  /// No description provided for @newMapPlayersValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{players} players'**
+  String newMapPlayersValue(int players);
+
+  /// No description provided for @newMapReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to create'**
+  String get newMapReviewTitle;
+
+  /// No description provided for @newMapReviewFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Brood War UMS (.scx)'**
+  String get newMapReviewFormat;
+
+  /// No description provided for @newMapReviewNoTriggers.
+  ///
+  /// In en, this message translates to:
+  /// **'No victory or resource triggers are added. Add them in Triggers.'**
+  String get newMapReviewNoTriggers;
+
+  /// No description provided for @newMapReviewTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting tile #{tile}'**
+  String newMapReviewTile(String tile);
+
+  /// No description provided for @newMapReviewNoTile.
+  ///
+  /// In en, this message translates to:
+  /// **'No starting tile yet'**
+  String get newMapReviewNoTile;
+
+  /// No description provided for @newMapCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get newMapCancel;
+
+  /// No description provided for @newMapBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get newMapBack;
+
+  /// No description provided for @newMapContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get newMapContinue;
+
+  /// No description provided for @newMapCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get newMapCreate;
+
+  /// No description provided for @newMapDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved map changes?'**
+  String get newMapDiscardTitle;
+
+  /// No description provided for @newMapDiscardBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating a new map replaces the current document. Save it first if you want to keep these changes.'**
+  String get newMapDiscardBody;
+
+  /// No description provided for @newMapKeepCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current map'**
+  String get newMapKeepCurrent;
+
+  /// No description provided for @newMapDiscardAndCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and create'**
+  String get newMapDiscardAndCreate;
+
+  /// No description provided for @catalogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What to place'**
+  String get catalogTitle;
+
+  /// No description provided for @catalogKindTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain tiles'**
+  String get catalogKindTile;
+
+  /// No description provided for @catalogKindDoodad.
+  ///
+  /// In en, this message translates to:
+  /// **'Doodads'**
+  String get catalogKindDoodad;
+
+  /// No description provided for @catalogKindUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get catalogKindUnit;
+
+  /// No description provided for @catalogKindSprite.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprites'**
+  String get catalogKindSprite;
+
+  /// No description provided for @catalogKindSpriteUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprite-units'**
+  String get catalogKindSpriteUnit;
+
+  /// No description provided for @catalogCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories'**
+  String get catalogCategories;
+
+  /// No description provided for @catalogCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get catalogCategoryAll;
+
+  /// No description provided for @catalogTilesetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{tileset} map'**
+  String catalogTilesetTitle(String tileset);
+
+  /// No description provided for @catalogTilesetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only entries that match this map\'s tileset are shown.'**
+  String get catalogTilesetHint;
+
+  /// No description provided for @catalogSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name, #ID or type (e.g. Bunker, #125)'**
+  String get catalogSearchHint;
+
+  /// No description provided for @catalogBackToMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to map'**
+  String get catalogBackToMap;
+
+  /// No description provided for @catalogPlaceableOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Placeable only'**
+  String get catalogPlaceableOnly;
+
+  /// No description provided for @catalogShownCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shown'**
+  String catalogShownCount(int count);
+
+  /// No description provided for @catalogEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No catalog entry matches this search.'**
+  String get catalogEmpty;
+
+  /// No description provided for @catalogDetailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an entry to see its details and place it.'**
+  String get catalogDetailEmpty;
+
+  /// No description provided for @catalogFootprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Footprint {width} × {height} tiles'**
+  String catalogFootprint(int width, int height);
+
+  /// No description provided for @catalogFootprintOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Footprint {width} × {height} tiles + overlay'**
+  String catalogFootprintOverlay(int width, int height);
+
+  /// No description provided for @catalogOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Who owns it?'**
+  String get catalogOwner;
+
+  /// No description provided for @catalogOwnerPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {count}'**
+  String catalogOwnerPlayer(int count);
+
+  /// No description provided for @catalogKeepPlacing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep placing on each click'**
+  String get catalogKeepPlacing;
+
+  /// No description provided for @catalogHowTo.
+  ///
+  /// In en, this message translates to:
+  /// **'How to place'**
+  String get catalogHowTo;
+
+  /// No description provided for @catalogHowTo1.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Press the button below to return to the map.'**
+  String get catalogHowTo1;
+
+  /// No description provided for @catalogHowTo2.
+  ///
+  /// In en, this message translates to:
+  /// **'2. Click where the outline is shown to place it.'**
+  String get catalogHowTo2;
+
+  /// No description provided for @catalogHowTo3.
+  ///
+  /// In en, this message translates to:
+  /// **'3. A red outline is outside the map. Press Esc to cancel.'**
+  String get catalogHowTo3;
+
+  /// No description provided for @catalogPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'Place on map'**
+  String get catalogPlace;
+
+  /// No description provided for @catalogCannotPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'This entry cannot be placed.'**
+  String get catalogCannotPlace;
+
+  /// No description provided for @catalogIssueRelation.
+  ///
+  /// In en, this message translates to:
+  /// **'Add-ons and similar units need another building, so they cannot be placed on their own.'**
+  String get catalogIssueRelation;
+
+  /// No description provided for @catalogIssueCapability.
+  ///
+  /// In en, this message translates to:
+  /// **'The unit data could not be read from the local game files, so placement is locked.'**
+  String get catalogIssueCapability;
+
+  /// No description provided for @catalogIssueGraphic.
+  ///
+  /// In en, this message translates to:
+  /// **'The graphic could not be loaded, so the entry is locked to avoid invisible objects.'**
+  String get catalogIssueGraphic;
+
+  /// No description provided for @catalogIssueRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'The doodad layout data is incomplete, so it cannot be placed safely.'**
+  String get catalogIssueRecipe;
+
+  /// No description provided for @catalogIssueCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code: {code}'**
+  String catalogIssueCode(String code);
+
+  /// No description provided for @buildStepsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps to an EUD map'**
+  String get buildStepsLabel;
+
+  /// No description provided for @buildStepMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the map'**
+  String get buildStepMap;
+
+  /// No description provided for @buildStepMapNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No map is open'**
+  String get buildStepMapNone;
+
+  /// No description provided for @buildStepMapDirty.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved changes · use Save As'**
+  String get buildStepMapDirty;
+
+  /// No description provided for @buildStepMapSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get buildStepMapSaved;
+
+  /// No description provided for @buildStepSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the script'**
+  String get buildStepSource;
+
+  /// No description provided for @buildStepSourceUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Save it as a file to build'**
+  String get buildStepSourceUntitled;
+
+  /// No description provided for @buildStepSourceDirty.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved yet'**
+  String get buildStepSourceDirty;
+
+  /// No description provided for @buildStepSourceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get buildStepSourceSaved;
+
+  /// No description provided for @buildStepPrepare.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare the build'**
+  String get buildStepPrepare;
+
+  /// No description provided for @buildStepPrepareNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose input and output files'**
+  String get buildStepPrepareNeeded;
+
+  /// No description provided for @buildStepPrepareReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get buildStepPrepareReady;
+
+  /// No description provided for @buildStepPrepareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare…'**
+  String get buildStepPrepareAction;
+
+  /// No description provided for @buildStepRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get buildStepRun;
+
+  /// No description provided for @buildStepRunReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to run'**
+  String get buildStepRunReady;
+
+  /// No description provided for @buildStepRunBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Building…'**
+  String get buildStepRunBusy;
+
+  /// No description provided for @buildStepRunSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Succeeded'**
+  String get buildStepRunSucceeded;
+
+  /// No description provided for @buildStepRunFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed · see the result below'**
+  String get buildStepRunFailed;
+
+  /// No description provided for @buildStepRunCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get buildStepRunCancelled;
+
+  /// No description provided for @buildStepRunBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish the earlier steps first'**
+  String get buildStepRunBlocked;
+
+  /// No description provided for @buildSafetyNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The original map is never overwritten'**
+  String get buildSafetyNote;
+
+  /// No description provided for @buildSummarySucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD map was built'**
+  String get buildSummarySucceeded;
+
+  /// No description provided for @buildSummaryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The build did not finish'**
+  String get buildSummaryFailed;
+
+  /// No description provided for @buildSummaryCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The build was cancelled'**
+  String get buildSummaryCancelled;
+
+  /// No description provided for @buildSummaryRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Building with euddraft…'**
+  String get buildSummaryRunning;
+
+  /// No description provided for @buildSummaryFirstError.
+  ///
+  /// In en, this message translates to:
+  /// **'First problem: {message}'**
+  String buildSummaryFirstError(String message);
+
+  /// No description provided for @buildSummaryAt.
+  ///
+  /// In en, this message translates to:
+  /// **'{location}: {message}'**
+  String buildSummaryAt(String location, String message);
+
+  /// No description provided for @buildSummaryUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The original map and earlier output were left unchanged.'**
+  String get buildSummaryUnchanged;
+
+  /// No description provided for @buildSummaryRawLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw euddraft log below'**
+  String get buildSummaryRawLog;
 }
 
 class _AppLocalizationsDelegate

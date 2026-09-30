@@ -561,5 +561,227 @@
         "type": "int"
       }
     }
-  }
+  },
+  "newMapTitle": "New Map",
+  "newMapStepBasics": "Size and terrain",
+  "newMapStepPlayers": "Players",
+  "newMapStepReview": "Review and create",
+  "newMapStepCurrent": "Current step",
+  "newMapSideNote": "You can resize the map later from File → Resize Map. A new map is saved for the first time with Save As.",
+  "newMapName": "Map title",
+  "newMapDefaultTitle": "Untitled Scenario",
+  "newMapDescription": "Description (optional)",
+  "newMapSize": "Size",
+  "newMapSizeSmall": "Small",
+  "newMapSizeSmallNote": "1 vs 1 practice",
+  "newMapSizeCompact": "Compact",
+  "newMapSizeCompactNote": "2 players",
+  "newMapSizeMedium": "Medium",
+  "newMapSizeMediumNote": "Recommended for 4",
+  "newMapSizeLarge": "Large",
+  "newMapSizeLargeNote": "6–8 players",
+  "newMapSizeHuge": "Huge",
+  "newMapSizeHugeNote": "Large UMS",
+  "newMapSizeCustom": "Custom",
+  "newMapSizeCustomNote": "Up to 256",
+  "newMapWidth": "Width (tiles)",
+  "newMapHeight": "Height (tiles)",
+  "newMapSizeValue": "{width} × {height}",
+  "@newMapSizeValue": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapTileset": "Tileset",
+  "newMapTilesetHint": "The look of the whole map. It cannot be changed after creation.",
+  "tilesetBadlands": "Badlands",
+  "tilesetSpacePlatform": "Space Platform",
+  "tilesetInstallation": "Installation",
+  "tilesetAshworld": "Ashworld",
+  "tilesetJungle": "Jungle",
+  "tilesetDesert": "Desert",
+  "tilesetIce": "Ice",
+  "tilesetTwilight": "Twilight",
+  "newMapInitialTile": "Starting tile",
+  "newMapInitialTileHint": "The whole map is filled with this raw tile. ISOM terrain is not generated, so walkability is not guaranteed.",
+  "newMapTileRequired": "Pick a starting tile to create the map.",
+  "newMapTilesLoading": "Loading tiles from StarCraft data…",
+  "newMapTilePage": "{first}–{last} of {total}",
+  "@newMapTilePage": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "last": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapPrevious": "Previous",
+  "newMapNext": "Next",
+  "newMapReload": "Reload",
+  "newMapPlayersTitle": "How many people will play?",
+  "newMapPlayersHint": "Each human player gets a Terran start location. You can change races and slots later in Player Settings.",
+  "newMapPlayersValue": "{players} players",
+  "@newMapPlayersValue": {
+    "placeholders": {
+      "players": {
+        "type": "int"
+      }
+    }
+  },
+  "newMapReviewTitle": "Ready to create",
+  "newMapReviewFormat": "Brood War UMS (.scx)",
+  "newMapReviewNoTriggers": "No victory or resource triggers are added. Add them in Triggers.",
+  "newMapReviewTile": "Starting tile #{tile}",
+  "@newMapReviewTile": {
+    "placeholders": {
+      "tile": {
+        "type": "String"
+      }
+    }
+  },
+  "newMapReviewNoTile": "No starting tile yet",
+  "newMapCancel": "Cancel",
+  "newMapBack": "Back",
+  "newMapContinue": "Next",
+  "newMapCreate": "Create",
+  "newMapDiscardTitle": "Discard unsaved map changes?",
+  "newMapDiscardBody": "Creating a new map replaces the current document. Save it first if you want to keep these changes.",
+  "newMapKeepCurrent": "Keep current map",
+  "newMapDiscardAndCreate": "Discard and create",
+  "catalogTitle": "What to place",
+  "catalogKindTile": "Terrain tiles",
+  "catalogKindDoodad": "Doodads",
+  "catalogKindUnit": "Units",
+  "catalogKindSprite": "Sprites",
+  "catalogKindSpriteUnit": "Sprite-units",
+  "catalogCategories": "Categories",
+  "catalogCategoryAll": "All",
+  "catalogTilesetTitle": "{tileset} map",
+  "@catalogTilesetTitle": {
+    "placeholders": {
+      "tileset": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogTilesetHint": "Only entries that match this map's tileset are shown.",
+  "catalogSearchHint": "Search by name, #ID or type (e.g. Bunker, #125)",
+  "catalogBackToMap": "Back to map",
+  "catalogPlaceableOnly": "Placeable only",
+  "catalogShownCount": "{count} shown",
+  "@catalogShownCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogEmpty": "No catalog entry matches this search.",
+  "catalogDetailEmpty": "Select an entry to see its details and place it.",
+  "catalogFootprint": "Footprint {width} × {height} tiles",
+  "@catalogFootprint": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogFootprintOverlay": "Footprint {width} × {height} tiles + overlay",
+  "@catalogFootprintOverlay": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogOwner": "Who owns it?",
+  "catalogOwnerPlayer": "Player {count}",
+  "@catalogOwnerPlayer": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogKeepPlacing": "Keep placing on each click",
+  "catalogHowTo": "How to place",
+  "catalogHowTo1": "1. Press the button below to return to the map.",
+  "catalogHowTo2": "2. Click where the outline is shown to place it.",
+  "catalogHowTo3": "3. A red outline is outside the map. Press Esc to cancel.",
+  "catalogPlace": "Place on map",
+  "catalogCannotPlace": "This entry cannot be placed.",
+  "catalogIssueRelation": "Add-ons and similar units need another building, so they cannot be placed on their own.",
+  "catalogIssueCapability": "The unit data could not be read from the local game files, so placement is locked.",
+  "catalogIssueGraphic": "The graphic could not be loaded, so the entry is locked to avoid invisible objects.",
+  "catalogIssueRecipe": "The doodad layout data is incomplete, so it cannot be placed safely.",
+  "catalogIssueCode": "Code: {code}",
+  "@catalogIssueCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "buildStepsLabel": "Steps to an EUD map",
+  "buildStepMap": "Save the map",
+  "buildStepMapNone": "No map is open",
+  "buildStepMapDirty": "Unsaved changes · use Save As",
+  "buildStepMapSaved": "Saved",
+  "buildStepSource": "Save the script",
+  "buildStepSourceUntitled": "Save it as a file to build",
+  "buildStepSourceDirty": "Not saved yet",
+  "buildStepSourceSaved": "Saved",
+  "buildStepPrepare": "Prepare the build",
+  "buildStepPrepareNeeded": "Choose input and output files",
+  "buildStepPrepareReady": "Ready",
+  "buildStepPrepareAction": "Prepare…",
+  "buildStepRun": "Build",
+  "buildStepRunReady": "Ready to run",
+  "buildStepRunBusy": "Building…",
+  "buildStepRunSucceeded": "Succeeded",
+  "buildStepRunFailed": "Failed · see the result below",
+  "buildStepRunCancelled": "Cancelled",
+  "buildStepRunBlocked": "Finish the earlier steps first",
+  "buildSafetyNote": "The original map is never overwritten",
+  "buildSummarySucceeded": "The EUD map was built",
+  "buildSummaryFailed": "The build did not finish",
+  "buildSummaryCancelled": "The build was cancelled",
+  "buildSummaryRunning": "Building with euddraft…",
+  "buildSummaryFirstError": "First problem: {message}",
+  "@buildSummaryFirstError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "buildSummaryAt": "{location}: {message}",
+  "@buildSummaryAt": {
+    "placeholders": {
+      "location": {
+        "type": "String"
+      },
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "buildSummaryUnchanged": "The original map and earlier output were left unchanged.",
+  "buildSummaryRawLog": "Raw euddraft log below"
 }
