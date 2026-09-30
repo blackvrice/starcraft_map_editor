@@ -71,10 +71,62 @@ ISOM 변경 영역을 타일로 변환하는 경로와 resize 경계 처리가 �
 기존 CascLib CMake deprecation 경고는 남아 있다. 실제 게임·외부 에디터와
 수동 UI 인수는 수행하지 않았다. 구조 검사 통과를 등각 지형 생성 검증으로 간주하지 않는다.
 
+## 비적층 변환 기반 (2026-09-30 후속)
+
+`IsomTerrainConverter`는 검증된 숫자 연결 카탈로그를 주입받아 TILE/MTXM을 함께
+생성하는 순수 도메인 코어다. 실제 로컬 데이터 공급자와 UI는 아직 연결하지 않았다.
+합성 사례 통과는 실제 StarCraft 지형·보행 가능성·경사로 검증을 의미하지 않는다.
+
+### 포맷 근거와 제한
+
+같은 고정 Chkdraft revision의
+[TileGroup/ShapeLinks 선언](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.h),
+[연결 키 생성](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.cpp#L1849-L1871),
+[타일 쌍과 적층 처리](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/scenario.cpp#L416-L486)를 참고했다.
+CV5만으로 ISOM 값의 의미를 추측하지 않는다. 형태 연결표까지 함께 검증해야 한다.
+외부 구현 코드는 복사하지 않았다.
+
+- 카탈로그는 tileset·revision, 정규화 ISOM 값별 연결/terrain type, 검증된 짝수
+  left group과 다음 right group, 네 방향 연결과 적층 연결, 허용 member를 제공한다.
+  공급자는 양쪽 그룹과 실제 렌더 가능한 member를 검증해야 한다.
+- 연결 값은 6비트이고 48 이상 연결에는 terrain type을 키에 포함한다.
+  조회할 때만 ISOM modified/visited 비트를 제외하며 원시 ISOM은 보존한다.
+- 적층 연결이 모두 0인 쌍만 사용한다. 적층/경사로 solver는 구현하지 않았다.
+  오른쪽·아래 여분 레코드까지 알려진 값이어야 한다. 이 검사는 인접성 solver가 아니다.
+- 짝수 폭, 최대 256×256, 유일하고 정상 크기의 DIM/ERA/ISOM/TILE/MTXM을 요구한다.
+  두다드, 보호 마커, 중복 지형 섹션, TILE/MTXM 차이, 알 수 없는 연결은 거부한다.
+- 기존 타일 쌍과 member가 카탈로그 후보에 맞으면 유지한다. 새 선택은 정렬된
+  후보와 uint32 seed·좌표 혼합으로 결정한다. StarEdit의 난수와 같다는 계약은 아니다.
+- 실패하면 입력 전체를 보존한다. 성공하면 TILE/MTXM만 교체하고 ISOM 플래그,
+  다른 섹션, 문자열·객체는 그대로 둔다. 변경 0이면 원래 문서를 반환한다.
+
+### 애플리케이션 경계
+
+`IsomTerrainCatalogGateway`는 후속 로컬 자료 공급자의 포트다. 공급자는 동일한
+설치 자료 snapshot/fingerprint와 변환 버전을 revision에 결합해야 한다.
+현재는 테스트용 합성 공급자만 있으며 제품 공급자를 가장하지 않는다.
+`IsomConversionController`는 읽기 전용 미리보기 후 명시적 적용을 제공한다.
+문서 교체·취소·후속 요청·활성 작업/편집 transaction에서 오래된 결과를 거부한다.
+적용은 리소스 편집을 보존하며 공통 Undo/Redo 한 건으로 기록한다. 파일 저장은
+기존 Save As 파이프라인을 사용한다. UI 연결 시 진단과 명령 이름을 현지화해야 한다.
+
+### 후속 검증 기록
+
+도메인/애플리케이션 7개 통과: 독립 예상 바이트, 후보 순서·seed 결정성, 유효 쌍
+유지, 상한 타일 값, hard-link 타입, 보호/중복/두다드/원시 덮어쓰기 거부,
+미리보기 무변경, 오래된 결과 거부와 Undo/Redo를 검사했다.
+실제 MPQ helper 통합 1개도 통과했다. 자체 제작 합성 맵의 적용·Undo/Redo·Save As·
+재열기, 전체 CHK 바이트와 입력 fingerprint 보존을 확인했다. 게임 자산은 포함하지 않았다.
+최종 analyze 무이슈, 변경 Dart 7개 format 및 문서 링크 검사 통과.
+전체 Flutter 테스트 815개 통과/31개 선택 skip. 실제 설치 자료와 게임 검증은
+공급자가 미구현이므로 수행하지 않았다. UI/native 변경이 없어 이번 Windows 빌드는 생략했다.
+SDK는 Flutter 3.47.5/Dart 3.13.4로 기준 SDK와 다르며 기준 버전 CI 확인은 별도다.
+전체 format은 위 기존 테스트 4개의 차이로 미통과이며 사용자 변경을 보존했다.
+
 ## 다음 구현 순서
 
-1. 로컬 CV5 등에서 변환에 필요한 지형 연결 자료의 범위·출처를 조사하고 helper
-   포트 및 결정적 변환 계약을 정한다. 경사로·높이 전환·두다드 보존 경계를 포함한다.
-2. 자체 제작 사례로 ISOM → TILE/MTXM 변환과 경계·랜덤 타일 선택을 검증한다.
+1. 실제 로컬 CV5와 형태 연결표를 읽는 공급자를 구현하고 자료 fingerprint·버전을
+   기록한다. 설치 자료와 대조해 검증된 비적층 카탈로그부터 제공한다.
+2. 수직 적층·경사로·경계 연결 solver와 보존 범위를 확장하고 독립 사례로 검증한다.
 3. 검증된 평지/전환/경사로 브러시·미리보기·공통 Undo와 원자적 섹션 갱신을 연결한다.
 4. 실제 설치·외부 에디터·SC:R로 확인한 뒤 ISOM/두다드 resize를 확장한다.

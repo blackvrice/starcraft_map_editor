@@ -973,3 +973,7 @@ UI는 파일이나 프로세스를 직접 읽지 않는다. [계약과 검증](U
 Inspector의 `TerrainDataPanel`은 해당 결과를 한글·영문으로 표시한다.
 검사 상태는 기존 편집 차단 진단과 분리하며 새 dirty/Undo 명령을 만들지 않는다.
 [등각 지형 계약](ISOMETRIC_TERRAIN.md)에 따라 구조 검사와 의미 검증을 구분한다.
+
+ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, application의
+명시적 미리보기·적용/Undo로 분리한다. 실제 자료 공급자와 UI 연결은 미구현이다.
+지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.

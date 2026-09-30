@@ -67,7 +67,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [실드 초기화 및 생성 빌드 작업 준비](EUD_SHIELD_BUILD_PREPARATION.md) | 실드 초기화 비교 시나리오·최초 준비 기록 |
 | [동봉 EUD 도구 manifest와 무결성 검사](EUD_TOOL_MANIFEST.md) | manifest 검사 계약·초기 구현 이력 |
 | [EUD 도구 선택·진단 화면](EUD_TOOL_SETTINGS_UI.md) | 기본/외부 도구 선택과 진단 UI |
-| [등각 지형·ISOM 검사](ISOMETRIC_TERRAIN.md) | TILE/ISOM 읽기 전용 구조·차이 검사와 변환/브러시 후속 계획 |
+| [등각 지형·ISOM 검사](ISOMETRIC_TERRAIN.md) | TILE/ISOM 구조 검사·비적층 변환 코어 계약과 실제 자료/브러시 후속 계획 |
 | [맵 크기 변경](MAP_RESIZE.md) | raw 맵 resize·영향 미리보기·원자적 적용·보존 계약 |
 | [새 맵 생성 정책과 CHK 생성기](NEW_MAP.md) | 생성 정책·도메인 구현·UI/신규 MPQ 통합 인수인계 |
 | [실제 설치 카탈로그 배치 검증](PLACEMENT_INSTALLATION_SMOKE.md) | 로컬 설치 카탈로그 배치 스모크 기록 |
@@ -80,8 +80,8 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 2026-09-29: 설정·일반 트리거·브리핑·리소스·문서 공통 Undo/Redo,
 관리형 EUD 동봉·61개 후보 필드·확장 실행 규칙의 편집/테스트 빌드를 구현했다.
 New Map·원본 없는 세션·신규 MPQ 저장/재열기를 구현했다. raw 맵 크기 변경·미리보기·Undo/Redo도 구현했다.
-2026-09-30 TILE/ISOM 읽기 전용 검사를 구현했다. 다음은 지형 연결 자료·ISOM 변환이며
-등각 지형·경사로 브러시는 아직 미구현이다.
+2026-09-30 TILE/ISOM 읽기 전용 검사와 주입형 비적층 변환 코어·적용/Undo를 구현했다.
+다음은 실제 로컬 지형 연결 자료 공급자다. 변환 UI·등각 지형·경사로 브러시는 아직 미구현이다.
 [개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
 [문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.
 
