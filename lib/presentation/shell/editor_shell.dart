@@ -1,3 +1,5 @@
+import '../documents/isom_fill_dialog.dart';
+import '../../application/documents/isom_fill_controller.dart';
 import '../documents/terrain_data_panel.dart';
 import '../../application/documents/map_resize_controller.dart';
 import '../documents/map_resize_dialog.dart';
@@ -82,6 +84,7 @@ class EditorShell extends StatefulWidget {
     required this.operationProgressController,
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
+    this.isomFillController,
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
@@ -105,6 +108,7 @@ class EditorShell extends StatefulWidget {
   final RecentProjectsService recentProjectsService;
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
+  final IsomFillController? isomFillController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
@@ -142,6 +146,15 @@ class _EditorShellState extends State<EditorShell> {
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
   bool _settingsVisited = false;
+
+  Future<void> _fillIsom() async {
+    final controller = widget.isomFillController;
+    if (controller == null) return;
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => IsomFillDialog(controller: controller),
+    );
+  }
 
   Future<void> _resizeMap() async {
     if (widget.openMapController.state.session == null) return;
@@ -811,6 +824,12 @@ class _EditorShellState extends State<EditorShell> {
               children: [
                 _EditorMenuBar(
                   newMap: openMap == null ? null : _newMap,
+                  fillIsom:
+                      widget.isomFillController != null &&
+                          openMap != null &&
+                          widget.openMapController.state.session != null
+                      ? _fillIsom
+                      : null,
                   resizeMap:
                       openMap == null ||
                           widget.openMapController.state.session == null
@@ -1052,6 +1071,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openPlayerSettings,
     required this.openMapInformation,
     required this.newMap,
+    required this.fillIsom,
     required this.resizeMap,
     required this.openMap,
     required this.saveAs,
@@ -1066,6 +1086,7 @@ class _EditorMenuBar extends StatelessWidget {
   });
 
   final VoidCallback? newMap;
+  final VoidCallback? fillIsom;
   final VoidCallback? resizeMap;
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
@@ -1125,6 +1146,11 @@ class _EditorMenuBar extends StatelessWidget {
             MenuItemButton(
               onPressed: openMapInformation,
               child: Text(l10n.menuMapInformation),
+            ),
+            MenuItemButton(
+              key: const Key('menu-isom-fill'),
+              onPressed: fillIsom,
+              child: Text(l10n.isomFillTitle),
             ),
             MenuItemButton(
               onPressed: openMapSettings,

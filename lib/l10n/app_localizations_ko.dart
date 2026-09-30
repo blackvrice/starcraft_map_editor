@@ -2306,4 +2306,34 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get eudFieldsInvalid => '선택한 항목에 쓸 수 없는 값이에요.';
+
+  @override
+  String get isomFillTitle => '등각 지형 채우기';
+
+  @override
+  String get isomFillScope =>
+      '맵 전체를 한 종류의 평지로 바꿉니다. ISOM, TILE, MTXM이 함께 갱신되며 Undo로 원래 지형을 복원할 수 있습니다. 경사로·지형 경계·두다드는 아직 지원하지 않습니다.';
+
+  @override
+  String get isomTerrainType => '평지 종류';
+
+  @override
+  String isomTerrainId(int id) {
+    return '지형 종류 #$id';
+  }
+
+  @override
+  String isomFillPreview(int count) {
+    return '게임 타일 $count개가 변경됩니다. 에디터 지형(ISOM)도 함께 갱신됩니다.';
+  }
+
+  @override
+  String get isomFillUnavailable =>
+      '지형 채우기를 사용할 수 없습니다. 설정에서 스타크래프트 데이터를 지정하고, TILE/MTXM이 일치하며 지원되는 ISOM 형태를 가진 짝수 너비 맵을 사용하세요.';
+
+  @override
+  String get isomFillCancel => '취소';
+
+  @override
+  String get isomFillApply => '맵 전체 채우기';
 }

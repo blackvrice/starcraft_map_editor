@@ -1,5 +1,11 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-01 평지 전체 채우기는 검증된 로컬 형태 값으로 `(width/2+1)*(height+1)`개의
+8바이트 ISOM rectangle을 만들고 각 면을 little-endian `shapeIndex << 4`로 채운다.
+TILE/MTXM 좌우 그룹·member는 같은 catalog에서 결정한다. 기존 ISOM의 크기/알 수 없는
+형태·보호 마커, raw override와 두다드를 추측 복구하지 않는다. 다른 섹션은 원시 바이트로
+보존하며 새 ISOM은 마지막에 추가한다. [계약](ISOMETRIC_TERRAIN.md#로컬-평지-채우기-2026-10-01).
+
 ## 맵 제목·설명 편집
 
 SPRP의 두 u16 문자열 참조만 변경하며 공유 문자열 자체는 덮어쓰지 않는다.

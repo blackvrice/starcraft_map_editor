@@ -1,3 +1,5 @@
+import '../infrastructure/assets/process_terrain_connection_snapshot_gateway.dart';
+import '../application/documents/isom_fill_controller.dart';
 import 'dart:async';
 
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
@@ -186,6 +188,11 @@ void bootstrap() {
     recentProjectsService: recentProjectsService,
     settingsStore: settingsStore,
     starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
+    isomFillController: IsomFillController(
+      maps: openMapController,
+      assets: () => starCraftDataAssetSettingsController.state,
+      gateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
+    ),
     terrainEditingController: terrainEditingController,
     mapLayerController: mapLayerController,
     objectEditingController: objectEditingController,

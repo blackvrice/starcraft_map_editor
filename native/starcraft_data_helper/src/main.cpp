@@ -30,7 +30,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.9.0";
+constexpr char kHelperVersion[] = "0.10.0";
 constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
@@ -137,7 +137,7 @@ int ReadTerrainConnectionSnapshot(
   }
   auto response = BaseResponse(request_id, kTerrainConnectionsOperation);
   response["status"] = "success";
-  response["snapshotVersion"] = 1;
+  response["snapshotVersion"] = 2;
   response["tileset"] = tileset;
   response["isomShapesResolved"] = false;
   response["installation"] = {{"path", assets.installation_path},
@@ -156,6 +156,7 @@ int ReadTerrainConnectionSnapshot(
     response["groups"].push_back({{"group", group.group},
         {"terrainTypeWord", group.terrain_type}, {"flagsWord", group.flags},
         {"linkWords", group.links}, {"stackWords", group.stack_connections},
+        {"megaTileReferences", group.mega_tile_references},
         {"renderableMembers", group.renderable_members}});
   }
   std::cout << response.dump() << '\n';

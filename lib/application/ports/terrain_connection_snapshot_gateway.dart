@@ -38,12 +38,14 @@ final class TerrainSnapshotGroup {
     required this.flagsWord,
     required List<int> linkWords,
     required List<int> stackWords,
+    required List<int> megaTileReferences,
     required List<int> renderableMembers,
   }) : linkWords = List.unmodifiable(linkWords),
        stackWords = List.unmodifiable(stackWords),
+       megaTileReferences = List.unmodifiable(megaTileReferences),
        renderableMembers = List.unmodifiable(renderableMembers);
   final int group, terrainTypeWord, flagsWord;
-  final List<int> linkWords, stackWords, renderableMembers;
+  final List<int> linkWords, stackWords, megaTileReferences, renderableMembers;
 }
 
 final class TerrainSnapshotReadResult {

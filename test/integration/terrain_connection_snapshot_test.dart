@@ -37,7 +37,7 @@ void main() {
         expect(second.snapshot!.revision, first.snapshot!.revision);
         expect(first.snapshot!.groups, isNotEmpty);
         expect(first.snapshot!.assets, hasLength(4));
-        expect(first.stdout, contains('"helperVersion":"0.9.0"'));
+        expect(first.stdout, contains('"helperVersion":"0.10.0"'));
       }
     },
     skip: canRun ? false : 'Requires local Windows CASC helper/installation.',
@@ -98,7 +98,7 @@ void main() {
           json['cascLibRevision'],
           StarCraftDataHelperProtocol.cascLibRevision,
         );
-        expect(json['snapshotVersion'], 1);
+        expect(json['snapshotVersion'], 2);
         expect(json['tileset'], tileset);
         expect(json['isomShapesResolved'], isFalse);
         final assets = json['assets'] as List;

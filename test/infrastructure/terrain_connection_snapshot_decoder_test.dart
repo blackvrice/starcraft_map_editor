@@ -55,6 +55,7 @@ void main() {
         (j) => j['assets'][0]['sha256'] = 'b' * 64,
         (j) => j['installation']['storageBuildNumber']++,
         (j) => j['groups'][0]['flagsWord']++,
+        (j) => j['groups'][0]['megaTileReferences'][0]++,
       ]) {
         final json = terrainSnapshotJson();
         change(json);
@@ -74,7 +75,7 @@ void main() {
       (j) => j['requestId'] = 'other',
       (j) => j['operation'] = 'other',
       (j) => j['status'] = 'error',
-      (j) => j['snapshotVersion'] = 2,
+      (j) => j['snapshotVersion'] = 1,
       (j) => j['tileset'] = 1,
       (j) => j['isomShapesResolved'] = true,
       (j) => j['installation']['path'] = r'C:\Elsewhere',
@@ -90,6 +91,9 @@ void main() {
       (j) => j['groups'][0]['linkWords'] = [0, 0, 0],
       (j) => j['groups'][0]['stackWords'][0] = -1,
       (j) => j['groups'][0]['flagsWord'] = 65536,
+      (j) => j['groups'][0]['megaTileReferences'] = [1],
+      (j) => j['groups'][0]['megaTileReferences'][0] = 65536,
+      (j) => j['groups'][0]['megaTileReferences'][0] = 1.5,
       (j) => j['groups'][0]['renderableMembers'] = [0, 0],
       (j) => j['groups'][0]['renderableMembers'] = [3, 0],
       (j) => j['groups'][0]['renderableMembers'] = [16],

@@ -1,11 +1,11 @@
 Map<String, dynamic> terrainSnapshotJson() => {
   'protocolVersion': 3,
-  'helperVersion': '0.9.0',
+  'helperVersion': '0.10.0',
   'cascLibRevision': '4971d363e665551ac4142f541e5f2d71f1cda653',
   'requestId': 'fixture',
   'operation': 'readTerrainConnections',
   'status': 'success',
-  'snapshotVersion': 1,
+  'snapshotVersion': 2,
   'tileset': 0,
   'isomShapesResolved': false,
   'installation': {
@@ -34,6 +34,7 @@ Map<String, dynamic> terrainSnapshotJson() => {
         'flagsWord': 32769,
         'linkWords': [0, 48, 64, 65535],
         'stackWords': [0, 1, 2, 3],
+        'megaTileReferences': List<dynamic>.filled(16, 1),
         'renderableMembers': [0, 3, 15],
       },
   ],

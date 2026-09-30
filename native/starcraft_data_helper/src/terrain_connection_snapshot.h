@@ -11,6 +11,7 @@ struct TerrainGroupConnection {
   std::uint16_t flags = 0;
   std::array<std::uint16_t, 4> links{};
   std::array<std::uint16_t, 4> stack_connections{};
+  std::array<std::uint16_t, 16> mega_tile_references{};
   std::vector<std::uint16_t> renderable_members;
 };
 

@@ -44,6 +44,9 @@ int main() {
   assert((result.groups[0].renderable_members ==
       std::vector<std::uint16_t>{0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}));
   assert(result.groups[1].group == 1 && result.groups[1].renderable_members.size() == 16);
+  assert(result.groups[0].mega_tile_references[0] == 0);
+  assert(result.groups[0].mega_tile_references[3] == 2);
+  assert(result.groups[0].mega_tile_references[4] == 1);
   assert(assets == original);
   assert(sc::ReadTerrainConnections(assets).asset_sha256 == result.asset_sha256);
   assets[3][0] = std::byte{1};

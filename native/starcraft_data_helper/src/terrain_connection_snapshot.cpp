@@ -78,6 +78,7 @@ TerrainConnectionSnapshot ReadTerrainConnections(
     }
     for (std::uint16_t member = 0; member < 16; ++member) {
       const auto mega = U16(cv5, at + 20 + member * 2);
+      entry.mega_tile_references[member] = mega;
       if (mega < valid_mega.size() && valid_mega[mega]) {
         entry.renderable_members.push_back(member);
       }

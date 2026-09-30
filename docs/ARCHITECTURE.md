@@ -285,7 +285,7 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.9.0의
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.0의
 `listPlacementCatalog`를 실행한다. Unit·pure Sprite와 tileset별 Doodad recipe도
 같은 operation을 사용하며, 기존 `ObjectPaletteController` template의 UI merge는
 후속 단계로 남아 있다.
@@ -484,7 +484,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.9.0을
+렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.10.0을
 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
@@ -975,12 +975,16 @@ Inspector의 `TerrainDataPanel`은 해당 결과를 한글·영문으로 표시�
 [등각 지형 계약](ISOMETRIC_TERRAIN.md)에 따라 구조 검사와 의미 검증을 구분한다.
 
 ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, application의
-명시적 미리보기·적용/Undo로 분리한다. 실제 ISOM 변환 카탈로그 공급자와 UI 연결은 미구현이다. 로컬 원시 자료 수신은 아래 경계를 사용한다.
+명시적 미리보기·적용/Undo로 분리한다. 평지 제품 경로는 `SolidIsomCatalogBuilder` →
+`IsomTerrainFill` → `IsomFillController` → `IsomFillDialog`다. bootstrap이 gateway와
+설정 getter를 주입하며 UI는 process/FS를 호출하지 않는다. 기존 일반 변환 포트는
+전환·적층 범위 확대를 위해 유지한다. 로컬 원시 자료 수신은 아래 경계를 사용한다.
 지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.
 
-로컬 연결 자료 취득 경계는 helper 0.9.0의 읽기 전용 `readTerrainConnections`다.
-CV5 원시 단어·그래픽 참조 유효 member와 네 자산 SHA-256을 반환한다.
+로컬 연결 자료 취득 경계는 helper 0.10.0의 읽기 전용 `readTerrainConnections`다.
+snapshot v2는 CV5 원시 단어·mega-tile 참조 16개·그래픽 참조 유효 member와
+네 자산 SHA-256을 반환한다.
 `TerrainConnectionSnapshotGateway`의 Dart process adapter는 이를 엄격히 검증하고
-불변 스냅샷·revision·한도 내 원시 로그를 제공한다. ISOM 형태 연결표 생성과 변환
-카탈로그 조립은 후속 범위다.
+불변 스냅샷·revision·한도 내 원시 로그를 제공한다. 평지 catalog revision은
+`solid-isom-v1:`과 snapshot revision을 결합한다. 전체 형태 연결표·경계/적층 solver는 후속이다.
 [스냅샷 계약](ISOMETRIC_TERRAIN.md#로컬-연결-자료-스냅샷-2026-09-30-후속)을 따른다.

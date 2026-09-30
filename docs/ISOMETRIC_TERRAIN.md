@@ -1,10 +1,10 @@
 # 등각 지형·경사로와 에디터 지형 데이터
 
-2026-09-30 현재: **TILE/ISOM 검사, 주입형 비적층 변환 코어, 로컬 CV5 스냅샷과
-Dart 수신/검증**까지 구현했다. 실제 ISOM 형태 연결표·변환 카탈로그·UI 연결은 남았다.
-아래 단계별 구현·검증 기록은 당시 범위를 유지한다.
-등각 지형·경사로 브러시, ISOM 생성/복구, ISOM·두다드 맵 resize는 아직 미구현이다.
-기존 원시 브러시는 계속 MTXM만 변경한다.
+2026-10-01 현재: 로컬 평지 형태 연결표·변환 카탈로그와 **File → 등각 지형 채우기**를
+연결했다. ISOM/TILE/MTXM 동시 갱신·변경 수 미리보기·Undo/Redo와 실제 MPQ 왕복을 제공한다.
+[최신 평지 계약과 검증](#로컬-평지-채우기-2026-10-01)을 먼저 읽는다.
+아래 날짜별 기록은 당시 범위를 유지한다. 경계·적층·경사로 solver와 선택 영역 브러시,
+손상 ISOM 복구, ISOM·두다드 맵 resize는 미구현이다. 원시 브러시는 계속 MTXM만 변경한다.
 
 ## 화면에서 확인
 
@@ -231,3 +231,68 @@ process_eud_compiler_gateway, process_map_archive_gateway)의 차이로 미통�
 최종 전체 Flutter 테스트 823개 통과/34개 선택 skip, analyze 무이슈.
 변경 Dart 7개 format·문서 링크 검사를 통과했다. 전체 format은 앞서 기록한 기존
 infrastructure 테스트 3개의 차이로 미통과이며 해당 파일을 변경하지 않았다.
+
+
+## 로컬 평지 채우기 (2026-10-01)
+
+File → 등각 지형 채우기에서 로컬 타일셋의 평지 종류 ID를 선택하고 변경 수를
+확인한 뒤 맵 전체를 교체한다. 선택 영역 브러시와 시각 타일 미리보기는 아직 없다.
+ISOM/TILE/MTXM 동시 변경, 한 명령 Undo/Redo, 기존 Save As 검증 경계를 사용한다.
+게임/외부 에디터 인수와 경계·적층·경사로는 후속이다. 위 v1 기록은 당시 이력이다.
+
+### 포맷 근거와 카탈로그
+
+숫자 형태 표는 Chkdraft revision `32d27861b16dda0b0f3d95e34bad894ea4efb2c3`의
+[sc.cpp](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.cpp)
+solid brush type/index를 확인하고 독립 구현했다. 원시 자산이나 upstream 구현 코드를
+복사하지 않았다. [sc.h](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.h)의
+terrain CV5 범위는 최초 1024 그룹이다. 전체 flat ISOM 초기화는
+[scenario.cpp](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/scenario.cpp)를
+대조했다. 전체 rectangle의 네 면에 `shapeIndex << 4`를 쓰며 편집 플래그는 새로 생성하지 않는다.
+
+- `SolidIsomCatalogBuilder`: 알려진 solid type/index + 한 번 조회한 CV5 snapshot으로
+  catalog를 조립한다. 좌우 연속 even/odd 그룹의 type·4개 동일 soft link(1..47)·
+  무적층·유효한 같은 member를 검사한다. 방향마다 link가 다르면 평지로 추측하지 않는다.
+- 일반 평지의 mega-tile 0 슬롯을 제외한다. 확인된 Platform Space(type 2)는 좌우
+  16개 참조가 전부 0이고 member 0이 렌더 가능할 때에만 member 0을 사용한다.
+  SC:R build 13515의 우주 평지 참조/렌더를 검사했다. 다른 종류로 예외를 일반화하지 않는다.
+- 타입별 link 또는 타입 사이 link가 모호하면 전체 실패한다. 두다드 범위의 그룹과
+  지원하지 않는 타입/적층은 catalog에 넣지 않는다. 숫자 ID로 표시하며 미확인 이름을 붙이지 않는다.
+- catalog revision = `solid-isom-v1:` + snapshot v2 revision. 자료 해시와 알고리즘
+  버전을 함께 구분한다. 섞인 설치 조회로 조립하지 않는다.
+
+### snapshot v2와 적용 경계
+
+helper 0.10.0 / wire protocol 3 / snapshotVersion 2. 각 그룹에 원시
+`megaTileReferences[16]` u16을 추가하고 revision에 포함한다. v1은 거부한다.
+나머지 응답 제한·취소·원시 로그·설치/tileset 검증은 기존 수신 계약을 유지한다.
+`renderableMembers`만으로 ISOM member를 고르지 않는다. renderable 목록과
+nonzero 참조를 교차 검사하며 Space의 검증된 예외만 허용한다.
+
+- `IsomTerrainFill`은 선택한 flat 값이 catalog에 존재하는지 검사하고 전체 ISOM을
+  임시 문서에 추가/교체한 뒤 기존 변환 코어로 TILE/MTXM을 생성한다.
+- 짝수 너비·최대 256x256, 유일한 정상 DIM/ERA/TILE/MTXM, TILE==MTXM이 필요하다.
+  보호/손상/중복 지형, 비어 있지 않은 DD2, 기존 미지원 ISOM 형태는 무변경 거부한다.
+- 다른 섹션의 바이트·순서·객체·리소스를 보존한다. ISOM 추가는 마지막 위치만 사용한다.
+  기존 타일이 유효한 좌우 pair/member이면 보존하고 나머지는 seed/좌표로 결정한다.
+- 변경 수는 TILE 값이 달라진 타일 수다. 타일 변경 0개여도 ISOM 추가/교체가 있으면
+  적용할 수 있다. ISOM과 타일이 같으면 dirty/Undo 명령을 추가하지 않는다.
+- `IsomFillController`는 preview와 session/설정 identity를 고정한다. 늦은 응답·취소·
+  설정 변경·새 세션·진행 중 작업/brush transaction은 적용하지 않는다.
+  dialog를 닫으면 요청을 취소한다. preview는 메모리만 사용하며 적용 후 Save As한다.
+
+### 검증
+
+SC:R build 13515에서 8개 타일셋의 평지 종류 수는 `9,10,7,8,13,13,13,13`(총 86)이다.
+각 종류를 32x32 자체 제작 문서로 생성해 모든 고유 타일의 렌더 참조를 검사하고,
+동일 종류 재적용 무변경을 확인했다. 실제 MPQ의 원본 fingerprint 유지,
+Undo/Redo → Save As → 재열기 byte-exact 일치와 정상 ISOM을 검증했다.
+게임 실행·보행 가능성·외부 에디터 왕복은 자동 검증 결과에 포함하지 않는다.
+
+검증: 전체 Flutter 838개 통과/36개 환경 선택 skip, analyze 무이슈, native CTest 6개 통과.
+새 실제 평지 생성/렌더·MPQ 테스트 2개와 기존 CASC 6개·snapshot 3개, 총 11개 실제 설치 테스트 통과.
+Windows Debug 빌드·시작 확인을 수행했다. 변경 Dart 30개 format 통과.
+전체 format은 기존 infrastructure 테스트 3개(local_map_save_file_gateway,
+process_eud_compiler_gateway, process_map_archive_gateway)의 차이로 미통과이며
+이번에 변경하지 않았다. 사용 SDK는 Flutter 3.47.5/Dart 3.13.4로 기준 3.44.8/3.12와 다르다.
+CascLib CMake deprecation 경고는 남는다. 원격 CI·게임 인수는 이번 로컬 검증에 포함하지 않는다.

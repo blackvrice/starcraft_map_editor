@@ -2363,4 +2363,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get eudFieldsInvalid =>
       'This value cannot be used for the selected field.';
+
+  @override
+  String get isomFillTitle => 'Fill Isometric Terrain';
+
+  @override
+  String get isomFillScope =>
+      'Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.';
+
+  @override
+  String get isomTerrainType => 'Flat terrain type';
+
+  @override
+  String isomTerrainId(int id) {
+    return 'Terrain type #$id';
+  }
+
+  @override
+  String isomFillPreview(int count) {
+    return '$count game tiles will change. Editor terrain (ISOM) will also be updated.';
+  }
+
+  @override
+  String get isomFillUnavailable =>
+      'Terrain fill is unavailable. Configure StarCraft data in Settings, and use an even-width map with matching TILE/MTXM and supported ISOM shapes.';
+
+  @override
+  String get isomFillCancel => 'Cancel';
+
+  @override
+  String get isomFillApply => 'Fill whole map';
 }

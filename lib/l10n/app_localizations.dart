@@ -4243,6 +4243,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This value cannot be used for the selected field.'**
   String get eudFieldsInvalid;
+
+  /// No description provided for @isomFillTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill Isometric Terrain'**
+  String get isomFillTitle;
+
+  /// No description provided for @isomFillScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.'**
+  String get isomFillScope;
+
+  /// No description provided for @isomTerrainType.
+  ///
+  /// In en, this message translates to:
+  /// **'Flat terrain type'**
+  String get isomTerrainType;
+
+  /// No description provided for @isomTerrainId.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain type #{id}'**
+  String isomTerrainId(int id);
+
+  /// No description provided for @isomFillPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} game tiles will change. Editor terrain (ISOM) will also be updated.'**
+  String isomFillPreview(int count);
+
+  /// No description provided for @isomFillUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain fill is unavailable. Configure StarCraft data in Settings, and use an even-width map with matching TILE/MTXM and supported ISOM shapes.'**
+  String get isomFillUnavailable;
+
+  /// No description provided for @isomFillCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get isomFillCancel;
+
+  /// No description provided for @isomFillApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill whole map'**
+  String get isomFillApply;
 }
 
 class _AppLocalizationsDelegate

@@ -29,6 +29,12 @@ final class ProcessTerrainConnectionSnapshotGateway
     }
   }
 
+  factory ProcessTerrainConnectionSnapshotGateway.bundled() =>
+      ProcessTerrainConnectionSnapshotGateway(
+        helperExecutablePath:
+            '${File(Platform.resolvedExecutable).parent.path}${Platform.pathSeparator}starcraft_data_helper.exe',
+      );
+
   final String helperExecutablePath;
   final List<String> helperArguments;
   final Duration timeout;

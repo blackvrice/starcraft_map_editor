@@ -25,7 +25,7 @@ class TerrainConnectionSnapshotDecoder {
         json['requestId'] != operationId ||
         json['operation'] != 'readTerrainConnections' ||
         json['status'] != 'success' ||
-        json['snapshotVersion'] != 1 ||
+        json['snapshotVersion'] != 2 ||
         json['tileset'] != tileset ||
         json['isomShapesResolved'] != false ||
         tileset < 0 ||
@@ -109,13 +109,17 @@ class TerrainConnectionSnapshotDecoder {
             g['stackWords'],
             4,
           ).map((v) => _int(v, 65535)).toList(),
+          megaTileReferences: _list(
+            g['megaTileReferences'],
+            16,
+          ).map((v) => _int(v, 65535)).toList(),
           renderableMembers: ids,
         ),
       );
     }
     // Canonical field order excludes transport IDs and installation location.
     final identity = [
-      1,
+      2,
       StarCraftDataHelperProtocol.helperVersion,
       StarCraftDataHelperProtocol.cascLibRevision,
       tileset,
@@ -129,13 +133,14 @@ class TerrainConnectionSnapshotDecoder {
           g.flagsWord,
           g.linkWords,
           g.stackWords,
+          g.megaTileReferences,
           g.renderableMembers,
         ],
     ];
     return TerrainConnectionSnapshot(
       tileset: tileset,
       revision:
-          'terrain-snapshot-v1:${sha256.convert(utf8.encode(jsonEncode(identity)))}',
+          'terrain-snapshot-v2:${sha256.convert(utf8.encode(jsonEncode(identity)))}',
       helperVersion: StarCraftDataHelperProtocol.helperVersion,
       storageProduct: product,
       storageBuildNumber: build,

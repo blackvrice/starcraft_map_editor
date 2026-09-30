@@ -1441,5 +1441,27 @@
   "eudFieldsApply": "Apply draft to project",
   "eudFieldsNeedChk": "This value also changes an ordinary map (CHK) setting. Tick the box above to allow it.",
   "eudFieldsOutOfRange": "The value is outside the allowed range.",
-  "eudFieldsInvalid": "This value cannot be used for the selected field."
+  "eudFieldsInvalid": "This value cannot be used for the selected field.",
+  "isomFillTitle": "Fill Isometric Terrain",
+  "isomFillScope": "Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.",
+  "isomTerrainType": "Flat terrain type",
+  "isomTerrainId": "Terrain type #{id}",
+  "isomFillPreview": "{count} game tiles will change. Editor terrain (ISOM) will also be updated.",
+  "isomFillUnavailable": "Terrain fill is unavailable. Configure StarCraft data in Settings, and use an even-width map with matching TILE/MTXM and supported ISOM shapes.",
+  "isomFillCancel": "Cancel",
+  "isomFillApply": "Fill whole map",
+  "@isomTerrainId": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "@isomFillPreview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
