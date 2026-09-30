@@ -200,10 +200,14 @@ void main() {
         );
         expect(result.page.entries, hasLength(catalogRequest.limit));
         expect(result.page.entries.every((entry) => entry.hasPreview), isTrue);
-        expect(
-          result.page.entries.every((entry) => !entry.isPlaceable),
-          isTrue,
-        );
+        expect(result.page.entries.any((entry) => entry.isPlaceable), isTrue);
+        for (final entry in result.page.entries.where((e) => e.isPlaceable)) {
+          expect(entry.hasPreview, isTrue);
+          if (catalogRequest.kind == StarCraftPlacementKind.unit) {
+            expect(entry.unitCapability, isNotNull);
+            expect(entry.unitCapability!.requiresRelationLink, isFalse);
+          }
+        }
         expect(result.thumbnails, hasLength(catalogRequest.limit));
         for (final thumbnail in result.thumbnails.values) {
           expect(thumbnail.width, greaterThan(0));
@@ -250,7 +254,9 @@ void main() {
         );
         expect(page.totalEntries, greaterThan(0));
         expect(page.entries, isNotEmpty);
-        expect(page.entries.every((entry) => !entry.isPlaceable), isTrue);
+        for (final entry in page.entries) {
+          expect(entry.isPlaceable, entry.doodadRecipe != null);
+        }
         final recipes = page.entries
             .map((entry) => entry.doodadRecipe)
             .whereType<DoodadPlacementRecipe>()

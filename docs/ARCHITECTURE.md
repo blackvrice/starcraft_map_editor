@@ -285,7 +285,7 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.8.0의
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.9.0의
 `listPlacementCatalog`를 실행한다. Unit·pure Sprite와 tileset별 Doodad recipe도
 같은 operation을 사용하며, 기존 `ObjectPaletteController` template의 UI merge는
 후속 단계로 남아 있다.
@@ -484,7 +484,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.8.0을
+렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.9.0을
 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
@@ -977,3 +977,8 @@ Inspector의 `TerrainDataPanel`은 해당 결과를 한글·영문으로 표시�
 ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, application의
 명시적 미리보기·적용/Undo로 분리한다. 실제 자료 공급자와 UI 연결은 미구현이다.
 지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.
+
+로컬 연결 자료 취득 경계는 helper 0.9.0의 읽기 전용 `readTerrainConnections`다.
+CV5 원시 단어·그래픽 참조 유효 member와 네 자산 SHA-256을 반환한다. ISOM 형태
+연결표는 생성하지 않으며 Dart process adapter와 변환 카탈로그 조립은 후속 범위다.
+[스냅샷 계약](ISOMETRIC_TERRAIN.md#로컬-연결-자료-스냅샷-2026-09-30-후속)을 따른다.

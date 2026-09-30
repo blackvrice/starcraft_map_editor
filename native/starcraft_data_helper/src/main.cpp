@@ -6,6 +6,7 @@
 #include "tile_atlas_protocol.h"
 #include "tileset_asset_reader.h"
 #include "tileset_tile_decoder.h"
+#include "terrain_connection_snapshot.h"
 
 #include <Windows.h>
 
@@ -29,7 +30,8 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.8.0";
+constexpr char kHelperVersion[] = "0.9.0";
+constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
 
@@ -108,6 +110,53 @@ int InspectInstallation(
         {"path", invalid_asset.path},
         {"nativeError", invalid_asset.native_error},
     });
+  }
+  std::cout << response.dump() << '\n';
+  return 0;
+}
+
+int ReadTerrainConnectionSnapshot(
+    const json& request, const std::string& request_id,
+    const std::filesystem::path& installation_path) {
+  if (!request.contains("tileset") || !request["tileset"].is_number_integer() ||
+      request["tileset"] < 0 || request["tileset"] >= sc::kTilesetCount) {
+    return WriteError(request_id, kTerrainConnectionsOperation,
+        "SC_CASC_PROTOCOL_INVALID_TILESET", "A tileset in 0..7 is required.",
+        "protocol", ERROR_INVALID_DATA, 2);
+  }
+  const auto tileset = request["tileset"].get<std::uint32_t>();
+  const auto assets = sc::ReadTilesetAssets(installation_path, tileset);
+  if (!assets.success) {
+    return WriteError(request_id, kTerrainConnectionsOperation, assets.error_code,
+        assets.message, assets.stage, assets.native_error, 3);
+  }
+  const auto snapshot = sc::ReadTerrainConnections(assets.assets);
+  if (!snapshot.success) {
+    return WriteError(request_id, kTerrainConnectionsOperation, snapshot.error_code,
+        "Terrain asset structure is invalid.", "decode-assets", ERROR_INVALID_DATA, 3);
+  }
+  auto response = BaseResponse(request_id, kTerrainConnectionsOperation);
+  response["status"] = "success";
+  response["snapshotVersion"] = 1;
+  response["tileset"] = tileset;
+  response["isomShapesResolved"] = false;
+  response["installation"] = {{"path", assets.installation_path},
+      {"storageProduct", assets.storage_product},
+      {"storageBuildNumber", assets.storage_build_number}};
+  response["assets"] = json::array();
+  for (std::size_t i = 0; i < sc::kRenderAssetCount; ++i) {
+    response["assets"].push_back({
+        {"path", std::string(sc::RenderTilesetAssetPaths()[tileset][i])},
+        {"bytes", assets.assets[i].size()}, {"sha256", snapshot.asset_sha256[i]}});
+  }
+  response["groups"] = json::array();
+  for (const auto& group : snapshot.groups) {
+    // Raw words retain the alternate doodad header interpretation; consumers
+    // must not infer ISOM eligibility from a renderable member alone.
+    response["groups"].push_back({{"group", group.group},
+        {"terrainTypeWord", group.terrain_type}, {"flagsWord", group.flags},
+        {"linkWords", group.links}, {"stackWords", group.stack_connections},
+        {"renderableMembers", group.renderable_members}});
   }
   std::cout << response.dump() << '\n';
   return 0;
@@ -894,7 +943,8 @@ int main() {
     }
     if (operation != kInspectOperation && operation != kRenderOperation &&
         operation != kRenderObjectOperation &&
-        operation != kListCatalogOperation) {
+        operation != kListCatalogOperation &&
+        operation != kTerrainConnectionsOperation) {
       return WriteError(
           request_id,
           operation,
@@ -928,6 +978,9 @@ int main() {
           2);
     }
 
+    if (operation == kTerrainConnectionsOperation) {
+      return ReadTerrainConnectionSnapshot(request, request_id, installation_path);
+    }
     if (operation == kInspectOperation) {
       return InspectInstallation(request_id, installation_path);
     }

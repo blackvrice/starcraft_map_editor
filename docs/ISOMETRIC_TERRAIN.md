@@ -125,8 +125,63 @@ SDK는 Flutter 3.47.5/Dart 3.13.4로 기준 SDK와 다르며 기준 버전 CI �
 
 ## 다음 구현 순서
 
-1. 실제 로컬 CV5와 형태 연결표를 읽는 공급자를 구현하고 자료 fingerprint·버전을
-   기록한다. 설치 자료와 대조해 검증된 비적층 카탈로그부터 제공한다.
+1. 로컬 CV5 스냅샷을 소비하는 Dart 공급자와 ISOM 형태 연결표 생성 규칙을 구현한다.
+   자료 해시·helper/snapshot/변환 버전을 revision에 결합하고 실제 자료와 대조한다.
 2. 수직 적층·경사로·경계 연결 solver와 보존 범위를 확장하고 독립 사례로 검증한다.
 3. 검증된 평지/전환/경사로 브러시·미리보기·공통 Undo와 원자적 섹션 갱신을 연결한다.
 4. 실제 설치·외부 에디터·SC:R로 확인한 뒤 ISOM/두다드 resize를 확장한다.
+
+
+## 로컬 연결 자료 스냅샷 (2026-09-30 후속)
+
+helper 0.9.0/protocol 3에 `readTerrainConnections` 읽기 전용 작업을 추가했다.
+이 단계는 CV5 자료 취득 경계이며 `IsomTerrainCatalogGateway` 제품 구현의 완료가
+아니다. 아직 Dart process adapter, ISOM 형태 연결표 생성, 변환 UI가 없다.
+
+요청은 공통 protocolVersion/requestId/installationPath와 tileset(0..7)을 받는다.
+응답은 공통 helper/CascLib 버전, 설치 product/build, `snapshotVersion: 1`,
+`isomShapesResolved: false`, assets와 groups를 포함한다. 설치 파일과 맵을 쓰지 않는다.
+
+- `assets`: CV5/VX4EX/VR4/WPE 고정 순서의 내부 경로, 바이트 수, SHA-256.
+  [Windows BCryptHash](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcrypthash)로
+  실제 디코딩한 메모리 자료를 해시한다. 원시 자산/추출 이미지를 응답에 넣지 않는다.
+- `groups`: 0부터 순서대로 최대 4096개. `terrainTypeWord`, `flagsWord`,
+  `linkWords[4]`, `stackWords[4]`는 u16 원시 숫자다. 두다드 헤더는 같은 위치를
+  다르게 해석하므로 이 숫자만으로 지형/ISOM 변환 가능하다고 분류하지 않는다.
+- `renderableMembers`: CV5 → VX4EX → VR4 참조가 범위 안인 member 0..15.
+  잘못된 참조는 목록에서 제외한다. 0번 mega-tile을 가리키는 빈 슬롯도 그래픽 참조는
+  유효할 수 있다. 따라서 이 목록은 ISOM 사용 가능 member 목록과 **같지 않다**.
+- 자산 구조 크기가 잘못되면 `SC_CASC_TERRAIN_ASSET_INVALID`로 전체 실패한다.
+  u16 연결 값을 6비트로 잘라내거나, 홀수 그룹 수를 자동 보정하지 않는다.
+- 같은 읽기 작업에서 얻은 네 자산을 해시/검사한다. 설치 업데이트 중 모든 파일을
+  원자적으로 고정한다는 보증은 없다. 후속 공급자는 결과 전체를 한 번에 사용하고
+  서로 다른 조회/버전의 자료를 섞지 않아야 한다.
+- snapshot v1은 전체 그룹을 한 응답으로 보낸다. 관찰된 응답은 약 199~327 KB이며
+  최대 4096 그룹까지 고려해 후속 process adapter에 명시적 출력 한도·timeout·취소와
+  원시 로그 기록을 구현해야 한다. 기존 catalog의 256 KB 한도를 그대로 쓰면 안 된다.
+
+합성 native 검증은 SHA-256 표준 벡터(빈 입력/abc), little-endian 원시 단어,
+누락 mega/mini 참조, 각 자산 손상 크기, 4096/4097 그룹 경계와 입력 불변성을 확인했다.
+실제 SC:R build 13515에서 8개 타일셋의 반복 응답/해시 일치와 전체 그룹 범위를 검사했다.
+
+| tileset ID | CV5 그룹 수 | 그래픽 참조 유효 member 수 |
+| --- | ---: | ---: |
+| 0 | 1979 | 31664 |
+| 1 | 2046 | 32736 |
+| 2 | 1265 | 20240 |
+| 3 | 1418 | 22688 |
+| 4 | 2046 | 32736 |
+| 5 | 2046 | 32736 |
+| 6 | 2039 | 32624 |
+| 7 | 2047 | 32752 |
+
+위 숫자는 변환 가능한 타일 수가 아니다. 실제 지형 변환/게임 실행은 아직 검증하지 않았다.
+새 snapshot 2개와 기존 CASC 6개, 총 8개 실제 설치 테스트가 통과했다. 기존 CASC
+테스트의 오래된 유닛/두다드 배치 불가 기대값을 현재 검증 데이터 기반 배치 계약으로
+갱신했다. Windows debug 빌드와 CTest 6개 통과. CTest의 최초 sandbox 실행에서는
+기존 MPQ 파일 교체가 실패했으나 권한을 갖춘 재실행에서 통과했다.
+전체 Flutter 815개 통과/33개 환경 선택 skip, analyze 무이슈. Flutter 3.47.5/
+Dart 3.13.4 사용으로 기준 3.44.8/3.12 CI 검증은 별도다. CascLib CMake 경고는 남는다.
+변경 파일 format은 통과, 전체 format은 기존 테스트 3개(local_map_save_file_gateway,
+process_eud_compiler_gateway, process_map_archive_gateway)의 차이로 미통과다.
+이번에 버전을 수정한 process_starcraft_data_asset_inspector 테스트는 포맷도 정리했다.

@@ -65,6 +65,8 @@ add_library(starcraft_data_core STATIC
   src/tile_atlas_protocol.h
   src/tileset_asset_reader.cpp
   src/tileset_asset_reader.h
+  src/terrain_connection_snapshot.cpp
+  src/terrain_connection_snapshot.h
   src/tileset_tile_decoder.cpp
   src/tileset_tile_decoder.h
 )
@@ -83,7 +85,7 @@ target_compile_options(
     /EHsc
     /utf-8
 )
-target_link_libraries(starcraft_data_core PUBLIC casc_static)
+target_link_libraries(starcraft_data_core PUBLIC casc_static bcrypt)
 target_include_directories(
   starcraft_data_core
   PUBLIC
@@ -276,3 +278,10 @@ install(
     "${INSTALL_BUNDLE_DATA_DIR}/licenses/CascLib/bundled-notices"
   COMPONENT Runtime
 )
+
+add_executable(starcraft_terrain_connections_native_test test/terrain_connection_snapshot_test.cpp)
+target_compile_features(starcraft_terrain_connections_native_test PRIVATE cxx_std_17)
+target_compile_definitions(starcraft_terrain_connections_native_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_options(starcraft_terrain_connections_native_test PRIVATE /UNDEBUG /W4 /WX /EHsc /utf-8)
+target_link_libraries(starcraft_terrain_connections_native_test PRIVATE starcraft_data_core)
+add_test(NAME starcraft_terrain_connections_native COMMAND starcraft_terrain_connections_native_test)
