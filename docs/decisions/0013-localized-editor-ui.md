@@ -34,6 +34,12 @@
   Problems/Output/Build Log, 상태 표시줄, 시작 화면)이다. 설정 대화상자, 트리거·
   리소스·EUD 패널, 카탈로그는 후속 단계에서 같은 ARB로 옮긴다.
 
+- 2026-09-30 후속: 새 맵 마법사, 배치 카탈로그, EUD 빌드 단계, 트리거, EUD 확장
+  프로젝트 화면을 같은 ARB로 옮겼다. 트리거 opcode·플레이어 값과 EUD 필드·실행 규칙
+  이름은 도메인 모델이 영어 이름과 안정 ID를 유지하도록 presentation 계층의 표시
+  표(`TriggerLabels`, `EudFieldLabels`, `EudRuleLabels`)에서 번역하고, 표에 없는
+  값은 도메인 이름을 그대로 보여준다.
+
 ## Alternatives
 
 - `intl` 메시지를 직접 작성하거나 자체 문자열 맵을 두는 방식은 생성기 검증과

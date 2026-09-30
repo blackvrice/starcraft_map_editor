@@ -983,16 +983,18 @@ class _RecordDialogState extends State<_RecordDialog> {
     bool hasCondition(int id) =>
         conditions.any((slot) => ChkTrigger.type(false, slot) == id);
     final preserve = actions.any((slot) => ChkTrigger.type(true, slot) == 3);
-    return [
+    // A trigger that cannot run gets only the reasons, so the explanation
+    // never describes actions that will not happen.
+    final blockers = [
       if (!_draft.enabled) l10n.trigExplainDisabled,
-      if (owners.isEmpty)
-        l10n.trigExplainNoOwner
-      else
-        l10n.trigExplainOwners(owners.join(', ')),
+      if (owners.isEmpty) l10n.trigExplainNoOwner,
+      if (!_draft.briefing && hasCondition(23)) l10n.trigExplainNever,
+    ];
+    if (blockers.isNotEmpty) return blockers;
+    return [
+      l10n.trigExplainOwners(owners.join(', ')),
       if (!_draft.briefing) ...[
-        if (hasCondition(23))
-          l10n.trigExplainNever
-        else if (hasCondition(22) && conditions.length == 1)
+        if (hasCondition(22) && conditions.length == 1)
           l10n.trigExplainAlways
         else if (conditions.isEmpty)
           l10n.trigExplainNoConditions
