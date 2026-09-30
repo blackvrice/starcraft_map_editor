@@ -1,6 +1,8 @@
 # 등각 지형·경사로와 에디터 지형 데이터
 
-2026-09-30: 첫 단계인 **TILE/ISOM 읽기 전용 구조 검사와 MTXM 비교**를 구현했다.
+2026-09-30 현재: **TILE/ISOM 검사, 주입형 비적층 변환 코어, 로컬 CV5 스냅샷과
+Dart 수신/검증**까지 구현했다. 실제 ISOM 형태 연결표·변환 카탈로그·UI 연결은 남았다.
+아래 단계별 구현·검증 기록은 당시 범위를 유지한다.
 등각 지형·경사로 브러시, ISOM 생성/복구, ISOM·두다드 맵 resize는 아직 미구현이다.
 기존 원시 브러시는 계속 MTXM만 변경한다.
 
@@ -136,7 +138,8 @@ SDK는 Flutter 3.47.5/Dart 3.13.4로 기준 SDK와 다르며 기준 버전 CI �
 
 helper 0.9.0/protocol 3에 `readTerrainConnections` 읽기 전용 작업을 추가했다.
 이 단계는 CV5 자료 취득 경계이며 `IsomTerrainCatalogGateway` 제품 구현의 완료가
-아니다. 아직 Dart process adapter, ISOM 형태 연결표 생성, 변환 UI가 없다.
+아니다. 이 스냅샷 단계 당시에는 Dart adapter도 없었으며, 아래 후속 단계에서
+Dart 수신/검증을 구현했다. 현재도 ISOM 형태 연결표 생성과 변환 UI는 남아 있다.
 
 요청은 공통 protocolVersion/requestId/installationPath와 tileset(0..7)을 받는다.
 응답은 공통 helper/CascLib 버전, 설치 product/build, `snapshotVersion: 1`,

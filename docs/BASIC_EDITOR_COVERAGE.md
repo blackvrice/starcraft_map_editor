@@ -1,7 +1,7 @@
 # 기본 맵 에디터 기능 대조표
 
-2026-09-29 갱신. 최초 2026-09-07 조사에서 발견한 기능 누락을 현재 구현과
-대조했다. 도메인 생성기 `bad4bab` 이후 New Map UI·신규 MPQ 통합까지 반영한다.
+2026-09-30 갱신. 최초 2026-09-07 조사에서 발견한 기능 누락을 현재 구현과
+대조했다. `cbd7225`까지 New Map·raw resize·등각 지형 기반과 Dart 자료 수신을 반영한다.
 정적 코드·테스트·기존 검증 기록의 대조이며 실제 게임을 다시 실행한 기록은 아니다.
 
 ## 판정 기준
@@ -26,7 +26,7 @@
 | EUD 실행 규칙 | 변수/식·개체/플레이어/위치/표시, schema v3·실제 컴파일 | 게임 생명주기·성능·멀티 검증 M7.1 |
 | EUD 도구·언어 | 관리형 euddraft 동봉, epScript entry | 깨끗한 Windows 인수 X1/X5; Python X3·Lua X4 미구현 |
 | Tile/Unit/Sprite/Doodad | 카탈로그·썸네일·검증된 factory·배치 | Doodad 삭제 게임/외부 왕복·미지원 확대 M6.2 |
-| 지형 | raw MTXM Brush/Rectangle·Undo | 등각 지형/경사로·TILE/ISOM 동기화 M6.4 |
+| 지형 | raw MTXM 편집, TILE/ISOM 검사, 비적층 변환 코어·로컬 자료/Dart 수신 기반 | 실제 ISOM 형태표·변환 카탈로그·경사로/브러시/UI 연결 M6.4 |
 | 시작 위치 | 생성기 자동 생성·기존 객체 이동·누락/중복 진단 | 전용 선택/배치 UX M6.4 |
 | 객체 속성 | 위치·소유자·비율·자원 등 개별 편집 | 상태/valid flags·Addon/Nydus·다중 속성 M6.4 |
 | 로케이션 | 생성·이동·크기·이름·참조 검사 | 목록 탐색·고도 조건 M6.4 |
@@ -50,6 +50,8 @@ Map Save As는 CHK·리소스를 저장한다. Save Project는 JSON을 저장한
 EUD 효과는 Prepare EUD Build의 명시적 테스트 빌드로 별도 결과 맵에 반영한다.
 사용자의 실드/공격 간격 일부 확인은 [관찰 기록](EUD_GENERATED_BUILD_VALIDATION.md)의
 범위만 인정하며 사거리·피해 유형·전체 필드 검증으로 확대하지 않는다.
+
+분야별 남은 구현과 게임/배포 검증은 [남은 작업 요약](REMAINING_WORK.md)을 따른다.
 
 ## 완료 기준
 

@@ -975,7 +975,7 @@ Inspector의 `TerrainDataPanel`은 해당 결과를 한글·영문으로 표시�
 [등각 지형 계약](ISOMETRIC_TERRAIN.md)에 따라 구조 검사와 의미 검증을 구분한다.
 
 ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, application의
-명시적 미리보기·적용/Undo로 분리한다. 실제 자료 공급자와 UI 연결은 미구현이다.
+명시적 미리보기·적용/Undo로 분리한다. 실제 ISOM 변환 카탈로그 공급자와 UI 연결은 미구현이다. 로컬 원시 자료 수신은 아래 경계를 사용한다.
 지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.
 
 로컬 연결 자료 취득 경계는 helper 0.9.0의 읽기 전용 `readTerrainConnections`다.
