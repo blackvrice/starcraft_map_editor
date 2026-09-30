@@ -979,6 +979,8 @@ ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, app
 지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.
 
 로컬 연결 자료 취득 경계는 helper 0.9.0의 읽기 전용 `readTerrainConnections`다.
-CV5 원시 단어·그래픽 참조 유효 member와 네 자산 SHA-256을 반환한다. ISOM 형태
-연결표는 생성하지 않으며 Dart process adapter와 변환 카탈로그 조립은 후속 범위다.
+CV5 원시 단어·그래픽 참조 유효 member와 네 자산 SHA-256을 반환한다.
+`TerrainConnectionSnapshotGateway`의 Dart process adapter는 이를 엄격히 검증하고
+불변 스냅샷·revision·한도 내 원시 로그를 제공한다. ISOM 형태 연결표 생성과 변환
+카탈로그 조립은 후속 범위다.
 [스냅샷 계약](ISOMETRIC_TERRAIN.md#로컬-연결-자료-스냅샷-2026-09-30-후속)을 따른다.

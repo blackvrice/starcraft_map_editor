@@ -3,12 +3,45 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_terrain_connection_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/starcraft_data_helper_protocol.dart';
 
 void main() {
   final helper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   final installation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final canRun = Platform.isWindows && helper != null && installation != null;
+
+  test(
+    'Dart gateway validates all local tilesets and stable snapshot revisions',
+    () async {
+      final gateway = ProcessTerrainConnectionSnapshotGateway(
+        helperExecutablePath: helper!,
+      );
+      for (var tileset = 0; tileset < 8; tileset++) {
+        final first = await gateway.read(
+          operationId: 'adapter-$tileset',
+          installationPath: installation!,
+          tileset: tileset,
+        );
+        expect(
+          first.isSuccess,
+          isTrue,
+          reason: '${first.errorCode}: ${first.stderr}',
+        );
+        final second = await gateway.read(
+          operationId: 'repeat-$tileset',
+          installationPath: installation,
+          tileset: tileset,
+        );
+        expect(second.isSuccess, isTrue, reason: second.errorCode);
+        expect(second.snapshot!.revision, first.snapshot!.revision);
+        expect(first.snapshot!.groups, isNotEmpty);
+        expect(first.snapshot!.assets, hasLength(4));
+        expect(first.stdout, contains('"helperVersion":"0.9.0"'));
+      }
+    },
+    skip: canRun ? false : 'Requires local Windows CASC helper/installation.',
+  );
 
   Future<(int, Map<String, dynamic>)> read(Object? tileset) async {
     final process = await Process.start(helper!, const []);

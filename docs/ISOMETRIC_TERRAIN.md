@@ -125,8 +125,8 @@ SDK는 Flutter 3.47.5/Dart 3.13.4로 기준 SDK와 다르며 기준 버전 CI �
 
 ## 다음 구현 순서
 
-1. 로컬 CV5 스냅샷을 소비하는 Dart 공급자와 ISOM 형태 연결표 생성 규칙을 구현한다.
-   자료 해시·helper/snapshot/변환 버전을 revision에 결합하고 실제 자료와 대조한다.
+1. 검증된 Dart 스냅샷을 소비하는 ISOM 형태 연결표 생성 규칙과 변환 카탈로그 조립을
+   구현한다. snapshot revision에 변환 알고리즘 버전을 결합하고 실제 자료와 대조한다.
 2. 수직 적층·경사로·경계 연결 solver와 보존 범위를 확장하고 독립 사례로 검증한다.
 3. 검증된 평지/전환/경사로 브러시·미리보기·공통 Undo와 원자적 섹션 갱신을 연결한다.
 4. 실제 설치·외부 에디터·SC:R로 확인한 뒤 ISOM/두다드 resize를 확장한다.
@@ -185,3 +185,46 @@ Dart 3.13.4 사용으로 기준 3.44.8/3.12 CI 검증은 별도다. CascLib CMak
 변경 파일 format은 통과, 전체 format은 기존 테스트 3개(local_map_save_file_gateway,
 process_eud_compiler_gateway, process_map_archive_gateway)의 차이로 미통과다.
 이번에 버전을 수정한 process_starcraft_data_asset_inspector 테스트는 포맷도 정리했다.
+
+
+## Dart 스냅샷 수신 경계 (2026-09-30 후속)
+
+`TerrainConnectionSnapshotGateway`와 `ProcessTerrainConnectionSnapshotGateway`를
+추가했다. `read(operationId, installationPath, tileset)`는 불변 스냅샷 또는 안정적인
+실패 코드를 반환하고 `cancel(operationId)`로 요청을 취소한다. UI와 변환 코어에는
+아직 연결하지 않았다. 이 포트는 원시 자료 수신용이며 `IsomTerrainCatalogGateway`의
+제품 구현을 대체하지 않는다.
+
+- helper는 shell 없이 절대 경로로 실행한다. 기본 환경은 SystemRoot와 요청별
+  임시 디렉터리 TEMP/TMP뿐이다. 테스트용 실행 인수·환경 주입은 별도로 제공한다.
+- 기본 timeout 30초, stdout/stderr 각각 최대 2 MiB. 출력 초과 시 즉시 종료를 요청한다.
+  종료와 스트림 완료를 기다리는 중에도 timeout/취소를 처리한다. cleanup은 해당 요청이
+  만든 임시 디렉터리만 대상으로 하며, 종료 대기는 추가 최대 2초다.
+- 같은 operation ID의 동시 실행은 거부한다. 시작 대기 중 취소도 기록하여 뒤늦게
+  시작된 helper가 계속 실행되지 않도록 한다. 실패 결과에는 스냅샷을 반환하지 않는다.
+- 성공/실패 모두 한도 내 원시 stdout/stderr와 확인된 exitCode를 결과에 보존한다.
+  취소/출력 초과 때 로그는 부분 기록일 수 있고 exitCode는 미확인(null)일 수 있다.
+  일반 helper 오류는 `SC_TERRAIN_HELPER_FAILED`로 구분하며 원래 오류는 로그에 남는다.
+- decoder는 protocol/helper/CascLib/snapshot 버전, operation/request ID, 설치 경로,
+  tileset, `isomShapesResolved: false`를 검사한다. 미지원 버전은 자동 수용하지 않는다.
+- 자산 경로·순서·크기·해시 형식, CV5 길이와 전체 그룹 수, 연속 그룹 ID,
+  u16 단어 범위, member 정렬·중복·범위를 검사한다. 숫자 필드의 실수형은 거부한다.
+  알 수 없는 u16은 그대로 보존하고 6비트 연결 값으로 축소하지 않는다.
+- revision은 snapshot v1/helper/CascLib/tileset/product/build, 네 자료 경로·크기·해시,
+  그룹 투영 전체의 정해진 필드 순서를 SHA-256으로 계산한다. 요청 ID와 설치 위치는
+  제외한다. 자료가 같으면 재조회/요청 ID 변경에도 같고 내용이 바뀌면 달라진다.
+  이 값은 **자료 식별자**이며 아직 변환 알고리즘 버전이나 ISOM 검증을 포함하지 않는다.
+- asset hash는 신뢰하는 번들 helper가 읽은 자료의 식별자다. Dart는 원시 자산을
+  받지 않으므로 해시 내용을 독립 재계산하거나 악성 helper를 인증하지 않는다.
+
+검증: 합성 decoder/process 테스트 8개 통과. 256 KiB보다 큰 정상 응답,
+잘못된 버전/범위/자료 경로/그룹 커버리지, 불변성, revision 변화, 시간 초과,
+중복 ID·시작 대기 취소, 출력 초과, 잘못된 JSON/실행 실패를 검사했다.
+실제 설치 테스트 3개 통과: 새 Dart adapter로 SC:R build 13515의 8개 타일셋을
+반복 수신하고 revision 일치를 확인했으며 이전 native 응답 검증도 유지했다.
+실제 ISOM 변환/게임 실행은 형태 연결표가 미구현이므로 검증하지 않았다.
+이번 변경은 Dart 수신 계층이며 native/UI 변경이 없어 Windows 재빌드는 생략했다.
+검증 SDK는 Flutter 3.47.5/Dart 3.13.4이고 기준 SDK CI 확인은 별도다.
+최종 전체 Flutter 테스트 823개 통과/34개 선택 skip, analyze 무이슈.
+변경 Dart 7개 format·문서 링크 검사를 통과했다. 전체 format은 앞서 기록한 기존
+infrastructure 테스트 3개의 차이로 미통과이며 해당 파일을 변경하지 않았다.
