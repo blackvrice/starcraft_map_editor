@@ -1,3 +1,5 @@
+import '../documents/selection_navigation_dialog.dart';
+import '../../application/layers/selection_navigation_controller.dart';
 import '../documents/isom_fill_dialog.dart';
 import '../documents/basic_editing_tools_dialog.dart';
 import '../../application/editing/basic_editing_controller.dart';
@@ -149,6 +151,51 @@ class _EditorShellState extends State<EditorShell> {
   late _WorkspaceView _workspaceView;
   bool _settingsVisited = false;
   late BasicEditingController _basicEditing;
+  late SelectionNavigationController _selectionNavigation;
+  MapNavigationTarget? _navigationTarget;
+  int _selectionInteractionRevision = 0;
+  void _prepareSelection() {
+    setState(() => _selectionInteractionRevision++);
+    widget.terrainEditingController.cancelBrushStroke();
+    widget.terrainEditingController.setTool(TerrainEditingTool.select);
+    widget.objectPaletteController.cancelPlacement();
+    if (widget.placementCatalogController.state.isPlacementActive) {
+      widget.placementCatalogController.cancelSelection();
+    }
+    widget.objectEditingController.cancelLocationCreation();
+  }
+
+  void _navigateTo(MapNavigationTarget? target) {
+    if (target == null ||
+        !identical(
+          target.document,
+          widget.openMapController.state.session?.rawDocument,
+        )) {
+      return;
+    }
+    _prepareSelection();
+    setState(() {
+      _navigationTarget = target;
+      _workspaceView = _WorkspaceView.map;
+    });
+  }
+
+  void _selectionAction(bool Function() action) {
+    _prepareSelection();
+    action();
+  }
+
+  Future<void> _openSelectionNavigation({bool coordinates = false}) async {
+    _prepareSelection();
+    await showDialog<void>(
+      context: context,
+      builder: (_) => SelectionNavigationDialog(
+        controller: _selectionNavigation,
+        coordinateFocus: coordinates,
+        onNavigate: _navigateTo,
+      ),
+    );
+  }
 
   Future<void> _openBasicTools({int initialTab = 0}) async {
     if (widget.openMapController.state.session == null) return;
@@ -222,6 +269,10 @@ class _EditorShellState extends State<EditorShell> {
   void initState() {
     super.initState();
     _basicEditing = BasicEditingController(
+      maps: widget.openMapController,
+      layers: widget.mapLayerController,
+    );
+    _selectionNavigation = SelectionNavigationController(
       maps: widget.openMapController,
       layers: widget.mapLayerController,
     );
@@ -319,6 +370,11 @@ class _EditorShellState extends State<EditorShell> {
         maps: widget.openMapController,
         layers: widget.mapLayerController,
       );
+      _selectionNavigation = SelectionNavigationController(
+        maps: widget.openMapController,
+        layers: widget.mapLayerController,
+      );
+      _navigationTarget = null;
     }
     if (oldWidget.eudProjectWorkspace != widget.eudProjectWorkspace) {
       _projectSubscription?.cancel();
@@ -846,6 +902,40 @@ class _EditorShellState extends State<EditorShell> {
     if (_workspaceView == _WorkspaceView.map &&
         openMap != null &&
         widget.openMapController.state.session != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.keyF, control: true)] =
+          _openSelectionNavigation;
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyG,
+        control: true,
+      )] = () =>
+          _openSelectionNavigation(coordinates: true);
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyA,
+        control: true,
+      )] = () =>
+          _selectionAction(_selectionNavigation.selectAll);
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyI,
+        control: true,
+      )] = () =>
+          _selectionAction(_selectionNavigation.invert);
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyT,
+        control: true,
+        shift: true,
+      )] = () =>
+          _selectionAction(() => _selectionNavigation.selectRelated());
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyJ,
+        control: true,
+      )] = () =>
+          _navigateTo(_selectionNavigation.focusSelection());
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyJ,
+        control: true,
+        shift: true,
+      )] = () =>
+          _navigateTo(_selectionNavigation.focusSelection(fit: true));
       shortcuts[const SingleActivator(LogicalKeyboardKey.keyC, control: true)] =
           _copyObjectsShortcut;
       shortcuts[const SingleActivator(
@@ -883,6 +973,10 @@ class _EditorShellState extends State<EditorShell> {
               children: [
                 _EditorMenuBar(
                   newMap: openMap == null ? null : _newMap,
+                  selectionNavigation:
+                      widget.openMapController.state.session == null
+                      ? null
+                      : _openSelectionNavigation,
                   basicTools:
                       openMap != null &&
                           widget.openMapController.state.session != null
@@ -1044,6 +1138,10 @@ class _EditorShellState extends State<EditorShell> {
                             terrainEditingController:
                                 widget.terrainEditingController,
                             mapLayerController: widget.mapLayerController,
+                            selectionNavigation: _selectionNavigation,
+                            navigationTarget: _navigationTarget,
+                            selectionInteractionRevision:
+                                _selectionInteractionRevision,
                             objectEditingController:
                                 widget.objectEditingController,
                             objectPaletteController:
@@ -1137,6 +1235,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.newMap,
     required this.fillIsom,
     required this.basicTools,
+    required this.selectionNavigation,
     required this.resizeMap,
     required this.openMap,
     required this.saveAs,
@@ -1153,6 +1252,7 @@ class _EditorMenuBar extends StatelessWidget {
   final VoidCallback? newMap;
   final VoidCallback? fillIsom;
   final VoidCallback? basicTools;
+  final VoidCallback? selectionNavigation;
   final VoidCallback? resizeMap;
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
@@ -1281,6 +1381,11 @@ class _EditorMenuBar extends StatelessWidget {
               child: Text(l10n.menuRedo),
             ),
             const Divider(),
+            MenuItemButton(
+              key: const Key('menu-selection-navigation'),
+              onPressed: selectionNavigation,
+              child: Text(l10n.selectionTitle),
+            ),
             MenuItemButton(
               key: const Key('menu-basic-tools'),
               onPressed: basicTools,
@@ -1677,6 +1782,9 @@ class _EditorWorkspace extends StatelessWidget {
     required this.eudSourceController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.selectionNavigation,
+    this.navigationTarget,
+    this.selectionInteractionRevision = 0,
     required this.objectEditingController,
     required this.objectPaletteController,
     required this.placementCatalogController,
@@ -1706,6 +1814,9 @@ class _EditorWorkspace extends StatelessWidget {
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final SelectionNavigationController selectionNavigation;
+  final MapNavigationTarget? navigationTarget;
+  final int selectionInteractionRevision;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
   final PlacementCatalogController placementCatalogController;
@@ -1814,6 +1925,10 @@ class _EditorWorkspace extends StatelessWidget {
                   children: [
                     _MapWorkspace(
                       eudBuildSteps: eudBuildSteps,
+                      selectionNavigation: selectionNavigation,
+                      navigationTarget: navigationTarget,
+                      selectionInteractionRevision:
+                          selectionInteractionRevision,
                       openMap: openMap,
                       openMapState: openMapState,
                       recentProjects: recentProjects,
@@ -2338,6 +2453,9 @@ class _MapWorkspace extends StatelessWidget {
     required this.eudSourceController,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.selectionNavigation,
+    this.navigationTarget,
+    this.selectionInteractionRevision = 0,
     required this.objectEditingController,
     required this.objectPaletteController,
     required this.placementCatalogController,
@@ -2358,6 +2476,9 @@ class _MapWorkspace extends StatelessWidget {
   final EudSourceController eudSourceController;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final SelectionNavigationController selectionNavigation;
+  final MapNavigationTarget? navigationTarget;
+  final int selectionInteractionRevision;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
   final PlacementCatalogController placementCatalogController;
@@ -2397,6 +2518,9 @@ class _MapWorkspace extends StatelessWidget {
     if (session != null) {
       return _OpenedMapWorkspace(
         session: session,
+        selectionNavigation: selectionNavigation,
+        navigationTarget: navigationTarget,
+        selectionInteractionRevision: selectionInteractionRevision,
         diagnostics: [
           ...session.diagnostics,
           ...terrainTileTextureState.diagnostics,
@@ -2511,6 +2635,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.diagnostics,
     required this.terrainEditingController,
     required this.mapLayerController,
+    required this.selectionNavigation,
+    this.navigationTarget,
+    this.selectionInteractionRevision = 0,
     required this.objectEditingController,
     required this.objectPaletteController,
     required this.placementCatalogController,
@@ -2522,6 +2649,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
   final List<EditorDiagnostic> diagnostics;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
+  final SelectionNavigationController selectionNavigation;
+  final MapNavigationTarget? navigationTarget;
+  final int selectionInteractionRevision;
   final ObjectEditingController objectEditingController;
   final ObjectPaletteController objectPaletteController;
   final PlacementCatalogController placementCatalogController;
@@ -2771,6 +2901,68 @@ class _OpenedMapWorkspace extends StatelessWidget {
                   ? const _MapCanvasUnavailable()
                   : MapCanvas(
                       key: ObjectKey(session.extractedMap),
+                      navigationTarget:
+                          identical(
+                            navigationTarget?.document,
+                            session.rawDocument,
+                          )
+                          ? navigationTarget
+                          : null,
+                      interactionRevision: selectionInteractionRevision,
+                      onOverlapSelectionRequested: (request) async {
+                        final hits = mapLayerController
+                            .orderedHitsAt(
+                              session: session,
+                              pixelX: request.coordinate.pixelX,
+                              pixelY: request.coordinate.pixelY,
+                            )
+                            .where(
+                              (e) => e.object.layer != MapLayerType.terrain,
+                            )
+                            .toList();
+                        if (hits.isEmpty) return;
+                        final labels = {
+                          for (final e in selectionNavigation.entries)
+                            e.object: objectSearchLabel(e),
+                        };
+                        final chosen = await showMenu<MapLayerObjectRef>(
+                          context: context,
+                          semanticLabel: context.l10n.selectionOverlap,
+                          position: RelativeRect.fromRect(
+                            Rect.fromLTWH(
+                              request.globalPosition.dx,
+                              request.globalPosition.dy,
+                              0,
+                              0,
+                            ),
+                            Offset.zero & MediaQuery.sizeOf(context),
+                          ),
+                          items: [
+                            for (final hit in hits)
+                              PopupMenuItem(
+                                value: hit.object,
+                                child: Text(
+                                  labels[hit.object] ?? hit.object.label,
+                                ),
+                              ),
+                          ],
+                        );
+                        if (chosen != null &&
+                            identical(
+                              selectionNavigation
+                                  .maps
+                                  .state
+                                  .session
+                                  ?.rawDocument,
+                              session.rawDocument,
+                            ) &&
+                            context.mounted) {
+                          mapLayerController.selectObject(
+                            session: session,
+                            object: chosen,
+                          );
+                        }
+                      },
                       mapWidth: dimensions.width,
                       mapHeight: dimensions.height,
                       rawTileValues: terrainLayer.isVisible
@@ -2788,6 +2980,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         terrainEditingController.setTool(tool);
                       },
                       selectedTile: selectedTerrainTile,
+                      onSelectionCleared: mapLayerController.clearSelection,
                       layerScene: layerScene,
                       isObjectPlacementActive:
                           paletteState.isPlacementActive ||

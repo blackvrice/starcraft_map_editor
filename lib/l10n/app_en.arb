@@ -1559,5 +1559,37 @@
         "type": "int"
       }
     }
+  },
+  "selectionTitle": "Selection and navigation",
+  "selectionSearch": "Name, #type ID, layer or coordinates",
+  "selectionAllLayers": "All object layers",
+  "selectionAllOwners": "All owners",
+  "selectionSelectable": "Selectable only",
+  "selectionResults": "Select search results",
+  "selectionAll": "Select all in active layer",
+  "selectionInvert": "Invert in active layer",
+  "selectionSameType": "Select same type",
+  "selectionSameOwner": "Select same owner",
+  "selectionClear": "Clear selection",
+  "selectionFocus": "Go to selection",
+  "selectionFit": "Fit selection",
+  "selectionFitMap": "Fit map",
+  "selectionGoTo": "Go to coordinates",
+  "selectionTileCoordinates": "Tile coordinates",
+  "selectionEmpty": "Select an object first.",
+  "selectionStale": "The map or layer changed. Refresh your selection.",
+  "selectionNoResults": "No matching objects",
+  "selectionUnavailable": "Hidden or locked",
+  "selectionOverlap": "Choose an overlapping object",
+  "selectionCounts": "{count} results · {selected} selected",
+  "@selectionCounts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "selected": {
+        "type": "int"
+      }
+    }
   }
 }

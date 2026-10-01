@@ -31,6 +31,7 @@
 | 객체 속성 | 개별/일괄 수치·상태/valid flags·Addon/Nydus·Sprite-unit/Doodad 상태 | 불명확한 flags/관계/overlay 거부; 실제 게임 인수 M6.4 |
 | 로케이션 | 생성·이동·크기·이름·목록/검색·고도·일괄 고도 | 실제 고도 조건·외부 에디터 인수 M6.4 |
 | Fog of War | 플레이어별 MASK 표시·브러시/사각형/전체 채우기·Undo/Redo | 게임 인수 M6.4 |
+| 선택·탐색 | 이름/종류 ID·레이어/소유자 검색, 전체/반전/관련 선택·좌표/화면 맞춤·겹침 목록 | [지원·검증](SELECTION_NAVIGATION.md), 게임/릴리스 인수 별도 |
 | 선택 영역 clipboard | 문서 내 유닛/Sprite/로케이션·Raw MTXM·검증된 단일 Doodad 복합 편집 | 혼합 다수 Doodad/문서 간 복사·등각 경계 계산 제외 |
 | 미니맵 | 미니맵 이동/viewport·Alt 겹침 순환·V/B/R·Ctrl+C/X/V | 실제 사용성·접근성 M8 |
 | Undo/Redo | 문서 공통 시간순 기록·스냅샷 검사·원자적 복원 | 저장 후 기록 유지 확장 미포함; EUD 프로젝트 기록 별도 |

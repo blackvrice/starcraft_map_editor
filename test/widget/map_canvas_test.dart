@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
+import 'package:starcraft_map_editor/application/layers/selection_navigation_controller.dart';
+import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/application/objects/object_sprite_atlas_loader.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_gateway.dart';
 import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
@@ -14,6 +16,123 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'navigation fits a 256 map, centers a pixel target and does not reapply on rebuild',
+    (tester) async {
+      tester.view.physicalSize = const Size(640, 480);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final doc = const NewMapFactory().create(
+        NewMapOptions(width: 256, height: 256, rawTileValue: 1),
+      );
+      MapNavigationTarget? target;
+      var revision = 0, regions = 0;
+      late StateSetter update;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                update = setState;
+                return MapCanvas(
+                  mapWidth: 256,
+                  mapHeight: 256,
+                  navigationTarget: target,
+                  interactionRevision: revision,
+                  onSelectionRegionRequested: (_) => regions++,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      MapCanvasLayout layout() =>
+          (tester
+                      .widget<CustomPaint>(
+                        find.byKey(const Key('map-canvas-paint')),
+                      )
+                      .painter!
+                  as MapCanvasPainter)
+              .layout;
+      update(
+        () => target = MapNavigationTarget(
+          document: doc,
+          left: 0,
+          top: 0,
+          right: 8192,
+          bottom: 8192,
+          fit: true,
+        ),
+      );
+      await tester.pump();
+      expect(layout().visibleTiles.left, 0);
+      expect(layout().visibleTiles.rightExclusive, 256);
+      expect(layout().visibleTiles.bottomExclusive, 256);
+      update(
+        () => target = MapNavigationTarget(
+          document: doc,
+          left: 4000,
+          top: 4000,
+          right: 4032,
+          bottom: 4032,
+          fit: true,
+        ),
+      );
+      await tester.pump();
+      final pixel = layout().coordinateAt(const Offset(320, 240))!;
+      expect(pixel.pixelX, closeTo(4016, 1));
+      expect(pixel.pixelY, closeTo(4016, 1));
+      await tester.tap(find.byKey(const Key('map-canvas-zoom-out')));
+      await tester.pump();
+      final changed = layout().tileExtent;
+      update(() {});
+      await tester.pump();
+      expect(layout().tileExtent, changed);
+      final drag = await tester.startGesture(const Offset(320, 240));
+      await drag.moveBy(const Offset(20, 20));
+      await tester.pump();
+      update(() => revision++);
+      await tester.pump();
+      await drag.up();
+      await tester.pump();
+      expect(regions, 0);
+      expect(layout().tileExtent, changed);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'right click requests overlap choice and escape clears only canvas selection',
+    (tester) async {
+      var choices = 0, clears = 0, paints = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MapCanvas(
+              mapWidth: 8,
+              mapHeight: 8,
+              onOverlapSelectionRequested: (_) => choices++,
+              onSelectionCleared: () => clears++,
+              onBrushStroke: (_) => paints++,
+            ),
+          ),
+        ),
+      );
+      final location = _tileCenter(tester, x: 2, y: 2);
+      final gesture = await tester.startGesture(
+        location,
+        buttons: kSecondaryMouseButton,
+        kind: PointerDeviceKind.mouse,
+      );
+      await gesture.up();
+      await tester.pump();
+      expect(choices, 1);
+      expect(paints, 0);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      expect(clears, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'minimap navigates without painting and canvas tool shortcuts preserve text modifiers',
     (tester) async {

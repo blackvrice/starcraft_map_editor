@@ -4741,6 +4741,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Click the map to fill coordinates; Apply places or moves this player\'s start location.'**
   String get basicStartCanvasHelp;
+
+  /// No description provided for @selectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection and navigation'**
+  String get selectionTitle;
+
+  /// No description provided for @selectionSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, #type ID, layer or coordinates'**
+  String get selectionSearch;
+
+  /// No description provided for @selectionAllLayers.
+  ///
+  /// In en, this message translates to:
+  /// **'All object layers'**
+  String get selectionAllLayers;
+
+  /// No description provided for @selectionAllOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'All owners'**
+  String get selectionAllOwners;
+
+  /// No description provided for @selectionSelectable.
+  ///
+  /// In en, this message translates to:
+  /// **'Selectable only'**
+  String get selectionSelectable;
+
+  /// No description provided for @selectionResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Select search results'**
+  String get selectionResults;
+
+  /// No description provided for @selectionAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all in active layer'**
+  String get selectionAll;
+
+  /// No description provided for @selectionInvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Invert in active layer'**
+  String get selectionInvert;
+
+  /// No description provided for @selectionSameType.
+  ///
+  /// In en, this message translates to:
+  /// **'Select same type'**
+  String get selectionSameType;
+
+  /// No description provided for @selectionSameOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Select same owner'**
+  String get selectionSameOwner;
+
+  /// No description provided for @selectionClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get selectionClear;
+
+  /// No description provided for @selectionFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to selection'**
+  String get selectionFocus;
+
+  /// No description provided for @selectionFit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit selection'**
+  String get selectionFit;
+
+  /// No description provided for @selectionFitMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit map'**
+  String get selectionFitMap;
+
+  /// No description provided for @selectionGoTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to coordinates'**
+  String get selectionGoTo;
+
+  /// No description provided for @selectionTileCoordinates.
+  ///
+  /// In en, this message translates to:
+  /// **'Tile coordinates'**
+  String get selectionTileCoordinates;
+
+  /// No description provided for @selectionEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an object first.'**
+  String get selectionEmpty;
+
+  /// No description provided for @selectionStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The map or layer changed. Refresh your selection.'**
+  String get selectionStale;
+
+  /// No description provided for @selectionNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching objects'**
+  String get selectionNoResults;
+
+  /// No description provided for @selectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden or locked'**
+  String get selectionUnavailable;
+
+  /// No description provided for @selectionOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an overlapping object'**
+  String get selectionOverlap;
+
+  /// No description provided for @selectionCounts.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} results · {selected} selected'**
+  String selectionCounts(int count, int selected);
 }
 
 class _AppLocalizationsDelegate

@@ -997,3 +997,7 @@ snapshot v2는 CV5 원시 단어·mega-tile 참조 16개·그래픽 참조 유�
 기존 로컬 placement catalog의 recipe와 명시적 overlay를 검증한다.
 UI에는 파일·바이너리 파서·프로세스 호출을 추가하지 않는다.
 [지원·검증 계약](BASIC_EDITING_TOOLS.md)을 따른다.
+
+## 선택·탐색 (2026-10-01)
+
+`SelectionNavigationController`는 문서 identity에 연결된 typed 객체 검색 결과와 카메라 범위를 반환한다. `MapLayerController.selectObjects`는 모든 참조·잠금·숨김을 검증하고 선택을 원자적으로 교체한다. UI의 이름은 Presentation이 보완한다. Canvas는 새 탐색 요청을 한 번만 적용하고 편집 제스처를 취소한다. 검색·선택·카메라는 문서 변경 기록에 포함하지 않는다. [지원 계약](SELECTION_NAVIGATION.md).

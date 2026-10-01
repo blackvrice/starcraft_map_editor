@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/app/app.dart';
@@ -50,6 +51,92 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'map navigation shortcuts preserve text selection and overlap menu chooses the explicit object',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final settings = InMemorySettingsStore(),
+          progress = OperationProgressController(),
+          layers = MapLayerController();
+      final extracted = _createExtractedMap();
+      final maps = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: extracted),
+        ),
+        filePicker: _FakeMapFilePicker(extracted.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(settings),
+        operationProgressController: progress,
+      );
+      addTearDown(maps.dispose);
+      addTearDown(layers.dispose);
+      addTearDown(progress.dispose);
+      addTearDown(() => tester.pumpWidget(const SizedBox()));
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: maps,
+          mapLayerController: layers,
+          settingsStore: settings,
+          operationProgressController: progress,
+        ),
+      );
+      await tester.tap(find.byKey(const Key('open-map-button')));
+      await tester.pumpAndSettle();
+      final before = maps.state.session!, depth = maps.editHistory.undoDepth;
+      await tester.tap(find.byKey(const Key('map-layer-units')));
+      await tester.pump();
+      final secondary = await tester.startGesture(
+        _mapPixelOffset(tester, pixelX: 64, pixelY: 64),
+        buttons: kSecondaryMouseButton,
+        kind: ui.PointerDeviceKind.mouse,
+      );
+      await secondary.up();
+      await tester.pumpAndSettle();
+      final choices = find.byType(PopupMenuItem<MapLayerObjectRef>);
+      expect(choices, findsAtLeastNWidgets(2));
+      final sprite = choices
+          .evaluate()
+          .map((e) => e.widget as PopupMenuItem<MapLayerObjectRef>)
+          .firstWhere((v) => v.value!.layer == MapLayerType.sprites);
+      await tester.tap(find.byWidget(sprite));
+      await tester.pumpAndSettle();
+      expect(layers.state.selection!.object.layer, MapLayerType.sprites);
+      await _tapMapPixel(tester, pixelX: 64, pixelY: 64);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(layers.state.selections.length, 1);
+      expect(layers.state.selection!.object.layer, MapLayerType.units);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyF);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('selection-search')), findsOneWidget);
+      await tester.enterText(
+        find.byKey(const Key('selection-search')),
+        'Terran Marine',
+      );
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(layers.state.selections.length, 1);
+      final input = tester.widget<TextField>(
+        find.byKey(const Key('selection-search')),
+      );
+      expect(input.controller!.selection.baseOffset, 0);
+      expect(input.controller!.selection.extentOffset, 13);
+      await tester.tap(find.byKey(const Key('selection-fit-map')));
+      await tester.pumpAndSettle();
+      expect(maps.state.session, same(before));
+      expect(maps.editHistory.undoDepth, depth);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('shows the remaining build steps above a new epScript', (
     tester,
   ) async {

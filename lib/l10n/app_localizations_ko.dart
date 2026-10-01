@@ -2575,4 +2575,72 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get basicStartCanvasHelp =>
       '맵을 클릭하면 좌표를 입력합니다. 적용하면 선택한 플레이어의 시작 위치를 배치하거나 이동합니다.';
+
+  @override
+  String get selectionTitle => '선택·탐색';
+
+  @override
+  String get selectionSearch => '이름, #종류 ID, 레이어 또는 좌표';
+
+  @override
+  String get selectionAllLayers => '모든 객체 레이어';
+
+  @override
+  String get selectionAllOwners => '모든 소유자';
+
+  @override
+  String get selectionSelectable => '선택 가능한 객체만';
+
+  @override
+  String get selectionResults => '검색 결과 선택';
+
+  @override
+  String get selectionAll => '활성 레이어 전체 선택';
+
+  @override
+  String get selectionInvert => '활성 레이어 선택 반전';
+
+  @override
+  String get selectionSameType => '같은 종류 선택';
+
+  @override
+  String get selectionSameOwner => '같은 소유자 선택';
+
+  @override
+  String get selectionClear => '선택 해제';
+
+  @override
+  String get selectionFocus => '선택으로 이동';
+
+  @override
+  String get selectionFit => '선택 영역 맞춤';
+
+  @override
+  String get selectionFitMap => '맵 전체 맞춤';
+
+  @override
+  String get selectionGoTo => '좌표로 이동';
+
+  @override
+  String get selectionTileCoordinates => '타일 좌표';
+
+  @override
+  String get selectionEmpty => '객체를 먼저 선택하세요.';
+
+  @override
+  String get selectionStale => '맵 또는 레이어가 변경되었습니다. 선택을 다시 확인하세요.';
+
+  @override
+  String get selectionNoResults => '검색 결과 없음';
+
+  @override
+  String get selectionUnavailable => '숨김 또는 잠김';
+
+  @override
+  String get selectionOverlap => '겹친 객체 선택';
+
+  @override
+  String selectionCounts(int count, int selected) {
+    return '검색 $count개 · 선택 $selected개';
+  }
 }

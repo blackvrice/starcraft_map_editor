@@ -2635,4 +2635,73 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get basicStartCanvasHelp =>
       'Click the map to fill coordinates; Apply places or moves this player\'s start location.';
+
+  @override
+  String get selectionTitle => 'Selection and navigation';
+
+  @override
+  String get selectionSearch => 'Name, #type ID, layer or coordinates';
+
+  @override
+  String get selectionAllLayers => 'All object layers';
+
+  @override
+  String get selectionAllOwners => 'All owners';
+
+  @override
+  String get selectionSelectable => 'Selectable only';
+
+  @override
+  String get selectionResults => 'Select search results';
+
+  @override
+  String get selectionAll => 'Select all in active layer';
+
+  @override
+  String get selectionInvert => 'Invert in active layer';
+
+  @override
+  String get selectionSameType => 'Select same type';
+
+  @override
+  String get selectionSameOwner => 'Select same owner';
+
+  @override
+  String get selectionClear => 'Clear selection';
+
+  @override
+  String get selectionFocus => 'Go to selection';
+
+  @override
+  String get selectionFit => 'Fit selection';
+
+  @override
+  String get selectionFitMap => 'Fit map';
+
+  @override
+  String get selectionGoTo => 'Go to coordinates';
+
+  @override
+  String get selectionTileCoordinates => 'Tile coordinates';
+
+  @override
+  String get selectionEmpty => 'Select an object first.';
+
+  @override
+  String get selectionStale =>
+      'The map or layer changed. Refresh your selection.';
+
+  @override
+  String get selectionNoResults => 'No matching objects';
+
+  @override
+  String get selectionUnavailable => 'Hidden or locked';
+
+  @override
+  String get selectionOverlap => 'Choose an overlapping object';
+
+  @override
+  String selectionCounts(int count, int selected) {
+    return '$count results · $selected selected';
+  }
 }

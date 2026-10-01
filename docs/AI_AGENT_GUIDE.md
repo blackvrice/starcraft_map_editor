@@ -480,3 +480,5 @@ docs/                 기준 문서 (이 디렉터리)
 - `test/fixtures/eud/minimal-smoke.eps` — 최소 epScript
 
 새 픽스처는 **직접 제작하거나 재배포가 허용된 것만** 추가한다.
+
+선택·탐색의 객체 이름/ID 검색·레이어/소유자 필터·전체/반전/관련 선택, 좌표 이동·화면 맞춤과 우클릭 겹침 목록은 [계약](SELECTION_NAVIGATION.md)을 따른다.

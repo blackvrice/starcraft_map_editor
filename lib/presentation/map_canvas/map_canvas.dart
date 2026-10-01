@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/layers/map_layer_controller.dart';
+import '../../application/layers/selection_navigation_controller.dart';
 import '../../application/ports/starcraft_object_atlas_gateway.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
@@ -66,6 +67,10 @@ class MapCanvas extends StatefulWidget {
     this.onEditingToolRequested,
     this.onCanvasSelected,
     this.onSelectionRequested,
+    this.onOverlapSelectionRequested,
+    this.onSelectionCleared,
+    this.navigationTarget,
+    this.interactionRevision = 0,
     this.onSelectionRegionRequested,
     this.onSelectedObjectsMoved,
     this.layerScene,
@@ -100,6 +105,10 @@ class MapCanvas extends StatefulWidget {
   final ValueChanged<TerrainEditingTool>? onEditingToolRequested;
   final ValueChanged<MapCanvasPointerCoordinate>? onCanvasSelected;
   final ValueChanged<MapCanvasSelectionRequest>? onSelectionRequested;
+  final ValueChanged<MapCanvasOverlapRequest>? onOverlapSelectionRequested;
+  final VoidCallback? onSelectionCleared;
+  final MapNavigationTarget? navigationTarget;
+  final int interactionRevision;
   final ValueChanged<MapCanvasSelectionRegionRequest>?
   onSelectionRegionRequested;
   final ValueChanged<MapCanvasMoveRequest>? onSelectedObjectsMoved;
@@ -146,6 +155,7 @@ class _MapCanvasState extends State<MapCanvas> {
   List<int>? _summarizedRawTileValues;
   List<int>? _summarizedUnsupportedRawValues;
   TerrainTileDisplaySummary? _terrainDisplaySummary;
+  MapNavigationTarget? _appliedNavigation;
 
   @override
   void didUpdateWidget(MapCanvas oldWidget) {
@@ -153,8 +163,10 @@ class _MapCanvasState extends State<MapCanvas> {
     if (oldWidget.mapWidth != widget.mapWidth ||
         oldWidget.mapHeight != widget.mapHeight) {
       _resetCamera(notify: false);
-    } else if (oldWidget.editingTool != widget.editingTool) {
+    } else if (oldWidget.editingTool != widget.editingTool ||
+        oldWidget.interactionRevision != widget.interactionRevision) {
       _cancelEditGesture(notify: false);
+      _activePanPointer = null;
     }
   }
 
@@ -182,6 +194,18 @@ class _MapCanvasState extends State<MapCanvas> {
             constraints.maxWidth,
             constraints.maxHeight,
           );
+          final target = widget.navigationTarget;
+          if (target != null && !identical(target, _appliedNavigation)) {
+            _appliedNavigation = target;
+            _navigateBounds(
+              viewportSize,
+              target.left,
+              target.top,
+              target.right,
+              target.bottom,
+              fit: target.fit,
+            );
+          }
           final layout = MapCanvasLayout.view(
             viewportSize: viewportSize,
             mapWidth: widget.mapWidth,
@@ -389,7 +413,23 @@ class _MapCanvasState extends State<MapCanvas> {
                             layout.viewportSize.center(Offset.zero),
                             layout,
                           ),
-                          onFit: () => _resetCamera(),
+                          onFit: () {
+                            if (_activeEditPointer != null &&
+                                widget.editingTool ==
+                                    TerrainEditingTool.brush) {
+                              widget.onBrushStrokeCancelled?.call();
+                            }
+                            setState(
+                              () => _navigateBounds(
+                                layout.viewportSize,
+                                0,
+                                0,
+                                widget.mapWidth * 32,
+                                widget.mapHeight * 32,
+                                fit: true,
+                              ),
+                            );
+                          },
                           onZoomIn: () => _zoomAt(
                             _zoom * _zoomStep,
                             layout.viewportSize.center(Offset.zero),
@@ -567,6 +607,23 @@ class _MapCanvasState extends State<MapCanvas> {
     }
     _focusNode.requestFocus();
     _updatePointerPosition(event.localPosition);
+
+    if (event.buttons & kSecondaryMouseButton != 0) {
+      if (_activeEditPointer == null &&
+          widget.editingTool == TerrainEditingTool.select &&
+          !widget.isObjectPlacementActive) {
+        final coordinate = layout.coordinateAt(event.localPosition);
+        if (coordinate != null) {
+          widget.onOverlapSelectionRequested?.call(
+            MapCanvasOverlapRequest(
+              coordinate: coordinate,
+              globalPosition: event.position,
+            ),
+          );
+        }
+      }
+      return;
+    }
 
     final isMiddleButton = event.buttons & kMiddleMouseButton != 0;
     final isSpacePrimary =
@@ -797,6 +854,14 @@ class _MapCanvasState extends State<MapCanvas> {
       _cancelEditGesture();
       return KeyEventResult.handled;
     }
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        widget.editingTool == TerrainEditingTool.select &&
+        !widget.isObjectPlacementActive &&
+        widget.onSelectionCleared != null) {
+      widget.onSelectionCleared!();
+      return KeyEventResult.handled;
+    }
     return KeyEventResult.ignored;
   }
 
@@ -876,6 +941,55 @@ class _MapCanvasState extends State<MapCanvas> {
     } else {
       reset();
     }
+  }
+
+  void _navigateBounds(
+    Size viewport,
+    int left,
+    int top,
+    int right,
+    int bottom, {
+    required bool fit,
+  }) {
+    _cancelEditGesture(notify: false);
+    _activePanPointer = null;
+    if (fit) {
+      final fitted = MapCanvasLayout.view(
+        viewportSize: viewport,
+        mapWidth: widget.mapWidth,
+        mapHeight: widget.mapHeight,
+        zoom: 1,
+        contentPadding: widget.contentPadding,
+        maximumTileExtent: widget.maximumTileExtent,
+      );
+      final sx =
+          math.max(1.0, viewport.width - widget.contentPadding * 2) /
+          math.max(32, right - left);
+      final sy =
+          math.max(1.0, viewport.height - widget.contentPadding * 2) /
+          math.max(32, bottom - top);
+      final fullMap =
+          left == 0 &&
+          top == 0 &&
+          right == widget.mapWidth * 32 &&
+          bottom == widget.mapHeight * 32;
+      _zoom = (math.min(sx, sy) * 32 / fitted.baseTileExtent).clamp(
+        _minimumZoom,
+        fullMap ? 1 : _maximumZoom,
+      );
+    }
+    final base = MapCanvasLayout.view(
+      viewportSize: viewport,
+      mapWidth: widget.mapWidth,
+      mapHeight: widget.mapHeight,
+      zoom: _zoom,
+      contentPadding: widget.contentPadding,
+      maximumTileExtent: widget.maximumTileExtent,
+    );
+    _requestedPan =
+        viewport.center(Offset.zero) -
+        base.mapRect.topLeft -
+        Offset((left + right) / 2, (top + bottom) / 2) * (base.tileExtent / 32);
   }
 }
 
@@ -1076,6 +1190,15 @@ class MapCanvasPointerCoordinate {
   final int tileY;
   final int pixelX;
   final int pixelY;
+}
+
+final class MapCanvasOverlapRequest {
+  const MapCanvasOverlapRequest({
+    required this.coordinate,
+    required this.globalPosition,
+  });
+  final MapCanvasPointerCoordinate coordinate;
+  final Offset globalPosition;
 }
 
 final class MapCanvasSelectionRequest {

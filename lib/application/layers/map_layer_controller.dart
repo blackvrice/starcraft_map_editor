@@ -668,6 +668,35 @@ class MapLayerController {
     );
   }
 
+  /// Resolves the entire request before changing selection; stale/locked refs
+  /// never produce a partial result. This changes UI state only.
+  bool selectObjects({
+    required OpenedMapSession session,
+    required Iterable<MapLayerObjectRef> objects,
+    bool additive = false,
+  }) {
+    final resolved = <MapLayerSelection>[];
+    for (final object in objects.toSet()) {
+      if (!_state.statusOf(object.layer).isSelectable) return false;
+      final selection = _resolveSelection(session, object);
+      if (selection == null) return false;
+      resolved.add(selection);
+    }
+    final selections = additive
+        ? _mergeSelections(_state.selections, resolved)
+        : resolved;
+    if (!_sameSelections(_state.selections, selections)) {
+      _emit(
+        MapLayerState(
+          activeLayer: _state.activeLayer,
+          layers: _state.layers,
+          selections: selections,
+        ),
+      );
+    }
+    return true;
+  }
+
   List<MapLayerSelection> _updatedSelections(
     MapLayerSelection? selection, {
     required bool additive,
