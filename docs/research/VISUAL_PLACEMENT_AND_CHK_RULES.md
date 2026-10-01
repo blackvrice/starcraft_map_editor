@@ -262,7 +262,9 @@ recipe 타일과 일치할 때에만 `TILE` editor scope의 underlying tile로 �
   같은 row-major 순서의 placibility group으로 보존한다.
 - overlay 0은 없음, `DrawAsSprite`가 있으면 classic Sprite 0~516, 없으면
   sprite-unit Unit 0~227로 검증한다. 중심은 footprint 시작점 기준
-  `(width*16, height*16)`이고 `DD2 ` enabled 값은 1로 고정한다.
+  `(width*16, height*16)`이다. 2026-10-01 고정 CHK 구조 재확인으로
+  `DD2 ` 활성값을 0으로 정정했다(helper 0.10.1). 이전 활성=1의 생성은
+  오류이며 기존 맵을 자동 수정하지 않는다([정정 계약](../BASIC_EDITING_TOOLS.md#doodad-활성값-정정)).
 - 정상 recipe도 원자적 command 구현 전에는 배치 불가다. 잘린 footprint,
   flags 0, 범위 밖 DDData/overlay 등은 `SC_CASC_DOODAD_*`로 해당 항목만
   비활성화하며 값을 추측하지 않는다.

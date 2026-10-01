@@ -712,6 +712,7 @@ void main() {
         .single
         .units;
     expect(units, hasLength(3));
+    expect(units.map((u) => u.classId).toSet(), hasLength(3));
     expect((units.last.x, units.last.y), (64, 64));
     expect(fixture.mapLayerController.state.selection?.object.recordIndex, 2);
     expect(fixture.objectEditingController.undoLabel, 'Place Unit');
@@ -725,7 +726,7 @@ void main() {
         .rawSection
         .payload;
     for (var index = 0; index < ChkUnitPlacement.recordLength; index++) {
-      if ({4, 5, 6, 7}.contains(index)) {
+      if ({0, 1, 2, 3, 4, 5, 6, 7}.contains(index)) {
         continue;
       }
       expect(
@@ -1296,7 +1297,9 @@ Uint8List _unit(int x, int y, int seed) {
   );
   ByteData.sublistView(bytes)
     ..setUint16(4, x, Endian.little)
-    ..setUint16(6, y, Endian.little);
+    ..setUint16(6, y, Endian.little)
+    ..setUint16(10, 0, Endian.little)
+    ..setUint32(32, 0, Endian.little);
   return bytes;
 }
 

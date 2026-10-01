@@ -2336,4 +2336,243 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get isomFillApply => '맵 전체 채우기';
+
+  @override
+  String get basicToolsTitle => '기본 편집 도구';
+
+  @override
+  String get basicFog => '초기 안개';
+
+  @override
+  String get basicUnits => '선택 유닛';
+
+  @override
+  String get basicStarts => '시작 위치';
+
+  @override
+  String get basicLocations => '로케이션';
+
+  @override
+  String get basicOpenMap => '편집 가능한 맵을 먼저 여세요.';
+
+  @override
+  String get basicFogUnavailable => '정상 MASK/DIM 격자가 필요합니다.';
+
+  @override
+  String basicPlayer(int id) {
+    return '플레이어 $id';
+  }
+
+  @override
+  String get basicFogHide => '지형 숨김';
+
+  @override
+  String get basicBrush => '브러시';
+
+  @override
+  String get basicRectangle => '사각형';
+
+  @override
+  String get basicFillAll => '맵 전체 채우기';
+
+  @override
+  String get basicFogScope => '어두운 칸은 초기에 숨겨집니다. 선택 플레이어에게만 적용합니다.';
+
+  @override
+  String basicSelectedUnits(int count) {
+    return '선택 유닛 $count개';
+  }
+
+  @override
+  String get basicKeepBlank => '비워 둔 숫자 항목은 기존 값을 유지합니다.';
+
+  @override
+  String get basicOwner => '소유자 (1–12)';
+
+  @override
+  String get basicHitpoints => '체력 %';
+
+  @override
+  String get basicShields => '실드 %';
+
+  @override
+  String get basicEnergy => '에너지 %';
+
+  @override
+  String get basicResources => '자원량';
+
+  @override
+  String get basicHangar => '격납 수';
+
+  @override
+  String get basicUnitStates => '상태와 상속';
+
+  @override
+  String get basicCloak => '클로킹';
+
+  @override
+  String get basicBurrow => '버로우';
+
+  @override
+  String get basicLifted => '공중 이동 상태';
+
+  @override
+  String get basicHallucination => '환상';
+
+  @override
+  String get basicInvincible => '무적';
+
+  @override
+  String get basicKeep => '유지';
+
+  @override
+  String get basicOff => '끔';
+
+  @override
+  String get basicOn => '켬';
+
+  @override
+  String get basicInherit => '게임 기본값 사용';
+
+  @override
+  String get basicValidFields => '저장된 필드 값 적용';
+
+  @override
+  String get basicApplyStored => '저장 값 적용';
+
+  @override
+  String get basicApply => '적용';
+
+  @override
+  String get basicRelationHelp =>
+      '맵에서 호환되는 유닛 두 개를 선택하세요. 연결은 양쪽 참조를 갱신하며 위치를 유지합니다. 소유자 변경 전에는 연결을 해제하세요.';
+
+  @override
+  String get basicLinkAddon => '애드온 연결';
+
+  @override
+  String get basicLinkNydus => '나이더스 연결';
+
+  @override
+  String get basicUnlink => '연결 해제';
+
+  @override
+  String get basicStartsHelp =>
+      '선택 플레이어의 시작 위치를 생성하거나 이동합니다. 중복 시작 위치는 보존하며 먼저 검토해야 합니다.';
+
+  @override
+  String get basicPixelX => '픽셀 X';
+
+  @override
+  String get basicPixelY => '픽셀 Y';
+
+  @override
+  String get basicLocationsUnavailable => '정상 로케이션 표 하나가 필요합니다.';
+
+  @override
+  String get basicElevationHelp =>
+      '로케이션을 선택하고 지상·공중 고도 조건을 지정하세요. 다른 플래그 비트와 문자열은 보존합니다.';
+
+  @override
+  String get basicLowGround => '낮은 지형';
+
+  @override
+  String get basicMediumGround => '중간 지형';
+
+  @override
+  String get basicHighGround => '높은 지형';
+
+  @override
+  String get basicLowAir => '낮은 공중';
+
+  @override
+  String get basicMediumAir => '중간 공중';
+
+  @override
+  String get basicHighAir => '높은 공중';
+
+  @override
+  String get basicSpritesDoodads => 'Sprite / Doodad';
+
+  @override
+  String get basicClipboard => '복사·붙여넣기';
+
+  @override
+  String get basicCopy => '선택 객체 복사';
+
+  @override
+  String get basicCut => '선택 객체 자르기';
+
+  @override
+  String get basicPaste => '픽셀 위치에 붙여넣기';
+
+  @override
+  String get basicClipboardHelp =>
+      '현재 문서의 유닛·Sprite·로케이션을 복사합니다. 연결된 유닛은 함께 선택하세요. 시작 위치와 검증되지 않은 Doodad overlay 복사는 거부합니다.';
+
+  @override
+  String get basicSpriteDisabled => 'Sprite-unit 비활성';
+
+  @override
+  String get basicSpriteHelp =>
+      '비활성은 Sprite-unit에만 적용합니다. Doodad overlay 가능성이 있으면 아래 복합 도구를 사용하세요. 알 수 없는 flags는 보존합니다.';
+
+  @override
+  String get basicLoadDoodad => '선택 Doodad 연결 자료 불러오기';
+
+  @override
+  String get basicDoodadEnabled => 'Doodad 활성';
+
+  @override
+  String get basicDoodadHelp =>
+      'Doodad 하나를 선택하고 해당 overlay를 명시적으로 지정하세요. 로컬 자료와 footprint·아래 지형이 일치해야 합니다. Pure Sprite의 활성값은 편집기 메타데이터이며 Sprite-unit의 비활성은 THG2에도 반영됩니다.';
+
+  @override
+  String get basicOverlay => '일치하는 overlay';
+
+  @override
+  String get basicLocationSearch => '이름 또는 ID 검색';
+
+  @override
+  String get basicRawTerrain => 'Raw 지형 복사';
+
+  @override
+  String get basicRawClipboardHelp =>
+      'Raw MTXM 타일만 복사하고 TILE/ISOM을 보존합니다. 등각 지형 경계는 계산하지 않습니다. Doodad 맵에는 검증된 복합 편집이 필요합니다. 아래 좌표는 타일 기준입니다.';
+
+  @override
+  String get basicCutReplacement => '자른 영역 채움값 (현재 맵에 있는 타일)';
+
+  @override
+  String get basicTileLeft => '왼쪽 타일';
+
+  @override
+  String get basicTileTop => '위쪽 타일';
+
+  @override
+  String get basicTileRight => '오른쪽 타일';
+
+  @override
+  String get basicTileBottom => '아래쪽 타일';
+
+  @override
+  String get basicTileX => '대상 타일 X';
+
+  @override
+  String get basicTileY => '대상 타일 Y';
+
+  @override
+  String get basicStartMissing => '시작 위치 없음';
+
+  @override
+  String basicStartDuplicate(int count) {
+    return '시작 위치 중복: $count개';
+  }
+
+  @override
+  String get basicApplySelectedLocations => '선택한 로케이션 모두에 적용';
+
+  @override
+  String get basicStartCanvasHelp =>
+      '맵을 클릭하면 좌표를 입력합니다. 적용하면 선택한 플레이어의 시작 위치를 배치하거나 이동합니다.';
 }

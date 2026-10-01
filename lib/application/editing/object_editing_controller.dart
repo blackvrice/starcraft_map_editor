@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:typed_data';
+import '../../domain/chk/chk_basic_editing.dart';
 import '../ports/map_resource_gateway.dart';
 import '../../domain/assets/map_sound.dart';
 import '../../domain/chk/typed/chk_resource_editor.dart';
@@ -692,6 +694,19 @@ class ObjectEditingController {
 
   bool canPlaceTemplate(MapLayerObjectRef template) {
     final session = openMapController.state.session;
+    if (session != null &&
+        template.layer == MapLayerType.units &&
+        _templateExists(session, template)) {
+      final unit = _unitSection(
+        session,
+        template.sectionIndex,
+      ).units[template.recordIndex];
+      if (unit.unitType == 214 ||
+          unit.relationFlags != 0 ||
+          unit.relationClassId != 0) {
+        return false;
+      }
+    }
     return session != null &&
         template.layer != MapLayerType.terrain &&
         template.layer != MapLayerType.locations &&
@@ -793,6 +808,30 @@ class ObjectEditingController {
     if (!_fitsMap(session, selections, dx: dx, dy: dy)) {
       return false;
     }
+    for (final selection in selections.where(
+      (s) => s.object.layer == MapLayerType.units,
+    )) {
+      final view = _unitSection(session, selection.object.sectionIndex);
+      final unit = view.units[selection.object.recordIndex];
+      if (unit.relationFlags == 0 && unit.relationClassId == 0) continue;
+      final peers = view.units
+          .where((u) => u.classId == unit.relationClassId)
+          .toList();
+      if (![0x200, 0x400].contains(unit.relationFlags) ||
+          unit.classId == 0 ||
+          view.units.where((u) => u.classId == unit.classId).length != 1 ||
+          peers.length != 1 ||
+          peers.single.relationClassId != unit.classId ||
+          peers.single.relationFlags != unit.relationFlags ||
+          !selections.any(
+            (s) =>
+                s.object.sectionIndex == selection.object.sectionIndex &&
+                s.object.layer == MapLayerType.units &&
+                s.object.recordIndex == peers.single.recordIndex,
+          )) {
+        return false;
+      }
+    }
 
     final grouped = _groupSelections(selections);
     final before = <int, RawChkSection>{};
@@ -840,6 +879,32 @@ class ObjectEditingController {
     return true;
   }
 
+  RawChkSection _duplicateUnitWithFreshId(
+    OpenedMapSession session,
+    MapLayerObjectRef template,
+    int x,
+    int y,
+  ) {
+    final view = _unitSection(session, template.sectionIndex);
+    final result = sectionEditor.duplicateUnit(
+      view,
+      templateRecordIndex: template.recordIndex,
+      x: x,
+      y: y,
+    );
+    final used = {
+      for (final section in session.objectViews.unitSections)
+        for (final u in section.units) u.classId,
+    };
+    var id = 1;
+    while (used.contains(id)) {
+      id++;
+    }
+    final bytes = result.payload;
+    ByteData.sublistView(bytes).setUint32(bytes.length - 36, id, Endian.little);
+    return result.withPayload(bytes);
+  }
+
   bool duplicateTemplate({
     required MapLayerObjectRef template,
     required int pixelX,
@@ -867,11 +932,11 @@ class ObjectEditingController {
       ),
     };
     final replacement = switch (template.layer) {
-      MapLayerType.units => sectionEditor.duplicateUnit(
-        _unitSection(session, sectionIndex),
-        templateRecordIndex: template.recordIndex,
-        x: pixelX,
-        y: pixelY,
+      MapLayerType.units => _duplicateUnitWithFreshId(
+        session,
+        template,
+        pixelX,
+        pixelY,
       ),
       MapLayerType.doodads => sectionEditor.duplicateDoodad(
         _doodadSection(session, sectionIndex),
@@ -1195,6 +1260,26 @@ class ObjectEditingController {
     if (_propertyUpdateHasNoChanges(current, update)) {
       return ObjectPropertyEditResult.noChanges();
     }
+    if (current is UnitObjectProperties &&
+        update is UnitObjectPropertyUpdate &&
+        (current.relationFlags != 0 || current.relationClassId != 0) &&
+        (current.typeId != update.typeId ||
+            current.owner != update.owner ||
+            current.x != update.x ||
+            current.y != update.y)) {
+      return ObjectPropertyEditResult.invalid({
+        ObjectPropertyFields.typeId:
+            'Unlink the unit before changing its type, owner or individual position.',
+      });
+    }
+    if (current is DoodadObjectProperties &&
+        update is DoodadObjectPropertyUpdate &&
+        current.enabledValue != update.enabledValue) {
+      return ObjectPropertyEditResult.invalid({
+        ObjectPropertyFields.enabledValue:
+            'Use Basic Editing Tools to validate and synchronize the Doodad overlay.',
+      });
+    }
     final sectionIndex = update.object.sectionIndex;
     final recordIndex = update.object.recordIndex;
     final beforeSections = <int, RawChkSection>{};
@@ -1292,6 +1377,23 @@ class ObjectEditingController {
       return false;
     }
     final grouped = _groupSelections(selections);
+    RawChkDocument unlinked = session.rawDocument;
+    final unitIndices = {
+      for (final s in selections.where(
+        (s) => s.object.layer == MapLayerType.units,
+      ))
+        s.object.recordIndex,
+    };
+    if (unitIndices.isNotEmpty) {
+      try {
+        unlinked = const ChkBasicEditing().unlinkUnits(
+          session.rawDocument,
+          unitIndices,
+        );
+      } on Object {
+        return false;
+      }
+    }
     final before = <int, RawChkSection>{};
     final after = <int, RawChkSection>{};
     for (final entry in grouped.entries) {
@@ -1302,7 +1404,10 @@ class ObjectEditingController {
       };
       final replacement = switch (layer) {
         MapLayerType.units => sectionEditor.deleteUnits(
-          _unitSection(session, sectionIndex),
+          openMapController.objectViewDecoder
+              .decode(unlinked)
+              .unitSections
+              .single,
           indices,
         ),
         MapLayerType.doodads => sectionEditor.deleteDoodads(

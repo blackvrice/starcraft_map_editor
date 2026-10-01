@@ -562,13 +562,19 @@ class MapLayerController {
     required int pixelX,
     required int pixelY,
     bool additive = false,
+    bool cycle = false,
   }) {
     final hits = orderedHitsAt(
       session: session,
       pixelX: pixelX,
       pixelY: pixelY,
     );
-    final selection = hits.firstOrNull;
+    final current = hits.indexWhere(
+      (hit) => hit.object == _state.selection?.object,
+    );
+    final selection = cycle && hits.isNotEmpty
+        ? hits[(current + 1) % hits.length]
+        : hits.firstOrNull;
     final selections = _updatedSelections(selection, additive: additive);
     if (_sameSelections(_state.selections, selections)) {
       return selection;

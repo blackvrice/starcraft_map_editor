@@ -126,7 +126,7 @@ final class DoodadPlacementRecipe {
   static const maximumFootprintAxis = 16;
   static const maximumFootprintCells = 256;
   static const halfTilePixels = 16;
-  static const enabled = 1;
+  static const enabled = 0;
 
   final StarCraftTilesetAssetSet tileset;
   final int startTileGroup;

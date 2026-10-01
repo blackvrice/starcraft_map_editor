@@ -63,6 +63,7 @@ class MapCanvas extends StatefulWidget {
     this.editingTool = TerrainEditingTool.select,
     this.selectedTile,
     this.onTileSelected,
+    this.onEditingToolRequested,
     this.onCanvasSelected,
     this.onSelectionRequested,
     this.onSelectionRegionRequested,
@@ -74,6 +75,8 @@ class MapCanvas extends StatefulWidget {
     this.onBrushStrokeCancelled,
     this.onRectangleFilled,
     this.onPaintMeasured,
+    this.fogValues,
+    this.fogPlayer,
     this.isObjectPlacementActive = false,
     this.placementGhost,
     this.contentPadding = 24,
@@ -87,11 +90,14 @@ class MapCanvas extends StatefulWidget {
   final int mapWidth;
   final int mapHeight;
   final List<int>? rawTileValues;
+  final List<int>? fogValues;
+  final int? fogPlayer;
   final TerrainTileTextureState terrainTextureState;
   final ObjectSpriteTextureState objectSpriteTextureState;
   final TerrainEditingTool editingTool;
   final TerrainTileCoordinate? selectedTile;
   final ValueChanged<TerrainTileCoordinate>? onTileSelected;
+  final ValueChanged<TerrainEditingTool>? onEditingToolRequested;
   final ValueChanged<MapCanvasPointerCoordinate>? onCanvasSelected;
   final ValueChanged<MapCanvasSelectionRequest>? onSelectionRequested;
   final ValueChanged<MapCanvasSelectionRegionRequest>?
@@ -134,6 +140,7 @@ class _MapCanvasState extends State<MapCanvas> {
   MapCanvasPointerCoordinate? _selectionEnd;
   Offset? _selectionStartPosition;
   bool _selectionAdditive = false;
+  bool _selectionCycle = false;
   bool _selectionMovesObjects = false;
   bool _selectionDragged = false;
   List<int>? _summarizedRawTileValues;
@@ -277,6 +284,8 @@ class _MapCanvasState extends State<MapCanvas> {
                               objectTextures:
                                   widget.objectSpriteTextureState.textures,
                               onPaintMeasured: widget.onPaintMeasured,
+                              fogValues: widget.fogValues,
+                              fogPlayer: widget.fogPlayer,
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                               placementGhost: widget.placementGhost,
@@ -316,6 +325,33 @@ class _MapCanvasState extends State<MapCanvas> {
                           label: 'Grid ${layout.gridStep} tile',
                         ),
                       ),
+                      if (viewportSize.width >= 480 &&
+                          viewportSize.height >= 240)
+                        Positioned(
+                          right: 12,
+                          top: 48,
+                          child: GestureDetector(
+                            key: const Key('map-minimap'),
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (e) =>
+                                _navigateMinimap(e.localPosition, layout),
+                            onPanUpdate: (e) =>
+                                _navigateMinimap(e.localPosition, layout),
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                size: const Size(144, 108),
+                                painter: _MinimapPainter(
+                                  layout: layout,
+                                  values: terrainValues,
+                                  textures: widget.terrainTextureState.textures,
+                                  scene: widget.layerScene,
+                                  fog: widget.fogValues,
+                                  player: widget.fogPlayer,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       Positioned(
                         left: 12,
                         bottom: 12,
@@ -501,7 +537,34 @@ class _MapCanvasState extends State<MapCanvas> {
     };
   }
 
+  void _navigateMinimap(Offset p, MapCanvasLayout layout) {
+    if (_activeEditPointer != null || _activePanPointer != null) return;
+    setState(() {
+      _requestedPan = Offset(
+        (widget.mapWidth / 2 - p.dx.clamp(0, 144) / 144 * widget.mapWidth) *
+            layout.tileExtent,
+        (widget.mapHeight / 2 - p.dy.clamp(0, 108) / 108 * widget.mapHeight) *
+            layout.tileExtent,
+      );
+    });
+  }
+
   void _startInteraction(PointerDownEvent event, MapCanvasLayout layout) {
+    // Overlay controls share the input listener; their clicks must never paint.
+    if (event.localPosition.dx >= layout.viewportSize.width - 168 &&
+        event.localPosition.dy >= layout.viewportSize.height - 52) {
+      return;
+    }
+    if (layout.viewportSize.width >= 480 &&
+        layout.viewportSize.height >= 240 &&
+        Rect.fromLTWH(
+          layout.viewportSize.width - 156,
+          48,
+          144,
+          108,
+        ).contains(event.localPosition)) {
+      return;
+    }
     _focusNode.requestFocus();
     _updatePointerPosition(event.localPosition);
 
@@ -543,7 +606,9 @@ class _MapCanvasState extends State<MapCanvas> {
           _selectionAdditive =
               HardwareKeyboard.instance.isControlPressed ||
               HardwareKeyboard.instance.isShiftPressed;
-          _selectionMovesObjects = _isSelectedObjectAt(coordinate);
+          _selectionCycle = HardwareKeyboard.instance.isAltPressed;
+          _selectionMovesObjects =
+              !_selectionCycle && _isSelectedObjectAt(coordinate);
           _selectionDragged = false;
         });
       case TerrainEditingTool.brush:
@@ -674,6 +739,7 @@ class _MapCanvasState extends State<MapCanvas> {
               MapCanvasSelectionRequest(
                 coordinate: start,
                 additive: _selectionAdditive,
+                cycle: _selectionCycle,
               ),
             );
             widget.onCanvasSelected?.call(start);
@@ -706,6 +772,23 @@ class _MapCanvasState extends State<MapCanvas> {
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent &&
+        _activeEditPointer == null &&
+        !widget.isObjectPlacementActive &&
+        !HardwareKeyboard.instance.isControlPressed &&
+        !HardwareKeyboard.instance.isAltPressed &&
+        widget.onEditingToolRequested != null) {
+      final tool = switch (event.logicalKey) {
+        LogicalKeyboardKey.keyV => TerrainEditingTool.select,
+        LogicalKeyboardKey.keyB => TerrainEditingTool.brush,
+        LogicalKeyboardKey.keyR => TerrainEditingTool.rectangle,
+        _ => null,
+      };
+      if (tool != null) {
+        widget.onEditingToolRequested!(tool);
+        return KeyEventResult.handled;
+      }
+    }
+    if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
         _activeEditPointer != null) {
       if (widget.editingTool == TerrainEditingTool.brush) {
@@ -727,6 +810,7 @@ class _MapCanvasState extends State<MapCanvas> {
       _selectionEnd = null;
       _selectionStartPosition = null;
       _selectionAdditive = false;
+      _selectionCycle = false;
       _selectionMovesObjects = false;
       _selectionDragged = false;
       if (pointerPosition != null) {
@@ -998,10 +1082,12 @@ final class MapCanvasSelectionRequest {
   const MapCanvasSelectionRequest({
     required this.coordinate,
     required this.additive,
+    this.cycle = false,
   });
 
   final MapCanvasPointerCoordinate coordinate;
   final bool additive;
+  final bool cycle;
 }
 
 final class MapCanvasSelectionRegionRequest {
@@ -1061,6 +1147,110 @@ final class MapCanvasPlacementGhost {
   int originY(int tileY) => tileY - tileHeight ~/ 2;
 }
 
+class _MinimapPainter extends CustomPainter {
+  _MinimapPainter({
+    required this.layout,
+    required this.values,
+    required this.textures,
+    required this.scene,
+    required this.fog,
+    required this.player,
+  });
+  final MapCanvasLayout layout;
+  final List<int>? values, fog;
+  final int? player;
+  final Map<int, TerrainTileTexture> textures;
+  final MapLayerScene? scene;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = layout.mapWidth, h = layout.mapHeight;
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = MapCanvasPainter.mapBackground,
+    );
+    // Bound miniature sampling work independently of map size and zoom.
+    final step = (math.max(w, h) / 128).ceil().clamp(1, 256);
+    final paint = Paint()..filterQuality = FilterQuality.low;
+    if (values != null) {
+      for (var y = 0; y < h; y += step) {
+        for (var x = 0; x < w; x += step) {
+          final value = values![y * w + x], texture = textures[value];
+          final rect = Rect.fromLTRB(
+            x / w * size.width,
+            y / h * size.height,
+            math.min(x + step, w) / w * size.width,
+            math.min(y + step, h) / h * size.height,
+          );
+          if (texture != null) {
+            canvas.drawImageRect(
+              texture.image,
+              Rect.fromLTWH(
+                0,
+                0,
+                texture.width.toDouble(),
+                texture.height.toDouble(),
+              ),
+              rect,
+              paint,
+            );
+          } else {
+            canvas.drawRect(
+              rect,
+              paint
+                ..color = MapCanvasPainter._tilePalette[_paletteIndex(value)],
+            );
+          }
+          if (fog?.length == w * h &&
+              player != null &&
+              player! >= 0 &&
+              player! < 8 &&
+              fog![y * w + x] & (1 << player!) != 0) {
+            canvas.drawRect(rect, Paint()..color = const Color(0xAA090D15));
+          }
+        }
+      }
+    }
+    for (final point in scene?.points ?? <MapLayerPointObject>[]) {
+      canvas.drawCircle(
+        Offset(
+          point.pixelX / (w * 32) * size.width,
+          point.pixelY / (h * 32) * size.height,
+        ),
+        1.5,
+        Paint()..color = const Color(0xFFF6C85F),
+      );
+    }
+    final b = layout.visibleTiles;
+    canvas.drawRect(
+      Rect.fromLTRB(
+        b.left / w * size.width,
+        b.top / h * size.height,
+        b.rightExclusive / w * size.width,
+        b.bottomExclusive / h * size.height,
+      ),
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..color = MapCanvasPainter.mapBoundary
+        ..style = PaintingStyle.stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _MinimapPainter old) =>
+      old.layout != layout ||
+      old.values != values ||
+      old.textures != textures ||
+      old.scene != scene ||
+      old.fog != fog ||
+      old.player != player;
+}
+
 class MapCanvasPainter extends CustomPainter {
   MapCanvasPainter({
     required this.layout,
@@ -1069,6 +1259,8 @@ class MapCanvasPainter extends CustomPainter {
     this.unsupportedRawValues = const [],
     this.objectTextures = const {},
     this.onPaintMeasured,
+    this.fogValues,
+    this.fogPlayer,
     this.selectedTile,
     this.rectanglePreview,
     this.placementGhost,
@@ -1110,6 +1302,8 @@ class MapCanvasPainter extends CustomPainter {
 
   final MapCanvasLayout layout;
   final List<int>? rawTileValues;
+  final List<int>? fogValues;
+  final int? fogPlayer;
   final Map<int, TerrainTileTexture> terrainTextures;
   final List<int> unsupportedRawValues;
   final Map<StarCraftObjectGraphicKey, ObjectSpriteTexture> objectTextures;
@@ -1151,6 +1345,7 @@ class MapCanvasPainter extends CustomPainter {
       _paintTerrain(canvas, counters);
       _paintGrid(canvas);
       _paintObjectLayers(canvas, counters);
+      _paintFog(canvas);
       _paintEditOverlay(canvas);
       canvas.drawRect(
         mapRect,
@@ -1181,6 +1376,34 @@ class MapCanvasPainter extends CustomPainter {
             culledObjectCount: counters.culledObjectCount,
           ),
         );
+      }
+    }
+  }
+
+  void _paintFog(Canvas canvas) {
+    final values = fogValues, player = fogPlayer;
+    if (values == null ||
+        player == null ||
+        player < 0 ||
+        player > 7 ||
+        values.length != layout.mapWidth * layout.mapHeight) {
+      return;
+    }
+    final bounds = layout.visibleTiles,
+        paint = Paint()..color = const Color(0xAA090D15);
+    for (var y = bounds.top; y < bounds.bottomExclusive; y++) {
+      for (var x = bounds.left; x < bounds.rightExclusive; x++) {
+        if (values[y * layout.mapWidth + x] & (1 << player) != 0) {
+          canvas.drawRect(
+            Rect.fromLTWH(
+              layout.mapRect.left + x * layout.tileExtent,
+              layout.mapRect.top + y * layout.tileExtent,
+              layout.tileExtent,
+              layout.tileExtent,
+            ),
+            paint,
+          );
+        }
       }
     }
   }
@@ -1570,6 +1793,8 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.layout.tileExtent != layout.tileExtent ||
         oldDelegate.layout.gridStep != layout.gridStep ||
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
+        !identical(oldDelegate.fogValues, fogValues) ||
+        oldDelegate.fogPlayer != fogPlayer ||
         !identical(oldDelegate.terrainTextures, terrainTextures) ||
         !identical(oldDelegate.unsupportedRawValues, unsupportedRawValues) ||
         !identical(oldDelegate.objectTextures, objectTextures) ||

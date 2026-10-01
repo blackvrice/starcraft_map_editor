@@ -2393,4 +2393,246 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isomFillApply => 'Fill whole map';
+
+  @override
+  String get basicToolsTitle => 'Basic Editing Tools';
+
+  @override
+  String get basicFog => 'Initial fog';
+
+  @override
+  String get basicUnits => 'Selected units';
+
+  @override
+  String get basicStarts => 'Start locations';
+
+  @override
+  String get basicLocations => 'Locations';
+
+  @override
+  String get basicOpenMap => 'Open an editable map first.';
+
+  @override
+  String get basicFogUnavailable => 'A unique valid MASK/DIM grid is required.';
+
+  @override
+  String basicPlayer(int id) {
+    return 'Player $id';
+  }
+
+  @override
+  String get basicFogHide => 'Hide terrain';
+
+  @override
+  String get basicBrush => 'Brush';
+
+  @override
+  String get basicRectangle => 'Rectangle';
+
+  @override
+  String get basicFillAll => 'Fill whole map';
+
+  @override
+  String get basicFogScope =>
+      'Dark cells are initially hidden. Edits affect this player only.';
+
+  @override
+  String basicSelectedUnits(int count) {
+    return '$count selected units';
+  }
+
+  @override
+  String get basicKeepBlank =>
+      'Leave numeric fields blank to preserve existing values.';
+
+  @override
+  String get basicOwner => 'Owner (1–12)';
+
+  @override
+  String get basicHitpoints => 'Hitpoints %';
+
+  @override
+  String get basicShields => 'Shields %';
+
+  @override
+  String get basicEnergy => 'Energy %';
+
+  @override
+  String get basicResources => 'Resources';
+
+  @override
+  String get basicHangar => 'Hangar';
+
+  @override
+  String get basicUnitStates => 'State and inheritance';
+
+  @override
+  String get basicCloak => 'Cloaked';
+
+  @override
+  String get basicBurrow => 'Burrowed';
+
+  @override
+  String get basicLifted => 'Lifted / in transit';
+
+  @override
+  String get basicHallucination => 'Hallucination';
+
+  @override
+  String get basicInvincible => 'Invincible';
+
+  @override
+  String get basicKeep => 'Keep';
+
+  @override
+  String get basicOff => 'Off';
+
+  @override
+  String get basicOn => 'On';
+
+  @override
+  String get basicInherit => 'Use game default';
+
+  @override
+  String get basicValidFields => 'Use stored field values';
+
+  @override
+  String get basicApplyStored => 'Apply stored value';
+
+  @override
+  String get basicApply => 'Apply';
+
+  @override
+  String get basicRelationHelp =>
+      'Select two compatible units in the map. Linking updates mutual references; positions are kept. Unlink before changing their owner.';
+
+  @override
+  String get basicLinkAddon => 'Link addon';
+
+  @override
+  String get basicLinkNydus => 'Link Nydus';
+
+  @override
+  String get basicUnlink => 'Unlink';
+
+  @override
+  String get basicStartsHelp =>
+      'Set or move the selected player’s start location. Duplicate starts are preserved and must be reviewed first.';
+
+  @override
+  String get basicPixelX => 'Pixel X';
+
+  @override
+  String get basicPixelY => 'Pixel Y';
+
+  @override
+  String get basicLocationsUnavailable =>
+      'A unique valid location table is required.';
+
+  @override
+  String get basicElevationHelp =>
+      'Select a location and its ground/air elevation conditions. Other flag bits and strings are preserved.';
+
+  @override
+  String get basicLowGround => 'Low ground';
+
+  @override
+  String get basicMediumGround => 'Medium ground';
+
+  @override
+  String get basicHighGround => 'High ground';
+
+  @override
+  String get basicLowAir => 'Low air';
+
+  @override
+  String get basicMediumAir => 'Medium air';
+
+  @override
+  String get basicHighAir => 'High air';
+
+  @override
+  String get basicSpritesDoodads => 'Sprites / Doodads';
+
+  @override
+  String get basicClipboard => 'Clipboard';
+
+  @override
+  String get basicCopy => 'Copy selection';
+
+  @override
+  String get basicCut => 'Cut selection';
+
+  @override
+  String get basicPaste => 'Paste at pixel position';
+
+  @override
+  String get basicClipboardHelp =>
+      'Document-local units, sprites and locations. Copy both linked units together. Start locations and unverified Doodad overlays are refused.';
+
+  @override
+  String get basicSpriteDisabled => 'Sprite-unit disabled';
+
+  @override
+  String get basicSpriteHelp =>
+      'Disabled applies to sprite-units only. Possible Doodad overlays require the composite tool below. Unknown flags are preserved.';
+
+  @override
+  String get basicLoadDoodad => 'Load selected Doodad recipe';
+
+  @override
+  String get basicDoodadEnabled => 'Doodad enabled';
+
+  @override
+  String get basicDoodadHelp =>
+      'Select one Doodad and explicitly choose its matching overlay. The footprint and underlying terrain must match local data. Pure-sprite enabled state is editor metadata; sprite-unit disabling also changes THG2.';
+
+  @override
+  String get basicOverlay => 'Matching overlay';
+
+  @override
+  String get basicLocationSearch => 'Find by name or ID';
+
+  @override
+  String get basicRawTerrain => 'Raw terrain clipboard';
+
+  @override
+  String get basicRawClipboardHelp =>
+      'Copies raw MTXM tiles only and preserves TILE/ISOM. This does not calculate isometric boundaries. Maps containing Doodads require verified composite editing. Coordinates below are tile coordinates.';
+
+  @override
+  String get basicCutReplacement => 'Cut fill tile value (already in map)';
+
+  @override
+  String get basicTileLeft => 'Left tile';
+
+  @override
+  String get basicTileTop => 'Top tile';
+
+  @override
+  String get basicTileRight => 'Right tile';
+
+  @override
+  String get basicTileBottom => 'Bottom tile';
+
+  @override
+  String get basicTileX => 'Destination tile X';
+
+  @override
+  String get basicTileY => 'Destination tile Y';
+
+  @override
+  String get basicStartMissing => 'Missing start location';
+
+  @override
+  String basicStartDuplicate(int count) {
+    return 'Duplicate start locations: $count';
+  }
+
+  @override
+  String get basicApplySelectedLocations => 'Apply to selected locations';
+
+  @override
+  String get basicStartCanvasHelp =>
+      'Click the map to fill coordinates; Apply places or moves this player\'s start location.';
 }

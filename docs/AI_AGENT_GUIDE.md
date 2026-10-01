@@ -55,9 +55,11 @@ EUD는 관리형 도구 동봉, 8개 분류·61개 후보 필드, schema v1/v2/v
 전체 필드·멀티플레이·배포 인수를 완료한 것은 아니다.
 
 New Map UI·원본 없는 세션·신규 MPQ 저장/재열기·raw resize를 구현했다.
-등각 지형은 helper 0.10.0/snapshot v2 로컬 CV5 자료, 평지 형태 연결표·변환 카탈로그와
+등각 지형은 helper 0.10.1/snapshot v2 로컬 CV5 자료, 평지 형태 연결표·변환 카탈로그와
 File → 등각 지형 채우기까지 연결했다. ISOM/TILE/MTXM 동시 적용과 Undo/Redo를 제공한다.
 지형 경계·적층·경사로 solver, 선택 영역 브러시와 ISOM resize는 남았다.
+[기본 편집 도구](BASIC_EDITING_TOOLS.md)의 안개·상태·관계·시작 위치·고도·clipboard·미니맵을 구현했다.
+DD2 활성=0/비활성=1을 helper 0.10.1로 정정하며 기존 맵은 자동 재작성하지 않는다.
 실제 게임 인수는 별도이며 [남은 작업 요약](REMAINING_WORK.md)에서 구분한다.
 정확한 남은 항목과 작업 재개 지점은 [개발 계획](DEVELOPMENT_PLAN.md),
 이번 점검의 근거와 한계는 [문서 정합성 점검](DOCUMENTATION_REVIEW.md)을 따른다.

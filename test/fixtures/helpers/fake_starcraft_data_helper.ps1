@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.10.0"
+    helperVersion = "0.10.1"
     cascLibRevision = $revision
 }
 
@@ -150,7 +150,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                     height = 2
                     centerOffsetX = 32
                     centerOffsetY = 32
-                    enabledValue = 1
+                    enabledValue = 0
                     footprintRawValues = @(3200, 3201, 3216, $null)
                     placibilityTileGroups = @(4, 0, 5, 6)
                     overlay = [ordered]@{ kind = "pureSprite"; id = 130 }
@@ -171,7 +171,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                     height = 1
                     centerOffsetX = 16
                     centerOffsetY = 16
-                    enabledValue = 1
+                    enabledValue = 0
                     footprintRawValues = @(4800)
                     placibilityTileGroups = @(0)
                     overlay = [ordered]@{ kind = "spriteUnit"; id = 100 }

@@ -86,7 +86,9 @@ New Map·원본 없는 세션·신규 MPQ 저장/재열기를 구현했다. raw 
 로컬 CV5 연결 스냅샷과 자료 해시, Dart 수신·검증 경계를 8개 타일셋에서 검증했다.
 2026-10-01 로컬 평지 형태 연결표·실제 변환 카탈로그와 File → 등각 지형 채우기를 연결했다.
 8개 타일셋 평지 86종의 생성·렌더와 실제 MPQ 저장/재열기를 검증했다.
-다음은 지형 경계·적층·경사로 solver와 브러시다. 게임/외부 에디터 인수는 별도다.
+Edit → 기본 편집 도구에 안개·시작 위치·상태/valid flags·Sprite-unit 비활성·검증형 Doodad 활성과 복합 clipboard, 관계 편집·고도/검색·미니맵을 추가했다.
+helper 0.10.1에서 DD2 활성값을 0으로 정정했다([계약](BASIC_EDITING_TOOLS.md)).
+지형 경계·적층·경사로 solver와 브러시, ISOM/Doodad resize·게임/외부 에디터 인수는 남았다.
 [개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
 [문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.
 

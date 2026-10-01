@@ -1463,5 +1463,101 @@
         "type": "int"
       }
     }
+  },
+  "basicToolsTitle": "Basic Editing Tools",
+  "basicFog": "Initial fog",
+  "basicUnits": "Selected units",
+  "basicStarts": "Start locations",
+  "basicLocations": "Locations",
+  "basicOpenMap": "Open an editable map first.",
+  "basicFogUnavailable": "A unique valid MASK/DIM grid is required.",
+  "basicPlayer": "Player {id}",
+  "basicFogHide": "Hide terrain",
+  "basicBrush": "Brush",
+  "basicRectangle": "Rectangle",
+  "basicFillAll": "Fill whole map",
+  "basicFogScope": "Dark cells are initially hidden. Edits affect this player only.",
+  "basicSelectedUnits": "{count} selected units",
+  "basicKeepBlank": "Leave numeric fields blank to preserve existing values.",
+  "basicOwner": "Owner (1–12)",
+  "basicHitpoints": "Hitpoints %",
+  "basicShields": "Shields %",
+  "basicEnergy": "Energy %",
+  "basicResources": "Resources",
+  "basicHangar": "Hangar",
+  "basicUnitStates": "State and inheritance",
+  "basicCloak": "Cloaked",
+  "basicBurrow": "Burrowed",
+  "basicLifted": "Lifted / in transit",
+  "basicHallucination": "Hallucination",
+  "basicInvincible": "Invincible",
+  "basicKeep": "Keep",
+  "basicOff": "Off",
+  "basicOn": "On",
+  "basicInherit": "Use game default",
+  "basicValidFields": "Use stored field values",
+  "basicApplyStored": "Apply stored value",
+  "basicApply": "Apply",
+  "basicRelationHelp": "Select two compatible units in the map. Linking updates mutual references; positions are kept. Unlink before changing their owner.",
+  "basicLinkAddon": "Link addon",
+  "basicLinkNydus": "Link Nydus",
+  "basicUnlink": "Unlink",
+  "basicStartsHelp": "Set or move the selected player’s start location. Duplicate starts are preserved and must be reviewed first.",
+  "basicPixelX": "Pixel X",
+  "basicPixelY": "Pixel Y",
+  "basicLocationsUnavailable": "A unique valid location table is required.",
+  "basicElevationHelp": "Select a location and its ground/air elevation conditions. Other flag bits and strings are preserved.",
+  "basicLowGround": "Low ground",
+  "basicMediumGround": "Medium ground",
+  "basicHighGround": "High ground",
+  "basicLowAir": "Low air",
+  "basicMediumAir": "Medium air",
+  "basicHighAir": "High air",
+  "@basicPlayer": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "@basicSelectedUnits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "basicSpritesDoodads": "Sprites / Doodads",
+  "basicClipboard": "Clipboard",
+  "basicCopy": "Copy selection",
+  "basicCut": "Cut selection",
+  "basicPaste": "Paste at pixel position",
+  "basicClipboardHelp": "Document-local units, sprites and locations. Copy both linked units together. Start locations and unverified Doodad overlays are refused.",
+  "basicSpriteDisabled": "Sprite-unit disabled",
+  "basicSpriteHelp": "Disabled applies to sprite-units only. Possible Doodad overlays require the composite tool below. Unknown flags are preserved.",
+  "basicLoadDoodad": "Load selected Doodad recipe",
+  "basicDoodadEnabled": "Doodad enabled",
+  "basicDoodadHelp": "Select one Doodad and explicitly choose its matching overlay. The footprint and underlying terrain must match local data. Pure-sprite enabled state is editor metadata; sprite-unit disabling also changes THG2.",
+  "basicOverlay": "Matching overlay",
+  "basicLocationSearch": "Find by name or ID",
+  "basicRawTerrain": "Raw terrain clipboard",
+  "basicRawClipboardHelp": "Copies raw MTXM tiles only and preserves TILE/ISOM. This does not calculate isometric boundaries. Maps containing Doodads require verified composite editing. Coordinates below are tile coordinates.",
+  "basicCutReplacement": "Cut fill tile value (already in map)",
+  "basicTileLeft": "Left tile",
+  "basicTileTop": "Top tile",
+  "basicTileRight": "Right tile",
+  "basicTileBottom": "Bottom tile",
+  "basicTileX": "Destination tile X",
+  "basicTileY": "Destination tile Y",
+  "basicStartMissing": "Missing start location",
+  "basicStartDuplicate": "Duplicate start locations: {count}",
+  "basicApplySelectedLocations": "Apply to selected locations",
+  "basicStartCanvasHelp": "Click the map to fill coordinates; Apply places or moves this player's start location.",
+  "@basicStartDuplicate": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -14,6 +14,62 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'minimap navigates without painting and canvas tool shortcuts preserve text modifiers',
+    (tester) async {
+      tester.view.physicalSize = const Size(640, 480);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      var strokes = 0;
+      TerrainEditingTool? tool;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MapCanvas(
+              mapWidth: 128,
+              mapHeight: 128,
+              rawTileValues: List.filled(128 * 128, 1),
+              editingTool: TerrainEditingTool.brush,
+              onBrushStrokeStarted: () => strokes++,
+              onBrushStroke: (_) {},
+              onEditingToolRequested: (v) => tool = v,
+            ),
+          ),
+        ),
+      );
+      MapCanvasPainter painter() =>
+          tester
+                  .widget<CustomPaint>(
+                    find.byKey(const Key('map-canvas-paint')),
+                  )
+                  .painter!
+              as MapCanvasPainter;
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(const Key('map-canvas-zoom-in')));
+        await tester.pump();
+      }
+      final before = painter().layout.visibleTiles.left;
+      await tester.tapAt(
+        tester.getTopLeft(find.byKey(const Key('map-minimap'))) +
+            const Offset(136, 54),
+      );
+      await tester.pump();
+      expect(painter().layout.visibleTiles.left, greaterThan(before));
+      expect(strokes, 0);
+      await tester.tapAt(const Offset(320, 240));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+      await tester.pump();
+      expect(tool, TerrainEditingTool.rectangle);
+      tool = null;
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      expect(tool, isNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('renders map bounds, grid, visible range, and terrain mode', (
     tester,
   ) async {

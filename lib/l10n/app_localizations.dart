@@ -4291,6 +4291,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fill whole map'**
   String get isomFillApply;
+
+  /// No description provided for @basicToolsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic Editing Tools'**
+  String get basicToolsTitle;
+
+  /// No description provided for @basicFog.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial fog'**
+  String get basicFog;
+
+  /// No description provided for @basicUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected units'**
+  String get basicUnits;
+
+  /// No description provided for @basicStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Start locations'**
+  String get basicStarts;
+
+  /// No description provided for @basicLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get basicLocations;
+
+  /// No description provided for @basicOpenMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map first.'**
+  String get basicOpenMap;
+
+  /// No description provided for @basicFogUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A unique valid MASK/DIM grid is required.'**
+  String get basicFogUnavailable;
+
+  /// No description provided for @basicPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {id}'**
+  String basicPlayer(int id);
+
+  /// No description provided for @basicFogHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide terrain'**
+  String get basicFogHide;
+
+  /// No description provided for @basicBrush.
+  ///
+  /// In en, this message translates to:
+  /// **'Brush'**
+  String get basicBrush;
+
+  /// No description provided for @basicRectangle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rectangle'**
+  String get basicRectangle;
+
+  /// No description provided for @basicFillAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill whole map'**
+  String get basicFillAll;
+
+  /// No description provided for @basicFogScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark cells are initially hidden. Edits affect this player only.'**
+  String get basicFogScope;
+
+  /// No description provided for @basicSelectedUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected units'**
+  String basicSelectedUnits(int count);
+
+  /// No description provided for @basicKeepBlank.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave numeric fields blank to preserve existing values.'**
+  String get basicKeepBlank;
+
+  /// No description provided for @basicOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner (1–12)'**
+  String get basicOwner;
+
+  /// No description provided for @basicHitpoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Hitpoints %'**
+  String get basicHitpoints;
+
+  /// No description provided for @basicShields.
+  ///
+  /// In en, this message translates to:
+  /// **'Shields %'**
+  String get basicShields;
+
+  /// No description provided for @basicEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy %'**
+  String get basicEnergy;
+
+  /// No description provided for @basicResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources'**
+  String get basicResources;
+
+  /// No description provided for @basicHangar.
+  ///
+  /// In en, this message translates to:
+  /// **'Hangar'**
+  String get basicHangar;
+
+  /// No description provided for @basicUnitStates.
+  ///
+  /// In en, this message translates to:
+  /// **'State and inheritance'**
+  String get basicUnitStates;
+
+  /// No description provided for @basicCloak.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloaked'**
+  String get basicCloak;
+
+  /// No description provided for @basicBurrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Burrowed'**
+  String get basicBurrow;
+
+  /// No description provided for @basicLifted.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifted / in transit'**
+  String get basicLifted;
+
+  /// No description provided for @basicHallucination.
+  ///
+  /// In en, this message translates to:
+  /// **'Hallucination'**
+  String get basicHallucination;
+
+  /// No description provided for @basicInvincible.
+  ///
+  /// In en, this message translates to:
+  /// **'Invincible'**
+  String get basicInvincible;
+
+  /// No description provided for @basicKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get basicKeep;
+
+  /// No description provided for @basicOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get basicOff;
+
+  /// No description provided for @basicOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get basicOn;
+
+  /// No description provided for @basicInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use game default'**
+  String get basicInherit;
+
+  /// No description provided for @basicValidFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Use stored field values'**
+  String get basicValidFields;
+
+  /// No description provided for @basicApplyStored.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply stored value'**
+  String get basicApplyStored;
+
+  /// No description provided for @basicApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get basicApply;
+
+  /// No description provided for @basicRelationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select two compatible units in the map. Linking updates mutual references; positions are kept. Unlink before changing their owner.'**
+  String get basicRelationHelp;
+
+  /// No description provided for @basicLinkAddon.
+  ///
+  /// In en, this message translates to:
+  /// **'Link addon'**
+  String get basicLinkAddon;
+
+  /// No description provided for @basicLinkNydus.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Nydus'**
+  String get basicLinkNydus;
+
+  /// No description provided for @basicUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get basicUnlink;
+
+  /// No description provided for @basicStartsHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Set or move the selected player’s start location. Duplicate starts are preserved and must be reviewed first.'**
+  String get basicStartsHelp;
+
+  /// No description provided for @basicPixelX.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel X'**
+  String get basicPixelX;
+
+  /// No description provided for @basicPixelY.
+  ///
+  /// In en, this message translates to:
+  /// **'Pixel Y'**
+  String get basicPixelY;
+
+  /// No description provided for @basicLocationsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A unique valid location table is required.'**
+  String get basicLocationsUnavailable;
+
+  /// No description provided for @basicElevationHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a location and its ground/air elevation conditions. Other flag bits and strings are preserved.'**
+  String get basicElevationHelp;
+
+  /// No description provided for @basicLowGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Low ground'**
+  String get basicLowGround;
+
+  /// No description provided for @basicMediumGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium ground'**
+  String get basicMediumGround;
+
+  /// No description provided for @basicHighGround.
+  ///
+  /// In en, this message translates to:
+  /// **'High ground'**
+  String get basicHighGround;
+
+  /// No description provided for @basicLowAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Low air'**
+  String get basicLowAir;
+
+  /// No description provided for @basicMediumAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium air'**
+  String get basicMediumAir;
+
+  /// No description provided for @basicHighAir.
+  ///
+  /// In en, this message translates to:
+  /// **'High air'**
+  String get basicHighAir;
+
+  /// No description provided for @basicSpritesDoodads.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprites / Doodads'**
+  String get basicSpritesDoodads;
+
+  /// No description provided for @basicClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Clipboard'**
+  String get basicClipboard;
+
+  /// No description provided for @basicCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy selection'**
+  String get basicCopy;
+
+  /// No description provided for @basicCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut selection'**
+  String get basicCut;
+
+  /// No description provided for @basicPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste at pixel position'**
+  String get basicPaste;
+
+  /// No description provided for @basicClipboardHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Document-local units, sprites and locations. Copy both linked units together. Start locations and unverified Doodad overlays are refused.'**
+  String get basicClipboardHelp;
+
+  /// No description provided for @basicSpriteDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprite-unit disabled'**
+  String get basicSpriteDisabled;
+
+  /// No description provided for @basicSpriteHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled applies to sprite-units only. Possible Doodad overlays require the composite tool below. Unknown flags are preserved.'**
+  String get basicSpriteHelp;
+
+  /// No description provided for @basicLoadDoodad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load selected Doodad recipe'**
+  String get basicLoadDoodad;
+
+  /// No description provided for @basicDoodadEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Doodad enabled'**
+  String get basicDoodadEnabled;
+
+  /// No description provided for @basicDoodadHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one Doodad and explicitly choose its matching overlay. The footprint and underlying terrain must match local data. Pure-sprite enabled state is editor metadata; sprite-unit disabling also changes THG2.'**
+  String get basicDoodadHelp;
+
+  /// No description provided for @basicOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching overlay'**
+  String get basicOverlay;
+
+  /// No description provided for @basicLocationSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find by name or ID'**
+  String get basicLocationSearch;
+
+  /// No description provided for @basicRawTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw terrain clipboard'**
+  String get basicRawTerrain;
+
+  /// No description provided for @basicRawClipboardHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies raw MTXM tiles only and preserves TILE/ISOM. This does not calculate isometric boundaries. Maps containing Doodads require verified composite editing. Coordinates below are tile coordinates.'**
+  String get basicRawClipboardHelp;
+
+  /// No description provided for @basicCutReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut fill tile value (already in map)'**
+  String get basicCutReplacement;
+
+  /// No description provided for @basicTileLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left tile'**
+  String get basicTileLeft;
+
+  /// No description provided for @basicTileTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Top tile'**
+  String get basicTileTop;
+
+  /// No description provided for @basicTileRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right tile'**
+  String get basicTileRight;
+
+  /// No description provided for @basicTileBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Bottom tile'**
+  String get basicTileBottom;
+
+  /// No description provided for @basicTileX.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination tile X'**
+  String get basicTileX;
+
+  /// No description provided for @basicTileY.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination tile Y'**
+  String get basicTileY;
+
+  /// No description provided for @basicStartMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing start location'**
+  String get basicStartMissing;
+
+  /// No description provided for @basicStartDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate start locations: {count}'**
+  String basicStartDuplicate(int count);
+
+  /// No description provided for @basicApplySelectedLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to selected locations'**
+  String get basicApplySelectedLocations;
+
+  /// No description provided for @basicStartCanvasHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Click the map to fill coordinates; Apply places or moves this player\'s start location.'**
+  String get basicStartCanvasHelp;
 }
 
 class _AppLocalizationsDelegate

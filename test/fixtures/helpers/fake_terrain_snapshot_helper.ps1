@@ -9,7 +9,7 @@ $groups = @(for ($i=0; $i -lt $count; $i++) {
   @{ group=$i; terrainTypeWord=65535; flagsWord=32769; linkWords=@(0,48,64,65535); stackWords=@(0,1,2,3); megaTileReferences=@(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1); renderableMembers=@(0,3,15) }
 })
 $response = @{
- protocolVersion=3; helperVersion='0.10.0'; cascLibRevision='4971d363e665551ac4142f541e5f2d71f1cda653'
+ protocolVersion=3; helperVersion='0.10.1'; cascLibRevision='4971d363e665551ac4142f541e5f2d71f1cda653'
  requestId=$request.requestId; operation=$request.operation; status='success'
  snapshotVersion=2; tileset=0; isomShapesResolved=$false
  installation=@{ path=$request.installationPath; storageProduct='synthetic'; storageBuildNumber=1 }

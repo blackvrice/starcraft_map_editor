@@ -1,4 +1,6 @@
 import '../documents/isom_fill_dialog.dart';
+import '../documents/basic_editing_tools_dialog.dart';
+import '../../application/editing/basic_editing_controller.dart';
 import '../../application/documents/isom_fill_controller.dart';
 import '../documents/terrain_data_panel.dart';
 import '../../application/documents/map_resize_controller.dart';
@@ -146,6 +148,28 @@ class _EditorShellState extends State<EditorShell> {
   late List<EditorDiagnostic> _documentDiagnostics;
   late _WorkspaceView _workspaceView;
   bool _settingsVisited = false;
+  late BasicEditingController _basicEditing;
+
+  Future<void> _openBasicTools({int initialTab = 0}) async {
+    if (widget.openMapController.state.session == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => BasicEditingToolsDialog(
+        controller: _basicEditing,
+        initialTab: initialTab,
+        catalog: widget.placementCatalogController,
+        textures: widget.terrainTileTextureController.state,
+      ),
+    );
+  }
+
+  void _copyObjectsShortcut({bool cut = false}) {
+    try {
+      _basicEditing.copyObjects(cut: cut);
+    } on Object catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
 
   Future<void> _fillIsom() async {
     final controller = widget.isomFillController;
@@ -197,6 +221,10 @@ class _EditorShellState extends State<EditorShell> {
   @override
   void initState() {
     super.initState();
+    _basicEditing = BasicEditingController(
+      maps: widget.openMapController,
+      layers: widget.mapLayerController,
+    );
     _recentProjects = widget.recentProjectsService.load();
     _documentDiagnostics = widget.openMapController.state.diagnostics;
     _workspaceView = widget.eudSourceController.state.hasDocument
@@ -284,6 +312,14 @@ class _EditorShellState extends State<EditorShell> {
   @override
   void didUpdateWidget(EditorShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.openMapController != widget.openMapController ||
+        oldWidget.mapLayerController != widget.mapLayerController) {
+      unawaited(_basicEditing.dispose());
+      _basicEditing = BasicEditingController(
+        maps: widget.openMapController,
+        layers: widget.mapLayerController,
+      );
+    }
     if (oldWidget.eudProjectWorkspace != widget.eudProjectWorkspace) {
       _projectSubscription?.cancel();
       _projectSubscription = widget.eudProjectWorkspace?.changes.listen((_) {
@@ -561,6 +597,7 @@ class _EditorShellState extends State<EditorShell> {
 
   @override
   void dispose() {
+    unawaited(_basicEditing.dispose());
     unawaited(_openMapSubscription.cancel());
     unawaited(_saveMapSubscription.cancel());
     unawaited(_eudBuildSubscription.cancel());
@@ -806,6 +843,28 @@ class _EditorShellState extends State<EditorShell> {
       shortcuts[const SingleActivator(LogicalKeyboardKey.delete)] =
           deleteObjects;
     }
+    if (_workspaceView == _WorkspaceView.map &&
+        openMap != null &&
+        widget.openMapController.state.session != null) {
+      shortcuts[const SingleActivator(LogicalKeyboardKey.keyC, control: true)] =
+          _copyObjectsShortcut;
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyX,
+        control: true,
+      )] = () =>
+          _copyObjectsShortcut(cut: true);
+      shortcuts[const SingleActivator(
+        LogicalKeyboardKey.keyV,
+        control: true,
+      )] = () =>
+          _openBasicTools(initialTab: 5);
+      shortcuts[const SingleActivator(
+            LogicalKeyboardKey.keyE,
+            control: true,
+            shift: true,
+          )] =
+          _openBasicTools;
+    }
     if (cancelObjectPlacement != null || cancelLocationCreation != null) {
       shortcuts[const SingleActivator(LogicalKeyboardKey.escape)] = () {
         cancelObjectPlacement?.call();
@@ -824,6 +883,11 @@ class _EditorShellState extends State<EditorShell> {
               children: [
                 _EditorMenuBar(
                   newMap: openMap == null ? null : _newMap,
+                  basicTools:
+                      openMap != null &&
+                          widget.openMapController.state.session != null
+                      ? _openBasicTools
+                      : null,
                   fillIsom:
                       widget.isomFillController != null &&
                           openMap != null &&
@@ -1072,6 +1136,7 @@ class _EditorMenuBar extends StatelessWidget {
     required this.openMapInformation,
     required this.newMap,
     required this.fillIsom,
+    required this.basicTools,
     required this.resizeMap,
     required this.openMap,
     required this.saveAs,
@@ -1087,6 +1152,7 @@ class _EditorMenuBar extends StatelessWidget {
 
   final VoidCallback? newMap;
   final VoidCallback? fillIsom;
+  final VoidCallback? basicTools;
   final VoidCallback? resizeMap;
   final VoidCallback? openMap;
   final VoidCallback? openEudTools;
@@ -1215,6 +1281,11 @@ class _EditorMenuBar extends StatelessWidget {
               child: Text(l10n.menuRedo),
             ),
             const Divider(),
+            MenuItemButton(
+              key: const Key('menu-basic-tools'),
+              onPressed: basicTools,
+              child: Text(l10n.basicToolsTitle),
+            ),
             MenuItemButton(
               key: const Key('menu-settings'),
               onPressed: openSettings,
@@ -2708,6 +2779,14 @@ class _OpenedMapWorkspace extends StatelessWidget {
                       terrainTextureState: terrainTileTextureState,
                       objectSpriteTextureState: objectSpriteTextureState,
                       editingTool: editingState.tool,
+                      onEditingToolRequested: (tool) {
+                        if (tool != TerrainEditingTool.select &&
+                            !terrainLayer.isSelectable) {
+                          return;
+                        }
+                        mapLayerController.setActiveLayer(MapLayerType.terrain);
+                        terrainEditingController.setTool(tool);
+                      },
                       selectedTile: selectedTerrainTile,
                       layerScene: layerScene,
                       isObjectPlacementActive:
@@ -2748,6 +2827,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
                                 pixelX: request.coordinate.pixelX,
                                 pixelY: request.coordinate.pixelY,
                                 additive: request.additive,
+                                cycle: request.cycle,
                               );
                               if (selection?.object.layer ==
                                       MapLayerType.terrain &&

@@ -79,6 +79,7 @@ void ListsValidatedRecipesAndIsolatesInvalidEntries() {
   assert(recipe.height == 2);
   assert(recipe.center_offset_x == 32);
   assert(recipe.center_offset_y == 32);
+  assert(recipe.enabled_value == 0);
   assert(recipe.footprint.size() == 4);
   assert(recipe.footprint[0].raw_tile_value == 16);
   assert(recipe.footprint[1].raw_tile_value == 17);

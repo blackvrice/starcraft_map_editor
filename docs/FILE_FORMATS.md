@@ -571,3 +571,12 @@ ISOM → TILE/MTXM 변환 코어는 주입된 검증 카탈로그의 비적층 �
 로컬 CV5 스냅샷은 52바이트 그룹의 0/2바이트 u16, 4~10바이트 네 연결 단어,
 12~18바이트 네 적층 단어를 원시 숫자로 보존한다. 두다드 헤더 해석과 ISOM 형태
 생성은 별도다. [자료 취득 계약](ISOMETRIC_TERRAIN.md)을 참고한다.
+
+## 기본 편집의 추가 CHK 계약 (2026-10-01)
+
+MASK의 플레이어 비트, UNIT 상태/valid-field와 상호 class ID 참조, MRGN의
+하위 6개 고도 비트, THG2 sprite-unit 비활성과 검증된 DD2 상태를 편집한다.
+DD2 활성=0/비활성=1이다. 이전 helper의 활성=1 생성은 0.10.1에서 정정했다.
+Raw MTXM clipboard는 TILE/ISOM을 보존하고, 복합 Doodad 경로는 아래 지형·
+recipe·명시적 overlay를 검증한다. 새 문자열을 정규화하지 않는다.
+자세한 비트/원자성 계약은 [기본 편집 도구](BASIC_EDITING_TOOLS.md)를 따른다.

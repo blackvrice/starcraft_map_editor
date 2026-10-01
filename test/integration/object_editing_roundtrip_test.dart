@@ -644,6 +644,7 @@ void _registerSettingsRoundtrip(bool realArchive) {
         expectedUnitPayload.sublist(0, ChkUnitPlacement.recordLength),
       );
       ByteData.sublistView(duplicatedUnit)
+        ..setUint32(0, 1, Endian.little)
         ..setUint16(4, 200, Endian.little)
         ..setUint16(6, 208, Endian.little);
       final expectedUnits = BytesBuilder(copy: false)
@@ -820,7 +821,7 @@ void _registerSettingsRoundtrip(bool realArchive) {
       expect(objectViews.unitSections.single.units, hasLength(3));
       expect(
         objectViews.unitSections.single.units.map((unit) => unit.classId),
-        [0x11111111, 0x22222222, 0x11111111],
+        [0x11111111, 0x22222222, 1],
       );
       expect(
         objectViews.unitSections.single.units.map((unit) => (unit.x, unit.y)),
@@ -1218,12 +1219,14 @@ Uint8List _unitRecord({
     ..setUint32(0, classId, Endian.little)
     ..setUint16(4, x, Endian.little)
     ..setUint16(6, y, Endian.little)
+    ..setUint16(10, 0, Endian.little)
+    ..setUint32(32, 0, Endian.little)
     ..setUint8(16, owner);
   return payload;
 }
 
 Uint8List _doodadRecord() {
-  final payload = Uint8List.fromList(const [9, 0, 64, 0, 72, 0, 3, 1]);
+  final payload = Uint8List.fromList(const [9, 0, 64, 0, 72, 0, 3, 0]);
   return payload;
 }
 

@@ -9,6 +9,32 @@ import 'package:starcraft_map_editor/application/ports/starcraft_object_atlas_ga
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 
 void main() {
+  test('overlap cycling traverses current selectable hits and wraps', () {
+    final controller = MapLayerController(), session = _session();
+    addTearDown(controller.dispose);
+    controller.setActiveLayer(MapLayerType.units);
+    final hits = controller.orderedHitsAt(
+      session: session,
+      pixelX: 64,
+      pixelY: 64,
+    );
+    for (final hit in [...hits, hits.first]) {
+      expect(
+        controller
+            .selectAt(session: session, pixelX: 64, pixelY: 64, cycle: true)
+            ?.object,
+        hit.object,
+      );
+    }
+    controller.setLocked(MapLayerType.units, true);
+    final next = controller.selectAt(
+      session: session,
+      pixelX: 64,
+      pixelY: 64,
+      cycle: true,
+    );
+    expect(next?.object.layer, isNot(MapLayerType.units));
+  });
   test(
     'uses the active selectable layer before the default top-down order',
     () {

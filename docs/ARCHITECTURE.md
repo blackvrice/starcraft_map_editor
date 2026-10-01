@@ -285,7 +285,7 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
-`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.0의
+`ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의
 `listPlacementCatalog`를 실행한다. Unit·pure Sprite와 tileset별 Doodad recipe도
 같은 operation을 사용하며, 기존 `ObjectPaletteController` template의 UI merge는
 후속 단계로 남아 있다.
@@ -484,7 +484,7 @@ fallback raw 목록으로 격리되며 맵 편집과 Save As에는 영향을 주
 [ADR-0007](decisions/0007-object-sprite-atlas-protocol.md)은 M6.1 객체 그래픽을
 타일과 분리된 `StarCraftObjectAtlasGateway`와 helper
 `renderObjectAtlas` operation으로 정의한다. 현재 설치 검사·타일 렌더·객체
-렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.10.0을
+렌더·Tile/Unit/Sprite/Doodad 카탈로그는 공용 wire protocol 3/helper 0.10.1을
 사용한다.
 
 Application은 맵의 `ERA`에서 얻은 0~7 tileset과 `UNIT`/`THG2`를
@@ -981,10 +981,19 @@ ISOM 변환은 순수 도메인 `IsomTerrainConverter`, 카탈로그 포트, app
 전환·적층 범위 확대를 위해 유지한다. 로컬 원시 자료 수신은 아래 경계를 사용한다.
 지원 범위는 [비적층 변환 계약](ISOMETRIC_TERRAIN.md)을 따른다.
 
-로컬 연결 자료 취득 경계는 helper 0.10.0의 읽기 전용 `readTerrainConnections`다.
+로컬 연결 자료 취득 경계는 helper 0.10.1의 읽기 전용 `readTerrainConnections`다.
 snapshot v2는 CV5 원시 단어·mega-tile 참조 16개·그래픽 참조 유효 member와
 네 자산 SHA-256을 반환한다.
 `TerrainConnectionSnapshotGateway`의 Dart process adapter는 이를 엄격히 검증하고
 불변 스냅샷·revision·한도 내 원시 로그를 제공한다. 평지 catalog revision은
 `solid-isom-v1:`과 snapshot revision을 결합한다. 전체 형태 연결표·경계/적층 solver는 후속이다.
 [스냅샷 계약](ISOMETRIC_TERRAIN.md#로컬-연결-자료-스냅샷-2026-09-30-후속)을 따른다.
+
+## 기본 편집 경계 (2026-10-01)
+
+`BasicEditingController`가 순수 CHK editor/clipboard 결과를 현재 문서·typed view·
+객체 참조 검증과 문서 공통 Undo/Redo로 연결한다. 안개 브러시는 별도 미리보기
+초안을 쓰며 완료 전 교차 편집을 막는다. Doodad 복합 clipboard와 상태 편집은
+기존 로컬 placement catalog의 recipe와 명시적 overlay를 검증한다.
+UI에는 파일·바이너리 파서·프로세스 호출을 추가하지 않는다.
+[지원·검증 계약](BASIC_EDITING_TOOLS.md)을 따른다.

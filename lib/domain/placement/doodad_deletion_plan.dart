@@ -51,7 +51,9 @@ final class DoodadDeletionPlan {
     final doodad = section.doodads[recordIndex];
     if (doodad.doodadType != recipe.doodadType ||
         doodad.enabledValue != recipe.enabledValue) {
-      reject('recipe does not match enabled doodad');
+      reject(
+        'recipe does not match enabled doodad (${doodad.doodadType}/${doodad.enabledValue}, expected ${recipe.doodadType}/${recipe.enabledValue})',
+      );
     }
     final dx = doodad.x - recipe.centerOffsetX;
     final dy = doodad.y - recipe.centerOffsetY;

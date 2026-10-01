@@ -30,7 +30,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.10.0";
+constexpr char kHelperVersion[] = "0.10.1";
 constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";

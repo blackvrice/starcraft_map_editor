@@ -37,7 +37,7 @@ void main() {
         expect(second.snapshot!.revision, first.snapshot!.revision);
         expect(first.snapshot!.groups, isNotEmpty);
         expect(first.snapshot!.assets, hasLength(4));
-        expect(first.stdout, contains('"helperVersion":"0.10.0"'));
+        expect(first.stdout, contains('"helperVersion":"0.10.1"'));
       }
     },
     skip: canRun ? false : 'Requires local Windows CASC helper/installation.',
