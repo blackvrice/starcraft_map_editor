@@ -1,4 +1,6 @@
 import 'package:starcraft_map_editor/application/documents/isom_fill_controller.dart';
+import 'package:starcraft_map_editor/application/documents/map_resize_controller.dart';
+import 'package:starcraft_map_editor/domain/chk/map_resize.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
@@ -23,7 +25,7 @@ void main() {
   final dataHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   final install = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   test(
-    'local boundary and ramp edits save/reopen byte-exactly and preserve source MPQ',
+    'local boundary, ramp and resize edits save/reopen byte-exactly and preserve source MPQ',
     () async {
       final root = await Directory.systemTemp.createTemp('isom_conversion_');
       addTearDown(() => root.delete(recursive: true));
@@ -141,11 +143,27 @@ void main() {
       expect(maps.state.session, same(beforeRamp));
       maps.editHistory.redo();
       expect(maps.state.session, same(afterRamp));
+      final resize = MapResizeController(maps, terrainLoader: controller);
+      addTearDown(resize.dispose);
+      await resize.loadTerrain();
+      final resized = resize.preview(
+        MapResizeOptions(width: 64, height: 96, anchor: MapResizeAnchor.center),
+      );
+      expect(resized.blockers, isEmpty);
+      expect(resized.movedDoodads, 1);
+      expect(maps.state.session, same(afterRamp));
+      resize.apply(resized, acceptCropping: false);
+      final afterResize = maps.state.session!;
+      expect(afterResize.terrainViews.tileMaps.single.width, 64);
+      maps.editHistory.undo();
+      expect(maps.state.session, same(afterRamp));
+      maps.editHistory.redo();
+      expect(maps.state.session, same(afterResize));
       final expected = const RawChkEncoder().encode(
         maps.state.session!.rawDocument,
       );
       maps.editHistory.undo();
-      expect(maps.state.session, same(beforeRamp));
+      expect(maps.state.session, same(afterRamp));
       maps.editHistory.redo();
       final output = '${root.path}/converted.scx';
       expect(
@@ -162,7 +180,7 @@ void main() {
       );
       expect(
         isom.payload,
-        afterRamp.rawDocument.sections
+        afterResize.rawDocument.sections
             .singleWhere((s) => s.name == 'ISOM')
             .payload,
       );

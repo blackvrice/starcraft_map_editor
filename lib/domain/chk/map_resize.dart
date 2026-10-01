@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'raw_chk_document.dart';
 import 'raw_chk_section.dart';
+import '../terrain/map_resize_terrain.dart';
 
 enum MapResizeAnchor {
   topLeft(0, 0, 'Top left'),
@@ -55,6 +56,10 @@ final class MapResizePreview {
     required this.movedUnits,
     required this.movedSprites,
     required this.fillTile,
+    required this.movedDoodads,
+    required this.outsideDoodads,
+    required this.recalculatedTiles,
+    required this.catalogRevision,
     required List<String> blockers,
     required this.result,
   }) : blockers = List.unmodifiable(blockers);
@@ -67,6 +72,8 @@ final class MapResizePreview {
       movedUnits,
       movedSprites;
   final int fillTile;
+  final int movedDoodads, outsideDoodads, recalculatedTiles;
+  final String? catalogRevision;
   final List<String> blockers;
   final RawChkDocument? result;
   bool get canApply => blockers.isEmpty && result != null;
@@ -84,7 +91,11 @@ final class MapResizePreview {
 class MapResizeEditor {
   const MapResizeEditor();
 
-  MapResizePreview preview(RawChkDocument source, MapResizeOptions options) {
+  MapResizePreview preview(
+    RawChkDocument source,
+    MapResizeOptions options, {
+    MapResizeTerrainData? terrainData,
+  }) {
     final blockers = <String>[];
     RawChkSection? section(String name, {bool required = false}) {
       final matches = source.sections.where((s) => s.name == name).toList();
@@ -116,16 +127,15 @@ class MapResizeEditor {
       math.min<int>(h + dy, nh) - math.max<int>(0, dy),
     );
     if (w == nw && h == nh) blockers.add('Choose a different map size.');
-    if (section('ISOM') != null ||
-        source.sections.any((s) => s.isEuddraftProtectionMarker)) {
-      blockers.add(
-        'ISOM/protected maps require a verified isometric terrain conversion.',
-      );
+    final isom = section('ISOM');
+    if (source.sections.any((s) => s.isEuddraftProtectionMarker)) {
+      blockers.add('Protected maps cannot be resized.');
     }
     final dd = section('DD2 ');
-    if (dd != null && dd.payload.isNotEmpty) {
+    final advanced = isom != null || (dd != null && dd.payload.isNotEmpty);
+    if (advanced && terrainData == null) {
       blockers.add(
-        'Doodad terrain and overlay ownership cannot yet be resized safely.',
+        'Load verified local terrain and doodad data before resizing this map.',
       );
     }
     final replacements = <RawChkSection, RawChkSection>{};
@@ -141,7 +151,9 @@ class MapResizeEditor {
     RangeError.checkValueInInterval(options.fillY, 0, h - 1, 'fillY');
     final sample = (options.fillY * w + options.fillX) * 2;
     final fill = ByteData.sublistView(
-      terrain.payload,
+      advanced && terrainData != null
+          ? section('TILE', required: true)!.payload
+          : terrain.payload,
     ).getUint16(sample, Endian.little);
     for (final name in ['MTXM', 'TILE', 'MASK']) {
       final s = section(name);
@@ -170,10 +182,15 @@ class MapResizeEditor {
       replacements[s] = s.withPayload(bytes);
     }
     var outsideUnits = 0, outsideSprites = 0, movedUnits = 0, movedSprites = 0;
-    for (final name in ['UNIT', 'THG2']) {
+    var outsideDoodads = 0, movedDoodads = 0, recalculatedTiles = 0;
+    for (final name in ['UNIT', 'THG2', 'DD2 ']) {
       final s = section(name);
       if (s == null) continue;
-      final stride = name == 'UNIT' ? 36 : 10;
+      final stride = name == 'UNIT'
+          ? 36
+          : name == 'DD2 '
+          ? 8
+          : 10;
       final coord = name == 'UNIT' ? 4 : 2;
       if (s.payload.length % stride != 0) {
         throw StateError('Truncated $name record.');
@@ -191,16 +208,20 @@ class MapResizeEditor {
         if (x < 0 || x >= nw * 32 || y < 0 || y >= nh * 32) {
           if (name == 'UNIT') {
             outsideUnits++;
-          } else {
+          } else if (name == 'THG2') {
             outsideSprites++;
+          } else {
+            outsideDoodads++;
           }
           continue;
         }
         if (dx != 0 || dy != 0) {
           if (name == 'UNIT') {
             movedUnits++;
-          } else {
+          } else if (name == 'THG2') {
             movedSprites++;
+          } else {
+            movedDoodads++;
           }
         }
         data.setUint16(i + coord, x, Endian.little);
@@ -211,6 +232,11 @@ class MapResizeEditor {
     if (outsideUnits + outsideSprites > 0) {
       blockers.add(
         '$outsideUnits units and $outsideSprites sprites would leave the map. Move them or change the anchor/size; no records are deleted.',
+      );
+    }
+    if (outsideDoodads > 0) {
+      blockers.add(
+        '$outsideDoodads doodads would leave the map; no records are deleted.',
       );
     }
     var clippedLocations = 0;
@@ -246,6 +272,31 @@ class MapResizeEditor {
       }
       replacements[locations] = locations.withPayload(bytes);
     }
+    RawChkDocument? result = RawChkDocument(
+      sections: [for (final s in source.sections) replacements[s] ?? s],
+      sourceLength: source.sourceLength,
+    );
+    if (advanced && terrainData != null) {
+      try {
+        final converted = const MapResizeTerrainEditor().resize(
+          source,
+          result,
+          terrainData,
+          dx: dx,
+          dy: dy,
+          fillX: options.fillX,
+          fillY: options.fillY,
+        );
+        result = converted.document;
+        blockers.addAll(converted.blockers);
+        movedDoodads = converted.movedDoodads;
+        outsideDoodads = math.max(outsideDoodads, converted.outsideDoodads);
+        recalculatedTiles = converted.recalculatedTiles;
+      } on Object catch (e) {
+        blockers.add('Terrain resize validation failed: $e');
+        result = null;
+      }
+    }
     return MapResizePreview._(
       source: source,
       options: options,
@@ -261,13 +312,12 @@ class MapResizeEditor {
       movedUnits: movedUnits,
       movedSprites: movedSprites,
       fillTile: fill,
+      movedDoodads: movedDoodads,
+      outsideDoodads: outsideDoodads,
+      recalculatedTiles: recalculatedTiles,
+      catalogRevision: advanced ? terrainData?.catalog.revision : null,
       blockers: blockers,
-      result: blockers.isEmpty
-          ? RawChkDocument(
-              sections: [for (final s in source.sections) replacements[s] ?? s],
-              sourceLength: source.sourceLength,
-            )
-          : null,
+      result: blockers.isEmpty ? result : null,
     );
   }
 }

@@ -232,7 +232,10 @@ class _EditorShellState extends State<EditorShell> {
     final changed = await showDialog<bool>(
       context: context,
       builder: (_) => MapResizeDialog(
-        controller: MapResizeController(widget.openMapController),
+        controller: MapResizeController(
+          widget.openMapController,
+          terrainLoader: widget.isomFillController,
+        ),
       ),
     );
     if (changed == true && mounted) {

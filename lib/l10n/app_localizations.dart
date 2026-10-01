@@ -5017,6 +5017,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The last stroke was rejected. The previous preview is preserved.'**
   String get isomBrushStrokeRejected;
+
+  /// No description provided for @resizeTerrainLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading verified terrain and doodad data…'**
+  String get resizeTerrainLoading;
+
+  /// No description provided for @resizeIsomFillHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a flat terrain sample (zero-based tile X/Y) for added ISOM terrain. New fog cells are hidden for all players. Doodad footprints must remain fully inside the map.'**
+  String get resizeIsomFillHint;
+
+  /// No description provided for @resizeDoodadImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Doodads moved: {moved}; footprints outside: {outside}'**
+  String resizeDoodadImpact(int moved, int outside);
+
+  /// No description provided for @resizeTerrainImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain cells recalculated: {count}. Original diamonds and verified doodad footprints are retained.'**
+  String resizeTerrainImpact(int count);
+
+  /// No description provided for @resizeCoordinateScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application.'**
+  String get resizeCoordinateScope;
 }
 
 class _AppLocalizationsDelegate

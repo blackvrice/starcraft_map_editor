@@ -1659,5 +1659,27 @@
   "isomRampHint": "Select a local VF4 ramp recipe, then click its top-left tile on a matching cliff. Orientation is fixed by the recipe. Incompatible terrain is refused.",
   "isomRampEmpty": "This tileset has no verified ramp recipes.",
   "isomRampRecipe": "Ramp recipe",
-  "isomBrushStrokeRejected": "The last stroke was rejected. The previous preview is preserved."
+  "isomBrushStrokeRejected": "The last stroke was rejected. The previous preview is preserved.",
+  "resizeTerrainLoading": "Loading verified terrain and doodad data…",
+  "resizeIsomFillHint": "Choose a flat terrain sample (zero-based tile X/Y) for added ISOM terrain. New fog cells are hidden for all players. Doodad footprints must remain fully inside the map.",
+  "resizeDoodadImpact": "Doodads moved: {moved}; footprints outside: {outside}",
+  "@resizeDoodadImpact": {
+    "placeholders": {
+      "moved": {
+        "type": "int"
+      },
+      "outside": {
+        "type": "int"
+      }
+    }
+  },
+  "resizeTerrainImpact": "Terrain cells recalculated: {count}. Original diamonds and verified doodad footprints are retained.",
+  "@resizeTerrainImpact": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resizeCoordinateScope": "Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application."
 }

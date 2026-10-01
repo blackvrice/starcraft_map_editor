@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../application/documents/map_resize_controller.dart';
 import '../../domain/chk/map_resize.dart';
+import '../localization/l10n.dart';
 
 class MapResizeDialog extends StatefulWidget {
   const MapResizeDialog({required this.controller, super.key});
@@ -17,6 +18,7 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
   MapResizePreview? _preview;
   String? _error;
   bool _accept = false;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -27,7 +29,31 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
       if (w != null && w >= 32 && w <= 256 && w % 32 == 0) _width = w;
       if (h != null && h >= 32 && h <= 256 && h % 32 == 0) _height = h;
     }
-    _refresh();
+    if (widget.controller.needsTerrainData) {
+      _loading = true;
+      _loadTerrain();
+    } else {
+      _refresh();
+    }
+  }
+
+  Future<void> _loadTerrain() async {
+    try {
+      await widget.controller.loadTerrain();
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _refresh();
+        });
+      }
+    } on Object catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = '$e';
+        });
+      }
+    }
   }
 
   void _refresh() {
@@ -61,6 +87,7 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
   @override
   Widget build(BuildContext context) {
     final p = _preview;
+    final l = context.l10n;
     return AlertDialog(
       title: const Text('Resize Map'),
       content: SizedBox(
@@ -74,6 +101,10 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
                 'Choose the new size and where to keep the existing map. Changes apply together and can be undone.',
               ),
               const SizedBox(height: 12),
+              if (_loading) ...[
+                const LinearProgressIndicator(),
+                Text(l.resizeTerrainLoading),
+              ],
               Row(
                 children: [
                   Expanded(child: _size('Width', _width, (v) => _width = v)),
@@ -94,8 +125,10 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
                 }),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Fill added terrain using an existing map tile (zero-based coordinates). If fog data exists, added cells are hidden for all players.',
+              Text(
+                widget.controller.needsTerrainData
+                    ? l.resizeIsomFillHint
+                    : 'Fill added terrain using an existing map tile (zero-based coordinates). If fog data exists, added cells are hidden for all players.',
               ),
               Row(
                 children: [
@@ -138,6 +171,10 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
                 Text(
                   'Sprites moved: ${p.movedSprites}; outside: ${p.outsideSprites}',
                 ),
+                if (widget.controller.needsTerrainData) ...[
+                  Text(l.resizeDoodadImpact(p.movedDoodads, p.outsideDoodads)),
+                  Text(l.resizeTerrainImpact(p.recalculatedTiles)),
+                ],
                 Text(
                   'Locations clipped: ${p.clippedLocations}. IDs and names are retained; the standard Anywhere region follows the new size.',
                 ),
@@ -163,9 +200,7 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
                   ),
               ],
               const SizedBox(height: 12),
-              const Text(
-                'Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. ISOM and maps with doodads are not supported yet.',
-              ),
+              Text(l.resizeCoordinateScope),
               if (_error != null)
                 Text(
                   _error!,
@@ -183,7 +218,8 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
         FilledButton(
           key: const Key('resize-apply'),
           onPressed:
-              _error == null &&
+              !_loading &&
+                  _error == null &&
                   p != null &&
                   p.canApply &&
                   (!p.needsCropConfirmation || _accept)
@@ -212,6 +248,7 @@ class _MapResizeDialogState extends State<MapResizeDialog> {
 
   @override
   void dispose() {
+    widget.controller.dispose();
     _fillX.dispose();
     _fillY.dispose();
     super.dispose();

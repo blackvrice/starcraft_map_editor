@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/terrain/transition_isom_catalog_builder.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/chk/map_resize.dart';
+import 'package:starcraft_map_editor/domain/terrain/map_resize_terrain.dart';
 import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/domain/terrain/isom_terrain_conversion.dart';
 import 'package:starcraft_map_editor/domain/terrain/isom_terrain_fill.dart';
@@ -18,6 +20,108 @@ import 'package:starcraft_map_editor/infrastructure/assets/process_terrain_conne
 void main() {
   final helper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   final install = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
+  test(
+    'local ISOM resize preserves clipped boundary diamonds across all tilesets and anchors',
+    () async {
+      final gateway = ProcessTerrainConnectionSnapshotGateway(
+        helperExecutablePath: helper!,
+      );
+      for (var t = 0; t < 8; t++) {
+        final c = const TransitionIsomCatalogBuilder().build(
+          (await gateway.read(
+            operationId: 'resize-$t',
+            installationPath: install!,
+            tileset: t,
+          )).snapshot!,
+        );
+        final data = MapResizeTerrainData(
+          catalog: c.catalog,
+          brush: c.brush!,
+          solids: c.shapes,
+          recipes: [],
+        );
+        for (final type in c.shapes.keys) {
+          final flat = const IsomTerrainFill()
+              .preview(
+                const NewMapFactory().create(
+                  NewMapOptions(
+                    width: 64,
+                    height: 64,
+                    rawTileValue: 0,
+                    tileset: ChkTileset.values[t],
+                  ),
+                ),
+                c.catalog,
+                solidValue: c.shapes[type]! << 4,
+                seed: 5,
+              )
+              .result;
+          final other = c.shapes.keys.firstWhere((v) => v != type);
+          var source = const IsomTerrainPaint()
+              .preview(
+                flat,
+                c.catalog,
+                c.brush!,
+                solidShape: c.shapes[other]!,
+                diamonds: {(0, 0), (32, 64), (16, 32)},
+              )
+              .result;
+          final unit = source.sections.indexWhere((s) => s.name == 'UNIT');
+          source = source.replaceSection(
+            unit,
+            source.sections[unit].withPayload([]),
+          );
+          final original = IsomTerrainPaint.readDiamonds(source, c.brush!);
+          for (final anchor in MapResizeAnchor.values) {
+            for (final size in [(96, 128), (32, 32), (96, 32)]) {
+              final p = const MapResizeEditor().preview(
+                source,
+                MapResizeOptions(
+                  width: size.$1,
+                  height: size.$2,
+                  anchor: anchor,
+                  fillX: 8,
+                  fillY: 8,
+                ),
+                terrainData: data,
+              );
+              expect(
+                p.blockers,
+                isEmpty,
+                reason: '$t $type ${anchor.name} $size',
+              );
+              final result = p.apply(acceptCropping: true);
+              final grown = IsomTerrainPaint.readDiamonds(result, c.brush!);
+              for (final e in original.entries) {
+                final at = (e.key.$1 + p.dx ~/ 2, e.key.$2 + p.dy);
+                final formerlyClipped =
+                    (e.key.$1 == 0 && at.$1 > 0) ||
+                    (e.key.$1 == 32 && at.$1 < size.$1 ~/ 2) ||
+                    (e.key.$2 == 0 && at.$2 > 0) ||
+                    (e.key.$2 == 64 && at.$2 < size.$2);
+                if (grown.containsKey(at) && !formerlyClipped) {
+                  expect(grown[at], e.value, reason: 'translated original $at');
+                }
+              }
+              expect(
+                const IsomTerrainConverter()
+                    .preview(
+                      result,
+                      c.catalog,
+                      seed: 7,
+                      requireKnownSourcePairs: true,
+                    )
+                    .changedTileCount,
+                0,
+              );
+            }
+          }
+        }
+      }
+    },
+    skip: helper == null || install == null,
+    timeout: const Timeout(Duration(minutes: 10)),
+  );
   test(
     'local diamond brushes connect all terrain pairs in eight tilesets',
     () async {
@@ -210,6 +314,43 @@ void main() {
                       const RawChkEncoder().encode(result),
                     );
                     final bytes = const RawChkEncoder().encode(result);
+                    final resizeData = MapResizeTerrainData(
+                      catalog: c.catalog,
+                      brush: c.brush!,
+                      solids: c.shapes,
+                      recipes: recipes,
+                    );
+                    for (final anchor in MapResizeAnchor.values) {
+                      final resized = const MapResizeEditor().preview(
+                        result,
+                        MapResizeOptions(width: 64, height: 96, anchor: anchor),
+                        terrainData: resizeData,
+                      );
+                      expect(
+                        resized.blockers,
+                        isEmpty,
+                        reason: 'tileset $t ${anchor.name}',
+                      );
+                      final grown = resized.apply(acceptCropping: false);
+                      IsomDoodadOverlay.read(grown, recipes);
+                      final crop = const MapResizeEditor().preview(
+                        grown,
+                        MapResizeOptions(width: 32, height: 32, anchor: anchor),
+                        terrainData: resizeData,
+                      );
+                      expect(
+                        crop.blockers,
+                        isEmpty,
+                        reason: 'tileset $t crop ${anchor.name}',
+                      );
+                      expect(
+                        const RawChkEncoder().encode(
+                          crop.apply(acceptCropping: true),
+                        ),
+                        bytes,
+                        reason: 'tileset $t resize roundtrip ${anchor.name}',
+                      );
+                    }
                     expect(
                       const RawChkEncoder().encode(
                         const RawChkParser().parse(bytes).document!,

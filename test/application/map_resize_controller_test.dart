@@ -5,8 +5,129 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/chk/map_resize.dart';
 import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import '../fixtures/new_map_harness.dart';
+import 'dart:async';
+import 'package:starcraft_map_editor/application/documents/isom_fill_controller.dart';
+import '../fixtures/solid_isom_fixture.dart';
+import '../fixtures/isom_ramp_fixture.dart';
+import 'package:starcraft_map_editor/application/ports/terrain_connection_snapshot_gateway.dart';
+import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 
 void main() {
+  test(
+    'installation changes reject a loaded ISOM preview before application',
+    () async {
+      final h = NewMapHarness();
+      addTearDown(h.dispose);
+      h.maps.createNew(
+        NewMapOptions(width: 32, height: 32, rawTileValue: 0),
+        expectedSession: null,
+      );
+      final loader = IsomFillController(
+        maps: h.maps,
+        assets: () => h.assets,
+        gateway: SolidSnapshotGateway(),
+      );
+      await loader.load();
+      loader.apply(loader.preview(terrainType: 2));
+      final before = h.maps.state.session;
+      final c = MapResizeController(h.maps, terrainLoader: loader);
+      addTearDown(c.dispose);
+      await c.loadTerrain();
+      final p = c.preview(MapResizeOptions(width: 64, height: 64));
+      expect(p.canApply, isTrue);
+      h.assets = StarCraftDataAssetSettingsState(
+        status: StarCraftDataAssetSettingsStatus.ready,
+        configuredPath: r'C:\OtherStarCraft',
+      );
+      expect(() => c.apply(p, acceptCropping: false), throwsStateError);
+      expect(h.maps.state.session, same(before));
+    },
+  );
+  test(
+    'ISOM and doodad resize loads data and applies one reversible document edit',
+    () async {
+      final h = NewMapHarness();
+      addTearDown(h.dispose);
+      h.maps.createNew(
+        NewMapOptions(width: 32, height: 32, rawTileValue: 0),
+        expectedSession: null,
+      );
+      final loader = IsomFillController(
+        maps: h.maps,
+        assets: () => h.assets,
+        gateway: SolidSnapshotGateway(),
+        placementGateway: IsomRampGateway(),
+      );
+      await loader.load();
+      loader.apply(loader.preview(terrainType: 2));
+      await loader.load();
+      loader.apply(
+        loader.previewRamp(recipe: loader.ramps.single, x: 8, y: 10),
+      );
+      final before = h.maps.state.session!,
+          depth = h.maps.editHistory.undoDepth;
+      final c = MapResizeController(h.maps, terrainLoader: loader);
+      addTearDown(c.dispose);
+      final options = MapResizeOptions(
+        width: 64,
+        height: 96,
+        anchor: MapResizeAnchor.center,
+      );
+      expect(c.preview(options).canApply, isFalse);
+      await c.loadTerrain();
+      final p = c.preview(options);
+      expect(p.blockers, isEmpty);
+      expect(p.movedDoodads, 1);
+      expect(h.maps.state.session, same(before));
+      expect(h.maps.editHistory.undoDepth, depth);
+      c.apply(p, acceptCropping: false);
+      final after = h.maps.state.session!;
+      expect(after.terrainViews.tileMaps.single.width, 64);
+      expect(
+        after.objectViews.doodadSections.single.doodads.single.x,
+        288 + 512,
+      );
+      expect(after.resourceEdits, same(before.resourceEdits));
+      expect(after.sourceFingerprint, same(before.sourceFingerprint));
+      expect(h.maps.editHistory.undoDepth, depth + 1);
+      h.maps.editHistory.undo();
+      expect(h.maps.state.session, same(before));
+      h.maps.editHistory.redo();
+      expect(h.maps.state.session, same(after));
+      expect(() => c.apply(p, acceptCropping: false), throwsStateError);
+    },
+  );
+  test(
+    'closing resize cancels late terrain metadata without changing the document',
+    () async {
+      final h = NewMapHarness();
+      addTearDown(h.dispose);
+      h.maps.createNew(
+        NewMapOptions(width: 32, height: 32, rawTileValue: 0),
+        expectedSession: null,
+      );
+      final gateway = SolidSnapshotGateway();
+      final loader = IsomFillController(
+        maps: h.maps,
+        assets: () => h.assets,
+        gateway: gateway,
+      );
+      await loader.load();
+      loader.apply(loader.preview(terrainType: 2));
+      final before = h.maps.state.session!;
+      gateway.pending = Completer();
+      final c = MapResizeController(h.maps, terrainLoader: loader);
+      final loading = c.loadTerrain(),
+          failed = expectLater(loading, throwsStateError);
+      c.dispose();
+      expect(gateway.cancelled, isNotEmpty);
+      gateway.pending!.complete(
+        TerrainSnapshotReadResult(snapshot: solidSnapshot()),
+      );
+      await failed;
+      expect(h.maps.state.session, same(before));
+    },
+  );
   test(
     'preview is read-only; resize is a single reversible edit with stale preview protection',
     () async {

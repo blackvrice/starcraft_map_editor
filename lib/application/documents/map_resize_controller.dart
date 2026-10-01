@@ -2,18 +2,62 @@ import '../../domain/chk/map_resize.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import 'open_map_controller.dart';
 import 'opened_map_session.dart';
+import 'isom_fill_controller.dart';
+import '../settings/starcraft_data_asset_settings_controller.dart';
+import '../../domain/terrain/map_resize_terrain.dart';
 
 class MapResizeController {
-  MapResizeController(this.maps) : source = maps.state.session {
+  MapResizeController(this.maps, {this.terrainLoader})
+    : source = maps.state.session {
     if (source == null) throw StateError('Open a map first.');
   }
   final OpenMapController maps;
   final OpenedMapSession? source;
+  final IsomFillController? terrainLoader;
+  MapResizeTerrainData? _terrainData;
+  StarCraftDataAssetSettingsState? _settings;
+  bool _disposed = false;
+  bool get needsTerrainData => source!.rawDocument.sections.any(
+    (s) => s.name == 'ISOM' || (s.name == 'DD2 ' && s.payload.isNotEmpty),
+  );
+  Future<void> loadTerrain() async {
+    _check();
+    if (!needsTerrainData) return;
+    final loader = terrainLoader;
+    if (loader == null) {
+      throw StateError('Configure local StarCraft terrain data first.');
+    }
+    final settings = loader.assets();
+    final catalog = await loader.load();
+    _check();
+    if (!identical(settings, loader.assets()) ||
+        !identical(source, loader.source) ||
+        catalog.brush == null) {
+      throw StateError('Terrain data changed. Reopen Resize Map.');
+    }
+    _settings = settings;
+    _terrainData = MapResizeTerrainData(
+      catalog: catalog.catalog,
+      brush: catalog.brush!,
+      solids: catalog.shapes,
+      recipes: loader.doodadRecipes,
+    );
+  }
+
+  void dispose() {
+    _disposed = true;
+    if (needsTerrainData) terrainLoader?.invalidate();
+    _preview = null;
+    _terrainData = null;
+  }
+
   MapResizePreview? _preview;
 
   void _check() {
     final progress = maps.operationProgressController.current;
-    if (!identical(source, maps.state.session) ||
+    if (_disposed ||
+        !identical(source, maps.state.session) ||
+        (_settings != null && !identical(_settings, terrainLoader?.assets())) ||
         source!.requiresRestrictedEditing ||
         maps.editHistory.isTransactionActive ||
         (progress != null && !progress.isTerminal)) {
@@ -29,6 +73,7 @@ class MapResizeController {
     return _preview = const MapResizeEditor().preview(
       source!.rawDocument,
       options,
+      terrainData: _terrainData,
     );
   }
 

@@ -6,16 +6,31 @@ import '../placement/object_placement_factory.dart';
 
 /// Resolves existing footprints by exact local recipe and MTXM bytes.
 /// Ambiguous ownership, disabled records and raw overrides are never repaired.
+final class IsomDoodadBounds {
+  const IsomDoodadBounds(this.x, this.y, this.width, this.height);
+  final int x, y, width, height;
+  bool fits(int w, int h, int dx, int dy) =>
+      x + dx >= 0 && y + dy >= 0 && x + dx + width <= w && y + dy + height <= h;
+}
+
 final class IsomDoodadOverlay {
-  IsomDoodadOverlay._(this.source, this.base, this._cells, this._protected);
+  IsomDoodadOverlay._(
+    this.source,
+    this.base,
+    this._cells,
+    this._protected,
+    List<IsomDoodadBounds> bounds,
+  ) : bounds = List.unmodifiable(bounds);
   final RawChkDocument source, base;
   final Map<int, (int, int)> _cells; // index -> (raw overlay, required group)
   final Map<int, int> _protected;
+  final List<IsomDoodadBounds> bounds;
 
   static IsomDoodadOverlay read(
     RawChkDocument source,
-    List<DoodadPlacementRecipe> recipes,
-  ) {
+    List<DoodadPlacementRecipe> recipes, {
+    bool allowDisabled = false,
+  }) {
     final report = const ChkEditorTerrainDecoder().decode(source);
     if (report.width == null ||
         report.height == null ||
@@ -45,14 +60,17 @@ final class IsomDoodadOverlay {
     final objects = const ChkObjectViewDecoder().decode(source);
     final cells = <int, (int, int)>{};
     final protected = <int, int>{};
+    final bounds = <IsomDoodadBounds>[];
     for (final section in objects.doodadSections) {
       for (final d in section.doodads) {
-        final candidates = <(Map<int, (int, int)>, Map<int, int>)>[];
+        final candidates =
+            <(Map<int, (int, int)>, Map<int, int>, IsomDoodadBounds)>[];
         for (final r in recipes.where(
           (r) =>
               r.doodadType == d.doodadType &&
               r.tileset.rawValue == metadata.tilesets.single.rawValue &&
-              r.enabledValue == d.enabledValue,
+              (r.enabledValue == d.enabledValue ||
+                  (allowDisabled && d.enabledValue == 1)),
         )) {
           final dx = d.x - r.centerOffsetX, dy = d.y - r.centerOffsetY;
           if (dx < 0 || dy < 0 || dx % 32 != 0 || dy % 32 != 0) continue;
@@ -77,11 +95,18 @@ final class IsomDoodadOverlay {
               footprint[i] = (c.rawTileValue!, c.requiredTileGroup);
             }
           }
-          if (valid) candidates.add((footprint, required));
+          if (valid) {
+            candidates.add((
+              footprint,
+              required,
+              IsomDoodadBounds(x, y, r.width, r.height),
+            ));
+          }
         }
         if (candidates.length != 1) {
           throw StateError('Unknown or ambiguous doodad footprint.');
         }
+        bounds.add(candidates.single.$3);
         for (final e in candidates.single.$2.entries) {
           if (protected.containsKey(e.key)) {
             throw StateError('Overlapping doodad footprints.');
@@ -109,7 +134,43 @@ final class IsomDoodadOverlay {
         source.sections[section.sectionIndex].withPayload([]),
       );
     }
-    return IsomDoodadOverlay._(source, base, cells, protected);
+    return IsomDoodadOverlay._(source, base, cells, protected, bounds);
+  }
+
+  /// Coordinates and sprite records are translated by the resize editor.
+  /// No sprite ownership is guessed; all records keep the same translation.
+  RawChkDocument restoreResized(RawChkDocument resized, int dx, int dy) {
+    final oldView = const ChkTerrainViewDecoder()
+        .decode(source)
+        .tileMaps
+        .single;
+    final newView = const ChkTerrainViewDecoder()
+        .decode(resized)
+        .tileMaps
+        .single;
+    final w = newView.width!, h = newView.height!;
+    if (bounds.any((b) => !b.fits(w, h, dx, dy))) {
+      throw StateError('Doodad footprint would leave the map.');
+    }
+    int shifted(int i) =>
+        (i ~/ oldView.width! + dy) * w + i % oldView.width! + dx;
+    final tile = ByteData.sublistView(
+      resized.sections.singleWhere((s) => s.name == 'TILE').payload,
+    );
+    for (final e in _protected.entries) {
+      if (tile.getUint16(shifted(e.key) * 2, Endian.little) != e.value) {
+        throw StateError('Resizing changes a doodad underlying footprint.');
+      }
+    }
+    final bytes = newView.rawSection.payload;
+    final data = ByteData.sublistView(bytes);
+    for (final e in _cells.entries) {
+      data.setUint16(shifted(e.key) * 2, e.value.$1, Endian.little);
+    }
+    return resized.replaceSection(
+      newView.sectionIndex,
+      newView.rawSection.withPayload(bytes),
+    );
   }
 
   RawChkDocument restore(RawChkDocument converted) {

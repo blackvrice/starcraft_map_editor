@@ -71,7 +71,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [등각 경계·높이·경사로 브러시](ISOM_BRUSHES.md) | 다이아몬드 경계 전파·선택 영역·VF4 경사로·미리보기/보존 계약 |
 | [ISOM 전환·수직 적층 재계산](ISOM_TRANSITIONS.md) | 기존 ISOM 경계·적층 타일 재계산·형태 표·보존/검증 범위 |
 | [등각 지형·ISOM 검사](ISOMETRIC_TERRAIN.md) | TILE/ISOM 구조 검사·비적층 변환 코어 계약과 실제 자료/브러시 후속 계획 |
-| [맵 크기 변경](MAP_RESIZE.md) | raw 맵 resize·영향 미리보기·원자적 적용·보존 계약 |
+| [맵 크기 변경](MAP_RESIZE.md) | raw·ISOM·두다드 resize·영향 미리보기·원자적 적용·보존 계약 |
 | [새 맵 생성 정책과 CHK 생성기](NEW_MAP.md) | 생성 정책·도메인 구현·UI/신규 MPQ 통합 인수인계 |
 | [실제 설치 카탈로그 배치 검증](PLACEMENT_INSTALLATION_SMOKE.md) | 로컬 설치 카탈로그 배치 스모크 기록 |
 | [일반 트리거 편집기](TRIGGER_EDITOR.md) | 조건22·액션57·UPRP/스위치·원시 보존 |
@@ -84,7 +84,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 
 2026-09-29: 설정·일반 트리거·브리핑·리소스·문서 공통 Undo/Redo,
 관리형 EUD 동봉·61개 후보 필드·확장 실행 규칙의 편집/테스트 빌드를 구현했다.
-New Map·원본 없는 세션·신규 MPQ 저장/재열기를 구현했다. raw 맵 크기 변경·미리보기·Undo/Redo도 구현했다.
+New Map·원본 없는 세션·신규 MPQ 저장/재열기를 구현했다. raw·ISOM·두다드 맵 크기 변경·영향 미리보기·Undo/Redo도 구현했다.
 2026-09-30 TILE/ISOM 읽기 전용 검사와 주입형 비적층 변환 코어·적용/Undo를 구현했다.
 로컬 CV5 연결 스냅샷과 자료 해시, Dart 수신·검증 경계를 8개 타일셋에서 검증했다.
 2026-10-01 로컬 평지 형태 연결표·실제 변환 카탈로그와 File → 등각 지형 채우기를 연결했다.
@@ -93,7 +93,7 @@ Edit → 기본 편집 도구에 안개·시작 위치·상태/valid flags·Spri
 Edit → 선택·탐색에 객체 이름/ID·소유자 검색, 전체/반전/종류 선택과 좌표 이동·화면 맞춤을 추가했다([계약](SELECTION_NAVIGATION.md)).
 helper 0.10.1에서 DD2 활성값을 0으로 정정했다([계약](BASIC_EDITING_TOOLS.md)).
 2026-10-01 전환 형태 표·수직 적층 변환과 기존 ISOM 재계산 UI를 구현했다([계약](ISOM_TRANSITIONS.md)).
-[새 경계 자동 연결·높이/경사로 브러시와 선택 영역·시각 미리보기](ISOM_BRUSHES.md)를 구현했다. ISOM/Doodad resize·게임/외부 에디터 인수는 남았다.
+[새 경계 자동 연결·높이/경사로 브러시와 선택 영역·시각 미리보기](ISOM_BRUSHES.md)를 구현했다. [ISOM/Doodad resize](MAP_RESIZE.md)도 구현했으며 게임/외부 에디터 인수는 남았다.
 2026-10-01 EUD DAT 조회·공유 그래픽 원본/예정 영향과 정적 충돌 진단을 구현했다([계약](EUD_COMPLETION.md)). 현재 helper는 VF4 경사로 자료를 추가한 0.12.0이다.
 [개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
 [문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.

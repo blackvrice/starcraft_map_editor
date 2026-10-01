@@ -2790,4 +2790,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get isomBrushStrokeRejected =>
       'The last stroke was rejected. The previous preview is preserved.';
+
+  @override
+  String get resizeTerrainLoading =>
+      'Loading verified terrain and doodad data…';
+
+  @override
+  String get resizeIsomFillHint =>
+      'Choose a flat terrain sample (zero-based tile X/Y) for added ISOM terrain. New fog cells are hidden for all players. Doodad footprints must remain fully inside the map.';
+
+  @override
+  String resizeDoodadImpact(int moved, int outside) {
+    return 'Doodads moved: $moved; footprints outside: $outside';
+  }
+
+  @override
+  String resizeTerrainImpact(int count) {
+    return 'Terrain cells recalculated: $count. Original diamonds and verified doodad footprints are retained.';
+  }
+
+  @override
+  String get resizeCoordinateScope =>
+      'Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application.';
 }

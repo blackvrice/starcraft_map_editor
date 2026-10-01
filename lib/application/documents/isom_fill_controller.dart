@@ -30,6 +30,7 @@ class IsomFillController {
   List<DoodadPlacementRecipe> _recipes = [];
   List<DoodadPlacementRecipe> get ramps =>
       List.unmodifiable(_recipes.where((r) => r.hasRamp));
+  List<DoodadPlacementRecipe> get doodadRecipes => List.unmodifiable(_recipes);
   OpenedMapSession? get source => _source;
   static int _next = 0;
   String? _operation;

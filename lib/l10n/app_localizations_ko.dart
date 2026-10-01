@@ -2728,4 +2728,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get isomBrushStrokeRejected => '마지막 획은 적용되지 않았습니다. 이전 미리보기는 유지됩니다.';
+
+  @override
+  String get resizeTerrainLoading => '검증된 지형·두다드 자료를 불러오는 중…';
+
+  @override
+  String get resizeIsomFillHint =>
+      '추가할 등각 지형의 평지 표본을 타일 X/Y로 선택하세요(0부터 시작). 새 안개 셀은 모든 플레이어에게 숨겨집니다. 두다드의 전체 footprint가 맵 안에 남아야 합니다.';
+
+  @override
+  String resizeDoodadImpact(int moved, int outside) {
+    return '이동할 두다드: $moved; 맵 밖 footprint: $outside';
+  }
+
+  @override
+  String resizeTerrainImpact(int count) {
+    return '재계산한 지형 셀: $count. 기존 다이아몬드와 검증된 두다드 footprint를 보존합니다.';
+  }
+
+  @override
+  String get resizeCoordinateScope =>
+      '트리거·EUD 코드 좌표는 그대로 유지됩니다. 크기 변경 후 직접 지정한 좌표를 확인하세요. 미확인 지형이나 모호한 두다드는 적용을 차단합니다.';
 }
