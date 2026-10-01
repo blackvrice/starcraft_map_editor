@@ -31,7 +31,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.11.0";
+constexpr char kHelperVersion[] = "0.12.0";
 constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
@@ -537,6 +537,7 @@ int ListPlacementCatalog(
             {"centerOffsetX", recipe.center_offset_x},
             {"centerOffsetY", recipe.center_offset_y},
             {"enabledValue", recipe.enabled_value},
+            {"hasRamp", recipe.has_ramp},
             {"footprintRawValues", std::move(footprint_raw_values)},
             {"placibilityTileGroups", std::move(placibility_tile_groups)},
             {"overlay", std::move(overlay)},

@@ -9,7 +9,7 @@ void main() {
     () {
       final snapshot = transitionSnapshot();
       final c = const TransitionIsomCatalogBuilder().build(snapshot);
-      expect(c.catalog.revision, 'transition-isom-v1:synthetic-solid');
+      expect(c.catalog.revision, 'transition-isom-v2:synthetic-solid');
       expect(c.shapes, {2: 1, 3: 2});
       final edges = {for (final e in c.catalog.edges) e.value: e};
       expect(

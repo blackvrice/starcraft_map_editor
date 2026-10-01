@@ -2312,7 +2312,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get isomFillScope =>
-      '맵 전체를 평지로 채우거나 기존 ISOM 경계·수직 적층에서 타일을 다시 계산합니다. 미리보기는 맵을 바꾸지 않으며 적용은 Undo 한 건으로 기록합니다. 두다드·원시 타일 변경·알 수 없는 형태는 거부합니다. 새 경계·경사로를 그리는 기능은 아직 없습니다.';
+      '평지 채우기·재계산, 경계·높이 그리기와 확인된 경사로 배치를 제공합니다. 적용 전까지 맵은 바뀌지 않습니다. 미지원·손상 지형은 거부합니다.';
 
   @override
   String get isomTerrainType => '평지 종류';
@@ -2690,4 +2690,42 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get isomConvertApply => '재계산한 타일 적용';
+
+  @override
+  String get isomBrushMode => '경계 브러시';
+
+  @override
+  String get isomRampMode => '경사로';
+
+  @override
+  String get isomBrushFreehand => '자유 브러시';
+
+  @override
+  String get isomBrushRectangle => '선택 영역';
+
+  @override
+  String get isomBrushSize => '브러시 크기';
+
+  @override
+  String get isomBrushHint =>
+      '미리보기에 그리세요. 높이를 바꾸려면 지형 ID를 선택하세요. 경계는 자동 연결되며 적용 시 모든 획이 Undo 한 건으로 기록됩니다.';
+
+  @override
+  String get isomBrushApply => '지형 편집 적용';
+
+  @override
+  String get isomBrushReset => '미리보기 초기화';
+
+  @override
+  String get isomRampHint =>
+      '로컬 VF4에서 확인한 경사로를 선택한 뒤 맞는 절벽의 왼쪽 위 타일을 클릭하세요. 방향은 선택한 배치 자료로 결정됩니다. 지형이 맞지 않으면 적용을 거부합니다.';
+
+  @override
+  String get isomRampEmpty => '이 타일셋에 확인된 경사로 배치 자료가 없습니다.';
+
+  @override
+  String get isomRampRecipe => '경사로 배치 자료';
+
+  @override
+  String get isomBrushStrokeRejected => '마지막 획은 적용되지 않았습니다. 이전 미리보기는 유지됩니다.';
 }

@@ -112,7 +112,7 @@ void main() {
       expect(page.nextOffset, 3);
       expect(page.storageProduct, 's1');
       expect(page.storageBuildNumber, 13515);
-      expect(page.helperVersion, '0.11.0');
+      expect(page.helperVersion, '0.12.0');
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 
@@ -221,6 +221,7 @@ void main() {
         expect(first.issue, isNull);
         expect(first.doodadRecipe!.width, 2);
         expect(first.doodadRecipe!.height, 2);
+        expect(first.doodadRecipe!.hasRamp, isTrue);
         expect(first.doodadRecipe!.centerOffsetX, 32);
         expect(first.doodadRecipe!.centerOffsetY, 32);
         expect(first.doodadRecipe!.footprint.map((cell) => cell.rawTileValue), [

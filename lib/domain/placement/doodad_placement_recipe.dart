@@ -72,6 +72,7 @@ final class DoodadPlacementRecipe {
     required Iterable<DoodadFootprintCell> footprint,
     this.enabledValue = enabled,
     this.overlay,
+    this.hasRamp = false,
   }) : footprint = List.unmodifiable(footprint) {
     _checkU16(startTileGroup, 'startTileGroup');
     _checkU16(doodadType, 'doodadType');
@@ -138,6 +139,9 @@ final class DoodadPlacementRecipe {
   final int enabledValue;
   final List<DoodadFootprintCell> footprint;
   final DoodadOverlayRecipe? overlay;
+
+  /// True only when the local VF4 footprint contains a verified ramp flag.
+  final bool hasRamp;
 }
 
 void _checkU16(int? value, String name, {bool nullable = false}) {

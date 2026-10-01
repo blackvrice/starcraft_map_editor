@@ -25,10 +25,15 @@ void WriteUint16(
 std::array<std::vector<std::byte>, sc::kDoodadAssetCount> Assets() {
   std::array<std::vector<std::byte>, sc::kDoodadAssetCount> assets;
   assets[0].resize(sc::kCv5GroupBytes * 6);
-  assets[1].resize(64);
+  assets[1].resize(64 * 4);
   assets[2].resize(64);
   assets[3].resize(256 * 4);
   assets[4].resize(4 * 256 * 2);
+  assets[5].resize(32 * 4);
+  for (std::size_t mini = 0; mini < 16; ++mini) {
+    WriteUint16(&assets[5], 32 + mini * 2, 0x11);
+    WriteUint16(&assets[5], 64 + mini * 2, 0x13);
+  }
 
   const auto first = sc::kCv5GroupBytes;
   WriteUint16(&assets[0], first, 1);
@@ -80,6 +85,7 @@ void ListsValidatedRecipesAndIsolatesInvalidEntries() {
   assert(recipe.center_offset_x == 32);
   assert(recipe.center_offset_y == 32);
   assert(recipe.enabled_value == 0);
+  assert(recipe.has_ramp);
   assert(recipe.footprint.size() == 4);
   assert(recipe.footprint[0].raw_tile_value == 16);
   assert(recipe.footprint[1].raw_tile_value == 17);
@@ -108,6 +114,9 @@ void PagesSortedStableKeys() {
 }
 
 void RejectsMalformedMetadata() {
+  auto malformed_vf4 = Assets();
+  malformed_vf4[5].pop_back();
+  assert(!sc::ListDoodadRecipes(malformed_vf4, 0, 1).success);
   auto malformed_cv5 = Assets();
   malformed_cv5[0].push_back(std::byte{0});
   const auto cv5 = sc::ListDoodadRecipes(malformed_cv5, 0, 1);
@@ -121,12 +130,30 @@ void RejectsMalformedMetadata() {
   assert(dddata.error_code == "SC_CASC_DOODAD_ASSET_INVALID");
 }
 
+void RejectsFalseRampLabels() {
+  auto flat = Assets();
+  for (std::size_t at = 0; at < flat[5].size(); at += 2) {
+    WriteUint16(&flat[5], at, 0x11);
+  }
+  assert(!sc::ListDoodadRecipes(flat, 0, 8).entries[1].has_ramp);
+  auto blocked = Assets();
+  for (std::size_t at = 0; at < blocked[5].size(); at += 2) {
+    WriteUint16(&blocked[5], at, 0x10);
+  }
+  assert(!sc::ListDoodadRecipes(blocked, 0, 8).entries[1].has_ramp);
+  auto invalid_reference = Assets();
+  WriteUint16(&invalid_reference[0], sc::kCv5GroupBytes + 20, 65535);
+  assert(sc::ListDoodadRecipes(invalid_reference, 0, 8).entries[1].issue_code ==
+      "SC_CASC_DOODAD_VF4_REFERENCE_INVALID");
+}
+
 }  // namespace
 
 int main() {
   ListsValidatedRecipesAndIsolatesInvalidEntries();
   PagesSortedStableKeys();
   RejectsMalformedMetadata();
+  RejectsFalseRampLabels();
   std::cout << "starcraft_doodad_recipe_native_test passed\n";
   return 0;
 }

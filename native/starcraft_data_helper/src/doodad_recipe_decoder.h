@@ -32,6 +32,7 @@ struct DoodadPlacementRecipe {
   std::uint16_t center_offset_x = 0;
   std::uint16_t center_offset_y = 0;
   std::uint8_t enabled_value = 0;
+  bool has_ramp = false;
   std::vector<DoodadFootprintCell> footprint;
   std::optional<DoodadOverlayRecipe> overlay;
   std::string issue_code;

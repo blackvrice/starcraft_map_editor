@@ -150,11 +150,21 @@ void main() {
             0,
           );
           final bytes = const RawChkEncoder().encode(result.result);
+          final reopened = const RawChkEncoder().encode(
+            const RawChkParser().parse(bytes).document!,
+          );
+          expect(reopened.length, bytes.length);
+          var mismatch = -1;
+          for (var i = 0; i < bytes.length; i++) {
+            if (reopened[i] != bytes[i]) {
+              mismatch = i;
+              break;
+            }
+          }
           expect(
-            const RawChkEncoder().encode(
-              const RawChkParser().parse(bytes).document!,
-            ),
-            bytes,
+            mismatch,
+            -1,
+            reason: '$t group ${target.leftGroup} CHK offset',
           );
           stacks++;
         }

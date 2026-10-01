@@ -23,7 +23,7 @@ $base = [ordered]@{
     protocolVersion = 3
     requestId = $request.requestId
     operation = $request.operation
-    helperVersion = "0.11.0"
+    helperVersion = "0.12.0"
     cascLibRevision = $revision
 }
 
@@ -151,6 +151,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                     centerOffsetX = 32
                     centerOffsetY = 32
                     enabledValue = 0
+                    hasRamp = $true
                     footprintRawValues = @(3200, 3201, 3216, $null)
                     placibilityTileGroups = @(4, 0, 5, 6)
                     overlay = [ordered]@{ kind = "pureSprite"; id = 130 }
@@ -172,6 +173,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                     centerOffsetX = 16
                     centerOffsetY = 16
                     enabledValue = 0
+                    hasRamp = $true
                     footprintRawValues = @(4800)
                     placibilityTileGroups = @(0)
                     overlay = [ordered]@{ kind = "spriteUnit"; id = 100 }
@@ -228,7 +230,7 @@ elseif ($request.operation -eq "listPlacementCatalog") {
     $base.kind = $request.kind
     $base.tileset = [int]$request.tileset
     $base.assets = [ordered]@{
-        readCount = if ($request.kind -eq "tile") { 4 } elseif ($request.kind -eq "doodad") { 5 } else { 8 }
+        readCount = if ($request.kind -eq "tile") { 4 } elseif ($request.kind -eq "doodad") { 6 } else { 8 }
         totalBytes = 1048576
     }
     $base.catalog = [ordered]@{

@@ -2369,7 +2369,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isomFillScope =>
-      'Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.';
+      'Fill or recalculate terrain, draw boundaries and heights, or place validated ramps. Preview preserves the map until Apply. Unsupported or damaged terrain is refused.';
 
   @override
   String get isomTerrainType => 'Flat terrain type';
@@ -2751,4 +2751,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isomConvertApply => 'Apply recalculated tiles';
+
+  @override
+  String get isomBrushMode => 'Boundary brush';
+
+  @override
+  String get isomRampMode => 'Ramp';
+
+  @override
+  String get isomBrushFreehand => 'Freehand';
+
+  @override
+  String get isomBrushRectangle => 'Rectangle';
+
+  @override
+  String get isomBrushSize => 'Brush size';
+
+  @override
+  String get isomBrushHint =>
+      'Draw on the preview. Select terrain IDs for height changes; boundaries connect automatically. Apply commits all strokes as one Undo entry.';
+
+  @override
+  String get isomBrushApply => 'Apply terrain edits';
+
+  @override
+  String get isomBrushReset => 'Reset preview';
+
+  @override
+  String get isomRampHint =>
+      'Select a local VF4 ramp recipe, then click its top-left tile on a matching cliff. Orientation is fixed by the recipe. Incompatible terrain is refused.';
+
+  @override
+  String get isomRampEmpty => 'This tileset has no verified ramp recipes.';
+
+  @override
+  String get isomRampRecipe => 'Ramp recipe';
+
+  @override
+  String get isomBrushStrokeRejected =>
+      'The last stroke was rejected. The previous preview is preserved.';
 }

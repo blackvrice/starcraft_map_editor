@@ -67,7 +67,7 @@ $columns = @{
   'unit.construction_animation' = @(for ($i=0; $i -lt 228; $i++) { 0 })
 }
 $response = @{
-  protocolVersion=3; helperVersion='0.11.0'; cascLibRevision='4971d363e665551ac4142f541e5f2d71f1cda653'
+  protocolVersion=3; helperVersion='0.12.0'; cascLibRevision='4971d363e665551ac4142f541e5f2d71f1cda653'
   requestId=$request.requestId; operation=$request.operation; status='success'; snapshotVersion=1
   revision='classic-dat-v1-pyms-bfc5d3a-eudplib-0.80.6'
   installation=@{ path=$request.installationPath; storageProduct='synthetic'; storageBuildNumber=1 }

@@ -194,6 +194,8 @@ void bootstrap() {
       maps: openMapController,
       assets: () => starCraftDataAssetSettingsController.state,
       gateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
+      placementGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
+      atlasLoader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
     ),
     terrainEditingController: terrainEditingController,
     mapLayerController: mapLayerController,

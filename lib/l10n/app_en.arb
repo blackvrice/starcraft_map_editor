@@ -1443,7 +1443,7 @@
   "eudFieldsOutOfRange": "The value is outside the allowed range.",
   "eudFieldsInvalid": "This value cannot be used for the selected field.",
   "isomFillTitle": "Fill Isometric Terrain",
-  "isomFillScope": "Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.",
+  "isomFillScope": "Fill or recalculate terrain, draw boundaries and heights, or place validated ramps. Preview preserves the map until Apply. Unsupported or damaged terrain is refused.",
   "isomTerrainType": "Flat terrain type",
   "isomTerrainId": "Terrain type #{id}",
   "isomFillPreview": "{count} game tiles will change. Editor terrain (ISOM) will also be updated.",
@@ -1647,5 +1647,17 @@
         "type": "int"
       }
     }
-  }
+  },
+  "isomBrushMode": "Boundary brush",
+  "isomRampMode": "Ramp",
+  "isomBrushFreehand": "Freehand",
+  "isomBrushRectangle": "Rectangle",
+  "isomBrushSize": "Brush size",
+  "isomBrushHint": "Draw on the preview. Select terrain IDs for height changes; boundaries connect automatically. Apply commits all strokes as one Undo entry.",
+  "isomBrushApply": "Apply terrain edits",
+  "isomBrushReset": "Reset preview",
+  "isomRampHint": "Select a local VF4 ramp recipe, then click its top-left tile on a matching cliff. Orientation is fixed by the recipe. Incompatible terrain is refused.",
+  "isomRampEmpty": "This tileset has no verified ramp recipes.",
+  "isomRampRecipe": "Ramp recipe",
+  "isomBrushStrokeRejected": "The last stroke was rejected. The previous preview is preserved."
 }

@@ -12,7 +12,7 @@ namespace starcraft_map_editor::starcraft_data {
 
 inline constexpr std::size_t kTilesetCount = 8;
 inline constexpr std::size_t kRenderAssetCount = 4;
-inline constexpr std::size_t kDoodadAssetCount = 5;
+inline constexpr std::size_t kDoodadAssetCount = 6;
 
 struct TilesetAssetReadResult {
   bool success = false;

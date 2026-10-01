@@ -148,6 +148,11 @@ DoodadCatalogResult ListDoodadRecipes(
 
   const auto& cv5 = assets[0];
   const auto& dddata = assets[4];
+  const auto& vf4 = assets[5];
+  if (vf4.empty() || vf4.size() % 32 != 0 ||
+      vf4.size() / 32 != assets[1].size() / 64) {
+    return Failure("The StarCraft VF4 elevation metadata has an invalid byte length.");
+  }
   if (cv5.empty() || cv5.size() % kCv5GroupBytes != 0 ||
       cv5.size() / kCv5GroupBytes > kMaximumCv5Groups) {
     return Failure("The StarCraft CV5 doodad metadata has an invalid byte length.");
@@ -176,6 +181,53 @@ DoodadCatalogResult ListDoodadRecipes(
     recipe.issue_code = ValidateHeader(cv5, dddata, group, &recipe);
     if (recipe.issue_code.empty()) {
       recipe.issue_code = PopulateFootprint(cv5, dddata, &recipe);
+      if (recipe.issue_code.empty()) {
+        const auto mini_width = recipe.width * 4U;
+        std::vector<std::uint16_t> mini_flags(mini_width * recipe.height * 4U);
+        for (const auto& cell : recipe.footprint) {
+          if (!cell.raw_tile_value.has_value()) continue;
+          const auto raw = *cell.raw_tile_value;
+          const auto mega = ReadUint16(cv5,
+              (raw / 16U) * kCv5GroupBytes + 20 + (raw % 16U) * 2);
+          if (mega >= vf4.size() / 32) {
+            recipe.issue_code = "SC_CASC_DOODAD_VF4_REFERENCE_INVALID";
+            break;
+          }
+          for (std::size_t mini = 0; mini < 16; ++mini) {
+            mini_flags[(cell.y * 4U + mini / 4U) * mini_width +
+                cell.x * 4U + mini % 4U] = ReadUint16(vf4, mega * 32 + mini * 2);
+          }
+        }
+        std::vector<bool> visited(mini_flags.size());
+        for (std::size_t at = 0; at < mini_flags.size(); ++at) {
+          if (visited[at] || (mini_flags[at] & 1U) == 0) continue;
+          unsigned elevation_mask = 0;
+          bool walkable_ramp = false;
+          std::vector<std::size_t> pending{at};
+          visited[at] = true;
+          for (std::size_t next = 0; next < pending.size(); ++next) {
+            const auto index = pending[next];
+            const auto flags = mini_flags[index];
+            elevation_mask |= (flags & 4U) != 0 ? 4U :
+                (flags & 2U) != 0 ? 2U : 1U;
+            if ((flags & 0x10U) != 0) walkable_ramp = true;
+            const auto enqueue = [&](std::size_t neighbor) {
+              if (!visited[neighbor] && (mini_flags[neighbor] & 1U) != 0) {
+                visited[neighbor] = true;
+                pending.push_back(neighbor);
+              }
+            };
+            if (index % mini_width > 0) enqueue(index - 1);
+            if (index % mini_width + 1 < mini_width) enqueue(index + 1);
+            if (index >= mini_width) enqueue(index - mini_width);
+            if (index + mini_width < mini_flags.size()) enqueue(index + mini_width);
+          }
+          if (walkable_ramp && (elevation_mask & (elevation_mask - 1U)) != 0) {
+            recipe.has_ramp = true;
+            break;
+          }
+        }
+      }
     }
     all_entries.push_back(std::move(recipe));
   }

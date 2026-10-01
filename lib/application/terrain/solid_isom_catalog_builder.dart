@@ -1,12 +1,14 @@
 import '../../domain/terrain/isom_terrain_conversion.dart';
+import '../../domain/terrain/isom_terrain_paint.dart';
 import '../ports/terrain_connection_snapshot_gateway.dart';
 
 /// Flat shape IDs are format facts verified against Chkdraft sc.cpp at
 /// 32d27861b16dda0b0f3d95e34bad894ea4efb2c3. This is not a transition solver.
 final class SolidIsomCatalog {
-  SolidIsomCatalog(this.catalog, Map<int, int> shapes)
+  SolidIsomCatalog(this.catalog, Map<int, int> shapes, {this.brush})
     : shapes = Map.unmodifiable(shapes);
   final IsomTerrainCatalog catalog;
+  final IsomBrushCatalog? brush;
   final Map<int, int> shapes; // Terrain type -> solid shape index.
 }
 

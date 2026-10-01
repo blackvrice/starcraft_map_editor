@@ -2,7 +2,7 @@
 
 2026-10-01. 평지 채우기에 이어 **기존 ISOM의 전환 형태와 수직 적층에서
 TILE/MTXM을 재계산**하는 기능을 구현했다. 새 지형 경계·높이·경사로를 그리는
-브러시와 인접 다이아몬드의 자동 경계 조정은 다음 단계다.
+브러시와 인접 다이아몬드의 자동 경계 조정은 후속 [등각 브러시](ISOM_BRUSHES.md)에서 구현했다.
 
 ## 사용
 
@@ -19,9 +19,9 @@ ISOM의 바이트·에디터 플래그는 보존하고 TILE/MTXM만 함께 교�
 
 ## 연결표
 
-`TransitionIsomCatalogBuilder`는 기존 snapshot v2/helper 0.11.0을 소비한다.
+`TransitionIsomCatalogBuilder`는 snapshot v2/helper 0.12.0을 소비한다.
 새 네이티브 작업이나 자산 배포는 없다. 모든 표를 같은 snapshot에서 만들고
-revision을 `transition-isom-v1:<snapshot revision>`으로 결합한다.
+revision을 `transition-isom-v2:<snapshot revision>`으로 결합한다.
 
 - 평지 표와 타일셋별 전환 종류의 ISOM 시작 번호, 종류당 14개 형태를 조립한다.
 - TL/TR/BR/BL 사분면마다 2개 변을 투영한다. 0x0..0xE의 짝수 edge flag가 각각

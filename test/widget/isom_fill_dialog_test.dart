@@ -6,8 +6,11 @@ import 'package:starcraft_map_editor/application/documents/opened_map_session.da
 import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/presentation/documents/isom_fill_dialog.dart';
+import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
+import 'package:starcraft_map_editor/application/terrain/terrain_editing_controller.dart';
 import '../fixtures/new_map_harness.dart';
 import '../fixtures/solid_isom_fixture.dart';
+import '../fixtures/isom_ramp_fixture.dart';
 
 void main() {
   for (final apply in [false, true]) {
@@ -146,5 +149,105 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+  }
+  for (final locale in ['ko', 'en']) {
+    testWidgets('brush and ramp preview apply/cancel in $locale', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final h = NewMapHarness();
+      addTearDown(h.dispose);
+      h.maps.createNew(
+        NewMapOptions(width: 32, height: 32, rawTileValue: 0),
+        expectedSession: null,
+      );
+      final c = IsomFillController(
+        maps: h.maps,
+        assets: () => h.assets,
+        gateway: SolidSnapshotGateway(),
+        placementGateway: IsomRampGateway(),
+      );
+      await c.load();
+      c.apply(c.preview(terrainType: 2));
+      final before = h.maps.state.session;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(locale),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDialog<bool>(
+                context: context,
+                builder: (_) => IsomFillDialog(controller: c),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(locale == 'ko' ? '경계 브러시' : 'Boundary brush'));
+      await tester.pumpAndSettle();
+      var canvas = tester.widget<MapCanvas>(
+        find.byKey(const Key('isom-brush-canvas')),
+      );
+      canvas.onBrushStrokeStarted!();
+      canvas.onBrushStroke!([const TerrainTileCoordinate(x: 8, y: 16)]);
+      canvas.onBrushStrokeEnded!();
+      await tester.pumpAndSettle();
+      expect(h.maps.state.session, same(before));
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('isom-fill-apply')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.text(locale == 'ko' ? '경사로' : 'Ramp'));
+      await tester.pumpAndSettle();
+      canvas = tester.widget<MapCanvas>(
+        find.byKey(const Key('isom-brush-canvas')),
+      );
+      canvas.onTileSelected!(const TerrainTileCoordinate(x: 4, y: 8));
+      await tester.pumpAndSettle();
+      expect(h.maps.state.session, same(before));
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('isom-fill-apply')))
+            .onPressed,
+        isNotNull,
+      );
+      await tester.tap(find.byKey(const Key('isom-fill-apply')));
+      await tester.pumpAndSettle();
+      expect(
+        h.maps.state.session!.objectViews.doodadSections.single.doodads.length,
+        1,
+      );
+      h.maps.editHistory.undo();
+      expect(h.maps.state.session, same(before));
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(locale == 'ko' ? '경계 브러시' : 'Boundary brush'));
+      await tester.pumpAndSettle();
+      h.maps.createNew(
+        NewMapOptions(width: 32, height: 32, rawTileValue: 0),
+        expectedSession: before,
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('isom-brush-canvas')), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(find.byKey(const Key('isom-fill-apply')))
+            .onPressed,
+        isNull,
+      );
+      await tester.tap(find.text(locale == 'ko' ? '취소' : 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
   }
 }

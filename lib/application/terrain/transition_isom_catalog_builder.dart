@@ -2,6 +2,8 @@
 // 32d27861b16dda0b0f3d95e34bad894ea4efb2c3 (MIT).
 // Copyright (c) 2015-2026 Justin Forsberg. See docs/licenses/Chkdraft.txt.
 import '../../domain/terrain/isom_terrain_conversion.dart';
+import '../../domain/terrain/isom_terrain_paint.dart';
+import 'isom_brush_facts.dart';
 import '../ports/terrain_connection_snapshot_gateway.dart';
 import 'isom_transition_shapes.dart';
 import 'solid_isom_catalog_builder.dart';
@@ -15,6 +17,17 @@ class TransitionIsomCatalogBuilder {
     final solid = const SolidIsomCatalogBuilder().build(snapshot);
     final edges = [...solid.catalog.edges];
     final pairs = [...solid.catalog.pairs];
+    final diamondShapes = [
+      for (final e in solid.shapes.entries)
+        IsomDiamondShape(
+          e.value,
+          e.key,
+          List.filled(
+            4,
+            solid.catalog.edges.firstWhere((s) => s.value == e.value << 4).link,
+          ),
+        ),
+    ];
     final groups = {for (final g in snapshot.groups) g.group: g};
     const sides = [
       [2, 3],
@@ -113,6 +126,34 @@ class TransitionIsomCatalogBuilder {
         links[7][q] = List.filled(2, require(7, 1)[0]);
       }
       for (var shape = 0; shape < 14; shape++) {
+        final outer = matched[0][1]!.linkWords[0];
+        final inner = matched[0][2]!.linkWords[2];
+        const innerQuadrants = <Set<int>>[
+          {2},
+          {3},
+          {0},
+          {1},
+          {},
+          {},
+          {},
+          {},
+          {1, 2},
+          {0, 3},
+          {2, 3},
+          {0, 1},
+          {},
+          {},
+        ];
+        diamondShapes.add(
+          IsomDiamondShape(start + shape, type, [
+            for (var q = 0; q < 4; q++)
+              isomQuadrantLinkIds[shape][q] != 0
+                  ? isomQuadrantLinkIds[shape][q]
+                  : innerQuadrants[shape].contains(q)
+                  ? inner
+                  : outer,
+          ]),
+        );
         for (var q = 0; q < 4; q++) {
           final v = require(shape, q);
           for (var side = 0; side < 2; side++) {
@@ -164,11 +205,15 @@ class TransitionIsomCatalogBuilder {
     return SolidIsomCatalog(
       IsomTerrainCatalog(
         tileset: snapshot.tileset,
-        revision: 'transition-isom-v1:${snapshot.revision}',
+        revision: 'transition-isom-v2:${snapshot.revision}',
         edges: edges,
         pairs: pairs,
       ),
       solid.shapes,
+      brush: IsomBrushCatalog(
+        diamondShapes,
+        isomTerrainNeighbors[snapshot.tileset < 4 ? snapshot.tileset : 4],
+      ),
     );
   }
 }

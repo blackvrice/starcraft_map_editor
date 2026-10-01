@@ -4253,7 +4253,7 @@ abstract class AppLocalizations {
   /// No description provided for @isomFillScope.
   ///
   /// In en, this message translates to:
-  /// **'Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.'**
+  /// **'Fill or recalculate terrain, draw boundaries and heights, or place validated ramps. Preview preserves the map until Apply. Unsupported or damaged terrain is refused.'**
   String get isomFillScope;
 
   /// No description provided for @isomTerrainType.
@@ -4945,6 +4945,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply recalculated tiles'**
   String get isomConvertApply;
+
+  /// No description provided for @isomBrushMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Boundary brush'**
+  String get isomBrushMode;
+
+  /// No description provided for @isomRampMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp'**
+  String get isomRampMode;
+
+  /// No description provided for @isomBrushFreehand.
+  ///
+  /// In en, this message translates to:
+  /// **'Freehand'**
+  String get isomBrushFreehand;
+
+  /// No description provided for @isomBrushRectangle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rectangle'**
+  String get isomBrushRectangle;
+
+  /// No description provided for @isomBrushSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Brush size'**
+  String get isomBrushSize;
+
+  /// No description provided for @isomBrushHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw on the preview. Select terrain IDs for height changes; boundaries connect automatically. Apply commits all strokes as one Undo entry.'**
+  String get isomBrushHint;
+
+  /// No description provided for @isomBrushApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply terrain edits'**
+  String get isomBrushApply;
+
+  /// No description provided for @isomBrushReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset preview'**
+  String get isomBrushReset;
+
+  /// No description provided for @isomRampHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a local VF4 ramp recipe, then click its top-left tile on a matching cliff. Orientation is fixed by the recipe. Incompatible terrain is refused.'**
+  String get isomRampHint;
+
+  /// No description provided for @isomRampEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This tileset has no verified ramp recipes.'**
+  String get isomRampEmpty;
+
+  /// No description provided for @isomRampRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Ramp recipe'**
+  String get isomRampRecipe;
+
+  /// No description provided for @isomBrushStrokeRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The last stroke was rejected. The previous preview is preserved.'**
+  String get isomBrushStrokeRejected;
 }
 
 class _AppLocalizationsDelegate

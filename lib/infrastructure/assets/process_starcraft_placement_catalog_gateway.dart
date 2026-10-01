@@ -315,7 +315,7 @@ final class ProcessStarCraftPlacementCatalogGateway
           : request.kind == StarCraftPlacementKind.tile
           ? readCount == StarCraftDataAssetManifest.renderAssetKinds.length
           : request.kind == StarCraftPlacementKind.doodad
-          ? readCount == 5
+          ? readCount == 6
           : readCount >= 7 &&
                 readCount <= 7 + StarCraftPlacementCatalogRequest.maximumLimit;
       if (!validReadCount ||
@@ -609,6 +609,10 @@ final class ProcessStarCraftPlacementCatalogGateway
     final centerOffsetX = _jsonInteger(recipe, 'centerOffsetX');
     final centerOffsetY = _jsonInteger(recipe, 'centerOffsetY');
     final enabledValue = _jsonInteger(recipe, 'enabledValue');
+    final hasRamp = recipe['hasRamp'];
+    if (hasRamp is! bool) {
+      throw const FormatException('Doodad ramp classification is invalid.');
+    }
     if (width < 1 ||
         width > DoodadPlacementRecipe.maximumFootprintAxis ||
         height < 1 ||
@@ -681,6 +685,7 @@ final class ProcessStarCraftPlacementCatalogGateway
         enabledValue: enabledValue,
         footprint: cells,
         overlay: overlay,
+        hasRamp: hasRamp == true,
       );
     } on ArgumentError catch (error) {
       throw FormatException('Doodad recipe is invalid: $error');

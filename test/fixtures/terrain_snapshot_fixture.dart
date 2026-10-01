@@ -1,6 +1,6 @@
 Map<String, dynamic> terrainSnapshotJson() => {
   'protocolVersion': 3,
-  'helperVersion': '0.11.0',
+  'helperVersion': '0.12.0',
   'cascLibRevision': '4971d363e665551ac4142f541e5f2d71f1cda653',
   'requestId': 'fixture',
   'operation': 'readTerrainConnections',

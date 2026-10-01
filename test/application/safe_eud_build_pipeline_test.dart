@@ -453,7 +453,7 @@ final class _FakeToolInspector implements EudToolInspector {
             : original.executablePath,
         versionFilePath: original.versionFilePath,
         version: changed && change == 'version'
-            ? EudToolVersion.parse('0.11.0.1')
+            ? EudToolVersion.parse('0.12.0.1')
             : original.version,
         companionPaths: original.companionPaths,
         contentHashes: changed && change == 'missingHash'
