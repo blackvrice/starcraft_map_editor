@@ -161,12 +161,12 @@ void main() {
       IsomTerrainCatalog catalog(int type) => IsomTerrainCatalog(
         tileset: 0,
         revision: 'hard-fixture-v1',
-        edges: [IsomEdgeConnection(value: 16, link: 48, terrainType: 3)],
+        edges: [IsomEdgeConnection(value: 16, link: 49, terrainType: 3)],
         pairs: [
           IsomTilePair(
             leftGroup: 4094,
             terrainType: type,
-            links: [48, 48, 48, 48],
+            links: [49, 49, 49, 49],
             stackConnections: [0, 0, 0, 0],
             members: [15],
           ),

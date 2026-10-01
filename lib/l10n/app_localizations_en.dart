@@ -2369,7 +2369,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get isomFillScope =>
-      'Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.';
+      'Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.';
 
   @override
   String get isomTerrainType => 'Flat terrain type';
@@ -2737,4 +2737,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get eudConflictHelp =>
       'Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build.';
+
+  @override
+  String get isomFillMode => 'Fill flat terrain';
+
+  @override
+  String get isomConvertMode => 'Recalculate existing ISOM';
+
+  @override
+  String isomConvertPreview(int count) {
+    return '$count game tiles will change. Existing ISOM and its flags are preserved.';
+  }
+
+  @override
+  String get isomConvertApply => 'Apply recalculated tiles';
 }

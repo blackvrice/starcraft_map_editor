@@ -86,6 +86,10 @@ add_subdirectory(
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# Numeric ISOM shape definitions derived from the pinned MIT Chkdraft source.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../docs/licenses/Chkdraft.txt"
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/licenses" COMPONENT Runtime)
+
 # Build-time only download, pinned SHA-256; runtime never downloads tools.
 # The packager verifies every output against the inventory compiled into Dart.
 set(EUD_BUNDLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build/eud_bundle/0.10.2.5-editor.1")

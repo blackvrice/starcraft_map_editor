@@ -5,6 +5,14 @@ import '../chk/typed/chk_editor_terrain.dart';
 import 'isom_terrain_conversion.dart';
 
 final class IsomFillPreview {
+  factory IsomFillPreview.fromConversion(IsomConversionPreview preview) =>
+      IsomFillPreview._(
+        preview.source,
+        preview.result,
+        preview.changedTileCount,
+        false,
+        preview.catalogRevision,
+      );
   const IsomFillPreview._(
     this.source,
     this.result,

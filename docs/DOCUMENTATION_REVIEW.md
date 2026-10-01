@@ -1,5 +1,9 @@
 # 문서 정합성 점검과 작업 인수인계
 
+## ISOM 전환/적층 재계산 반영: 2026-10-01
+
+[계약](ISOM_TRANSITIONS.md)의 14개 형태·soft/hard 링크·CV5 기준 행·수직 적층 경로·기존 타일 보호와 새 경계 브러시 미구현을 계획/인덱스/남은 작업/UX/포맷/아키텍처에 반영했다. 전체 Flutter 895개 통과/40개 skip, 실제 CASC/MPQ 5개, analyze 및 Windows 빌드·시작·MIT 고지 동봉 검증. 전체 format 기존 3개 차이와 SDK 차이·미실행 게임 인수는 계약에 남긴다. 사용자 설정 연구·소스 변경은 보존한다.
+
 ## 최신 EUD 보완 반영: 2026-10-01
 
 [EUD 보완](EUD_COMPLETION.md)의 기본값·CHK 우선순위·참조 override 그래프·정적 충돌과 미확인 범위를 계획/인덱스/UX/아키텍처/연동/실행 규칙에 반영했다. helper는 0.11.0, wire 3을 유지한다. 전체 Flutter 887개 통과/38개 환경 skip, native 7개, 실제 로컬 DAT/동봉 API 컴파일 2개, analyze 및 Windows debug 빌드·시작 검증. 전체 format의 기존 무관한 3개 파일 차이와 SDK 기준 차이는 계약에 기록한다. 사용자 미커밋 설정 연구·소스는 보존한다.

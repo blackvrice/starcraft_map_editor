@@ -68,6 +68,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [실드 초기화 및 생성 빌드 작업 준비](EUD_SHIELD_BUILD_PREPARATION.md) | 실드 초기화 비교 시나리오·최초 준비 기록 |
 | [동봉 EUD 도구 manifest와 무결성 검사](EUD_TOOL_MANIFEST.md) | manifest 검사 계약·초기 구현 이력 |
 | [EUD 도구 선택·진단 화면](EUD_TOOL_SETTINGS_UI.md) | 기본/외부 도구 선택과 진단 UI |
+| [ISOM 전환·수직 적층 재계산](ISOM_TRANSITIONS.md) | 기존 ISOM 경계·적층 타일 재계산·형태 표·보존/검증 범위 |
 | [등각 지형·ISOM 검사](ISOMETRIC_TERRAIN.md) | TILE/ISOM 구조 검사·비적층 변환 코어 계약과 실제 자료/브러시 후속 계획 |
 | [맵 크기 변경](MAP_RESIZE.md) | raw 맵 resize·영향 미리보기·원자적 적용·보존 계약 |
 | [새 맵 생성 정책과 CHK 생성기](NEW_MAP.md) | 생성 정책·도메인 구현·UI/신규 MPQ 통합 인수인계 |
@@ -90,7 +91,8 @@ New Map·원본 없는 세션·신규 MPQ 저장/재열기를 구현했다. raw 
 Edit → 기본 편집 도구에 안개·시작 위치·상태/valid flags·Sprite-unit 비활성·검증형 Doodad 활성과 복합 clipboard, 관계 편집·고도/검색·미니맵을 추가했다.
 Edit → 선택·탐색에 객체 이름/ID·소유자 검색, 전체/반전/종류 선택과 좌표 이동·화면 맞춤을 추가했다([계약](SELECTION_NAVIGATION.md)).
 helper 0.10.1에서 DD2 활성값을 0으로 정정했다([계약](BASIC_EDITING_TOOLS.md)).
-지형 경계·적층·경사로 solver와 브러시, ISOM/Doodad resize·게임/외부 에디터 인수는 남았다.
+2026-10-01 전환 형태 표·수직 적층 변환과 기존 ISOM 재계산 UI를 구현했다([계약](ISOM_TRANSITIONS.md)).
+새 경계 자동 연결·높이/경사로 브러시, ISOM/Doodad resize·게임/외부 에디터 인수는 남았다.
 2026-10-01 EUD DAT 조회·공유 그래픽 원본/예정 영향과 정적 충돌 진단을 구현했다([계약](EUD_COMPLETION.md)). helper는 0.11.0이다.
 [개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
 [문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.

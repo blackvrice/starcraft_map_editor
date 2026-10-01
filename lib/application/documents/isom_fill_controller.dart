@@ -1,7 +1,9 @@
 import '../../domain/terrain/isom_terrain_fill.dart';
+import '../../domain/terrain/isom_terrain_conversion.dart';
 import '../ports/terrain_connection_snapshot_gateway.dart';
 import '../settings/starcraft_data_asset_settings_controller.dart';
 import '../terrain/solid_isom_catalog_builder.dart';
+import '../terrain/transition_isom_catalog_builder.dart';
 import 'open_map_controller.dart';
 import 'opened_map_session.dart';
 
@@ -74,7 +76,7 @@ class IsomFillController {
     if (read.snapshot!.tileset != sets.single.rawValue) {
       throw StateError('Terrain tileset mismatch.');
     }
-    final catalog = const SolidIsomCatalogBuilder().build(read.snapshot!);
+    final catalog = const TransitionIsomCatalogBuilder().build(read.snapshot!);
     _source = source;
     _assets = settings;
     _catalog = catalog;
@@ -128,7 +130,9 @@ class IsomFillController {
     );
     maps.adoptEditedSession(after);
     maps.editHistory.record(
-      label: 'Fill isometric terrain',
+      label: preview.isomChanged
+          ? 'Fill isometric terrain'
+          : 'Convert ISOM terrain',
       before: before,
       after: after,
       undo: () => maps.adoptEditedSession(before),
@@ -136,5 +140,25 @@ class IsomFillController {
     );
     invalidate();
     return true;
+  }
+
+  IsomFillPreview previewConversion({int seed = 0}) {
+    _preview = null;
+    final source = _source, catalog = _catalog;
+    if (source == null || catalog == null) {
+      throw StateError('Load terrain data first.');
+    }
+    _check(source);
+    if (!identical(_assets, assets())) {
+      throw StateError('StarCraft data settings changed.');
+    }
+    return _preview = IsomFillPreview.fromConversion(
+      const IsomTerrainConverter().preview(
+        source.rawDocument,
+        catalog.catalog,
+        seed: seed,
+        requireKnownSourcePairs: true,
+      ),
+    );
   }
 }

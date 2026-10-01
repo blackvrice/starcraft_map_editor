@@ -26,7 +26,7 @@
 | EUD 실행 규칙 | 변수/식·개체/플레이어/위치/표시, schema v3·실제 컴파일 | 게임 생명주기·성능·멀티 검증 M7.1 |
 | EUD 도구·언어 | 관리형 euddraft 동봉, epScript entry | 깨끗한 Windows 인수 X1/X5; Python X3·Lua X4 미구현 |
 | Tile/Unit/Sprite/Doodad | 카탈로그·썸네일·검증된 factory·배치 | Doodad 삭제 게임/외부 왕복·미지원 확대 M6.2 |
-| 지형 | raw MTXM·TILE/ISOM 검사·로컬 평지 채우기와 ISOM/TILE/MTXM 갱신 | 경계·적층·경사로 solver/선택 브러시 M6.4 |
+| 지형 | raw MTXM·TILE/ISOM 검사·평지 채우기·[전환/수직 적층 재계산](ISOM_TRANSITIONS.md) | 새 경계 자동 연결·높이/경사로·선택 브러시 M6.4 |
 | 시작 위치 | 소유자별 목록/선택/배치·이동·캔버스 좌표와 누락/중복 표시 | 실제 게임·외부 에디터 인수 M6.4 |
 | 객체 속성 | 개별/일괄 수치·상태/valid flags·Addon/Nydus·Sprite-unit/Doodad 상태 | 불명확한 flags/관계/overlay 거부; 실제 게임 인수 M6.4 |
 | 로케이션 | 생성·이동·크기·이름·목록/검색·고도·일괄 고도 | 실제 고도 조건·외부 에디터 인수 M6.4 |

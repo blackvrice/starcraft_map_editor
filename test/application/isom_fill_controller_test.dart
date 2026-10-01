@@ -45,6 +45,11 @@ void main() {
       await c.load();
       expect(c.apply(c.preview(terrainType: 2)), isFalse);
       expect(h.maps.editHistory.undoDepth, 1);
+      final conversion = c.previewConversion();
+      expect(conversion.isomChanged, isFalse);
+      expect(conversion.hasChanges, isFalse);
+      expect(c.apply(conversion), isFalse);
+      expect(h.maps.editHistory.undoDepth, 1);
     },
   );
   test('cancellation and late data cannot replace the current map', () async {

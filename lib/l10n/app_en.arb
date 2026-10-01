@@ -1443,7 +1443,7 @@
   "eudFieldsOutOfRange": "The value is outside the allowed range.",
   "eudFieldsInvalid": "This value cannot be used for the selected field.",
   "isomFillTitle": "Fill Isometric Terrain",
-  "isomFillScope": "Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.",
+  "isomFillScope": "Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.",
   "isomTerrainType": "Flat terrain type",
   "isomTerrainId": "Terrain type #{id}",
   "isomFillPreview": "{count} game tiles will change. Editor terrain (ISOM) will also be updated.",
@@ -1636,5 +1636,16 @@
       }
     }
   },
-  "eudConflictHelp": "Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build."
+  "eudConflictHelp": "Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build.",
+  "isomFillMode": "Fill flat terrain",
+  "isomConvertMode": "Recalculate existing ISOM",
+  "isomConvertPreview": "{count} game tiles will change. Existing ISOM and its flags are preserved.",
+  "isomConvertApply": "Apply recalculated tiles",
+  "@isomConvertPreview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

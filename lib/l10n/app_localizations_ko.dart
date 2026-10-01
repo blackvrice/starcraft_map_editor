@@ -2312,7 +2312,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get isomFillScope =>
-      '맵 전체를 한 종류의 평지로 바꿉니다. ISOM, TILE, MTXM이 함께 갱신되며 Undo로 원래 지형을 복원할 수 있습니다. 경사로·지형 경계·두다드는 아직 지원하지 않습니다.';
+      '맵 전체를 평지로 채우거나 기존 ISOM 경계·수직 적층에서 타일을 다시 계산합니다. 미리보기는 맵을 바꾸지 않으며 적용은 Undo 한 건으로 기록합니다. 두다드·원시 타일 변경·알 수 없는 형태는 거부합니다. 새 경계·경사로를 그리는 기능은 아직 없습니다.';
 
   @override
   String get isomTerrainType => '평지 종류';
@@ -2676,4 +2676,18 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get eudConflictHelp =>
       '현재 맵과 열린 소스만 검사합니다. 조건·그룹·동적 코드에 따라 실제 동작이 달라지므로 테스트 빌드 전 미확인 항목을 검토하세요.';
+
+  @override
+  String get isomFillMode => '평지 채우기';
+
+  @override
+  String get isomConvertMode => '기존 ISOM 재계산';
+
+  @override
+  String isomConvertPreview(int count) {
+    return '게임 타일 $count개가 변경됩니다. 기존 ISOM과 플래그는 보존됩니다.';
+  }
+
+  @override
+  String get isomConvertApply => '재계산한 타일 적용';
 }

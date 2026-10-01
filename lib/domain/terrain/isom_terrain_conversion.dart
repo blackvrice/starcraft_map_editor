@@ -94,14 +94,15 @@ final class IsomConversionPreview {
 
 typedef _ConnectionKey = (int, int, int, int, int);
 
-/// First supported conversion subset: verified, unstacked left/right tile pairs.
-/// Unknown edges, stacked terrain, doodads and raw overrides fail atomically.
+/// Verified left/right pairs with a globally consistent vertical stack path.
+/// Unknown edges, horizontal stacks, doodads and raw overrides fail atomically.
 class IsomTerrainConverter {
   const IsomTerrainConverter();
   IsomConversionPreview preview(
     RawChkDocument source,
     IsomTerrainCatalog catalog, {
     required int seed,
+    bool requireKnownSourcePairs = false,
   }) {
     RangeError.checkValueInInterval(seed, 0, 0xffffffff, 'seed');
     final report = const ChkEditorTerrainDecoder().decode(source);
@@ -145,13 +146,15 @@ class IsomTerrainConverter {
     final edges = {for (final e in catalog.edges) e.value: e};
     final candidates = <_ConnectionKey, List<IsomTilePair>>{};
     for (final pair in catalog.pairs) {
-      if (!pair.isUnstacked) continue;
+      if (pair.stackConnections[0] != 0 || pair.stackConnections[2] != 0) {
+        continue;
+      }
       final key = (
         pair.links[0],
         pair.links[1],
         pair.links[2],
         pair.links[3],
-        pair.links.any((v) => v >= 48) ? pair.terrainType : 0,
+        pair.links.any((v) => v > 48) ? pair.terrainType : 0,
       );
       (candidates[key] ??= []).add(pair);
     }
@@ -159,7 +162,25 @@ class IsomTerrainConverter {
       list.sort((a, b) => a.leftGroup.compareTo(b.leftGroup));
     }
     final bytes = tile.rawSection.payload;
+    if (requireKnownSourcePairs) {
+      final pairs = {for (final p in catalog.pairs) p.leftGroup: p};
+      for (var y = 0; y < height; y++) {
+        for (var x = 0; x < width; x += 2) {
+          final left = tile.tileAt(x, y), right = tile.tileAt(x + 1, y);
+          final p = pairs[left ~/ 16];
+          if (p == null ||
+              right ~/ 16 != p.leftGroup + 1 ||
+              (left & 15) != (right & 15) ||
+              !p.members.contains(left & 15)) {
+            throw StateError(
+              'Unsupported existing tile pair at ($x,$y); preserved.',
+            );
+          }
+        }
+      }
+    }
     var changes = 0;
+    final cells = List.generate(height, (_) => <List<IsomTilePair>>[]);
     // Right and bottom padding rectangles are not output cells, but must also
     // reference known values; never silently accept an unknown border.
     for (var y = 0; y < isom.rows!; y++) {
@@ -177,7 +198,12 @@ class IsomTerrainConverter {
         if (x == width ~/ 2 || y == height) continue;
         var type = 0;
         for (final e in resolved) {
-          if (e.link >= 48 && e.terrainType != 0) type = e.terrainType;
+          if (e.link > 48 && e.terrainType != 0) {
+            if (type != 0 && type != e.terrainType) {
+              throw StateError('Mixed hard-link terrain types at ($x,$y).');
+            }
+            type = e.terrainType;
+          }
         }
         final key = (
           resolved[0].link,
@@ -188,27 +214,22 @@ class IsomTerrainConverter {
         );
         final choices = candidates[key];
         if (choices == null || choices.isEmpty) {
-          throw StateError('No verified unstacked tile pair at ($x,$y).');
+          throw StateError('No verified tile pair at ($x,$y).');
         }
-        final oldLeft = tile.tileAt(x * 2, y),
-            oldRight = tile.tileAt(x * 2 + 1, y);
-        IsomTilePair? selected;
-        var member = oldLeft & 15;
-        for (final p in choices) {
-          if (oldLeft ~/ 16 == p.leftGroup &&
-              oldRight ~/ 16 == p.leftGroup + 1 &&
-              (oldRight & 15) == member &&
-              p.members.contains(member)) {
-            selected = p;
-            break;
-          }
-        }
-        if (selected == null) {
-          final hash = _mix(seed, x, y);
-          selected = choices[hash % choices.length];
-          member = selected
-              .members[(hash ~/ choices.length) % selected.members.length];
-        }
+        cells[y].add(choices);
+      }
+    }
+    // Solve the whole column before writing any tile. Local greedy choices
+    // can select a stack row that leaves no compatible member below it.
+    for (var x = 0; x < width ~/ 2; x++) {
+      final column = _column(
+        [for (var y = 0; y < height; y++) cells[y][x]],
+        tile,
+        x,
+        seed,
+      );
+      for (var y = 0; y < height; y++) {
+        final selected = column[y].pair, member = column[y].member;
         final values = [
           selected.leftGroup * 16 + member,
           (selected.leftGroup + 1) * 16 + member,
@@ -242,6 +263,51 @@ class IsomTerrainConverter {
     );
   }
 
+  List<_StackPath> _column(
+    List<List<IsomTilePair>> rows,
+    EditorTerrainSection tile,
+    int x,
+    int seed,
+  ) {
+    var previous = <(int, int), _StackPath>{};
+    for (var y = 0; y < rows.length; y++) {
+      final next = <(int, int), _StackPath>{};
+      final states = [
+        for (final p in rows[y])
+          for (final m in p.members) (p, m),
+      ];
+      final offset = _mix(seed, x, y) % states.length;
+      for (var i = 0; i < states.length; i++) {
+        final (p, m) = states[(i + offset) % states.length];
+        final top = p.stackConnections[1], bottom = p.stackConnections[3];
+        final parent = previous[(top, top == 0 ? -1 : m)];
+        // Map edges may clip a stack, but interior seams must match exactly.
+        if (y > 0 && parent == null) continue;
+        final cost =
+            (parent?.cost ?? 0) +
+            (tile.tileAt(x * 2, y) == p.leftGroup * 16 + m ? 0 : 1) +
+            (tile.tileAt(x * 2 + 1, y) == (p.leftGroup + 1) * 16 + m ? 0 : 1);
+        final key = (bottom, bottom == 0 ? -1 : m);
+        if (next[key] == null || cost < next[key]!.cost) {
+          next[key] = _StackPath(p, m, cost, parent);
+        }
+      }
+      if (next.isEmpty) {
+        throw StateError('No compatible vertical stack at ($x,$y).');
+      }
+      previous = next;
+    }
+    final paths = previous.values.toList()
+      ..sort((a, b) => a.cost.compareTo(b.cost));
+    var path = paths.first;
+    final result = <_StackPath>[path];
+    while (path.parent != null) {
+      path = path.parent!;
+      result.add(path);
+    }
+    return result.reversed.toList();
+  }
+
   int _mix(int seed, int x, int y) {
     var value = seed;
     for (final v in [x, y]) {
@@ -249,4 +315,11 @@ class IsomTerrainConverter {
     }
     return value;
   }
+}
+
+final class _StackPath {
+  const _StackPath(this.pair, this.member, this.cost, this.parent);
+  final IsomTilePair pair;
+  final int member, cost;
+  final _StackPath? parent;
 }

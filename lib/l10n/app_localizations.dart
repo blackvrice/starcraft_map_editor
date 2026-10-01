@@ -4253,7 +4253,7 @@ abstract class AppLocalizations {
   /// No description provided for @isomFillScope.
   ///
   /// In en, this message translates to:
-  /// **'Replace the whole map with one flat terrain type. ISOM, TILE and MTXM are updated together. Undo restores the original terrain. Ramps, transitions and doodads are not supported yet.'**
+  /// **'Fill the whole map with flat terrain, or recalculate tiles from existing ISOM boundaries and vertical stacks. Preview does not change the map; apply creates one Undo entry. Doodads, raw tile overrides and unknown shapes are refused. Drawing new boundaries and ramps is not available yet.'**
   String get isomFillScope;
 
   /// No description provided for @isomTerrainType.
@@ -4921,6 +4921,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build.'**
   String get eudConflictHelp;
+
+  /// No description provided for @isomFillMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill flat terrain'**
+  String get isomFillMode;
+
+  /// No description provided for @isomConvertMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Recalculate existing ISOM'**
+  String get isomConvertMode;
+
+  /// No description provided for @isomConvertPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} game tiles will change. Existing ISOM and its flags are preserved.'**
+  String isomConvertPreview(int count);
+
+  /// No description provided for @isomConvertApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply recalculated tiles'**
+  String get isomConvertApply;
 }
 
 class _AppLocalizationsDelegate

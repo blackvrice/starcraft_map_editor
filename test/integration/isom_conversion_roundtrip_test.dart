@@ -18,91 +18,101 @@ import '../fixtures/new_map_harness.dart';
 
 void main() {
   final helper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
-  test(
-    'synthetic verified ISOM conversion saves both tile grids and preserves ISOM/source MPQ',
-    () async {
-      final root = await Directory.systemTemp.createTemp('isom_conversion_');
-      addTearDown(() => root.delete(recursive: true));
-      final gateway = ProcessMapArchiveGateway(helperExecutablePath: helper!);
-      final picker = NewMapPicker();
-      final fingerprint = LocalMapFileFingerprintGateway();
-      final progress = OperationProgressController();
-      addTearDown(progress.dispose);
-      final recent = RecentProjectsService(InMemorySettingsStore());
-      final maps = OpenMapController(
-        archiveGateway: gateway,
-        filePicker: picker,
-        fingerprintGateway: fingerprint,
-        recentProjectsService: recent,
-        operationProgressController: progress,
-      );
-      addTearDown(maps.dispose);
-      final save = SaveMapController(
-        archiveGateway: gateway,
-        filePicker: picker,
-        fingerprintGateway: fingerprint,
-        saveFileGateway: LocalMapSaveFileGateway(),
-        openMapController: maps,
-        operationProgressController: progress,
-      );
-      addTearDown(save.dispose);
+  for (final stack in [false, true]) {
+    test(
+      'synthetic ISOM conversion saves tile grids and preserves ISOM/source MPQ (stack=$stack)',
+      () async {
+        final root = await Directory.systemTemp.createTemp('isom_conversion_');
+        addTearDown(() => root.delete(recursive: true));
+        final gateway = ProcessMapArchiveGateway(helperExecutablePath: helper!);
+        final picker = NewMapPicker();
+        final fingerprint = LocalMapFileFingerprintGateway();
+        final progress = OperationProgressController();
+        addTearDown(progress.dispose);
+        final recent = RecentProjectsService(InMemorySettingsStore());
+        final maps = OpenMapController(
+          archiveGateway: gateway,
+          filePicker: picker,
+          fingerprintGateway: fingerprint,
+          recentProjectsService: recent,
+          operationProgressController: progress,
+        );
+        addTearDown(maps.dispose);
+        final save = SaveMapController(
+          archiveGateway: gateway,
+          filePicker: picker,
+          fingerprintGateway: fingerprint,
+          saveFileGateway: LocalMapSaveFileGateway(),
+          openMapController: maps,
+          operationProgressController: progress,
+        );
+        addTearDown(save.dispose);
 
-      final doc = isomFixture();
-      final input = '${root.path}/source.scx';
-      expect(
-        (await gateway.writeTemporary(
-          MapArchiveWriteRequest(
-            operationId: 'isom-fixture',
-            sourcePath: null,
-            temporaryOutputPath: input,
-            scenarioChkBytes: const RawChkEncoder().encode(doc),
-            timeout: const Duration(seconds: 30),
-          ),
-        )).isSuccess,
-        isTrue,
-      );
-      final original = await fingerprint.fingerprint(input);
-      await maps.open(sourcePath: input);
-      final controller = IsomConversionController(
-        maps: maps,
-        catalogs: _Catalog(),
-      );
-      final preview = await controller.preview(seed: 0);
-      expect(preview.changedTileCount, 1024);
-      controller.apply(preview);
-      final expected = const RawChkEncoder().encode(
-        maps.state.session!.rawDocument,
-      );
-      maps.editHistory.undo();
-      expect(maps.state.session!.isDirty, isFalse);
-      maps.editHistory.redo();
-      final output = '${root.path}/converted.scx';
-      expect(
-        (await save.saveAs(destinationPath: output)).status,
-        SaveMapStatus.saved,
-      );
-      await maps.open(sourcePath: output);
-      expect(
-        const RawChkEncoder().encode(maps.state.session!.rawDocument),
-        expected,
-      );
-      expect(
-        maps.state.session!.rawDocument.sections
-            .singleWhere((s) => s.name == 'ISOM')
-            .payload,
-        doc.sections.singleWhere((s) => s.name == 'ISOM').payload,
-      );
-      expect(maps.state.session!.editorTerrain.differentTileCount, 0);
-      expect(await fingerprint.fingerprint(input), original);
-    },
-    skip: !Platform.isWindows || helper == null
-        ? 'Requires MAP_ARCHIVE_HELPER_PATH on Windows.'
-        : false,
-  );
+        final doc = isomFixture();
+        final input = '${root.path}/source.scx';
+        expect(
+          (await gateway.writeTemporary(
+            MapArchiveWriteRequest(
+              operationId: 'isom-fixture',
+              sourcePath: null,
+              temporaryOutputPath: input,
+              scenarioChkBytes: const RawChkEncoder().encode(doc),
+              timeout: const Duration(seconds: 30),
+            ),
+          )).isSuccess,
+          isTrue,
+        );
+        final original = await fingerprint.fingerprint(input);
+        await maps.open(sourcePath: input);
+        final controller = IsomConversionController(
+          maps: maps,
+          catalogs: _Catalog(stack),
+        );
+        final preview = await controller.preview(seed: 0);
+        expect(preview.changedTileCount, 1024);
+        controller.apply(preview);
+        final expected = const RawChkEncoder().encode(
+          maps.state.session!.rawDocument,
+        );
+        maps.editHistory.undo();
+        expect(maps.state.session!.isDirty, isFalse);
+        maps.editHistory.redo();
+        final output = '${root.path}/converted.scx';
+        expect(
+          (await save.saveAs(destinationPath: output)).status,
+          SaveMapStatus.saved,
+        );
+        await maps.open(sourcePath: output);
+        expect(
+          const RawChkEncoder().encode(maps.state.session!.rawDocument),
+          expected,
+        );
+        expect(
+          maps.state.session!.rawDocument.sections
+              .singleWhere((s) => s.name == 'ISOM')
+              .payload,
+          doc.sections.singleWhere((s) => s.name == 'ISOM').payload,
+        );
+        expect(maps.state.session!.editorTerrain.differentTileCount, 0);
+        expect(await fingerprint.fingerprint(input), original);
+      },
+      skip: !Platform.isWindows || helper == null
+          ? 'Requires MAP_ARCHIVE_HELPER_PATH on Windows.'
+          : false,
+    );
+  }
 }
 
 class _Catalog implements IsomTerrainCatalogGateway {
+  _Catalog(this.stack);
+  final bool stack;
   @override
-  Future<IsomTerrainCatalog> load({required int tileset}) async =>
-      isomCatalog();
+  Future<IsomTerrainCatalog> load({required int tileset}) async => isomCatalog(
+    pairs: stack
+        ? [
+            isomPair(2, members: [3], stacks: [0, 0, 0, 7]),
+            isomPair(4, members: [3], stacks: [0, 7, 0, 0]),
+          ]
+        : null,
+  );
 }

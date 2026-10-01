@@ -1005,3 +1005,7 @@ UI에는 파일·바이너리 파서·프로세스 호출을 추가하지 않는
 ## EUD DAT·정적 진단 (2026-10-01)
 
 EudDatGateway 뒤에서 ProcessEudDatGateway가 고정 경로 7개와 한정 프로세스 로그를 읽는다. PlacementCatalogController가 조회 공유·수명 주기를 관리하고 Domain EudDatGraph가 역참조·프로젝트 override를 분석한다. EudConflictAnalysis는 TRIG/현재 소스 정적 분석만 하며 실행하지 않는다. 빌드 준비 manifest에 맵 진단을 기록한다. 지원 범위는 [EUD 보완](EUD_COMPLETION.md)을 따른다.
+
+## ISOM 전환·수직 적층 재계산 (2026-10-01)
+
+File → 등각 지형 채우기의 기존 ISOM 재계산 모드는 전환 연결표·수직 적층의 공통 member 경로로 TILE/MTXM을 함께 변경하고 ISOM/플래그·객체/리소스를 보존한다. 한영 UI·읽기 전용 미리보기·공통 Undo/Redo와 무변경 거부 범위는 [계약](ISOM_TRANSITIONS.md)을 따른다. 새 경계/높이/경사로 브러시와 게임 인수는 남는다.

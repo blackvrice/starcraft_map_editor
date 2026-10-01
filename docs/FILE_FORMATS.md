@@ -584,3 +584,7 @@ recipe·명시적 overlay를 검증한다. 새 문자열을 정규화하지 않�
 ## EUD 로컬 DAT 조회 (2026-10-01)
 
 helper 0.11.0/wire 3의 readEudDat는 고정 classic DAT 7개만 읽고 61개 수치 열·크기·SHA256·제품/빌드를 반환한다. 원시 자산은 저장/배포하지 않는다. 보존·검증 계약은 [EUD 보완](EUD_COMPLETION.md)을 따른다.
+
+## ISOM 전환·수직 적층 재계산 (2026-10-01)
+
+File → 등각 지형 채우기의 기존 ISOM 재계산 모드는 전환 연결표·수직 적층의 공통 member 경로로 TILE/MTXM을 함께 변경하고 ISOM/플래그·객체/리소스를 보존한다. 한영 UI·읽기 전용 미리보기·공통 Undo/Redo와 무변경 거부 범위는 [계약](ISOM_TRANSITIONS.md)을 따른다. 새 경계/높이/경사로 브러시와 게임 인수는 남는다.

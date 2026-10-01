@@ -17,6 +17,7 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
   IsomFillPreview? _preview;
   Object? _error;
   bool _loading = true;
+  bool _convert = false;
   @override
   void initState() {
     super.initState();
@@ -49,7 +50,9 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
     _preview = null;
     _error = null;
     try {
-      _preview = widget.controller.preview(terrainType: _type!);
+      _preview = _convert
+          ? widget.controller.previewConversion()
+          : widget.controller.preview(terrainType: _type!);
     } on Object catch (e) {
       _error = e;
     }
@@ -87,14 +90,28 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
             children: [
               Text(l.isomFillScope),
               const SizedBox(height: 16),
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(value: false, label: Text(l.isomFillMode)),
+                  ButtonSegment(value: true, label: Text(l.isomConvertMode)),
+                ],
+                selected: {_convert},
+                onSelectionChanged: _loading
+                    ? null
+                    : (v) => setState(() {
+                        _convert = v.single;
+                        _refresh();
+                      }),
+              ),
+              const SizedBox(height: 16),
               if (_loading) const LinearProgressIndicator(),
-              if (_catalog case final SolidIsomCatalog catalog)
+              if (!_convert && _catalog != null)
                 DropdownButtonFormField<int>(
                   key: const Key('isom-terrain-type'),
                   initialValue: _type,
                   decoration: InputDecoration(labelText: l.isomTerrainType),
                   items: [
-                    for (final type in catalog.shapes.keys)
+                    for (final type in _catalog!.shapes.keys)
                       DropdownMenuItem(
                         value: type,
                         child: Text(l.isomTerrainId(type)),
@@ -107,7 +124,11 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
                 ),
               if (_preview case final IsomFillPreview p) ...[
                 const SizedBox(height: 16),
-                Text(l.isomFillPreview(p.changedTileCount)),
+                Text(
+                  _convert
+                      ? l.isomConvertPreview(p.changedTileCount)
+                      : l.isomFillPreview(p.changedTileCount),
+                ),
               ],
               if (_error != null) ...[
                 const SizedBox(height: 16),
@@ -130,7 +151,7 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
         FilledButton(
           key: const Key('isom-fill-apply'),
           onPressed: _preview?.hasChanges == true ? _apply : null,
-          child: Text(l.isomFillApply),
+          child: Text(_convert ? l.isomConvertApply : l.isomFillApply),
         ),
       ],
     );
