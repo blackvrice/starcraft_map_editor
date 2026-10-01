@@ -1,4 +1,5 @@
 #include "casc_asset_inspector.h"
+#include "eud_dat_snapshot.h"
 #include "doodad_recipe_decoder.h"
 #include "object_asset_reader.h"
 #include "object_atlas_protocol.h"
@@ -30,7 +31,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.10.1";
+constexpr char kHelperVersion[] = "0.11.0";
 constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
@@ -71,6 +72,44 @@ int WriteError(
 bool IsNonEmptyString(const json& value, const char* const key) {
   return value.contains(key) && value[key].is_string() &&
          !value[key].get_ref<const std::string&>().empty();
+}
+
+const char kEudDatOperation[] = "readEudDat";
+
+int ReadEudDat(const std::string& request_id, const std::filesystem::path& path) {
+  const auto assets = sc::ReadEudDatAssets(path);
+  if (!assets.success) {
+    return WriteError(request_id, kEudDatOperation, assets.error_code,
+                      assets.message, assets.stage, assets.native_error, 3);
+  }
+  const auto snapshot = sc::DecodeEudDat(assets.assets);
+  if (!snapshot.success) {
+    return WriteError(request_id, kEudDatOperation,
+                      "SC_EUD_DAT_LAYOUT_UNSUPPORTED",
+                      "Expected fixed classic DAT sizes and valid hashes.",
+                      "decode", ERROR_INVALID_DATA, 3);
+  }
+  auto response = BaseResponse(request_id, kEudDatOperation);
+  response["status"] = "success";
+  response["snapshotVersion"] = 1;
+  response["revision"] = "classic-dat-v1-pyms-bfc5d3a-eudplib-0.80.6";
+  response["installation"] = {
+      {"path", assets.installation_path},
+      {"storageProduct", assets.storage_product},
+      {"storageBuildNumber", assets.storage_build_number}};
+  response["assets"] = json::array();
+  for (std::size_t i = 0; i < assets.assets.size(); ++i) {
+    response["assets"].push_back({
+        {"path", sc::EudDatAssetPaths()[i]},
+        {"bytes", assets.assets[i].size()},
+        {"sha256", snapshot.hashes[i]}});
+  }
+  response["columns"] = json::object();
+  for (std::size_t i = 0; i < sc::kEudDatColumns.size(); ++i) {
+    response["columns"][sc::kEudDatColumns[i].key] = snapshot.columns[i];
+  }
+  std::cout << response.dump() << '\n';
+  return 0;
 }
 
 int InspectInstallation(
@@ -945,7 +984,7 @@ int main() {
     if (operation != kInspectOperation && operation != kRenderOperation &&
         operation != kRenderObjectOperation &&
         operation != kListCatalogOperation &&
-        operation != kTerrainConnectionsOperation) {
+        operation != kTerrainConnectionsOperation && operation != kEudDatOperation) {
       return WriteError(
           request_id,
           operation,
@@ -979,6 +1018,7 @@ int main() {
           2);
     }
 
+    if (operation == kEudDatOperation) return ReadEudDat(request_id, installation_path);
     if (operation == kTerrainConnectionsOperation) {
       return ReadTerrainConnectionSnapshot(request, request_id, installation_path);
     }

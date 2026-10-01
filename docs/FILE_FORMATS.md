@@ -580,3 +580,7 @@ DD2 활성=0/비활성=1이다. 이전 helper의 활성=1 생성은 0.10.1에서
 Raw MTXM clipboard는 TILE/ISOM을 보존하고, 복합 Doodad 경로는 아래 지형·
 recipe·명시적 overlay를 검증한다. 새 문자열을 정규화하지 않는다.
 자세한 비트/원자성 계약은 [기본 편집 도구](BASIC_EDITING_TOOLS.md)를 따른다.
+
+## EUD 로컬 DAT 조회 (2026-10-01)
+
+helper 0.11.0/wire 3의 readEudDat는 고정 classic DAT 7개만 읽고 61개 수치 열·크기·SHA256·제품/빌드를 반환한다. 원시 자산은 저장/배포하지 않는다. 보존·검증 계약은 [EUD 보완](EUD_COMPLETION.md)을 따른다.

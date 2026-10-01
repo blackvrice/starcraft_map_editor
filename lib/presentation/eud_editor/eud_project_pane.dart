@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:ui' show AppExitResponse;
 import '../../application/eud/eud_project_workspace.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../localization/l10n.dart';
 import 'eud_field_labels.dart';
+import 'eud_conflict_pane.dart';
+import '../../application/eud/eud_source_controller.dart';
 import 'eud_impact_pane.dart';
 import 'eud_weapon_editor.dart';
 import 'eud_shield_editor.dart';
@@ -12,6 +15,7 @@ import 'eud_rules_editor.dart';
 import '../../domain/eud/eud_field_manifest.dart';
 import '../../domain/eud/eud_effective_settings.dart';
 import '../../domain/eud/eud_generated_settings.dart';
+import '../../domain/eud/eud_conflict_analysis.dart';
 import '../../domain/eud/eud_project.dart';
 
 const _eudAccent = Color(0xFFE3A64A);
@@ -27,7 +31,13 @@ const _warn = Color(0xFFF0C982);
 /// Every action goes through [EudProjectWorkspace]; this widget never reads
 /// or writes files itself.
 class EudProjectPane extends StatefulWidget {
-  const EudProjectPane({required this.workspace, this.catalog, super.key});
+  const EudProjectPane({
+    required this.workspace,
+    this.catalog,
+    this.sourceController,
+    super.key,
+  });
+  final EudSourceController? sourceController;
   final EudProjectWorkspace workspace;
   final PlacementCatalogController? catalog;
   @override
@@ -40,9 +50,11 @@ class _EudProjectPaneState extends State<EudProjectPane> {
   int _linkedWeapon = 0;
   int _linkRevision = 0;
   late final AppLifecycleListener _lifecycle;
+  StreamSubscription<PlacementCatalogState>? _dataSubscription;
   @override
   void initState() {
     super.initState();
+    _listenData();
     _lifecycle = AppLifecycleListener(
       onExitRequested: () async {
         if (widget.workspace.isBusy || _acting) return AppExitResponse.cancel;
@@ -52,7 +64,23 @@ class _EudProjectPaneState extends State<EudProjectPane> {
   }
 
   @override
+  void didUpdateWidget(EudProjectPane oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.catalog, widget.catalog)) {
+      _dataSubscription?.cancel();
+      _listenData();
+    }
+  }
+
+  void _listenData() {
+    _dataSubscription = widget.catalog?.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
+    _dataSubscription?.cancel();
     _lifecycle.dispose();
     super.dispose();
   }
@@ -98,7 +126,14 @@ class _EudProjectPaneState extends State<EudProjectPane> {
   }
 
   Future<void> _showPreview(EudProject project) async {
-    final preview = EudGeneratedSettings(project);
+    final preview = EudGeneratedSettings(
+      project,
+      conflicts: EudConflictAnalysis.analyze(
+        project,
+        document: widget.workspace.maps.state.session?.rawDocument,
+        userSource: widget.sourceController?.state.document?.text,
+      ),
+    );
     await showDialog<void>(
       context: context,
       builder: (context) {
@@ -434,7 +469,13 @@ class _EudProjectPaneState extends State<EudProjectPane> {
     final l10n = context.l10n;
     final locale = l10n.localeName;
     final controller = widget.workspace.projects;
-    final effective = widget.workspace.effectiveSettings;
+    final effective = EudEffectiveSettings.resolve(
+      project,
+      verifiedDocument: widget.workspace.binding == EudMapBinding.matched
+          ? widget.workspace.maps.state.session?.rawDocument
+          : null,
+      localDat: widget.catalog?.eudData?.snapshot,
+    );
     final rows = <Widget>[];
     for (var i = 0; i < project.overrides.length; i++) {
       final item = project.overrides[i];
@@ -545,7 +586,11 @@ class _EudProjectPaneState extends State<EudProjectPane> {
         onPressed: busy
             ? null
             : () => _run(
-                () => showEudFieldEditor(context, controller: controller),
+                () => showEudFieldEditor(
+                  context,
+                  controller: controller,
+                  catalog: widget.catalog,
+                ),
               ),
         label: Text(l10n.eudAllFields),
       ),
@@ -581,40 +626,52 @@ class _EudProjectPaneState extends State<EudProjectPane> {
 
   Widget _impact(BuildContext context, EudProject project, bool busy) {
     final controller = widget.workspace.projects;
-    return EudImpactPane(
-      onSelectWeapon: busy
-          ? null
-          : (weapon) => setState(() {
-              _linkedWeapon = weapon;
-              _linkRevision++;
-            }),
-      key: const ValueKey('eud-project-impact'),
-      project: project,
-      catalog: widget.catalog,
-      onEditShields: busy
-          ? null
-          : (unit) => _run(
-              () => showEudShieldEditor(
-                context,
-                controller: controller,
-                unit: unit,
-              ),
-            ),
-      onEditWeapon: busy
-          ? null
-          : (weapon, epoch) {
-              final catalog = widget.catalog;
-              _run(
-                () => showEudWeaponEditor(
-                  context,
-                  controller: controller,
-                  weapon: weapon,
-                  referenceIsCurrent: () =>
-                      identical(catalog, widget.catalog) &&
-                      catalog?.weaponReferenceEpoch == epoch,
+    return Column(
+      children: [
+        StreamBuilder<EudSourceState>(
+          stream: widget.sourceController?.changes,
+          builder: (context, _) => EudConflictPane(
+            project: project,
+            document: widget.workspace.maps.state.session?.rawDocument,
+            userSource: widget.sourceController?.state.document?.text,
+          ),
+        ),
+        EudImpactPane(
+          onSelectWeapon: busy
+              ? null
+              : (weapon) => setState(() {
+                  _linkedWeapon = weapon;
+                  _linkRevision++;
+                }),
+          key: const ValueKey('eud-project-impact'),
+          project: project,
+          catalog: widget.catalog,
+          onEditShields: busy
+              ? null
+              : (unit) => _run(
+                  () => showEudShieldEditor(
+                    context,
+                    controller: controller,
+                    unit: unit,
+                  ),
                 ),
-              );
-            },
+          onEditWeapon: busy
+              ? null
+              : (weapon, epoch) {
+                  final catalog = widget.catalog;
+                  _run(
+                    () => showEudWeaponEditor(
+                      context,
+                      controller: controller,
+                      weapon: weapon,
+                      referenceIsCurrent: () =>
+                          identical(catalog, widget.catalog) &&
+                          catalog?.weaponReferenceEpoch == epoch,
+                    ),
+                  );
+                },
+        ),
+      ],
     );
   }
 
@@ -777,6 +834,10 @@ class _EudProjectPaneState extends State<EudProjectPane> {
     return switch (setting.baselineSource) {
       EudBaselineSource.unverifiedMap => l10n.eudBaselineUnverified,
       EudBaselineSource.chk => '${setting.baselineValue} ($detail)',
+      EudBaselineSource.localDat => l10n.eudDatDefault(
+        '${setting.baselineValue}',
+        widget.catalog?.eudData?.label ?? detail,
+      ),
       EudBaselineSource.gameDefault => l10n.eudBaselineGameDefault(detail),
       EudBaselineSource.unavailable => l10n.eudBaselineUnavailable(detail),
       EudBaselineSource.notInChk => l10n.eudBaselineNotInChk(detail),

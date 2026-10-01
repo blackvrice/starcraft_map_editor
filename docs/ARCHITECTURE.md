@@ -1001,3 +1001,7 @@ UI에는 파일·바이너리 파서·프로세스 호출을 추가하지 않는
 ## 선택·탐색 (2026-10-01)
 
 `SelectionNavigationController`는 문서 identity에 연결된 typed 객체 검색 결과와 카메라 범위를 반환한다. `MapLayerController.selectObjects`는 모든 참조·잠금·숨김을 검증하고 선택을 원자적으로 교체한다. UI의 이름은 Presentation이 보완한다. Canvas는 새 탐색 요청을 한 번만 적용하고 편집 제스처를 취소한다. 검색·선택·카메라는 문서 변경 기록에 포함하지 않는다. [지원 계약](SELECTION_NAVIGATION.md).
+
+## EUD DAT·정적 진단 (2026-10-01)
+
+EudDatGateway 뒤에서 ProcessEudDatGateway가 고정 경로 7개와 한정 프로세스 로그를 읽는다. PlacementCatalogController가 조회 공유·수명 주기를 관리하고 Domain EudDatGraph가 역참조·프로젝트 override를 분석한다. EudConflictAnalysis는 TRIG/현재 소스 정적 분석만 하며 실행하지 않는다. 빌드 준비 manifest에 맵 진단을 기록한다. 지원 범위는 [EUD 보완](EUD_COMPLETION.md)을 따른다.

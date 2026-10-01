@@ -4,6 +4,7 @@ import '../chk/typed/chk_upgrade_settings_editor.dart';
 import '../chk/typed/chk_tech_settings_editor.dart';
 import 'eud_field_manifest.dart';
 import 'eud_project.dart';
+import 'eud_dat_snapshot.dart';
 
 enum EudBaselineSource {
   unverifiedMap,
@@ -11,6 +12,7 @@ enum EudBaselineSource {
   gameDefault,
   unavailable,
   notInChk,
+  localDat,
 }
 
 /// A proposed value under the declarative policy, never a runtime result.
@@ -24,7 +26,7 @@ final class EudEffectiveSetting {
   });
   final EudOverride override;
   final EudBaselineSource baselineSource;
-  final int? baselineValue;
+  final Object? baselineValue;
   final String? baselineDetail;
   final Object? plannedValue;
 }
@@ -34,6 +36,7 @@ abstract final class EudEffectiveSettings {
   static List<EudEffectiveSetting> resolve(
     EudProject project, {
     RawChkDocument? verifiedDocument,
+    EudDatSnapshot? localDat,
   }) {
     ChkUnitSettings? units;
     String? readError;
@@ -49,7 +52,7 @@ abstract final class EudEffectiveSettings {
     return List.unmodifiable(
       project.overrides.map((item) {
         var source = EudBaselineSource.unverifiedMap;
-        int? value;
+        Object? value;
         String? detail;
         final field = EudFieldManifest.find(item.field);
         final valid =
@@ -85,6 +88,19 @@ abstract final class EudEffectiveSettings {
             } else {
               source = EudBaselineSource.unavailable;
             }
+          }
+        }
+        if (verifiedDocument != null &&
+            valid &&
+            localDat != null &&
+            (source == EudBaselineSource.notInChk ||
+                source == EudBaselineSource.gameDefault ||
+                item.field == 'upgrade.maxLevel')) {
+          final datValue = localDat.value(item.field, item.targetId);
+          if (datValue != null) {
+            source = EudBaselineSource.localDat;
+            value = datValue;
+            detail = '${detail ?? ''}; local DAT baseline (runtime unverified)';
           }
         }
         return EudEffectiveSetting(

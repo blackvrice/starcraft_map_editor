@@ -1952,6 +1952,7 @@ class _EditorWorkspace extends StatelessWidget {
                       EudProjectPane(
                         key: ObjectKey(projectWorkspace),
                         workspace: projectWorkspace!,
+                        sourceController: eudSourceController,
                         catalog: placementCatalogController,
                       )
                     else

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:starcraft_map_editor/application/ports/eud_dat_gateway.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/placement/placement_catalog_controller.dart';
@@ -9,6 +10,10 @@ import '../fixtures/eud_project_workspace_fixture.dart';
 import 'package:starcraft_map_editor/presentation/eud_editor/eud_project_pane.dart';
 
 class _Catalog implements PlacementCatalogController {
+  @override
+  EudDatGateway? get eudDatGateway => null;
+  @override
+  EudDatSource? get eudData => null;
   final events = StreamController<PlacementCatalogState>.broadcast(sync: true);
   @override
   int weaponReferenceEpoch = 0;

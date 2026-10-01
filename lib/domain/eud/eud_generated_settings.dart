@@ -5,10 +5,11 @@ import 'eud_project.dart';
 import 'eud_execution_rule.dart';
 import 'eud_rule_expression.dart';
 import 'eud_rule_codegen.dart';
+import 'eud_conflict_analysis.dart';
 
 /// Deterministic compiler input. Compilable does not mean game verified.
 final class EudGeneratedSettings {
-  EudGeneratedSettings(EudProject project) {
+  EudGeneratedSettings(EudProject project, {List<EudConflict>? conflicts}) {
     final issues = project.validationIssues;
     if (issues.isNotEmpty) throw FormatException(issues.join(', '));
     mapSha256 = project.mapSha256;
@@ -80,6 +81,10 @@ final class EudGeneratedSettings {
           if (project.rules.isNotEmpty) 'rulePolicy': 'synchronized-explicit-player; periodic-first-check-after-interval; once-until-first-match; basic-Accumulate-SetResources',
           'shieldPolicy': project.rules.any((r) => r.extension?.usesUnit ?? false) ? 'guarded-bound-instance; type-settings-independent' : 'type-only-no-current-unit-write',
           'operations': operations.map((o) => o.toJson()).toList(),
+          if (conflicts != null) 'staticConflictAnalysis': {
+              'scope': 'current-map; user-files-and-plugins-unresolved; advisory-only',
+              'issues': conflicts.map((c) => {'kind': c.kind.name, 'origin': c.origin, 'target': c.target}).toList(),
+            },
         })}\n';
   }
   late final String source;

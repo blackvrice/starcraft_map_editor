@@ -1271,7 +1271,7 @@ final class _DeferredCatalogGateway
           entries: entries,
           storageProduct: 's1',
           storageBuildNumber: 13515,
-          helperVersion: '0.10.1',
+          helperVersion: '0.11.0',
           cascLibRevision: 'abc',
         ),
       );

@@ -7,7 +7,7 @@ TerrainConnectionSnapshot solidSnapshot({
 }) => TerrainConnectionSnapshot(
   tileset: tileset,
   revision: 'synthetic-solid',
-  helperVersion: '0.10.1',
+  helperVersion: '0.11.0',
   storageProduct: 'fixture',
   storageBuildNumber: 1,
   assets: [],

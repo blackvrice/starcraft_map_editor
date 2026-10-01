@@ -2643,4 +2643,37 @@ class AppLocalizationsKo extends AppLocalizations {
   String selectionCounts(int count, int selected) {
     return '검색 $count개 · 선택 $selected개';
   }
+
+  @override
+  String get eudDatLoad => '로컬 DAT 기본값 조회';
+
+  @override
+  String get eudDatUseDefault => 'DAT 값을 입력에 사용';
+
+  @override
+  String get eudDatUnavailable => '미조회 / DAT 필드 아님';
+
+  @override
+  String eudDatDefault(String value, String source) {
+    return '로컬 DAT: $value · $source (CHK·런타임 값은 다를 수 있음)';
+  }
+
+  @override
+  String eudDatImpact(String before, String after, String direct) {
+    return '원본 참조: $before\n변경 예정 참조: $after\n변경 예정 직접 참조: $direct';
+  }
+
+  @override
+  String eudDatPartial(int count) {
+    return '미확인 DAT 연결: $count개. 정적 목록은 IScript 오버레이·HD 동작을 포함하지 않습니다.';
+  }
+
+  @override
+  String eudConflictTitle(int count) {
+    return '정적 충돌 분석 · 겹침 $count개';
+  }
+
+  @override
+  String get eudConflictHelp =>
+      '현재 맵과 열린 소스만 검사합니다. 조건·그룹·동적 코드에 따라 실제 동작이 달라지므로 테스트 빌드 전 미확인 항목을 검토하세요.';
 }

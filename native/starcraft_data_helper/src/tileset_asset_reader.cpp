@@ -325,4 +325,17 @@ DoodadAssetReadResult ReadDoodadAssets(
       "A required StarCraft doodad asset is unreadable.");
 }
 
+const std::array<std::string_view, 7>& EudDatAssetPaths() {
+  static const std::array<std::string_view, 7> paths = {
+      "arr\\units.dat", "arr\\weapons.dat", "arr\\flingy.dat", "arr\\upgrades.dat",
+      "arr\\techdata.dat", "arr\\sprites.dat", "arr\\images.dat"};
+  return paths;
+}
+EudDatAssetReadResult ReadEudDatAssets(const std::filesystem::path& path) {
+  std::array<std::array<std::string_view, 7>, kTilesetCount> paths;
+  paths.fill(EudDatAssetPaths());
+  return ReadAssets<EudDatAssetReadResult>(path, 0, paths,
+      "SC_EUD_DAT_MISSING", "SC_EUD_DAT_INVALID",
+      "A required local DAT table is missing.", "A required local DAT table is unreadable.");
+}
 }  // namespace starcraft_map_editor::starcraft_data

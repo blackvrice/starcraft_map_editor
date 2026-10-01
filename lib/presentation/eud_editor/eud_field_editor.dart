@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import '../../application/placement/placement_catalog_controller.dart';
 
 import '../../application/eud/eud_project_controller.dart';
 import '../../domain/eud/eud_field_manifest.dart';
@@ -24,13 +26,15 @@ String eudTargetName(EudTable table, int id) {
 Future<void> showEudFieldEditor(
   BuildContext context, {
   required EudProjectController controller,
+  PlacementCatalogController? catalog,
 }) => showDialog<void>(
   context: context,
-  builder: (_) => _FieldEditor(controller: controller),
+  builder: (_) => _FieldEditor(controller: controller, catalog: catalog),
 );
 
 class _FieldEditor extends StatefulWidget {
-  const _FieldEditor({required this.controller});
+  const _FieldEditor({required this.controller, this.catalog});
+  final PlacementCatalogController? catalog;
   final EudProjectController controller;
   @override
   State<_FieldEditor> createState() => _FieldEditorState();
@@ -49,15 +53,21 @@ class _FieldEditorState extends State<_FieldEditor> {
   Object? _value;
   bool _overrideChk = false;
   String? _error;
+  bool _loadingDefaults = false;
+  StreamSubscription<PlacementCatalogState>? _dataSubscription;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _dataSubscription = widget.catalog?.changes.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _dataSubscription?.cancel();
     _number.dispose();
     super.dispose();
   }
@@ -70,6 +80,26 @@ class _FieldEditorState extends State<_FieldEditor> {
     _number.text = stored?.value is int ? '${stored!.value}' : '';
     _overrideChk = stored?.overrideChk ?? false;
     _error = null;
+  }
+
+  Future<void> _readDefaults() async {
+    setState(() => _loadingDefaults = true);
+    try {
+      await widget.catalog!.loadEudData();
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loadingDefaults = false);
+    }
+  }
+
+  void _useDefault() {
+    final value = widget.catalog?.eudData?.snapshot.value(_field.key, _target);
+    if (value == null) return;
+    setState(() {
+      _value = value;
+      _number.text = value is int ? '$value' : '';
+    });
   }
 
   bool _stage({bool remove = false}) {
@@ -323,6 +353,40 @@ class _FieldEditorState extends State<_FieldEditor> {
                   '${_draft[_identity]?.value ?? l10n.eudFieldsNoOverride}',
                 ),
               ),
+              Text(
+                l10n.eudDatDefault(
+                  '${widget.catalog?.eudData?.snapshot.raw(_field.key, _target) ?? l10n.eudDatUnavailable}',
+                  widget.catalog?.eudData?.label ?? l10n.eudDatUnavailable,
+                ),
+                key: const Key('eud-dat-default'),
+              ),
+              Wrap(
+                spacing: 8,
+                children: [
+                  OutlinedButton(
+                    key: const Key('eud-dat-load'),
+                    onPressed:
+                        widget.catalog?.eudDatGateway == null ||
+                            _loadingDefaults
+                        ? null
+                        : _readDefaults,
+                    child: Text(l10n.eudDatLoad),
+                  ),
+                  TextButton(
+                    key: const Key('eud-dat-use-default'),
+                    onPressed:
+                        widget.catalog?.eudData?.snapshot.value(
+                              _field.key,
+                              _target,
+                            ) ==
+                            null
+                        ? null
+                        : _useDefault,
+                    child: Text(l10n.eudDatUseDefault),
+                  ),
+                ],
+              ),
+              if (_loadingDefaults) const LinearProgressIndicator(),
               if (_error != null)
                 Text(
                   _error!,

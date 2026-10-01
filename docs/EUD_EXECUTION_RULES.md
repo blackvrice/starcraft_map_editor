@@ -110,3 +110,7 @@ createPayloadMain과 [pluginLoader.py](https://github.com/armoha/euddraft/blob/v
 게임 확인: Once가 첫 조건 일치 때만 적용되는지, Periodic의 조건 거짓/참 전환과
 간격, 두 플레이어의 자원 독립성, 비활성 규칙, 일반 트리거와의 실행 순서,
 두 클라이언트 멀티플레이 동기화를 자체 제작 맵에서 확인해야 한다.
+
+## 일반 TRIG 쓰기 대상 비교 (2026-10-01)
+
+자원·위치·HP/Energy/Shields 일반 액션과 실행 규칙의 쓰기 대상 및 고정 EUD 메모리를 비교한다. 실제 조건·그룹·hook 실행의 안전 증명은 아니며 미확인 코드 경계는 [EUD 보완](EUD_COMPLETION.md)을 따른다.

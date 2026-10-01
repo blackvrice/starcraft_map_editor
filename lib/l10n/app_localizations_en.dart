@@ -2704,4 +2704,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String selectionCounts(int count, int selected) {
     return '$count results · $selected selected';
   }
+
+  @override
+  String get eudDatLoad => 'Load local DAT defaults';
+
+  @override
+  String get eudDatUseDefault => 'Use DAT value in input';
+
+  @override
+  String get eudDatUnavailable => 'Not loaded / not a DAT field';
+
+  @override
+  String eudDatDefault(String value, String source) {
+    return 'Local DAT: $value · $source (CHK and runtime may differ)';
+  }
+
+  @override
+  String eudDatImpact(String before, String after, String direct) {
+    return 'Original users: $before\nPlanned users: $after\nDirect planned references: $direct';
+  }
+
+  @override
+  String eudDatPartial(int count) {
+    return 'Unresolved DAT links: $count. Static lists exclude IScript overlays and HD behavior.';
+  }
+
+  @override
+  String eudConflictTitle(int count) {
+    return 'Static conflict analysis · $count overlaps';
+  }
+
+  @override
+  String get eudConflictHelp =>
+      'Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build.';
 }

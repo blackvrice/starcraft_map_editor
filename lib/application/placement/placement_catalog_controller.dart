@@ -1,4 +1,5 @@
 import '../../domain/placement/unit_weapon_references.dart';
+import '../ports/eud_dat_gateway.dart';
 import 'catalog_thumbnail_pixels.dart';
 import 'dart:async';
 import 'dart:typed_data';
@@ -166,6 +167,7 @@ class PlacementCatalogController {
     required this.objectEditingController,
     required this.terrainEditingController,
     this.catalogGateway,
+    this.eudDatGateway,
     this.tileAtlasGateway,
     this.objectAtlasGateway,
     this.pageSize = StarCraftPlacementCatalogRequest.defaultLimit,
@@ -345,6 +347,61 @@ class PlacementCatalogController {
   String? _installationPath;
   Object? _mapSnapshot;
   bool _disposed = false;
+  final EudDatGateway? eudDatGateway;
+  EudDatSource? _eudData;
+  Future<EudDatSource>? _eudDataPending;
+  String? _eudDataOperation;
+  EudDatReadResult? lastEudDatRead;
+  EudDatSource? get eudData => _eudData;
+
+  Future<EudDatSource> loadEudData() {
+    if (_eudData != null) return Future.value(_eudData);
+    if (_eudDataPending != null) return _eudDataPending!;
+    final gateway = eudDatGateway, path = _installationPath;
+    if (_disposed || gateway == null || path == null) {
+      return Future.error(
+        StateError('Choose a StarCraft installation to load EUD DAT.'),
+      );
+    }
+    final epoch = weaponReferenceEpoch;
+    final operation = 'eud-dat-${++_weaponRequest}';
+    _eudDataOperation = operation;
+    final future = () async {
+      try {
+        final result = await gateway.read(
+          operationId: operation,
+          installationPath: path,
+        );
+        if (_disposed || epoch != weaponReferenceEpoch) {
+          throw StateError('Installation or map changed. Reload EUD DAT.');
+        }
+        lastEudDatRead = result;
+        if (!result.isSuccess) {
+          throw StateError(result.errorCode ?? 'EUD DAT unavailable');
+        }
+        _eudData = result.source!;
+        _emit(_state);
+        return result.source!;
+      } finally {
+        if (_eudDataOperation == operation) {
+          _eudDataPending = null;
+          _eudDataOperation = null;
+        }
+      }
+    }();
+    _eudDataPending = future;
+    return future;
+  }
+
+  void _invalidateEudData() {
+    final operation = _eudDataOperation;
+    if (operation != null) eudDatGateway?.cancel(operation);
+    _eudDataOperation = null;
+    _eudDataPending = null;
+    _eudData = null;
+    lastEudDatRead = null;
+  }
+
   int weaponReferenceEpoch = 0;
   int _weaponRequest = 0;
   String? _weaponOperation;
@@ -532,6 +589,7 @@ class PlacementCatalogController {
   }
 
   void _invalidateCatalog() {
+    _invalidateEudData();
     _resetThumbnails();
     weaponReferenceEpoch++;
     final operation = _weaponOperation;
@@ -764,6 +822,7 @@ class PlacementCatalogController {
   }
 
   Future<void> dispose() {
+    _invalidateEudData();
     if (_disposed) return _changes.close();
     _resetThumbnails();
     _disposed = true;

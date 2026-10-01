@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../domain/eud/eud_dat_snapshot.dart';
+import 'eud_field_editor.dart';
 import '../localization/l10n.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/eud/eud_override_impact.dart';
@@ -56,7 +58,16 @@ class _EudImpactPaneState extends State<EudImpactPane> {
       _error = null;
     });
     try {
-      final result = await catalog.loadWeaponReferences();
+      final result = catalog.eudDatGateway == null
+          ? await catalog.loadWeaponReferences()
+          : await (() async {
+              final data = await catalog.loadEudData();
+              return WeaponReferenceSnapshot(
+                data.snapshot.weaponIndex(),
+                epoch,
+                data.label,
+              );
+            })();
       if (!mounted || request != _request) return;
       if (epoch == catalog.weaponReferenceEpoch && result.epoch == epoch) {
         setState(() => _snapshot = result);
@@ -82,6 +93,11 @@ class _EudImpactPaneState extends State<EudImpactPane> {
       final l10n = context.l10n;
       final epoch = widget.catalog?.weaponReferenceEpoch;
       final snapshot = _snapshot?.epoch == epoch ? _snapshot : null;
+      final data = widget.catalog?.eudData?.snapshot;
+      final original = data?.graph();
+      final planned = widget.project.validationIssues.isEmpty
+          ? data?.graph(widget.project.overrides)
+          : null;
       return SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +121,11 @@ class _EudImpactPaneState extends State<EudImpactPane> {
                 ),
                 OutlinedButton(
                   onPressed: widget.catalog == null || _loading ? null : _load,
-                  child: Text(l10n.eudImpactLoad),
+                  child: Text(
+                    widget.catalog?.eudDatGateway != null
+                        ? l10n.eudDatLoad
+                        : l10n.eudImpactLoad,
+                  ),
                 ),
               ],
             ),
@@ -116,10 +136,14 @@ class _EudImpactPaneState extends State<EudImpactPane> {
             ),
             const SizedBox(height: 6),
             if (_loading) const LinearProgressIndicator(),
-            if (snapshot == null)
+            if (snapshot == null && data == null)
               Text(l10n.eudImpactUnavailable)
             else
-              Text(l10n.eudImpactSource(snapshot.source)),
+              Text(
+                l10n.eudImpactSource(
+                  snapshot?.source ?? widget.catalog!.eudData!.label,
+                ),
+              ),
             if (_error != null && _errorEpoch == epoch) Text(_error!),
             const SizedBox(height: 8),
             Text(l10n.eudImpactChooseUnit),
@@ -173,8 +197,10 @@ class _EudImpactPaneState extends State<EudImpactPane> {
                 ),
               ),
             ],
+            if (planned != null)
+              Text(l10n.eudDatPartial(planned.unresolved.length)),
             for (final override in widget.project.overrides)
-              _row(l10n, override, snapshot),
+              _row(l10n, override, snapshot, original, planned),
           ],
         ),
       );
@@ -211,11 +237,36 @@ class _EudImpactPaneState extends State<EudImpactPane> {
     AppLocalizations l10n,
     EudOverride override,
     WeaponReferenceSnapshot? snapshot,
+    EudDatGraph? original,
+    EudDatGraph? planned,
   ) {
     final impact = EudOverrideImpact.analyze(
       override,
       references: snapshot?.index,
     );
+    final table = EudFieldManifest.find(override.field)?.table;
+    final node = table == null ? null : (table: table, id: override.targetId);
+    if (impact.error == null &&
+        original != null &&
+        planned != null &&
+        node != null &&
+        [
+          EudTable.unit,
+          EudTable.weapon,
+          EudTable.flingy,
+          EudTable.sprite,
+          EudTable.image,
+        ].contains(table)) {
+      String names(List<EudDatNode> nodes) => nodes.isEmpty
+          ? l10n.eudImpactNone
+          : nodes.map((n) => eudTargetName(n.table, n.id)).join(', ');
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: SelectableText(
+          '${override.identity}\n${l10n.eudDatImpact(names([if (table == EudTable.unit) node, ...original.allUsers(node)]), names([if (table == EudTable.unit) node, ...planned.allUsers(node)]), names(planned.directUsers(node)))}',
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Text(

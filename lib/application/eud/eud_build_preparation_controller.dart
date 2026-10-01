@@ -5,6 +5,7 @@ import 'eud_build_configuration.dart';
 import 'eud_build_controller.dart';
 import 'eud_project_workspace.dart';
 import '../../domain/eud/eud_generated_settings.dart';
+import '../../domain/eud/eud_conflict_analysis.dart';
 import '../../domain/eud/eud_rule_references.dart';
 
 final class EudBuildPreparationController {
@@ -73,7 +74,13 @@ final class EudBuildPreparationController {
           mapSession!.rawDocument,
         );
         if (references.isNotEmpty) return references.join(', ');
-        generated = EudGeneratedSettings(project);
+        generated = EudGeneratedSettings(
+          project,
+          conflicts: EudConflictAnalysis.analyze(
+            project,
+            document: mapSession.rawDocument,
+          ),
+        );
       }
       final configuration = EudBuildConfiguration(
         baseMapPath: baseMap,

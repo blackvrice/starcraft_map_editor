@@ -47,6 +47,9 @@ endif()
 FetchContent_MakeAvailable(nlohmann_json)
 
 add_library(starcraft_data_core STATIC
+  src/eud_dat_snapshot.cpp
+  src/eud_dat_snapshot.h
+  src/eud_dat_layout.h
   src/casc_asset_inspector.cpp
   src/casc_asset_inspector.h
   src/doodad_recipe_decoder.cpp
@@ -285,3 +288,9 @@ target_compile_definitions(starcraft_terrain_connections_native_test PRIVATE NOM
 target_compile_options(starcraft_terrain_connections_native_test PRIVATE /UNDEBUG /W4 /WX /EHsc /utf-8)
 target_link_libraries(starcraft_terrain_connections_native_test PRIVATE starcraft_data_core)
 add_test(NAME starcraft_terrain_connections_native COMMAND starcraft_terrain_connections_native_test)
+
+add_executable(starcraft_eud_dat_native_test test/eud_dat_snapshot_test.cpp)
+target_compile_features(starcraft_eud_dat_native_test PRIVATE cxx_std_17)
+target_compile_options(starcraft_eud_dat_native_test PRIVATE /W4 /WX /EHsc /utf-8)
+target_link_libraries(starcraft_eud_dat_native_test PRIVATE starcraft_data_core)
+add_test(NAME starcraft_eud_dat_native COMMAND starcraft_eud_dat_native_test)

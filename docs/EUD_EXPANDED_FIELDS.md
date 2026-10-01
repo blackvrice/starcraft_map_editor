@@ -16,7 +16,8 @@ Cancel은 모든 초안을 버린다. 선택 변경 전에 추가하지 않은 �
 Save Project로 저장한다. 기존 실드/무기 편집기도 같은 프로젝트 값을 사용한다.
 편집 중 프로젝트가 교체되면 오래된 초안 적용을 거부한다.
 
-일반 DAT 기본 수치는 아직 로드하지 않으므로 0을 기본값처럼 채우지 않는다.
+2026-10-01 로컬 DAT 58개 필드 기본값 조회·명시적 입력 복사를 연결했다. 플레이어
+런타임 3개는 미확인을 유지한다. CHK 우선순위·조회 출처와 검증은 [EUD 보완](EUD_COMPLETION.md)을 따른다.
 알려진 유닛·무기·업그레이드·테크 이름을 표시하고, 이름 없는 항목과 그래픽 참조는
 종류와 숫자 ID를 유지한다. 플레이어 ID 0–7은 Player 1–8로 표시한다.
 
@@ -56,9 +57,9 @@ Registry는 `lib/domain/eud/eud_field_manifest.dart`에 있다. override의 fiel
   표시하지 않는다. 일반 비용 변경만 필요하면 기존 Settings를 사용한다.
 - 타입 설정은 플레이어 공통이고 player 필드만 해당 슬롯 대상이다. 업그레이드/테크의
   플레이어별 연구 허용·완료/레벨 변경으로 표시하지 않는다. 자원 액션도 추가하지 않는다.
-- Unit/Weapon 영향 분석은 원본 DAT 기준이다. 새 참조 override 반영 그래프와
-  Flingy/Sprite/Image 역참조 목록은 미구현이다. 이 경우 참조 없음 대신 영향 미확인으로
-  표시한다. classic/HD 표시·경로 탐색 갱신은 미검증이다.
+- Unit/Weapon/Flingy/Sprite/Image의 원본·예정 참조 그래프·역참조 목록을 구현했다.
+  미조회·잘못된 연결·IScript/HD 동작은 미확인으로 구분한다. [정적 지원 계약](EUD_COMPLETION.md)을 따른다.
+  classic/HD 표시·경로 탐색 갱신은 미검증이다.
 
 ## 근거와 재현
 
@@ -89,7 +90,8 @@ Registry는 `lib/domain/eud/eud_field_manifest.dart`에 있다. override의 fiel
 CascLib CMake 최소 버전 경고가 남아 있다.
 
 결정적 실행 소스 생성기·사용자 hook 순서·SafeEudBuildPipeline의 테스트 빌드는 연결했다.
-타입만 한 번 변경하는 실드 정책의 배치/생성 유닛 관찰, 공유 그래픽 영향 조회와
+공유 그래픽 정적 영향 조회와 TRIG/현재 소스 진단은 [보완 구현](EUD_COMPLETION.md)으로 연결했다.
+타입만 한 번 변경하는 실드 정책의 배치/생성 유닛 관찰과
 실제 SC:R/멀티플레이 검증이 남아 있다.
 컴파일 성공만으로 M6.3.1/M6.3.2 전체를 완료 처리하지 않는다.
 관련: [개발 계획](DEVELOPMENT_PLAN.md), [실드 빌드 준비](EUD_SHIELD_BUILD_PREPARATION.md).

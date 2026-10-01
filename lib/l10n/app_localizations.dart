@@ -4873,6 +4873,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} results · {selected} selected'**
   String selectionCounts(int count, int selected);
+
+  /// No description provided for @eudDatLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load local DAT defaults'**
+  String get eudDatLoad;
+
+  /// No description provided for @eudDatUseDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Use DAT value in input'**
+  String get eudDatUseDefault;
+
+  /// No description provided for @eudDatUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not loaded / not a DAT field'**
+  String get eudDatUnavailable;
+
+  /// No description provided for @eudDatDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DAT: {value} · {source} (CHK and runtime may differ)'**
+  String eudDatDefault(String value, String source);
+
+  /// No description provided for @eudDatImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Original users: {before}\nPlanned users: {after}\nDirect planned references: {direct}'**
+  String eudDatImpact(String before, String after, String direct);
+
+  /// No description provided for @eudDatPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Unresolved DAT links: {count}. Static lists exclude IScript overlays and HD behavior.'**
+  String eudDatPartial(int count);
+
+  /// No description provided for @eudConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Static conflict analysis · {count} overlaps'**
+  String eudConflictTitle(int count);
+
+  /// No description provided for @eudConflictHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build.'**
+  String get eudConflictHelp;
 }
 
 class _AppLocalizationsDelegate

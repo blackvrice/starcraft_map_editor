@@ -58,3 +58,7 @@ Settings/EUD의 유닛 카드가 직접 지상→공중→서브유닛 순서로
   두 서브유닛은 228이었다. 실제 게임 전투·EUD 동작은 실행하지 않았다.
 
 구조의 근거는 [Chkdraft 고정 revision의 Unit::DatFile](https://github.com/TheNitesWhoSay/Chkdraft/blob/32d27861b16dda0b0f3d95e34bad894ea4efb2c3/src/mapping_core/sc.h)이다.
+
+## EUD 프로젝트 예정 참조 (2026-10-01)
+
+기존 자동 선택 카드는 원본 DAT를 유지한다. EUD 영향 목록은 변경 예정 unit 무기/Flingy·weapon Flingy·sprite image를 반영한 그래프와 원본 그래프를 비교한다. 범위는 [EUD 보완](EUD_COMPLETION.md)을 따른다.

@@ -27,6 +27,17 @@ struct TilesetAssetReadResult {
   std::uint32_t native_error = 0;
 };
 
+struct EudDatAssetReadResult {
+  bool success = false;
+  std::string installation_path, storage_product, error_code, message, stage;
+  std::uint32_t storage_build_number = 0, native_error = 0;
+  std::uint64_t total_asset_bytes = 0;
+  std::array<std::vector<std::byte>, 7> assets;
+};
+
+EudDatAssetReadResult ReadEudDatAssets(const std::filesystem::path& path);
+const std::array<std::string_view, 7>& EudDatAssetPaths();
+
 struct DoodadAssetReadResult {
   bool success = false;
   std::string installation_path;

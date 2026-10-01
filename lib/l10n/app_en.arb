@@ -1591,5 +1591,50 @@
         "type": "int"
       }
     }
-  }
+  },
+  "eudDatLoad": "Load local DAT defaults",
+  "eudDatUseDefault": "Use DAT value in input",
+  "eudDatUnavailable": "Not loaded / not a DAT field",
+  "eudDatDefault": "Local DAT: {value} · {source} (CHK and runtime may differ)",
+  "@eudDatDefault": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "eudDatImpact": "Original users: {before}\nPlanned users: {after}\nDirect planned references: {direct}",
+  "@eudDatImpact": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      },
+      "direct": {
+        "type": "String"
+      }
+    }
+  },
+  "eudDatPartial": "Unresolved DAT links: {count}. Static lists exclude IScript overlays and HD behavior.",
+  "@eudDatPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudConflictTitle": "Static conflict analysis · {count} overlaps",
+  "@eudConflictTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudConflictHelp": "Current map and open source only. Conditions, groups and dynamic code may change actual behavior; review unresolved items before a test build."
 }

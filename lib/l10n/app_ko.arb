@@ -840,5 +840,50 @@
         "type": "int"
       }
     }
-  }
+  },
+  "eudDatLoad": "로컬 DAT 기본값 조회",
+  "eudDatUseDefault": "DAT 값을 입력에 사용",
+  "eudDatUnavailable": "미조회 / DAT 필드 아님",
+  "eudDatDefault": "로컬 DAT: {value} · {source} (CHK·런타임 값은 다를 수 있음)",
+  "@eudDatDefault": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "eudDatImpact": "원본 참조: {before}\n변경 예정 참조: {after}\n변경 예정 직접 참조: {direct}",
+  "@eudDatImpact": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      },
+      "direct": {
+        "type": "String"
+      }
+    }
+  },
+  "eudDatPartial": "미확인 DAT 연결: {count}개. 정적 목록은 IScript 오버레이·HD 동작을 포함하지 않습니다.",
+  "@eudDatPartial": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudConflictTitle": "정적 충돌 분석 · 겹침 {count}개",
+  "@eudConflictTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eudConflictHelp": "현재 맵과 열린 소스만 검사합니다. 조건·그룹·동적 코드에 따라 실제 동작이 달라지므로 테스트 빌드 전 미확인 항목을 검토하세요."
 }

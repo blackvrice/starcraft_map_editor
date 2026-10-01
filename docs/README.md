@@ -61,6 +61,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [문서 정합성 점검과 작업 인수인계](DOCUMENTATION_REVIEW.md) | 전체 문서 점검 결과·코드 재개 지점·검증 한계 |
 | [저장 파일 기반 EUD 빌드 준비](EUD_BUILD_PREPARATION_UI.md) | Prepare 입력·도구 우선순위·테스트 빌드 선택 |
 | [앱 동봉 EUD 도구 — 0.10.2.5-editor.1](EUD_BUNDLED_TOOL.md) | 관리형 도구 공급·무결성·배포 인수 |
+| [EUD 데이터·영향·충돌 보완](EUD_COMPLETION.md) | 로컬 DAT 58개 기본값·원본/예정 그래픽 참조·TRIG/현재 소스 정적 충돌 |
 | [설정별 EUD 후보 필드 확대](EUD_EXPANDED_FIELDS.md) | 61개 후보 필드·참조/수치 범위·공유 영향 한계 |
 | [EUD 생성 빌드와 게임 검증](EUD_GENERATED_BUILD_VALIDATION.md) | 생성 소스·안전 빌드·사용자 게임 관찰 |
 | [선언적 EUD 생성 명세 미리보기](EUD_GENERATION_PREVIEW.md) | 생성 소스/manifest 미리보기와 최초 JSON 이력 |
@@ -90,6 +91,7 @@ Edit → 기본 편집 도구에 안개·시작 위치·상태/valid flags·Spri
 Edit → 선택·탐색에 객체 이름/ID·소유자 검색, 전체/반전/종류 선택과 좌표 이동·화면 맞춤을 추가했다([계약](SELECTION_NAVIGATION.md)).
 helper 0.10.1에서 DD2 활성값을 0으로 정정했다([계약](BASIC_EDITING_TOOLS.md)).
 지형 경계·적층·경사로 solver와 브러시, ISOM/Doodad resize·게임/외부 에디터 인수는 남았다.
+2026-10-01 EUD DAT 조회·공유 그래픽 원본/예정 영향과 정적 충돌 진단을 구현했다([계약](EUD_COMPLETION.md)). helper는 0.11.0이다.
 [개발 계획](DEVELOPMENT_PLAN.md)의 재개 지점과
 [문서 점검 기록](DOCUMENTATION_REVIEW.md)을 먼저 읽는다.
 
