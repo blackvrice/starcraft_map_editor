@@ -98,6 +98,120 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @recoveryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover Unsaved Work'**
+  String get recoveryTitle;
+
+  /// No description provided for @recoveryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recovery checkpoints.'**
+  String get recoveryEmpty;
+
+  /// No description provided for @recoveryDamaged.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreadable or damaged checkpoint'**
+  String get recoveryDamaged;
+
+  /// No description provided for @recoveryBaseline.
+  ///
+  /// In en, this message translates to:
+  /// **'Last saved map: {path}'**
+  String recoveryBaseline(String path);
+
+  /// No description provided for @recoveryProject.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD project: {path}'**
+  String recoveryProject(String path);
+
+  /// No description provided for @recoverySource.
+  ///
+  /// In en, this message translates to:
+  /// **'epScript: {path}'**
+  String recoverySource(String path);
+
+  /// No description provided for @recoveryOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open recovery copy'**
+  String get recoveryOpen;
+
+  /// No description provided for @recoveryDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete checkpoint'**
+  String get recoveryDelete;
+
+  /// No description provided for @recoveryDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete this recovery checkpoint?'**
+  String get recoveryDeleteConfirm;
+
+  /// No description provided for @recoverySourceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The last saved map changed on disk. Recovery was stopped; the checkpoint is still available.'**
+  String get recoverySourceChanged;
+
+  /// No description provided for @recoveryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery could not be opened. Save or close unsaved documents and check the last saved map. The checkpoint is still available.'**
+  String get recoveryFailed;
+
+  /// No description provided for @autosaveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave Settings'**
+  String get autosaveSettings;
+
+  /// No description provided for @autosaveEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically save recovery checkpoints'**
+  String get autosaveEnabled;
+
+  /// No description provided for @autosaveInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval: {seconds} seconds'**
+  String autosaveInterval(int seconds);
+
+  /// No description provided for @autosaveRetention.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoints per workspace: {count}'**
+  String autosaveRetention(int count);
+
+  /// No description provided for @autosaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Autosave or recovery failed. Check access and free space in the application data folder.'**
+  String get autosaveFailed;
+
+  /// No description provided for @recoveryCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get recoveryCancel;
+
+  /// No description provided for @recoveryClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get recoveryClose;
+
+  /// No description provided for @autosaveApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get autosaveApply;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

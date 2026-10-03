@@ -475,6 +475,18 @@ class OpenMapController {
     );
   }
 
+  OpenMapState adoptRecoverySession(OpenedMapSession session) {
+    if (_isOpening || editHistory.isTransactionActive) {
+      throw StateError('The document is busy.');
+    }
+    return _emit(
+      OpenMapState.opened(
+        openedSession: session,
+        diagnostics: session.diagnostics,
+      ),
+    );
+  }
+
   Future<String?> _selectMapPath() async {
     try {
       return await filePicker.pickMapPath();

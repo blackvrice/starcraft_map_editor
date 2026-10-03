@@ -9,6 +9,77 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get recoveryTitle => 'Recover Unsaved Work';
+
+  @override
+  String get recoveryEmpty => 'No recovery checkpoints.';
+
+  @override
+  String get recoveryDamaged => 'Unreadable or damaged checkpoint';
+
+  @override
+  String recoveryBaseline(String path) {
+    return 'Last saved map: $path';
+  }
+
+  @override
+  String recoveryProject(String path) {
+    return 'EUD project: $path';
+  }
+
+  @override
+  String recoverySource(String path) {
+    return 'epScript: $path';
+  }
+
+  @override
+  String get recoveryOpen => 'Open recovery copy';
+
+  @override
+  String get recoveryDelete => 'Delete checkpoint';
+
+  @override
+  String get recoveryDeleteConfirm =>
+      'Permanently delete this recovery checkpoint?';
+
+  @override
+  String get recoverySourceChanged =>
+      'The last saved map changed on disk. Recovery was stopped; the checkpoint is still available.';
+
+  @override
+  String get recoveryFailed =>
+      'Recovery could not be opened. Save or close unsaved documents and check the last saved map. The checkpoint is still available.';
+
+  @override
+  String get autosaveSettings => 'Autosave Settings';
+
+  @override
+  String get autosaveEnabled => 'Automatically save recovery checkpoints';
+
+  @override
+  String autosaveInterval(int seconds) {
+    return 'Interval: $seconds seconds';
+  }
+
+  @override
+  String autosaveRetention(int count) {
+    return 'Checkpoints per workspace: $count';
+  }
+
+  @override
+  String get autosaveFailed =>
+      'Autosave or recovery failed. Check access and free space in the application data folder.';
+
+  @override
+  String get recoveryCancel => 'Cancel';
+
+  @override
+  String get recoveryClose => 'Close';
+
+  @override
+  String get autosaveApply => 'Apply';
+
+  @override
   String get appTitle => 'StarCraft Map Editor';
 
   @override

@@ -1,5 +1,7 @@
 import '../infrastructure/assets/process_terrain_connection_snapshot_gateway.dart';
 import '../application/documents/isom_fill_controller.dart';
+import '../application/documents/autosave_controller.dart';
+import '../infrastructure/filesystem/local_recovery_store.dart';
 import 'dart:async';
 
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
@@ -178,6 +180,13 @@ void bootstrap() {
   });
 
   final dependencies = EditorAppDependencies(
+    autosaveController: AutosaveController(
+      maps: openMapController,
+      sources: eudSourceController,
+      projects: eudProjectWorkspace.projects,
+      store: LocalRecoveryStore.forCurrentUser(),
+      settings: settingsStore,
+    ),
     eudBuildPreparationController: eudBuildPreparationController,
     eudToolSettingsController: eudToolSettingsController,
     commandDispatcher: commandDispatcher,

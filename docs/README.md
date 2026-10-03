@@ -58,6 +58,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 
 | 문서 | 용도 |
 | --- | --- |
+| [자동 저장·미저장 복구](AUTOSAVE_RECOVERY.md) | CHK/리소스/EUD/epScript 체크포인트·복구·보관·충돌 경계 |
 | [문서 정합성 점검과 작업 인수인계](DOCUMENTATION_REVIEW.md) | 전체 문서 점검 결과·코드 재개 지점·검증 한계 |
 | [저장 파일 기반 EUD 빌드 준비](EUD_BUILD_PREPARATION_UI.md) | Prepare 입력·도구 우선순위·테스트 빌드 선택 |
 | [앱 동봉 EUD 도구 — 0.10.2.5-editor.1](EUD_BUNDLED_TOOL.md) | 관리형 도구 공급·무결성·배포 인수 |

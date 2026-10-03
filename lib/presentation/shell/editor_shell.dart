@@ -1,4 +1,6 @@
 import '../documents/selection_navigation_dialog.dart';
+import '../../application/documents/autosave_controller.dart';
+import '../documents/recovery_dialog.dart';
 import '../../application/layers/selection_navigation_controller.dart';
 import '../documents/isom_fill_dialog.dart';
 import '../documents/basic_editing_tools_dialog.dart';
@@ -77,6 +79,7 @@ enum _WorkspaceView {
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
+    this.autosaveController,
     required this.commandDispatcher,
     required this.openMapController,
     required this.saveMapController,
@@ -102,6 +105,7 @@ class EditorShell extends StatefulWidget {
 
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
+  final AutosaveController? autosaveController;
   final SaveMapController saveMapController;
   final EudBuildController eudBuildController;
   final EudSourceController eudSourceController;
@@ -128,7 +132,7 @@ class EditorShell extends StatefulWidget {
   State<EditorShell> createState() => _EditorShellState();
 }
 
-class _EditorShellState extends State<EditorShell> {
+class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   late Future<List<RecentProject>> _recentProjects;
   late StreamSubscription<OpenMapState> _openMapSubscription;
   late StreamSubscription<SaveMapState> _saveMapSubscription;
@@ -271,6 +275,7 @@ class _EditorShellState extends State<EditorShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _basicEditing = BasicEditingController(
       maps: widget.openMapController,
       layers: widget.mapLayerController,
@@ -335,6 +340,43 @@ class _EditorShellState extends State<EditorShell> {
     _synchronizeObjectTextures();
     _languageSubscription = _listenForLanguage(widget.languageController);
     unawaited(widget.starCraftDataAssetSettingsController.load());
+    final autosave = widget.autosaveController;
+    if (autosave != null) {
+      _autosaveSubscription = autosave.changes.listen((_) {
+        if (mounted) setState(() {});
+      });
+      unawaited(
+        autosave.initialize().then((_) {
+          if (mounted && autosave.candidates.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) unawaited(_showRecovery());
+            });
+          }
+        }),
+      );
+    }
+  }
+
+  StreamSubscription<void>? _autosaveSubscription;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(widget.autosaveController?.checkpoint());
+    }
+  }
+
+  Future<void> _showRecovery() async {
+    final controller = widget.autosaveController;
+    if (controller == null) return;
+    await controller.refresh();
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => RecoveryDialog(controller: controller),
+    );
   }
 
   StreamSubscription<AppLanguagePreference>? _listenForLanguage(
@@ -656,6 +698,8 @@ class _EditorShellState extends State<EditorShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_autosaveSubscription?.cancel());
     unawaited(_basicEditing.dispose());
     unawaited(_openMapSubscription.cancel());
     unawaited(_saveMapSubscription.cancel());
@@ -975,6 +1019,17 @@ class _EditorShellState extends State<EditorShell> {
             child: Column(
               children: [
                 _EditorMenuBar(
+                  recovery: widget.autosaveController == null
+                      ? null
+                      : _showRecovery,
+                  autosaveSettings: widget.autosaveController == null
+                      ? null
+                      : () => showDialog<void>(
+                          context: context,
+                          builder: (_) => AutosaveSettingsDialog(
+                            controller: widget.autosaveController!,
+                          ),
+                        ),
                   newMap: openMap == null ? null : _newMap,
                   selectionNavigation:
                       widget.openMapController.state.session == null
@@ -1088,6 +1143,16 @@ class _EditorShellState extends State<EditorShell> {
                       : _setLanguage,
                 ),
                 const Divider(height: 1),
+                if (widget.autosaveController?.lastError != null)
+                  MaterialBanner(
+                    content: Text(context.l10n.autosaveFailed),
+                    actions: [
+                      TextButton(
+                        onPressed: _showRecovery,
+                        child: Text(context.l10n.recoveryTitle),
+                      ),
+                    ],
+                  ),
                 _EditorToolbar(
                   openMap: openMap,
                   saveAs: saveAs,
@@ -1225,6 +1290,8 @@ class _EditorShellState extends State<EditorShell> {
 
 class _EditorMenuBar extends StatelessWidget {
   const _EditorMenuBar({
+    this.recovery,
+    this.autosaveSettings,
     this.prepareEud,
     this.openEudTools,
     required this.openUnitAvailability,
@@ -1253,6 +1320,8 @@ class _EditorMenuBar extends StatelessWidget {
   });
 
   final VoidCallback? newMap;
+  final VoidCallback? recovery;
+  final VoidCallback? autosaveSettings;
   final VoidCallback? fillIsom;
   final VoidCallback? basicTools;
   final VoidCallback? selectionNavigation;
@@ -1310,6 +1379,16 @@ class _EditorMenuBar extends StatelessWidget {
                 shift: true,
               ),
               child: Text(l10n.menuSaveAs),
+            ),
+            MenuItemButton(
+              onPressed: recovery,
+              leadingIcon: const Icon(Icons.restore),
+              child: Text(l10n.recoveryTitle),
+            ),
+            MenuItemButton(
+              onPressed: autosaveSettings,
+              leadingIcon: const Icon(Icons.schedule),
+              child: Text(l10n.autosaveSettings),
             ),
             const Divider(),
             MenuItemButton(

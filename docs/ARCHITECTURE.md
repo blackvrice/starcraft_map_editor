@@ -79,6 +79,12 @@ flowchart TB
 - euddraft 프로세스 실행과 진단 변환
 - 설정과 최근 프로젝트 저장
 
+자동 저장은 `AutosaveController`가 문서 스트림과 transaction/작업 상태를 관찰하고
+`RecoveryStore` 포트로 체크포인트를 보관한다. `LocalRecoveryStore`는 별도 isolate의
+JSON·SHA-256·flush·재검증·새 파일 rename을 담당한다. 복구 UI는 컨트롤러만 호출한다.
+원본 fingerprint와 CHK/typed view를 확인한 뒤 문서를 함께 복원하며 컴파일러를
+호출하지 않는다. [복구 계약](AUTOSAVE_RECOVERY.md)을 따른다.
+
 ## 4. 제안 디렉터리 구조
 
 ```text

@@ -26,6 +26,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0011](0011-managed-euddraft-bundle.md) | Accepted | updater 대체 소스와 신뢰 목록을 포함한 관리형 euddraft 동봉 |
 | [0012](0012-generated-eud-test-builds.md) | Accepted | 선언적 EUD 설정의 명시적 테스트 빌드 |
 | [0013](0013-localized-editor-ui.md) | Accepted | 시스템 언어를 따르는 한국어·영어 UI |
+| [0014](0014-autosave-recovery-checkpoints.md) | Accepted | 원본과 분리된 미저장 문서 체크포인트·명시적 복구 |
 
 ## 새 ADR 형식
 

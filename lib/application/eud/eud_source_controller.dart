@@ -77,6 +77,13 @@ final class EudSourceController {
     _emit(EudSourceState(document: updated));
   }
 
+  void restore(EudSourceDocument document) {
+    if (_state.document?.isDirty ?? false) {
+      throw StateError('Save or discard the current source first.');
+    }
+    _emit(EudSourceState(document: document));
+  }
+
   void markSaved({String? sourcePath}) {
     final current = _state.document;
     if (current == null) {

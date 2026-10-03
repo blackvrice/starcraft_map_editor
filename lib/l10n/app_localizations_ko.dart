@@ -9,6 +9,76 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get recoveryTitle => '미저장 작업 복구';
+
+  @override
+  String get recoveryEmpty => '복구본이 없습니다.';
+
+  @override
+  String get recoveryDamaged => '읽을 수 없거나 손상된 복구본';
+
+  @override
+  String recoveryBaseline(String path) {
+    return '마지막 저장 맵: $path';
+  }
+
+  @override
+  String recoveryProject(String path) {
+    return 'EUD 프로젝트: $path';
+  }
+
+  @override
+  String recoverySource(String path) {
+    return 'epScript: $path';
+  }
+
+  @override
+  String get recoveryOpen => '복구본 열기';
+
+  @override
+  String get recoveryDelete => '복구본 삭제';
+
+  @override
+  String get recoveryDeleteConfirm => '이 복구본을 영구 삭제할까요?';
+
+  @override
+  String get recoverySourceChanged =>
+      '마지막 저장 맵이 외부에서 변경되었습니다. 복구를 중단했으며 복구본은 유지됩니다.';
+
+  @override
+  String get recoveryFailed =>
+      '복구본을 열 수 없습니다. 미저장 문서를 저장하거나 닫고 마지막 저장 맵을 확인하세요. 복구본은 유지됩니다.';
+
+  @override
+  String get autosaveSettings => '자동 저장 설정';
+
+  @override
+  String get autosaveEnabled => '복구본 자동 저장';
+
+  @override
+  String autosaveInterval(int seconds) {
+    return '저장 간격: $seconds초';
+  }
+
+  @override
+  String autosaveRetention(int count) {
+    return '작업 공간별 보관 수: $count개';
+  }
+
+  @override
+  String get autosaveFailed =>
+      '자동 저장 또는 복구에 실패했습니다. 앱 데이터 폴더 접근 권한과 남은 공간을 확인하세요.';
+
+  @override
+  String get recoveryCancel => '취소';
+
+  @override
+  String get recoveryClose => '닫기';
+
+  @override
+  String get autosaveApply => '적용';
+
+  @override
   String get appTitle => 'StarCraft 맵 에디터';
 
   @override
