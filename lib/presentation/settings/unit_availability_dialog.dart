@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'default_unit_names.dart';
 import 'default_settings_names.dart';
 import 'settings_surface.dart';
@@ -116,7 +118,9 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
             if (stored != null && stored > 1)
               DropdownMenuItem(
                 value: stored,
-                child: Text('Stored ID $stored (preserved)'),
+                child: Text(
+                  context.l10n.editorStoredIDPreserved((stored).toString()),
+                ),
               ),
           ],
           onChanged: editable
@@ -146,7 +150,7 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
       snapshot: _snapshot,
       hasDraft: _draft.isNotEmpty,
       onReload: () => setState(_reload),
-      title: const Text('Unit Availability'),
+      title: Text(context.l10n.editorUnitAvailability),
       content: SizedBox(
         width: 560,
         child: SingleChildScrollView(
@@ -154,8 +158,10 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Map-wide unit production settings, separate from placed-unit Inspector properties.',
+              Text(
+                context
+                    .l10n
+                    .editorMapWideUnitProductionSettingsSeparateFromPlacedUnit,
               ),
               SettingsSelection(
                 revision: _snapshot,
@@ -164,14 +170,16 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                 count: 228,
                 selected: _unit,
                 label: (id) => settingsName(
-                  'Unit',
+                  context.l10n.editorUnit,
                   id,
                   defaultUnitNames,
                   custom: _unitNames[id],
                 ),
                 onSelected: _selectUnit,
-                scope:
-                    'Map defaults and Player ${_player + 1} only. Inheritance changes only if edited.',
+                scope: context.l10n
+                    .editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf(
+                      (_player + 1).toString(),
+                    ),
                 onCopy: _settings == null
                     ? null
                     : (ids) {
@@ -190,9 +198,9 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
               ),
               _field(
                 ChkUnitAvailabilityField.global,
-                'Map default — affects all inheriting players',
-                'Default: prohibited',
-                'Default: allowed',
+                context.l10n.editorMapDefaultAffectsAllInheritingPlayers,
+                context.l10n.editorDefaultProhibited,
+                context.l10n.editorDefaultAllowed,
               ),
               SettingsSelection(
                 prefix: 'availability-players',
@@ -202,11 +210,15 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                 idBase: 1,
                 selected: _player,
                 revision: _snapshot,
-                label: (id) =>
-                    'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+                label: (id) => context.l10n.editorPlayer203c6551(
+                  (id + 1).toString(),
+                  (id >= 8 ? context.l10n.editorReadOnly : "").toString(),
+                ),
                 onSelected: (id) => setState(() => _player = id),
-                scope:
-                    'Copies only current Unit #$_unit player edits to Players 1–8. Map defaults are excluded.',
+                scope: context.l10n
+                    .editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1(
+                      (_unit).toString(),
+                    ),
                 onCopy: _settings == null || _player >= 8
                     ? null
                     : (ids) {
@@ -222,33 +234,41 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
               ),
               _field(
                 ChkUnitAvailabilityField.inherit,
-                'Player setting source',
-                'Use player override',
-                'Inherit map default',
+                context.l10n.editorPlayerSettingSource,
+                context.l10n.editorUsePlayerOverride,
+                context.l10n.editorInheritMapDefault,
               ),
               _field(
                 ChkUnitAvailabilityField.player,
-                'Stored player override',
-                'Player: prohibited',
-                'Player: allowed',
+                context.l10n.editorStoredPlayerOverride,
+                context.l10n.editorPlayerProhibited,
+                context.l10n.editorPlayerAllowed,
               ),
               Text(
-                'Effective availability: ${effective == 0
-                    ? "prohibited"
-                    : effective == 1
-                    ? "allowed"
-                    : "unknown (stored flags preserved)"}',
+                context.l10n.editorEffectiveAvailability(
+                  (effective == 0
+                          ? context.l10n.editorProhibited
+                          : effective == 1
+                          ? context.l10n.editorAllowed
+                          : context.l10n.editorUnknownStoredFlagsPreserved)
+                      .toString(),
+                ),
                 key: const Key('availability-effective'),
               ),
-              const Text(
-                'Inheritance preserves the stored override. Availability does not bypass game prerequisites or create placed units.',
+              Text(
+                context
+                    .l10n
+                    .editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass,
               ),
               Text(
-                '${_draft.length} pending changes. Apply updates all edited units and players; Save As writes the map.',
+                context.l10n
+                    .editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers(
+                      (_draft.length).toString(),
+                    ),
               ),
               if (_error != null)
                 Text(
-                  _error!,
+                  context.localizeEditorText(_error!),
                   key: const Key('availability-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -258,20 +278,31 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('settings-undo'),
           onPressed: widget.controller.canUndo
               ? () => _run(widget.controller.undo)
               : null,
-          child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorUndo(
+              context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-redo'),
           onPressed: widget.controller.canRedo
               ? () => _run(widget.controller.redo)
               : null,
-          child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorRedo(
+              context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('availability-apply'),
@@ -283,7 +314,7 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
                     changes: _draft,
                   ),
                 ),
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

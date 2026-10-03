@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'settings_surface.dart';
 import 'package:flutter/material.dart';
 
@@ -71,7 +73,7 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
     hasDraft:
         _title.text != _savedTitle || _description.text != _savedDescription,
     onReload: () => setState(_reload),
-    title: const Text('Map Information'),
+    title: Text(context.l10n.editorMapInformation),
     content: SizedBox(
       width: 520,
       child: SingleChildScrollView(
@@ -84,7 +86,9 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
               controller: _title,
               onChanged: (_) => setState(() {}),
               enabled: _snapshot != null,
-              decoration: const InputDecoration(labelText: 'Map title'),
+              decoration: InputDecoration(
+                labelText: context.l10n.editorMapTitle,
+              ),
             ),
             TextField(
               key: const Key('map-information-description'),
@@ -93,15 +97,19 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
               enabled: _snapshot != null,
               minLines: 4,
               maxLines: 8,
-              decoration: const InputDecoration(labelText: 'Description'),
+              decoration: InputDecoration(
+                labelText: context.l10n.editorDescription,
+              ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Apply updates this map only. Shared names remain unchanged. Use Save As to write the edited map.',
+            Text(
+              context
+                  .l10n
+                  .editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged,
             ),
             if (_error != null)
               Text(
-                _error!,
+                context.localizeEditorText(_error!),
                 key: const Key('map-information-error'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
@@ -111,31 +119,42 @@ class _MapInformationDialogState extends State<MapInformationDialog> {
     ),
     actions: [
       TextButton(
+        key: const Key('settings-undo'),
         onPressed: widget.controller.canUndo
             ? () => setState(() {
                 widget.controller.undo();
                 _reload();
               })
             : null,
-        child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+        child: Text(
+          context.l10n.editorUndo(
+            context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+          ),
+        ),
       ),
       TextButton(
+        key: const Key('settings-redo'),
         onPressed: widget.controller.canRedo
             ? () => setState(() {
                 widget.controller.redo();
                 _reload();
               })
             : null,
-        child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+        child: Text(
+          context.l10n.editorRedo(
+            context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+          ),
+        ),
       ),
       TextButton(
+        key: const Key('settings-cancel'),
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.editorCancel),
       ),
       FilledButton(
         key: const Key('map-information-apply'),
         onPressed: _snapshot == null ? null : _apply,
-        child: const Text('Apply'),
+        child: Text(context.l10n.editorApply),
       ),
     ],
   );

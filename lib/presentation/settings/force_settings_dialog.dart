@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import 'settings_surface.dart';
@@ -74,7 +76,7 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
       snapshot: _snapshot,
       hasDraft: dirty,
       onReload: () => setState(_reload),
-      title: const Text('Force Settings'),
+      title: Text(context.l10n.editorForceSettings),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
@@ -82,7 +84,7 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Player assignment'),
+              Text(context.l10n.editorPlayerAssignment),
               SettingsSelection(
                 prefix: 'force-players',
                 selectorKey: const Key('force-player'),
@@ -90,10 +92,11 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                 idBase: 1,
                 selected: _player,
                 revision: _snapshot,
-                label: (id) => 'Player ${id + 1}',
+                label: (id) => context.l10n.editorPlayer((id + 1).toString()),
                 onSelected: (id) => setState(() => _player = id),
-                scope:
-                    'Copies only the edited force assignment to Players 1–8.',
+                scope: context
+                    .l10n
+                    .editorCopiesOnlyTheEditedForceAssignmentToPlayers1,
                 onCopy: settings == null
                     ? null
                     : (ids) {
@@ -115,12 +118,18 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                   for (var i = 0; i < 4; i++)
                     DropdownMenuItem(
                       value: i,
-                      child: Text('Assign to Force ${i + 1}'),
+                      child: Text(
+                        context.l10n.editorAssignToForce((i + 1).toString()),
+                      ),
                     ),
                   if (storedAssignment != null && storedAssignment > 3)
                     DropdownMenuItem(
                       value: storedAssignment,
-                      child: Text('Stored ID $storedAssignment (preserved)'),
+                      child: Text(
+                        context.l10n.editorStoredIDPreserved(
+                          (storedAssignment).toString(),
+                        ),
+                      ),
                     ),
                 ],
                 onChanged: settings == null
@@ -141,14 +150,15 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                 idBase: 1,
                 selected: _force,
                 revision: _snapshot,
-                label: (id) => 'Force ${id + 1}',
+                label: (id) => context.l10n.editorForce((id + 1).toString()),
                 searchText: (id) => _names[id] ?? settings?.names[id] ?? '',
                 onSelected: (id) => setState(() {
                   _force = id;
                   _name.text = _names[id] ?? settings?.names[id] ?? '';
                 }),
-                scope:
-                    'Copies edited force names and options only. Player assignments are separate.',
+                scope: context
+                    .l10n
+                    .editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments,
                 onCopy: settings == null
                     ? null
                     : (ids) {
@@ -176,7 +186,9 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                 controller: _name,
                 enabled:
                     settings != null && settings.nameIssues[_force] == null,
-                decoration: const InputDecoration(labelText: 'Force name'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.editorForceName,
+                ),
                 onChanged: (v) => setState(() {
                   if (v == settings!.names[_force]) {
                     _names.remove(_force);
@@ -186,12 +198,12 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                 }),
               ),
               if (settings?.nameIssues[_force] != null)
-                Text(settings!.nameIssues[_force]!),
-              for (final option in const {
-                1: 'Randomize start locations',
-                2: 'Allies',
-                4: 'Allied victory',
-                8: 'Shared vision',
+                Text(context.localizeEditorText(settings!.nameIssues[_force]!)),
+              for (final option in {
+                1: context.l10n.editorRandomizeStartLocations,
+                2: context.l10n.editorAllies,
+                4: context.l10n.editorAlliedVictory,
+                8: context.l10n.editorSharedVision,
               }.entries)
                 CheckboxListTile(
                   key: Key('force-flag-${option.key}'),
@@ -211,12 +223,12 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                           }
                         }),
                 ),
-              const Text(
-                'Apply updates all edited players and forces. Save As writes the map.',
+              Text(
+                context.l10n.editorApplyUpdatesAllEditedPlayersAndForcesSaveAs,
               ),
               if (_error != null)
                 Text(
-                  _error!,
+                  context.localizeEditorText(_error!),
                   key: const Key('force-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -226,20 +238,31 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('settings-undo'),
           onPressed: widget.controller.canUndo
               ? () => _run(widget.controller.undo)
               : null,
-          child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorUndo(
+              context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-redo'),
           onPressed: widget.controller.canRedo
               ? () => _run(widget.controller.redo)
               : null,
-          child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorRedo(
+              context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('force-apply'),
@@ -253,7 +276,7 @@ class _ForceSettingsDialogState extends State<ForceSettingsDialog> {
                     names: _names,
                   );
                 }),
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

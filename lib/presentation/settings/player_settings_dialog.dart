@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
 import 'settings_surface.dart';
@@ -57,12 +59,14 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
     final value = _draft[(_player, field)] ?? stored;
     final options = {...field.options};
     if (stored != null && !options.containsKey(stored)) {
-      options[stored] = 'Stored ID $stored (preserved)';
+      options[stored] = context.l10n.editorStoredIDPreserved(
+        (stored).toString(),
+      );
     }
     final label = switch (field) {
-      ChkPlayerField.owner => 'Slot type',
-      ChkPlayerField.race => 'Race',
-      ChkPlayerField.color => 'Color',
+      ChkPlayerField.owner => context.l10n.editorSlotType,
+      ChkPlayerField.race => context.l10n.editorRace,
+      ChkPlayerField.color => context.l10n.editorColor,
     };
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -74,12 +78,14 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
             key: Key('player-settings-${field.name}'),
             isExpanded: true,
             value: value,
-            hint: const Text('Unavailable'),
+            hint: Text(context.l10n.editorUnavailable),
             items: [
               for (final option in options.entries)
                 DropdownMenuItem(
                   value: option.key,
-                  child: Text('${option.value} (${option.key})'),
+                  child: Text(
+                    '${context.localizeEditorText(option.value)} (${option.key})',
+                  ),
                 ),
             ],
             onChanged: _snapshot != null && group.canEdit && _player < 8
@@ -92,7 +98,8 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
                   })
                 : null,
           ),
-          if (group.issue != null) Text(group.issue!),
+          if (group.issue != null)
+            Text(context.localizeEditorText(group.issue!)),
         ],
       ),
     );
@@ -104,7 +111,7 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
     snapshot: _snapshot,
     hasDraft: _draft.isNotEmpty,
     onReload: () => setState(_reload),
-    title: const Text('Player Settings'),
+    title: Text(context.l10n.editorPlayerSettings),
     content: SizedBox(
       width: 520,
       child: SingleChildScrollView(
@@ -120,10 +127,14 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
               idBase: 1,
               selected: _player,
               revision: _snapshot,
-              label: (id) => 'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+              label: (id) => context.l10n.editorPlayer203c6551(
+                (id + 1).toString(),
+                (id >= 8 ? context.l10n.editorReadOnly : "").toString(),
+              ),
               onSelected: (id) => setState(() => _player = id),
-              scope:
-                  'Slot type, race and color edits for playable Players 1–8 only.',
+              scope: context
+                  .l10n
+                  .editorSlotTypeRaceAndColorEditsForPlayablePlayers,
               onCopy: _snapshot == null || _player >= 8
                   ? null
                   : (ids) {
@@ -138,19 +149,22 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
                     },
             ),
             if (_player >= 8)
-              const Text(
-                'Only the eight playable slots can be edited. Players 9–12 have no COLR color entry.',
+              Text(
+                context.l10n.editorOnlyTheEightPlayableSlotsCanBeEditedPlayers,
               ),
             for (final group in _groups) _field(group),
-            const Text(
-              'Color settings are saved to the map. Canvas previews currently use default player colors.',
+            Text(
+              context.l10n.editorColorSettingsAreSavedToTheMapCanvasPreviews,
             ),
             Text(
-              '${_draft.length} pending field changes. Apply updates all edited players; Save As writes the map.',
+              context.l10n
+                  .editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave(
+                    (_draft.length).toString(),
+                  ),
             ),
             if (_error != null)
               Text(
-                _error!,
+                context.localizeEditorText(_error!),
                 key: const Key('player-settings-error'),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
@@ -165,27 +179,38 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
               if (diagnostic.code.startsWith(
                 ChkPlayerSettingsEditor.diagnosticPrefix,
               ))
-                Text(diagnostic.message),
+                Text(context.diagnosticMessage(diagnostic)),
           ],
         ),
       ),
     ),
     actions: [
       TextButton(
+        key: const Key('settings-undo'),
         onPressed: widget.controller.canUndo
             ? () => _run(widget.controller.undo)
             : null,
-        child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+        child: Text(
+          context.l10n.editorUndo(
+            context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+          ),
+        ),
       ),
       TextButton(
+        key: const Key('settings-redo'),
         onPressed: widget.controller.canRedo
             ? () => _run(widget.controller.redo)
             : null,
-        child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+        child: Text(
+          context.l10n.editorRedo(
+            context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+          ),
+        ),
       ),
       TextButton(
+        key: const Key('settings-cancel'),
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.editorCancel),
       ),
       FilledButton(
         key: const Key('player-settings-apply'),
@@ -200,7 +225,7 @@ class _PlayerSettingsDialogState extends State<PlayerSettingsDialog> {
                   ],
                 );
               }),
-        child: const Text('Apply'),
+        child: Text(context.l10n.editorApply),
       ),
     ],
   );

@@ -29,11 +29,14 @@ class RawChkParser {
             code: RawChkDiagnosticCodes.truncatedHeader,
             message:
                 'The CHK section header is truncated at byte offset $offset.',
+            messageId: 'editorTheCHKSectionHeaderIsTruncatedAtByteOffset',
+            messageArguments: [(offset).toString()],
             severity: DiagnosticSeverity.fatal,
             stage: DiagnosticStage.parse,
             byteOffset: offset,
             remediation:
                 'Use an intact scenario.chk or open the map as read-only.',
+            remediationId: 'editorUseAnIntactScenarioChkOrOpenTheMap',
             rawDetails:
                 'sectionIndex=${sections.length}; '
                 'availableHeaderBytes=$remainingLength; '
@@ -78,12 +81,19 @@ class RawChkParser {
             message:
                 'Section "$sectionName" declares $declaredLength bytes, '
                 'but only $availablePayloadLength bytes remain.',
+            messageId: 'editorSectionDeclaresBytesButOnlyBytesRemain',
+            messageArguments: [
+              (sectionName).toString(),
+              (declaredLength).toString(),
+              (availablePayloadLength).toString(),
+            ],
             severity: DiagnosticSeverity.fatal,
             stage: DiagnosticStage.parse,
             sectionName: sectionName,
             byteOffset: offset + sectionNameLength,
             remediation:
                 'Use an intact scenario.chk or open the map as read-only.',
+            remediationId: 'editorUseAnIntactScenarioChkOrOpenTheMap',
             rawDetails:
                 'sectionIndex=${sections.length}; '
                 'sectionOffset=$offset; '

@@ -177,10 +177,12 @@ class OpenMapController {
         EditorDiagnostic(
           code: OpenMapDiagnosticCodes.unsupportedExtension,
           message: 'Only .scm and .scx map files can be opened.',
+          messageId: 'editorOnlyScmAndScxMapFilesCanBeOpened',
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.application,
           filePath: normalizedPath,
           remediation: 'Choose a StarCraft map with a .scm or .scx extension.',
+          remediationId: 'editorChooseAStarCraftMapWithAScmOrScx',
         ),
       );
     }
@@ -192,11 +194,13 @@ class OpenMapController {
         EditorDiagnostic(
           code: OpenMapDiagnosticCodes.operationBusy,
           message: 'Another editor operation is already running.',
+          messageId: 'editorAnotherEditorOperationIsAlreadyRunning',
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.application,
           filePath: normalizedPath,
           remediation:
               'Wait for the current operation to finish and try again.',
+          remediationId: 'editorWaitForTheCurrentOperationToFinishAndTry',
           rawDetails: 'activeOperationId=${activeProgress.operationId}',
         ),
       );
@@ -331,12 +335,14 @@ class OpenMapController {
           EditorDiagnostic(
             code: OpenMapDiagnosticCodes.sourceChangedDuringOpen,
             message: 'The source map changed while it was being opened.',
+            messageId: 'editorTheSourceMapChangedWhileItWasBeingOpened',
             severity: DiagnosticSeverity.error,
             stage: DiagnosticStage.application,
             filePath: normalizedPath,
             remediation:
                 'Close the other program that is editing the map and open it '
                 'again.',
+            remediationId: 'editorCloseTheOtherProgramThatIsEditingTheMap',
             rawDetails:
                 'before=$sourceFingerprintBeforeOpen; '
                 'after=$sourceFingerprintAfterOpen',
@@ -366,12 +372,15 @@ class OpenMapController {
             code: OpenMapDiagnosticCodes.recentProjectUpdateFailed,
             message:
                 'The map opened, but the recent maps list was not updated.',
+            messageId: 'editorTheMapOpenedButTheRecentMapsListWas',
             severity: DiagnosticSeverity.warning,
             stage: DiagnosticStage.application,
             filePath: normalizedPath,
             remediation:
                 'Check access to the application settings folder and reopen '
                 'the map.',
+            remediationId:
+                'editorCheckAccessToTheApplicationSettingsFolderAndReopen',
             rawDetails: '$error',
           ),
         );
@@ -393,12 +402,14 @@ class OpenMapController {
       final diagnostic = EditorDiagnostic(
         code: OpenMapDiagnosticCodes.unexpectedFailure,
         message: 'The map could not be opened because of an unexpected error.',
+        messageId: 'editorTheMapCouldNotBeOpenedBecauseOfAn',
         severity: DiagnosticSeverity.fatal,
         stage: DiagnosticStage.application,
         filePath: normalizedPath,
         remediation:
             'Retry the operation. If it fails again, inspect the application '
             'log.',
+        remediationId: 'editorRetryTheOperationIfItFailsAgainInspectThe',
         rawDetails: '$error\n$stackTrace',
       );
       final currentProgress = operationProgressController.current;
@@ -428,12 +439,15 @@ class OpenMapController {
           code: OpenMapDiagnosticCodes.recentProjectUpdateFailed,
           message:
               'The map was saved, but the recent maps list was not updated.',
+          messageId: 'editorTheMapWasSavedButTheRecentMapsList',
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.application,
           filePath: session.sourcePath,
           remediation:
               'Check access to the application settings folder and reopen '
               'the saved map.',
+          remediationId:
+              'editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0',
           rawDetails: '$error',
         ),
       );
@@ -495,9 +509,11 @@ class OpenMapController {
         EditorDiagnostic(
           code: OpenMapDiagnosticCodes.fileSelectionFailed,
           message: 'The map file dialog could not be opened.',
+          messageId: 'editorTheMapFileDialogCouldNotBeOpened',
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.application,
           remediation: 'Retry the operation or restart the application.',
+          remediationId: 'editorRetryTheOperationOrRestartTheApplication',
           rawDetails: '$error\n$stackTrace',
         ),
       );
@@ -530,12 +546,14 @@ class OpenMapController {
     return EditorDiagnostic(
       code: OpenMapDiagnosticCodes.sourceFingerprintFailed,
       message: 'The source map fingerprint could not be verified.',
+      messageId: 'editorTheSourceMapFingerprintCouldNotBeVerified',
       severity: DiagnosticSeverity.error,
       stage: DiagnosticStage.application,
       filePath: path,
       remediation:
           'Check that the map still exists, is readable, and is not being '
           'changed by another program.',
+      remediationId: 'editorCheckThatTheMapStillExistsIsReadableAnd',
       rawDetails: '$error\n$stackTrace',
     );
   }

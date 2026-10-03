@@ -4,11 +4,29 @@
   "recoveryEmpty": "복구본이 없습니다.",
   "recoveryDamaged": "읽을 수 없거나 손상된 복구본",
   "recoveryBaseline": "마지막 저장 맵: {path}",
-  "@recoveryBaseline": {"placeholders": {"path": {"type": "String"}}},
+  "@recoveryBaseline": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoveryProject": "EUD 프로젝트: {path}",
-  "@recoveryProject": {"placeholders": {"path": {"type": "String"}}},
+  "@recoveryProject": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoverySource": "epScript: {path}",
-  "@recoverySource": {"placeholders": {"path": {"type": "String"}}},
+  "@recoverySource": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoveryOpen": "복구본 열기",
   "recoveryDelete": "복구본 삭제",
   "recoveryDeleteConfirm": "이 복구본을 영구 삭제할까요?",
@@ -17,9 +35,21 @@
   "autosaveSettings": "자동 저장 설정",
   "autosaveEnabled": "복구본 자동 저장",
   "autosaveInterval": "저장 간격: {seconds}초",
-  "@autosaveInterval": {"placeholders": {"seconds": {"type": "int"}}},
+  "@autosaveInterval": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "autosaveRetention": "작업 공간별 보관 수: {count}개",
-  "@autosaveRetention": {"placeholders": {"count": {"type": "int"}}},
+  "@autosaveRetention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "autosaveFailed": "자동 저장 또는 복구에 실패했습니다. 앱 데이터 폴더 접근 권한과 남은 공간을 확인하세요.",
   "recoveryCancel": "취소",
   "recoveryClose": "닫기",
@@ -954,5 +984,1910 @@
       }
     }
   },
-  "resizeCoordinateScope": "트리거·EUD 코드 좌표는 그대로 유지됩니다. 크기 변경 후 직접 지정한 좌표를 확인하세요. 미확인 지형이나 모호한 두다드는 적용을 차단합니다."
+  "resizeCoordinateScope": "트리거·EUD 코드 좌표는 그대로 유지됩니다. 크기 변경 후 직접 지정한 좌표를 확인하세요. 미확인 지형이나 모호한 두다드는 적용을 차단합니다.",
+  "editorPrepareEUDBuild": "EUD 빌드 준비",
+  "editorBuildSavedFilesOnDiskSaveMapAndSource": "디스크에 저장된 파일로 빌드합니다. 맵과 소스 변경사항을 먼저 저장하세요. 프로젝트 설정만 빌드하려면 소스 폴더와 진입 파일을 비워 두세요. 출력은 새로운 .scx 파일이어야 합니다.",
+  "editorBaseMapPath": "기본 맵 경로",
+  "editorSourceFolderPath": "소스 폴더 경로",
+  "editorEntryEpsPath": "진입 .eps 파일 경로",
+  "editorNewOutputScxPath": "새 출력 .scx 경로",
+  "editorToolOverrideForThisBuildOptional": "이 빌드에 사용할 도구 경로 (선택)",
+  "editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare": "도구 경로를 비워 두면 EUD 도구 설정을 사용합니다. 준비 단계는 파일을 검사하고, 빌드는 별도로 컴파일러를 실행합니다.",
+  "editorITrustThisSourceAndItsImportsToRun": "이 소스와 가져오는 코드가 이 컴퓨터에서 실행되는 것을 신뢰합니다.",
+  "editorIncludeProjectSettingsInAnUnverifiedTestBuild": "미검증 테스트 빌드에 프로젝트 설정 포함",
+  "editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter": "종류 설정은 한 번 초기화됩니다. 규칙은 트리거 실행 전후에 적용되며, 인스턴스 규칙은 조건으로 보호된 유닛을 변경할 수 있습니다. 실제 게임과 멀티플레이 동작은 별도 테스트가 필요합니다.",
+  "editorCancel": "취소",
+  "editorPrepare": "준비",
+  "editorEUDTools": "EUD 도구",
+  "editorChooseAnExternalEuddraftInstallationOrUseTheApp": "외부 euddraft 설치를 선택하거나 앱 기본값을 사용하세요. 프로젝트별 경로가 우선합니다.",
+  "editorExternalEuddraftPath": "외부 euddraft 경로",
+  "editorInstallationDirectoryOrEuddraftExeAbsolutePath": "설치 폴더 또는 euddraft.exe의 절대 경로",
+  "editorBrowseInstallationFolder": "설치 폴더 찾아보기",
+  "editorSelectionAppDefault": "선택: 앱 기본값",
+  "editorSelectionExternal": "선택: 외부 도구\n{value0}",
+  "@editorSelectionExternal": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoBundledToolIsIncludedInThisAppYet": "이 앱에는 아직 도구가 포함되어 있지 않습니다. 외부 설치를 선택하세요.",
+  "editorBundledEuddraft01025Editor1No": "포함된 euddraft 0.10.2.5 (editor.1)\n별도 Python 설치가 필요하지 않습니다. 앱과 함께 업데이트됩니다.\n{value0}\n라이선스 및 수정 내역: 이 폴더의 BUNDLE-NOTICE.txt",
+  "@editorBundledEuddraft01025Editor1No": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectionPassedEuddraft": "검사 통과: euddraft {value0}\n{value1}",
+  "@editorInspectionPassedEuddraft": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectionDoesNotRunTheCompilerSavingThisChoice": "검사는 컴파일러를 실행하지 않습니다. 이 선택을 저장해도 빌드를 준비하거나 기존 빌드 계획을 변경하지 않습니다.",
+  "editorUseAppDefault": "앱 기본값 사용",
+  "editorReinspect": "다시 검사",
+  "editorSaveAndInspect": "저장 후 검사",
+  "editorClose": "닫기",
+  "editorForceSettings": "세력 설정",
+  "editorPlayerAssignment": "플레이어 배정",
+  "editorPlayer": "플레이어 {value0}",
+  "@editorPlayer": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesOnlyTheEditedForceAssignmentToPlayers1": "변경한 세력 배정만 플레이어 1~8에 복사합니다.",
+  "editorAssignToForce": "세력 {value0}에 배정",
+  "@editorAssignToForce": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStoredIDPreserved": "저장된 ID {value0} (유지)",
+  "@editorStoredIDPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForce": "세력 {value0}",
+  "@editorForce": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments": "변경한 세력 이름과 옵션만 복사합니다. 플레이어 배정은 별도입니다.",
+  "editorForceName": "세력 이름",
+  "editorRandomizeStartLocations": "시작 위치 무작위 배정",
+  "editorAllies": "동맹",
+  "editorAlliedVictory": "동맹 승리",
+  "editorSharedVision": "시야 공유",
+  "editorApplyUpdatesAllEditedPlayersAndForcesSaveAs": "적용하면 변경한 모든 플레이어와 세력이 반영됩니다. 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "editorUndo": "실행 취소: {value0}",
+  "@editorUndo": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRedo": "다시 실행: {value0}",
+  "@editorRedo": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorApply": "적용",
+  "editorTheExistingTextIsNotValidUTF8Its": "기존 텍스트는 올바른 UTF-8이 아닙니다. 원본 바이트를 유지하며 편집할 수 없습니다.",
+  "editorMapInformation": "맵 정보",
+  "editorMapTitle": "맵 제목",
+  "editorDescription": "설명",
+  "editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged": "적용은 이 맵에만 반영됩니다. 공유 이름은 변경하지 않습니다. 편집한 맵은 다른 이름으로 저장하세요.",
+  "editorDiscardUnappliedSettings": "적용하지 않은 설정을 버릴까요?",
+  "editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges": "적용하지 않은 변경사항이 있는 탭이 있습니다. 이미 적용한 변경사항은 맵에 남으며 실행 취소할 수 있습니다.",
+  "editorKeepEditing": "계속 편집",
+  "editorDiscardAndClose": "버리고 닫기",
+  "editorMapSettings": "맵 설정",
+  "editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced": "맵 전체 설정입니다. 캔버스 속성 패널은 배치된 개별 객체를 편집합니다. 적용은 현재 탭에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "editorEUDExecutionRules": "EUD 실행 규칙",
+  "editorMap": "맵",
+  "editorPlayers": "플레이어",
+  "editorForces": "세력",
+  "editorUnits": "유닛",
+  "editorAvailability": "사용 가능 여부",
+  "editorUpgrades": "업그레이드",
+  "editorTech": "기술",
+  "editorSlotType": "슬롯 종류",
+  "editorRace": "종족",
+  "editorColor": "색상",
+  "editorUnavailable": "사용 불가",
+  "editorPlayerSettings": "플레이어 설정",
+  "editorPlayer203c6551": "플레이어 {value0}{value1}",
+  "@editorPlayer203c6551": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReadOnly": " (읽기 전용)",
+  "editorSlotTypeRaceAndColorEditsForPlayablePlayers": "플레이 가능한 플레이어 1~8의 슬롯 종류, 종족, 색상만 편집합니다.",
+  "editorOnlyTheEightPlayableSlotsCanBeEditedPlayers": "플레이 가능한 8개 슬롯만 편집할 수 있습니다. 플레이어 9~12에는 COLR 색상 항목이 없습니다.",
+  "editorColorSettingsAreSavedToTheMapCanvasPreviews": "색상 설정은 맵에 저장됩니다. 현재 캔버스 미리보기는 기본 플레이어 색상을 사용합니다.",
+  "editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave": "대기 중인 필드 변경 {value0}개. 적용은 변경한 모든 플레이어에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "@editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoEditedFieldsInTheCurrentSelection": "현재 선택에는 변경한 필드가 없습니다.",
+  "editorDraftFieldCopiesPreparedForIDsReviewThenApply": "ID {value1}개에 필드 초안 {value0}개를 복사했습니다. 확인 후 적용하세요.",
+  "@editorDraftFieldCopiesPreparedForIDsReviewThenApply": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSearchNameOrID12ForExactID": "이름 또는 ID 검색 (정확한 ID는 #12)",
+  "editorCurrent": "현재: {value0}",
+  "@editorCurrent": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged": "일치하는 ID가 없습니다. 현재 선택과 초안은 유지됩니다.",
+  "editorCopyEditedFieldsToIDs": "변경한 필드를 ID에 복사",
+  "editorSource": "원본: {value0}. {value1}",
+  "@editorSource": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt": "변경한 필드만 복사하며 대상 ID의 해당 초안 필드를 교체합니다. 검색으로 대상이 선택되지는 않습니다. 적용해야 맵이 변경됩니다.",
+  "editorTargetIDs": "대상 ID ({value0}~{value1})",
+  "@editorTargetIDs": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPrepareDraftCopies": "초안 복사 준비",
+  "editorUnappliedDraft": "미적용 초안",
+  "editorTheMapChangedInAnotherEditorOrThroughUndo": "다른 편집기 또는 실행 취소·다시 실행으로 맵이 변경되었습니다. 이 탭을 적용하기 전에 다시 불러오세요.",
+  "editorReloadAndDiscardThisDraft": "초안을 버리고 다시 불러오기",
+  "editorDiscardTabDraft": "탭 초안 버리기",
+  "editorStarCraftDataAssets": "StarCraft 데이터 자산",
+  "editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads": "설치된 StarCraft: Remastered 폴더를 선택하세요. 편집기는 포함된 CascLib 도우미로 로컬 CASC 저장소를 읽으며, 저작권이 있는 게임 데이터를 추출하거나 복사하지 않습니다.",
+  "editorClear": "지우기",
+  "editorRefresh": "새로고침",
+  "editorChooseInstallation": "설치 폴더 선택…",
+  "editorCASCBuildMiBCheckedCascLibHelper": "CASC {value0} • 빌드 {value1} • 검사 {value2} MiB • CascLib {value3} • 도우미 {value4}",
+  "@editorCASCBuildMiBCheckedCascLibHelper": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      },
+      "value4": {
+        "type": "String"
+      }
+    }
+  },
+  "editorConfiguredPath": "설정된 경로",
+  "editorNotConfigured": "미설정",
+  "editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd": "StarCraft.exe, .build.info, Data\\가 있는 폴더를 선택하세요.",
+  "editorLoadingSettings": "설정 불러오는 중…",
+  "editorInspectingAssets": "자산 검사 중…",
+  "editorRequiredAssetsReady": "필수 자산 {value0}/{value1}개 준비 완료",
+  "@editorRequiredAssetsReady": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStarCraftInstallationIsNotConfigured": "StarCraft 설치가 설정되지 않았습니다",
+  "editorStarCraftCASCDataIsUnavailable": "StarCraft CASC 데이터를 사용할 수 없습니다",
+  "editorRequiredAssetsFound": "필수 자산 {value0}/{value1}개 발견",
+  "@editorRequiredAssetsFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMissing": "누락",
+  "editorInvalid": "유효하지 않음",
+  "editorUnavailableAssetFiles": "사용할 수 없는 자산 파일",
+  "editorAndMore": "…외 {value0}개",
+  "@editorAndMore": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStoredFlagPreserved": "저장된 플래그 {value0} (유지)",
+  "@editorStoredFlagPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTechd52bce90": "기술 #{value0}, {value1}: {value2}",
+  "@editorTechd52bce90": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEffectiveStateUnknownStoredFlagPreserved": "실제 적용 상태: 알 수 없음 (저장된 플래그 유지)",
+  "editorEffectiveStateAvailableResearched": "실제 적용 상태: 사용 가능 {value0}, 연구 완료 {value1}",
+  "@editorEffectiveStateAvailableResearched": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTechSettings": "기술 설정",
+  "editorEditing": "편집 중: {value0} / {value1}{value2}.",
+  "@editorEditing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAlternateSectionsPreserved": "; 다른 섹션 유지",
+  "editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf": "맵 비용과 {value0}만 편집합니다. 상속 플래그는 편집한 경우에만 변경됩니다.",
+  "@editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMapDefaults": "맵 기본값",
+  "editorUseCustomCosts": "사용자 지정 비용 사용",
+  "editorUseGameDefaults": "게임 기본값 사용",
+  "editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues": "게임 기본값을 사용해도 저장된 사용자 지정 비용은 유지됩니다. 이 화면은 게임 기본 수치를 불러오지 않습니다.",
+  "editorMapDefaultSettings": "맵 기본 설정",
+  "editorCopiesOnlyCurrentTechPlayerEditsToPlayers1": "현재 기술 #{value0}의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 비용과 기본값은 제외합니다.",
+  "@editorCopiesOnlyCurrentTechPlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsePlayerSettings": "플레이어 설정 사용",
+  "editorInheritMapSettings": "맵 설정 상속",
+  "editorAvailable": "사용 가능",
+  "editorNotResearched": "미연구",
+  "editorAlreadyResearched": "연구 완료",
+  "editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer": "맵 설정은 이를 상속하는 플레이어에 적용됩니다. 상속해도 저장된 플레이어 플래그는 유지됩니다. 사용 가능 여부와 연구 상태는 독립적입니다.",
+  "editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe": "기술과 플레이어에 대기 중인 변경 {value0}개. 적용은 문서에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "@editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitAvailability": "유닛 사용 가능 여부",
+  "editorMapWideUnitProductionSettingsSeparateFromPlacedUnit": "맵 전체의 유닛 생산 설정입니다. 배치된 유닛의 속성 패널과는 별도입니다.",
+  "editorUnit": "유닛",
+  "editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf": "맵 기본값과 플레이어 {value0}만 편집합니다. 상속은 편집한 경우에만 변경됩니다.",
+  "@editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMapDefaultAffectsAllInheritingPlayers": "맵 기본값: 상속하는 모든 플레이어에 적용",
+  "editorDefaultProhibited": "기본값: 금지",
+  "editorDefaultAllowed": "기본값: 허용",
+  "editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1": "현재 유닛 #{value0}의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 기본값은 제외합니다.",
+  "@editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerSettingSource": "플레이어 설정 원본",
+  "editorUsePlayerOverride": "플레이어 개별 설정 사용",
+  "editorInheritMapDefault": "맵 기본값 상속",
+  "editorStoredPlayerOverride": "저장된 플레이어 개별 설정",
+  "editorPlayerProhibited": "플레이어: 금지",
+  "editorPlayerAllowed": "플레이어: 허용",
+  "editorEffectiveAvailability": "실제 사용 가능 여부: {value0}",
+  "@editorEffectiveAvailability": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnknownStoredFlagsPreserved": "알 수 없음 (저장된 플래그 유지)",
+  "editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass": "상속해도 저장된 개별 설정은 유지됩니다. 사용 가능 설정은 게임 선행 조건을 무시하거나 유닛을 배치하지 않습니다.",
+  "editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers": "대기 중인 변경 {value0}개. 적용은 변경한 모든 유닛과 플레이어에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "@editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorLocalWeaponReferencesUnavailableConfigureStarCraftAssetsAndRetry": "로컬 무기 참조를 사용할 수 없습니다. StarCraft 자산을 설정한 후 다시 시도하세요.",
+  "editorUnit88a3c859": "{value0}\n유닛 #{value1}",
+  "@editorUnit88a3c859": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitPreviewRequiresLocalStarCraftGraphics": "유닛 미리보기에는 로컬 StarCraft 그래픽이 필요합니다.",
+  "editorConfigureStarCraftAssetsToLoadUnitLinks": "유닛 연결을 불러오려면 StarCraft 자산을 설정하세요.",
+  "editorGround": "지상",
+  "editorAir": "공중",
+  "editorNone": "{value0}: 없음",
+  "@editorNone": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSubunit": "하위 유닛: {value0} (#{value1})",
+  "@editorSubunit": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSubunitWeaponsKeepsTheSelectedUnit": "하위 유닛 무기: 선택한 유닛 유지",
+  "editorNoLinkedWeaponSelectAWeaponManually": "연결된 무기가 없습니다. 무기를 직접 선택하세요.",
+  "editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing": "자동 선택: {value2}의 {value0} (#{value1}). 무기 변경은 이를 공유하는 모든 유닛에 적용됩니다.",
+  "@editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRetryUnitLinks": "유닛 연결 다시 불러오기",
+  "editorUnit24496eb9": "유닛 #{value0}: {value1}",
+  "@editorUnit24496eb9": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorWeaponDamageMustBeAnIntegerFrom0To": "무기 #{value0}: 피해량은 0~65535의 정수여야 합니다.",
+  "@editorWeaponDamageMustBeAnIntegerFrom0To": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitSettings": "유닛 설정",
+  "editorMapWideUnitTypesSeparateFromPlacedUnitProperties": "맵 전체의 유닛 종류 설정입니다. 배치된 유닛의 속성과는 별도입니다.",
+  "editorEditing4dc9e6e6": "편집 중: {value0}{value1}.",
+  "@editorEditing4dc9e6e6": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAlternateSectionPreservedWithoutSynchronization": "; 다른 섹션은 동기화하지 않고 유지",
+  "editorUnit38894196": "{value0} (유닛 #{value1})",
+  "@editorUnit38894196": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon": "유닛 수치, 이름, 기본값 플래그만 편집합니다. 공유 무기 피해량은 아래에서 별도로 선택합니다.",
+  "editorUseCustomValues": "사용자 지정 수치 사용",
+  "editorStoredDefaultFlagPreserved": "저장된 기본값 플래그 {value0} (유지)",
+  "@editorStoredDefaultFlagPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorFieldsShowStoredCustomValuesGameDefaultNumbersAre": "필드는 저장된 사용자 지정 수치를 표시합니다. 게임 기본 수치는 불러오지 않습니다.",
+  "editorRestoreSelectedUnitDefaults": "선택한 유닛 기본값 복원",
+  "editorUnitNameEmptyGameName": "유닛 이름 (비워 두면 게임 이름)",
+  "editorSharedWeaponDamage": "공유 무기 피해량",
+  "editorAWeaponChangeAffectsEveryUnitUsingThatWeapon": "무기 변경은 해당 무기를 사용하는 모든 유닛에 적용됩니다. 유닛 복원은 공유 무기 피해량을 초기화하지 않습니다.",
+  "editorWeapon": "무기",
+  "editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons": "공유 무기 피해량만 편집합니다. 대상 무기를 참조하는 모든 유닛에 영향을 줄 수 있습니다.",
+  "editorDamagePerUpgrade": "업그레이드당 피해량",
+  "editorBaseDamage": "기본 피해량",
+  "editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave": "적용은 변경한 모든 유닛 종류와 무기에 반영합니다. 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "editorUpgrade": "업그레이드 #{value0}, {value1}: {value2}",
+  "@editorUpgrade": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEffectiveLevelsUnknownStoredFlagPreserved": "실제 적용 레벨: 알 수 없음 (저장된 플래그 유지)",
+  "editorEffectiveLevelsStartMaximum": "실제 적용 레벨: {value0} / {value1} (시작 / 최대)",
+  "@editorEffectiveLevelsStartMaximum": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUpgradeSettings": "업그레이드 설정",
+  "editorUpgraded423b17": "업그레이드",
+  "editorMapDefaultLevels": "맵 기본 레벨",
+  "editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1": "현재 업그레이드 #{value0}의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 비용과 기본값은 제외합니다.",
+  "@editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsePlayerLevels": "플레이어 레벨 사용",
+  "editorInheritMapLevels": "맵 레벨 상속",
+  "editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer": "맵 레벨은 이를 상속하는 플레이어에 적용됩니다. 상속해도 저장된 플레이어 레벨은 유지됩니다. 시작 레벨은 최대 레벨을 넘을 수 없습니다.",
+  "editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe": "업그레이드와 플레이어에 대기 중인 변경 {value0}개. 적용은 문서에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.",
+  "@editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorLoadingLocalWeaponReferences": "로컬 무기 참조 불러오는 중…",
+  "editorWeaponReferenceListUnavailable": "무기 참조 목록을 사용할 수 없음: {value0}",
+  "@editorWeaponReferenceListUnavailable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSourceChanged": "원본 변경",
+  "editorReloadWeaponReferences": "무기 참조 다시 불러오기",
+  "editorNoneInThisDATSnapshot": "이 DAT 스냅샷에는 없음",
+  "editorWeaponDirectGroundAirReferences": "무기 #{value0}: 직접 지상·공중 참조: {value1}",
+  "@editorWeaponDirectGroundAirReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitsReferencingThoseSubunits": "해당 하위 유닛을 참조하는 유닛: {value0}",
+  "@editorUnitsReferencingThoseSubunits": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSource854c792f": "원본: {value0}",
+  "@editorSource854c792f": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD": "DAT 참조만 표시합니다. 주문, 생성되는 투사체·유닛, EUD 실행 중 변경에는 추가 영향이 있을 수 있습니다.",
+  "editorOpenAMapToManageResources": "리소스를 관리하려면 맵을 여세요.",
+  "editorResources": "리소스",
+  "editorUndo71fd4acf": "실행 취소",
+  "editorRedo7412e5e9": "다시 실행",
+  "editorAddString": "문자열 추가",
+  "editorImportPCMWAV": "PCM WAV 가져오기",
+  "editorStopPreview": "미리보기 중지",
+  "editorStringsBytesOffsetLimitSaveAsWritesPendingResource": "문자열 {value0}개 • {value1}바이트 • 오프셋 한도 {value2} • 다른 이름으로 저장하면 대기 중인 리소스 변경을 기록합니다.",
+  "@editorStringsBytesOffsetLimitSaveAsWritesPendingResource": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReferenceCoverageIncompleteDeletionRestricted": "참조 검사 범위 불완전: 삭제 제한",
+  "editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions": "아카이브 목록이 불완전합니다. 목록에 없는 사운드가 있을 수 있어 가져오기와 삭제를 제한합니다.",
+  "editorSearchTextStringIDOrSoundPath": "텍스트, 문자열 ID 또는 사운드 경로 검색",
+  "editorWorking": "작업 중…",
+  "editorStrings": "문자열",
+  "editorSounds": "사운드",
+  "editorInvalidUTF8RawBytesPreserved": "잘못된 UTF-8: 원본 바이트 유지",
+  "editorBytesKnownUseS": "{value0}바이트 • 확인된 사용 {value1}곳{value2}",
+  "@editorBytesKnownUseS": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorExplicitReplacementRequired": " • 명시적 교체 필요",
+  "editorClearUnreferencedString": "미참조 문자열 비우기",
+  "editorBytesPendingImport": "{value0}바이트 • 가져오기 대기",
+  "@editorBytesPendingImport": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReferencedPathNotListedInThisMap": "참조된 경로: 이 맵의 목록에는 없음",
+  "editorBytesLocale": "{value0}바이트 • 로캘 {value1}",
+  "@editorBytesLocale": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPreviewSound": "사운드 미리보기",
+  "editorExportSound": "사운드 내보내기",
+  "editorDeleteSound": "사운드 삭제",
+  "editorDeleteSoundf1d564e6": "사운드를 삭제할까요?",
+  "editorRemovalAppliesOnSaveAsUndoRestoresThisEdit": "{value0}\n다른 이름으로 저장하면 삭제가 반영됩니다. 실행 취소로 복원할 수 있습니다.",
+  "@editorRemovalAppliesOnSaveAsUndoRestoresThisEdit": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDelete": "삭제",
+  "editorMapChanged": "맵이 변경되었습니다.",
+  "editorResourcesAreReadOnly": "리소스는 읽기 전용입니다: {value0}",
+  "@editorResourcesAreReadOnly": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInvalidUTF8EnterExplicitReplacementTextOriginalBytes": "잘못된 UTF-8입니다. 교체할 텍스트를 직접 입력하세요. 적용 전까지 원본 바이트는 유지됩니다.",
+  "editorString": "문자열 #{value0}",
+  "@editorString": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEditSharedIDAffectsAllReferences": "공유 ID 편집: 모든 참조에 적용",
+  "editorSeparate": "분리: {value0}",
+  "@editorSeparate": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs": "확인되지 않은 사용처가 더 있을 수 있습니다. 자동 정리는 수행하지 않습니다.",
+  "editorUTF8Text": "UTF-8 텍스트",
+  "editorKnownReferences": "확인된 참조 {value0}개",
+  "@editorKnownReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorWriteEpScriptHere": "// 여기에 epScript를 작성하세요",
+  "editorModified": "수정됨",
+  "editorClean": "변경 없음",
+  "editorInMemoryDraft": "메모리 초안",
+  "editorLnCol": "{value0}행, {value1}열",
+  "@editorLnCol": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorActionSReferenceThisSlotApplyingChangesAffectsAll": "액션 {value0}개가 이 슬롯을 참조합니다. 적용하면 모두에 영향을 줍니다.",
+  "@editorActionSReferenceThisSlotApplyingChangesAffectsAll": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNewStringIDUseThisIDInATrigger": "새 문자열 ID: {value0}. 트리거 액션에서 이 ID를 사용하세요.",
+  "@editorNewStringIDUseThisIDInATrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAddTriggerText": "트리거 텍스트 추가",
+  "editorSwitchNames": "스위치 이름",
+  "editorUnitPropertySlots": "유닛 속성 슬롯",
+  "editorID": "{value0} ID {value1}",
+  "@editorID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorProperty": "속성",
+  "editorSwitch": "스위치",
+  "editorText": "텍스트",
+  "editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan": "선택하지 않은 값은 게임 기본값을 상속합니다. 특수 상태는 상속, 활성화, 비활성화를 선택할 수 있습니다.",
+  "editorInherit": "상속",
+  "editorEnabled": "활성화",
+  "editorDisabled": "비활성화",
+  "editorPrepareChanges": "변경 준비",
+  "editorApplyToMap": "맵에 적용",
+  "editorYes": "예",
+  "editorNo": "아니요",
+  "editorUnknown": "알 수 없음",
+  "editorAllowed": "허용",
+  "editorProhibited": "금지",
+  "editorMapdfa2efb1": "맵",
+  "editorTheCHKSectionHeaderIsTruncatedAtByteOffset": "바이트 오프셋 {value0}에서 CHK 섹션 헤더가 잘렸습니다.",
+  "@editorTheCHKSectionHeaderIsTruncatedAtByteOffset": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUseAnIntactScenarioChkOrOpenTheMap": "정상적인 scenario.chk를 사용하거나 맵을 읽기 전용으로 여세요.",
+  "editorSectionDeclaresBytesButOnlyBytesRemain": "섹션 \"{value0}\"은 {value1}바이트를 선언했지만 {value2}바이트만 남았습니다.",
+  "@editorSectionDeclaresBytesButOnlyBytesRemain": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSectionMustContainExactlyPayloadBytesButContains": "섹션 \"{value0}\"의 데이터는 정확히 {value1}바이트여야 하지만 {value2}바이트입니다.",
+  "@editorSectionMustContainExactlyPayloadBytesButContains": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisSectionUnchangedAndTreatTheMapAs": "이 섹션은 변경하지 말고 맵을 읽기 전용으로 취급하세요.",
+  "editorIsOutsideTheMapPixelBounds": "{value0} {value1}의 위치가 맵 픽셀 경계를 벗어났습니다.",
+  "@editorIsOutsideTheMapPixelBounds": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMoveTheObjectInside0By0OrKeep": "객체를 0~{value0}, 0~{value1} 범위 안으로 옮기세요. 의도적인 EUD 값이라면 원본 레코드를 유지하세요.",
+  "@editorMoveTheObjectInside0By0OrKeep": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRefersToPlayerValueOutsideTheSupported011": "{value0} {value1}이 지원 범위 0~11 밖의 플레이어 값 {value2}를 참조합니다.",
+  "@editorRefersToPlayerValueOutsideTheSupported011": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorChoosePlayer1ThroughPlayer12OrKeepThe": "플레이어 1~12를 선택하세요. 의도적인 EUD 데이터라면 원본 값을 유지하세요.",
+  "editorLocationDoesNotFormAValidRectangleInsideThe": "위치 {value0}이 맵 내부의 유효한 직사각형이 아닙니다.",
+  "@editorLocationDoesNotFormAValidRectangleInsideThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUseLeftRightAndTopBottomInside0By": "0~{value0}, 0~{value1} 범위에서 왼쪽 < 오른쪽, 위 < 아래가 되도록 설정하세요. 의도적인 값이라면 원본을 유지하세요.",
+  "@editorUseLeftRightAndTopBottomInside0By": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsesStringIDButMultipleSTRSTRxTablesMake": "{value0}이 문자열 ID {value1}을 사용하지만 STR/STRx 테이블이 여러 개여서 참조가 모호합니다.",
+  "@editorUsesStringIDButMultipleSTRSTRxTablesMake": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheRawStringSectionsTheEditorWillNot": "원본 문자열 섹션을 검사하세요. 편집기는 활성 테이블을 추측하지 않습니다.",
+  "editorUsesStringIDButNoReadableSTRSTRxTable": "{value0}이 문자열 ID {value1}을 사용하지만 읽을 수 있는 STR/STRx 테이블이 없습니다.",
+  "@editorUsesStringIDButNoReadableSTRSTRxTable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheRawStringTableBeforeChangingThisReference": "이 참조를 변경하기 전에 원본 문자열 테이블을 검사하세요.",
+  "editorUsesStringIDButTheTableContainsOnlyEntries": "{value0}이 문자열 ID {value1}을 사용하지만 테이블에는 항목이 {value2}개뿐입니다.",
+  "@editorUsesStringIDButTheTableContainsOnlyEntries": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorChooseAnExistingStringIDOrClearTheReference": "기존 문자열 ID를 선택하거나 ID 0으로 참조를 해제하세요.",
+  "editorUsesStringIDWhoseRawEntryCannotBeResolved": "{value0}이 사용하는 문자열 ID {value1}의 원본 항목을 안전하게 해석할 수 없습니다.",
+  "@editorUsesStringIDWhoseRawEntryCannotBeResolved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe": "문자열 테이블 구조 진단을 검사하세요. 원인을 파악할 때까지 원본 참조를 유지하세요.",
+  "editorSectionEndsWithAnIncompleteByteRecord": "섹션 \"{value0}\"이 불완전한 {value1}바이트 {value2} 레코드로 끝납니다.",
+  "@editorSectionEndsWithAnIncompleteByteRecord": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisObjectSectionUnchangedAndReadOnly": "이 객체 섹션을 변경하지 말고 읽기 전용으로 유지하세요.",
+  "editorSectionMustContainEither64Or255CompleteLocation": "섹션 \"{value0}\"에는 완전한 위치 레코드가 64개 또는 255개 있어야 합니다.",
+  "@editorSectionMustContainEither64Or255CompleteLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisLocationSectionUnchangedAndReadOnly": "이 위치 섹션을 변경하지 말고 읽기 전용으로 유지하세요.",
+  "editorSectionDoesNotContainItsCompleteByteStringCount": "섹션 \"{value0}\"의 {value1}바이트 문자열 개수 필드가 불완전합니다.",
+  "@editorSectionDoesNotContainItsCompleteByteStringCount": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisStringTableUnchangedAndReadOnly": "이 문자열 테이블을 변경하지 말고 읽기 전용으로 유지하세요.",
+  "editorSectionDeclaresStringsButItsOffsetTableExceedsThe": "섹션 \"{value0}\"이 문자열 {value1}개를 선언했지만 오프셋 테이블이 데이터 범위를 넘습니다.",
+  "@editorSectionDeclaresStringsButItsOffsetTableExceedsThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionPointsOutsideThePayload": "섹션 \"{value1}\"의 문자열 {value0}이 데이터 범위 밖을 가리킵니다.",
+  "@editorStringInSectionPointsOutsideThePayload": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionPointsIntoTheCountOrOffset": "섹션 \"{value1}\"의 문자열 {value0}이 개수 또는 오프셋 테이블 내부를 가리킵니다.",
+  "@editorStringInSectionPointsIntoTheCountOrOffset": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionHasNoNullTerminatorBeforeThe": "섹션 \"{value1}\"의 문자열 {value0}이 데이터 끝까지 널 종료자를 갖고 있지 않습니다.",
+  "@editorStringInSectionHasNoNullTerminatorBeforeThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSectionEndsWithAnIncomplete2ByteTileRecord": "섹션 \"{value0}\"이 불완전한 2바이트 타일 레코드로 끝납니다.",
+  "@editorSectionEndsWithAnIncomplete2ByteTileRecord": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisTerrainSectionUnchangedAndReadOnly": "이 지형 섹션을 변경하지 말고 읽기 전용으로 유지하세요.",
+  "editorSectionContainsTilesButXMapDimensionsRequire": "섹션 \"{value0}\"에는 타일이 {value1}개지만 {value2}x{value3} 맵 크기에는 {value4}개가 필요합니다.",
+  "@editorSectionContainsTilesButXMapDimensionsRequire": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      },
+      "value4": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRecoveryOpened": "복구본을 열었습니다",
+  "editorOnlyScmAndScxMapFilesCanBeOpened": ".scm 및 .scx 맵 파일만 열 수 있습니다.",
+  "editorChooseAStarCraftMapWithAScmOrScx": "확장자가 .scm 또는 .scx인 StarCraft 맵을 선택하세요.",
+  "editorAnotherEditorOperationIsAlreadyRunning": "다른 편집 작업이 이미 실행 중입니다.",
+  "editorWaitForTheCurrentOperationToFinishAndTry": "현재 작업이 끝날 때까지 기다린 후 다시 시도하세요.",
+  "editorReadingMapArchive": "맵 아카이브 읽는 중",
+  "editorFingerprintingSourceMap": "원본 맵 지문 계산 중",
+  "editorParsingScenarioChk": "scenario.chk 분석 중",
+  "editorValidatingMapMetadata": "맵 메타데이터 검증 중",
+  "editorTheSourceMapChangedWhileItWasBeingOpened": "맵을 여는 동안 원본 맵이 변경되었습니다.",
+  "editorCloseTheOtherProgramThatIsEditingTheMap": "맵을 편집하는 다른 프로그램을 닫고 다시 여세요.",
+  "editorTheMapOpenedButTheRecentMapsListWas": "맵을 열었지만 최근 맵 목록은 갱신하지 못했습니다.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndReopen": "앱 설정 폴더 접근 권한을 확인한 후 맵을 다시 여세요.",
+  "editorMapOpenedInRestrictedReadOnlyMode": "제한된 읽기 전용 모드로 맵을 열었습니다",
+  "editorMapOpened": "맵을 열었습니다",
+  "editorTheMapCouldNotBeOpenedBecauseOfAn": "예기치 않은 오류로 맵을 열지 못했습니다.",
+  "editorRetryTheOperationIfItFailsAgainInspectThe": "다시 시도하세요. 계속 실패하면 앱 로그를 검사하세요.",
+  "editorTheMapWasSavedButTheRecentMapsList": "맵을 저장했지만 최근 맵 목록은 갱신하지 못했습니다.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0": "앱 설정 폴더 접근 권한을 확인한 후 저장된 맵을 다시 여세요.",
+  "editorTheMapFileDialogCouldNotBeOpened": "맵 파일 대화상자를 열지 못했습니다.",
+  "editorRetryTheOperationOrRestartTheApplication": "다시 시도하거나 앱을 다시 시작하세요.",
+  "editorTheSourceMapFingerprintCouldNotBeVerified": "원본 맵 지문을 검증하지 못했습니다.",
+  "editorCheckThatTheMapStillExistsIsReadableAnd": "맵이 존재하고 읽을 수 있으며 다른 프로그램이 변경 중이 아닌지 확인하세요.",
+  "editorOpenAMapBeforeUsingSaveAs": "다른 이름으로 저장하기 전에 맵을 여세요.",
+  "editorOpenAScmOrScxMapAndTryAgain": ".scm 또는 .scx 맵을 열고 다시 시도하세요.",
+  "editorEditedContainInvalidFieldValuesOrReferences": "편집한 {value0}에 유효하지 않은 필드 값 또는 참조가 있습니다.",
+  "@editorEditedContainInvalidFieldValuesOrReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorOpenValidateReferencesAndCorrectTheReportedSlots": "{value0} → 참조 검증을 열고 보고된 슬롯을 수정하세요.",
+  "@editorOpenValidateReferencesAndCorrectTheReportedSlots": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorBriefing": "브리핑",
+  "editorTriggers": "트리거",
+  "editorTheSaveAsDestinationMustBeAnAbsoluteWindows": "저장 대상은 Windows 절대 경로여야 합니다.",
+  "editorChooseTheDestinationUsingTheSaveAsDialog": "다른 이름으로 저장 대화상자에서 대상을 선택하세요.",
+  "editorNewBroodWarMapsMustBeSavedAsScx": "새 Brood War 맵은 .scx로 저장해야 합니다.",
+  "editorSaveAsSupportsOnlyScmAndScxMapFiles": "다른 이름으로 저장은 .scm 및 .scx 맵 파일만 지원합니다.",
+  "editorChooseADestinationEndingInScx": ".scx로 끝나는 대상을 선택하세요.",
+  "editorChooseADestinationEndingInScmOrScx": ".scm 또는 .scx로 끝나는 대상을 선택하세요.",
+  "editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap": "현재 열려 있는 원본 맵을 덮어쓸 수 없습니다.",
+  "editorChooseADifferentOutputFileName": "다른 출력 파일 이름을 선택하세요.",
+  "editorTheSaveAsDestinationAlreadyExists": "저장 대상이 이미 존재합니다.",
+  "editorChooseANewFileNameOrExplicitlyConfirmReplacement": "새 파일 이름을 선택하거나 다른 이름으로 저장 대화상자에서 교체를 명시적으로 확인하세요.",
+  "editorPreparingNewMap": "새 맵 준비 중",
+  "editorCheckingSourceMap": "원본 맵 검사 중",
+  "editorValidatingNewMap": "새 맵 검증 중",
+  "editorCheckingSourceMapFingerprint": "원본 맵 지문 검사 중",
+  "editorTheSourceMapChangedAfterItWasOpenedSo": "맵을 연 뒤 원본이 변경되어 저장을 중단했습니다.",
+  "editorReopenTheSourceMapToReviewTheExternalChanges": "저장 전에 원본 맵을 다시 열어 외부 변경사항을 검토하세요.",
+  "editorCheckingExistingDestinationFingerprint": "기존 대상 지문 검사 중",
+  "editorATemporarySaveAsWorkspaceCouldNotBeCreated": "임시 저장 작업 폴더를 만들지 못했습니다.",
+  "editorCheckDestinationFolderPermissionsAndFreeDiskSpace": "대상 폴더 권한과 디스크 여유 공간을 확인하세요.",
+  "editorWritingTemporaryMapArchive": "임시 맵 아카이브 기록 중",
+  "editorReopeningAndVerifyingTemporaryMap": "임시 맵 다시 열어 검증 중",
+  "editorTheReopenedTemporaryMapDoesNotContainTheExpected": "다시 연 임시 맵의 scenario.chk 바이트가 예상 값과 다릅니다.",
+  "editorKeepTheSourceMapUnchangedAndReportTheArchive": "원본 맵을 유지하고 아카이브 기록 실패를 보고하세요.",
+  "editorTheReopenedTemporaryMapFailedCHKValidation": "다시 연 임시 맵이 CHK 검증에 실패했습니다.",
+  "editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics": "원본 맵을 유지하고 파서 진단을 검사하세요.",
+  "editorFingerprintingVerifiedOutput": "검증된 출력 지문 계산 중",
+  "editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated": "검증된 임시 맵의 지문을 계산하지 못했습니다.",
+  "editorRecheckingSourceMapFingerprint": "원본 맵 지문 재검사 중",
+  "editorTheSourceMapChangedDuringSaveAsSoThe": "저장 중 원본 맵이 변경되어 검증된 출력을 최종 대상으로 옮기지 않았습니다.",
+  "editorReopenTheSourceMapToReviewTheExternalChangesf53fd806": "원본 맵을 다시 열어 외부 변경사항을 검토하고 새 출력 이름으로 재시도하세요.",
+  "editorRecheckingSaveAsDestination": "저장 대상 재검사 중",
+  "editorPromotingVerifiedMapToFinalDestination": "검증된 맵을 최종 대상으로 이동 중",
+  "editorTheExistingDestinationIsSafeInABackupBut": "기존 대상은 백업에 안전하게 보관되었지만 자동 복원에 실패했습니다.",
+  "editorRestoreTheBackupToBeforeRetryingSaveAs": "저장을 재시도하기 전에 백업을 {value0}에 복원하세요.",
+  "@editorRestoreTheBackupToBeforeRetryingSaveAs": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheVerifiedMapCouldNotBePromotedToIts": "검증된 맵을 최종 대상으로 옮기지 못했습니다.",
+  "editorCheckDestinationFolderPermissionsAndChooseANewName": "대상 폴더 권한을 확인하고 새 이름을 선택하세요.",
+  "editorThePreviousDestinationWasPreservedAsARecoveryBackup": "이전 대상은 복구 백업으로 보관되었습니다.",
+  "editorKeepTheBackupUntilTheReplacementMapHasBeen": "교체한 맵을 검증할 때까지 백업을 유지하세요.",
+  "editorMapSavedAndVerified": "맵 저장 및 검증 완료",
+  "editorMapSavedVerifiedAndBackedUp": "맵 저장, 검증 및 백업 완료",
+  "editorSaveAsFailedBecauseOfAnUnexpectedError": "예기치 않은 오류로 저장에 실패했습니다.",
+  "editorRetryWithANewOutputNameTheSourceMap": "새 출력 이름으로 다시 시도하세요. 원본 맵은 수정하지 않았습니다.",
+  "editorTheSaveAsDialogCouldNotBeOpened": "다른 이름으로 저장 대화상자를 열지 못했습니다.",
+  "editorCheckThatTheSourceMapStillExistsIsReadable": "원본 맵이 존재하고 읽을 수 있으며 다른 프로그램이 변경 중이 아닌지 확인하세요.",
+  "editorTheExistingSaveAsDestinationCouldNotBeVerified": "기존 저장 대상을 검증하지 못했습니다.",
+  "editorCheckThatTheDestinationIsAReadableRegularFile": "대상이 읽을 수 있는 일반 파일인지 확인하고 다시 시도하세요.",
+  "editorTheSaveAsDestinationChangedWhileTheMapWas": "맵을 준비하는 동안 저장 대상이 변경되었습니다.",
+  "editorReviewTheDestinationInAnotherProgramThenRetryAnd": "다른 프로그램에서 대상을 검토한 후 재시도하고 교체를 다시 확인하세요.",
+  "editorWaitingForEuddraftToStart": "euddraft 시작 대기 중",
+  "editorTheEuddraftEventStreamFailedUnexpectedly": "euddraft 이벤트 스트림에 예기치 않은 오류가 발생했습니다.",
+  "editorTheEuddraftBuildCouldNotBeStarted": "euddraft 빌드를 시작하지 못했습니다.",
+  "editorStoppingEuddraft": "euddraft 중지 중",
+  "editorTheEUDBuildCancellationRequestFailed": "EUD 빌드 취소 요청에 실패했습니다.",
+  "editorEuddraftIsStillRunning": "euddraft가 아직 실행 중입니다",
+  "editorEuddraftReturnedAnEventForADifferentBuild": "euddraft가 다른 빌드의 이벤트를 반환했습니다.",
+  "editorEuddraftIsRunning": "euddraft {value0} 실행 중",
+  "@editorEuddraftIsRunning": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorValidatingAndPromotingTheGeneratedEUDMap": "생성된 EUD 맵 검증 및 이동 중",
+  "editorEUDBuildWasCancelled": "EUD 빌드가 취소되었습니다",
+  "editorEUDBuildFailed": "EUD 빌드 실패",
+  "editorEUDMapBuiltVerifiedAndPromoted": "EUD 맵 빌드, 검증 및 이동 완료",
+  "editorTheEuddraftEventStreamEndedWithoutAResult": "euddraft 이벤트 스트림이 결과 없이 종료되었습니다.",
+  "editorInspectTheBuildLogAndRetry": "빌드 로그를 검사하고 다시 시도하세요.",
+  "editorABuildWithThisIDIsAlreadyActive": "이 ID의 빌드가 이미 실행 중입니다.",
+  "editorWaitForTheActiveBuildToFinishAndRetry": "실행 중인 빌드가 끝나면 다시 시도하세요.",
+  "editorTheEUDBuildInputsAreNotSafeRegularFiles": "EUD 빌드 입력이 안전한 일반 파일이 아닙니다.",
+  "editorCheckTheBaseMapSourceRootEntrySourceAnd": "기본 맵, 소스 루트, 진입 소스 및 출력 폴더를 확인하세요.",
+  "editorTheEUDOutputResolvesToTheBaseMap": "EUD 출력이 기본 맵과 같은 파일을 가리킵니다.",
+  "editorChooseASeparateOutputFile": "별도의 출력 파일을 선택하세요.",
+  "editorTheEUDBaseMapFingerprintCouldNotBeCalculated": "EUD 기본 맵 지문을 계산하지 못했습니다.",
+  "editorTheBaseMapDoesNotMatchTheEUDProject": "기본 맵이 EUD 프로젝트 연결 정보와 일치하지 않습니다.",
+  "editorOpenAndVerifyTheBoundMapThenPrepareAgain": "연결된 맵을 열어 검증한 후 다시 준비하세요.",
+  "editorTheEpScriptEntrySourceFingerprintCouldNotBeCalculated": "epScript 진입 소스 지문을 계산하지 못했습니다.",
+  "editorTheEUDOutputAlreadyExists": "EUD 출력이 이미 존재합니다.",
+  "editorChooseANewOutputOrExplicitlyConfirmReplacement": "새 출력을 선택하거나 교체를 명시적으로 확인하세요.",
+  "editorTheExistingEUDOutputFingerprintCouldNotBeCalculated": "기존 EUD 출력 지문을 계산하지 못했습니다.",
+  "editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated": "임시 EUD 빌드 작업 폴더를 만들지 못했습니다.",
+  "editorCheckOutputFolderPermissionsAndAvailableDiskSpace": "출력 폴더 권한과 디스크 여유 공간을 확인하세요.",
+  "editorEuddraftExitedSuccessfullyButDidNotCreateAReadable": "euddraft가 정상 종료했지만 읽을 수 있는 임시 맵을 생성하지 않았습니다.",
+  "editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap": "euddraft가 정상 종료했지만 빈 임시 맵을 생성했습니다.",
+  "editorInspectTheEuddraftOutputAndEpScriptSource": "euddraft 출력과 epScript 소스를 검사하세요.",
+  "editorTheTemporaryEUDOutputIsNotAReadableMap": "임시 EUD 출력은 읽을 수 있는 맵 아카이브가 아닙니다.",
+  "editorInspectTheEuddraftLogAndKeepTheBaseMap": "euddraft 로그를 검사하고 기본 맵을 유지하세요.",
+  "editorTheTemporaryEUDOutputContainsAnInvalidCHK": "임시 EUD 출력에 유효하지 않은 CHK가 있습니다.",
+  "editorTheTemporaryEUDOutputFailedCHKMetadataValidation": "임시 EUD 출력이 CHK 메타데이터 검증에 실패했습니다.",
+  "editorInspectTheMapValidationDiagnosticsAndEuddraftLog": "맵 검증 진단과 euddraft 로그를 검사하세요.",
+  "editorTheTemporaryEUDOutputIsMissingRequiredVERDIM": "임시 EUD 출력에 필수 VER, DIM 또는 ERA 맵 메타데이터가 없습니다.",
+  "editorUseAnIntactStarCraftMapAsTheEUDBase": "정상적인 StarCraft 맵을 EUD 기본 맵으로 사용하세요.",
+  "editorTheEUDBaseMapFingerprintCouldNotBeRechecked": "EUD 기본 맵 지문을 재검사하지 못했습니다.",
+  "editorTheBaseMapChangedDuringTheEUDBuildSo": "EUD 빌드 중 기본 맵이 변경되어 출력을 최종 대상으로 옮기지 않았습니다.",
+  "editorReviewTheBaseMapChangesAndRebuild": "기본 맵 변경사항을 검토하고 다시 빌드하세요.",
+  "editorTheEpScriptEntryFingerprintCouldNotBeRechecked": "epScript 진입 파일 지문을 재검사하지 못했습니다.",
+  "editorTheEpScriptEntryChangedDuringTheEUDBuildSo": "EUD 빌드 중 epScript 진입 파일이 변경되어 출력을 최종 대상으로 옮기지 않았습니다.",
+  "editorSaveTheSourceChangesAndRebuild": "소스 변경사항을 저장하고 다시 빌드하세요.",
+  "editorThePreviousEUDOutputIsSafeInABackup": "이전 EUD 출력은 백업에 안전하게 보관되었지만 자동 복원에 실패했습니다.",
+  "editorRestoreTheBackupToBeforeBuildingAgain": "다시 빌드하기 전에 백업을 {value0}에 복원하세요.",
+  "@editorRestoreTheBackupToBeforeBuildingAgain": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheVerifiedEUDMapCouldNotBePromotedTo": "검증된 EUD 맵을 출력 대상으로 옮기지 못했습니다.",
+  "editorCheckOutputFolderPermissionsAndChooseANewName": "출력 폴더 권한을 확인하고 새 이름을 선택하세요.",
+  "editorThePreviousEUDOutputWasPreservedAsARecovery": "이전 EUD 출력은 복구 백업으로 보관되었습니다.",
+  "editorKeepTheBackupUntilTheGeneratedMapHasBeen": "생성된 맵을 테스트할 때까지 백업을 유지하세요.",
+  "editorTheSafeEUDBuildPipelineFailedUnexpectedly": "안전한 EUD 빌드 파이프라인에 예기치 않은 오류가 발생했습니다.",
+  "editorTheTemporaryEUDBuildWorkspaceWasNotRemoved": "임시 EUD 빌드 작업 폴더를 삭제하지 못했습니다.",
+  "editorCloseProcessesUsingTheFolderThenRemoveItManually": "이 폴더를 사용하는 프로세스를 닫고 직접 삭제하세요.",
+  "editorMapSourceOrEUDProjectChangedPrepareTheBuild": "맵, 소스 또는 EUD 프로젝트가 변경되었습니다. 빌드를 다시 준비하세요.",
+  "editorSaveAndVerifyTheCurrentInputsThenPrepareAgain": "현재 입력을 저장하고 검증한 후 다시 준비하세요.",
+  "editorTheSelectedEuddraftInstallationCouldNotBeRechecked": "선택한 euddraft 설치를 재검사하지 못했습니다.",
+  "editorInspectTheToolAndPrepareANewBuild": "도구를 검사하고 새 빌드를 준비하세요.",
+  "editorTheSelectedEuddraftInstallationChangedOrIsNotReady": "선택한 euddraft 설치가 변경되었거나 준비되지 않았습니다.",
+  "editorCheckThatTheFileIsReadableAndIsNot": "파일을 읽을 수 있고 변경 중이 아닌지 확인하세요.",
+  "editorTheExistingEUDOutputCouldNotBeRechecked": "기존 EUD 출력을 재검사하지 못했습니다.",
+  "editorTheEUDOutputChangedWhileTheMapWasBeing": "맵 빌드 중 EUD 출력이 변경되어 임시 출력을 최종 대상으로 옮기지 않았습니다.",
+  "editorReviewTheOtherProgramUsingTheOutputAndRebuild": "출력을 사용하는 다른 프로그램을 확인하고 다시 빌드하세요.",
+  "editorTheObjectCatalogRequestFailedUnexpectedly": "객체 카탈로그 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorRetryOrRepairTheApplicationInstallation": "다시 시도하거나 앱 설치를 복구하세요.",
+  "editorTheObjectThumbnailRequestFailedUnexpectedly": "객체 미리보기 이미지 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorTheObjectCatalogRequestIsNoLongerCurrent": "객체 카탈로그 요청이 더 이상 최신 상태가 아닙니다.",
+  "editorLoadTheCurrentlySelectedCatalog": "현재 선택한 카탈로그를 불러오세요.",
+  "editorTheObjectCatalogAndThumbnailResultsDidNotMatch": "객체 카탈로그와 미리보기 이미지 결과가 일치하지 않습니다.",
+  "editorRepairTheApplicationOrReportTheHelperError": "앱을 복구하거나 도우미 오류를 보고하세요.",
+  "editorTheStarCraftObjectAtlasRequestFailedUnexpectedly": "StarCraft 객체 아틀라스 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorTheStarCraftObjectAtlasResultDidNotMatchIts": "StarCraft 객체 아틀라스 결과가 요청 묶음과 일치하지 않습니다.",
+  "editorOpenAMapBeforeBrowsingThePlacementCatalog": "배치 카탈로그를 탐색하기 전에 맵을 여세요.",
+  "editorSetTheStarCraftRemasteredDataFolderInSettingsFirst": "설정에서 StarCraft: Remastered 데이터 폴더를 먼저 지정하세요.",
+  "editorTheMapNeedsExactlyOneERASectionWithA": "맵에 알려진 타일셋을 가진 ERA 섹션이 정확히 하나 있어야 합니다.",
+  "editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe": "카탈로그가 변경되었거나 중복된 페이지가 반환되었습니다. 종류를 다시 선택하여 불러오세요.",
+  "editorThePlacementCatalogIsUnavailableInThisBuild": "이 빌드에서는 배치 카탈로그를 사용할 수 없습니다.",
+  "editorStarCraftDataAssetSettingsCouldNotBeLoaded": "StarCraft 데이터 자산 설정을 불러오지 못했습니다.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndRetry": "앱 설정 폴더 접근 권한을 확인하고 다시 시도하세요.",
+  "editorTheStarCraftInstallationFolderPickerCouldNotBeOpened": "StarCraft 설치 폴더 선택창을 열지 못했습니다.",
+  "editorRetryOrCheckWindowsDialogPermissions": "다시 시도하거나 Windows 대화상자 권한을 확인하세요.",
+  "editorTheStarCraftInstallationPathCouldNotBeSaved": "StarCraft 설치 경로를 저장하지 못했습니다.",
+  "editorTheStarCraftInstallationPathCouldNotBeCleared": "StarCraft 설치 경로를 지우지 못했습니다.",
+  "editorTheStarCraftCASCStorageCouldNotBeInspected": "StarCraft CASC 저장소를 검사하지 못했습니다.",
+  "editorCheckDirectoryAccessAndRetry": "폴더 접근 권한을 확인하고 다시 시도하세요.",
+  "editorTheStarCraftInstallationIsNotConfigured": "StarCraft 설치가 설정되지 않았습니다.",
+  "editorOpenSettingsAndChooseTheStarCraftInstallationDirectory": "설정을 열어 StarCraft 설치 폴더를 선택하세요.",
+  "editorTheStarCraftTileAtlasRequestFailedUnexpectedly": "StarCraft 타일 아틀라스 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorTheStarCraftTileAtlasResultDidNotMatchIts": "StarCraft 타일 아틀라스 결과가 요청 묶음과 일치하지 않습니다.",
+  "editorTheTileCatalogRequestFailedUnexpectedly": "타일 카탈로그 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorTheTileThumbnailRequestFailedUnexpectedly": "타일 미리보기 이미지 요청에 예기치 않은 오류가 발생했습니다.",
+  "editorTheTileCatalogRequestIsNoLongerCurrent": "타일 카탈로그 요청이 더 이상 최신 상태가 아닙니다.",
+  "editorTheTileCatalogAndThumbnailResultsDidNotMatch": "타일 카탈로그와 미리보기 이미지 결과가 일치하지 않습니다.",
+  "editorTheMapPathMustBeAnAbsoluteWindowsPath": "맵 경로는 Windows 절대 경로여야 합니다.",
+  "editorChooseTheMapAgainUsingTheOpenMapDialog": "맵 열기 대화상자에서 맵을 다시 선택하세요.",
+  "editorAnArchiveOperationWithTheSameIDIsAlready": "같은 ID의 아카이브 작업이 이미 실행 중입니다.",
+  "editorWaitForTheActiveOperationOrCancelItFirst": "실행 중인 작업을 기다리거나 먼저 취소하세요.",
+  "editorTheBundledMapArchiveHelperIsMissing": "포함된 맵 아카이브 도우미가 없습니다.",
+  "editorRepairOrReinstallTheApplication": "앱을 복구하거나 다시 설치하세요.",
+  "editorATemporaryArchiveWorkspaceCouldNotBeCreated": "임시 아카이브 작업 폴더를 만들지 못했습니다.",
+  "editorCheckFreeDiskSpaceAndTemporaryFolderPermissions": "디스크 여유 공간과 임시 폴더 권한을 확인하세요.",
+  "editorTheMapArchiveHelperTimedOut": "맵 아카이브 도우미의 제한 시간이 초과되었습니다.",
+  "editorRetryTheOperationOrInspectTheMapForCorruption": "작업을 다시 시도하거나 맵 손상 여부를 검사하세요.",
+  "editorTheMapArchiveOperationWasCancelled": "맵 아카이브 작업이 취소되었습니다.",
+  "editorOpenTheMapAgainWhenReady": "준비되면 맵을 다시 여세요.",
+  "editorTheMapArchiveHelperProducedTooMuchOutput": "맵 아카이브 도우미의 출력량이 한도를 넘었습니다.",
+  "editorRepairTheApplicationOrReportTheHelperFailure": "앱을 복구하거나 도우미 실패를 보고하세요.",
+  "editorScenarioChkExceedsTheConfiguredExtractionSizeLimit": "scenario.chk가 설정된 추출 크기 한도를 넘었습니다.",
+  "editorRaiseTheReviewedSizeLimitOnlyForATrusted": "신뢰할 수 있는 맵에만 검토 후 크기 한도를 높이세요.",
+  "editorTheExtractedScenarioChkCouldNotBeRead": "추출한 scenario.chk를 읽지 못했습니다.",
+  "editorRetryTheOperationAndCheckTemporaryDiskAccess": "작업을 다시 시도하고 임시 디스크 접근 권한을 확인하세요.",
+  "editorTheExtractedScenarioChkDoesNotMatchHelperMetadata": "추출한 scenario.chk가 도우미 메타데이터와 일치하지 않습니다.",
+  "editorTheMapArchiveHelperCouldNotBeStarted": "맵 아카이브 도우미를 시작하지 못했습니다.",
+  "editorTheMapArchiveHelperReturnedAnInvalidResponse": "맵 아카이브 도우미가 유효하지 않은 응답을 반환했습니다.",
+  "editorTheSourceMapPathMustBeAnAbsoluteWindows": "원본 맵 경로는 Windows 절대 경로여야 합니다.",
+  "editorOpenTheSourceMapAgainUsingTheOpenMap": "맵 열기 대화상자에서 원본 맵을 다시 여세요.",
+  "editorTheTemporaryOutputPathMustBeAnAbsoluteWindows": "임시 출력 경로는 Windows 절대 경로여야 합니다.",
+  "editorCreateTheSaveAsWorkspaceAgain": "임시 저장 작업 폴더를 다시 만드세요.",
+  "editorTheSourceMapCannotBeUsedAsTemporaryOutput": "원본 맵을 임시 출력으로 사용할 수 없습니다.",
+  "editorChooseADifferentSaveAsDestination": "다른 저장 대상을 선택하세요.",
+  "editorTheTemporaryArchiveOutputAlreadyExists": "임시 아카이브 출력이 이미 존재합니다.",
+  "editorCreateAFreshSaveAsWorkspaceAndRetry": "새 임시 저장 작업 폴더를 만들고 다시 시도하세요.",
+  "editorTheTemporarySaveAsWorkspaceDoesNotExist": "임시 저장 작업 폴더가 없습니다.",
+  "editorTheTemporarySaveAsWorkspaceCouldNotBeInspected": "임시 저장 작업 폴더를 검사하지 못했습니다.",
+  "editorCheckDestinationFolderPermissionsAndRetry": "대상 폴더 권한을 확인하고 다시 시도하세요.",
+  "editorTheTemporaryScenarioInputPathAlreadyExists": "임시 시나리오 입력 경로가 이미 존재합니다.",
+  "editorTheTemporaryArchiveWriterTimedOut": "임시 아카이브 기록의 제한 시간이 초과되었습니다.",
+  "editorTheMapArchiveWriteWasCancelled": "맵 아카이브 기록이 취소되었습니다.",
+  "editorRunSaveAsAgainWhenReady": "준비되면 다른 이름으로 저장을 다시 실행하세요.",
+  "editorTheHelperReportedAnUnexpectedScenarioChkSize": "도우미가 예상과 다른 scenario.chk 크기를 보고했습니다.",
+  "editorTheHelperDidNotCreateTheTemporaryMapArchive": "도우미가 임시 맵 아카이브를 생성하지 않았습니다.",
+  "editorRetrySaveAsOrRepairTheApplication": "저장을 다시 시도하거나 앱을 복구하세요.",
+  "editorTheTemporaryMapArchiveCouldNotBeInspected": "임시 맵 아카이브를 검사하지 못했습니다.",
+  "editorTheTemporaryMapSizeDoesNotMatchHelperMetadata": "임시 맵 크기가 도우미 메타데이터와 일치하지 않습니다.",
+  "editorTheTemporaryScenarioInputCouldNotBeWritten": "임시 시나리오 입력을 기록하지 못했습니다.",
+  "editorTheArchiveEntryListingIsIncomplete": "아카이브 항목 목록이 불완전합니다.",
+  "editorEditingCanContinueButVerifyProtectedOrUnnamedEntries": "편집은 계속할 수 있지만 저장 전에 보호되거나 이름이 없는 항목을 검증하세요.",
+  "editorSomeArchiveEntryNamesWereRecoveredSynthetically": "일부 아카이브 항목에는 합성된 이름을 사용했습니다.",
+  "editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths": "합성 이름은 원본 경로가 아니라 진단용 표시로 취급하세요.",
+  "editorTheArchiveContainsDuplicateEntryPaths": "아카이브에 중복 항목 경로가 있습니다.",
+  "editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving": "저장 전에 로캘 변형과 중복 항목을 검토하세요.",
+  "editorTheMapUsesAnUnexpectedMPQFormatVersion": "맵이 예상하지 않은 MPQ 형식 버전을 사용합니다.",
+  "editorUseSaveAsAndReOpenTheOutputBefore": "다른 이름으로 저장한 뒤 출력을 다시 열어 확인하고 맵을 교체하세요.",
+  "editorTheArchiveContainsEncryptedEntries": "아카이브에 암호화된 항목이 있습니다.",
+  "editorEncryptedEntriesAreReportedWithoutAttemptingRecovery": "암호화된 항목은 복구를 시도하지 않고 보고합니다.",
+  "editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows": "StarCraft 설치 경로는 Windows 드라이브 또는 UNC 폴더의 절대 경로여야 합니다.",
+  "editorChooseTheStarCraftInstallationUsingTheSettingsDialog": "설정 대화상자에서 StarCraft 설치를 선택하세요.",
+  "editorTheBundledStarCraftCASCHelperIsMissing": "포함된 StarCraft CASC 도우미가 없습니다.",
+  "editorTheStarCraftCASCInspectionTimedOut": "StarCraft CASC 검사의 제한 시간이 초과되었습니다.",
+  "editorRetryAfterRepairingTheStarCraftInstallationInBattleNet": "Battle.net에서 StarCraft 설치를 복구한 후 다시 시도하세요.",
+  "editorTheStarCraftCASCHelperProducedTooMuchOutput": "StarCraft CASC 도우미의 출력량이 한도를 넘었습니다.",
+  "editorTheStarCraftCASCHelperCouldNotBeStarted": "StarCraft CASC 도우미를 시작하지 못했습니다.",
+  "editorTheStarCraftInstallationCouldNotBeInspected": "StarCraft 설치를 검사하지 못했습니다.",
+  "editorCheckDirectoryPermissionsAndRetry": "폴더 권한을 확인하고 다시 시도하세요.",
+  "editorRequiredStarCraftCASCTilesetMissing": "필수 StarCraft CASC 타일셋 자산 {value0}개가 누락되었습니다.",
+  "@editorRequiredStarCraftCASCTilesetMissing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAssetIs": "자산이",
+  "editorAssetsAre": "자산이",
+  "editorRepairTheStarCraftInstallationInBattleNetAndRetry": "Battle.net에서 StarCraft 설치를 복구하고 다시 시도하세요.",
+  "editorRequiredStarCraftCASCTilesetUnreadable": "필수 StarCraft CASC 타일셋 자산 {value0}개를 읽을 수 없습니다.",
+  "@editorRequiredStarCraftCASCTilesetUnreadable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheStarCraftCASCHelperReturnedAnInvalidResponse": "StarCraft CASC 도우미가 유효하지 않은 응답을 반환했습니다.",
+  "editorTheStarCraftInstallationPathIsInvalid": "StarCraft 설치 경로가 유효하지 않습니다.",
+  "editorChooseTheStarCraftInstallationFolderAgain": "StarCraft 설치 폴더를 다시 선택하세요.",
+  "editorAnObjectRenderingOperationWithThisIDIsActive": "이 ID의 객체 렌더링 작업이 실행 중입니다.",
+  "editorWaitForTheCurrentMapRenderingOperationToFinish": "현재 맵 렌더링 작업이 끝날 때까지 기다리세요.",
+  "editorTheStarCraftObjectRenderingHelperTimedOut": "StarCraft 객체 렌더링 도우미의 제한 시간이 초과되었습니다.",
+  "editorRepairTheStarCraftInstallationAndRetry": "StarCraft 설치를 복구하고 다시 시도하세요.",
+  "editorTheStarCraftObjectHelperProducedTooMuchOutput": "StarCraft 객체 도우미의 출력량이 한도를 넘었습니다.",
+  "editorTheStarCraftObjectHelperCouldNotBeStarted": "StarCraft 객체 도우미를 시작하지 못했습니다.",
+  "editorTheStarCraftObjectAtlasCouldNotBeReadSafely": "StarCraft 객체 아틀라스를 안전하게 읽지 못했습니다.",
+  "editorTheStarCraftObjectHelperReturnedAnInvalidResponse": "StarCraft 객체 도우미가 유효하지 않은 응답을 반환했습니다.",
+  "editorTheStarCraftObjectRenderingOperationWasCancelled": "StarCraft 객체 렌더링 작업이 취소되었습니다.",
+  "editorRetryAfterTheVisibleMapStateBecomesStable": "표시되는 맵 상태가 안정되면 다시 시도하세요.",
+  "editorThisHelperVersionDoesNotSupportThatCatalogKind": "이 도우미 버전은 해당 카탈로그 종류를 지원하지 않습니다.",
+  "editorChooseTheTileDoodadUnitOrPureSpriteCatalog": "타일, 두대드, 유닛 또는 순수 스프라이트 카탈로그를 선택하세요.",
+  "editorACatalogOperationWithThisIDIsAlreadyActive": "이 ID의 카탈로그 작업이 이미 실행 중입니다.",
+  "editorWaitForTheActiveCatalogOperationToFinish": "실행 중인 카탈로그 작업이 끝날 때까지 기다리세요.",
+  "editorTheStarCraftCatalogHelperTimedOut": "StarCraft 카탈로그 도우미의 제한 시간이 초과되었습니다.",
+  "editorTheStarCraftCatalogHelperProducedTooMuchOutput": "StarCraft 카탈로그 도우미의 출력량이 한도를 넘었습니다.",
+  "editorTheStarCraftCatalogHelperCouldNotBeStarted": "StarCraft 카탈로그 도우미를 시작하지 못했습니다.",
+  "editorTheStarCraftCatalogCouldNotBeListedSafely": "StarCraft 카탈로그 목록을 안전하게 읽지 못했습니다.",
+  "editorTheLocalDoodadRecipeIsInvalid": "로컬 두대드 레시피가 유효하지 않습니다.",
+  "editorTheLocalObjectPreviewIsUnavailable": "로컬 객체 미리보기를 사용할 수 없습니다.",
+  "editorVerifiedUnitCapabilityDataIsUnavailable": "검증된 유닛 기능 데이터를 사용할 수 없습니다.",
+  "editorThisUnitNeedsAnAddonOrNydusRelation": "이 유닛에는 애드온 또는 나이더스 연결이 필요합니다.",
+  "editorTheStarCraftCatalogHelperReturnedAnInvalidResponse": "StarCraft 카탈로그 도우미가 유효하지 않은 응답을 반환했습니다.",
+  "editorRepairTheApplicationOrReportTheCatalogHelperError": "앱을 복구하거나 카탈로그 도우미 오류를 보고하세요.",
+  "editorTheStarCraftCatalogOperationWasCancelled": "StarCraft 카탈로그 작업이 취소되었습니다.",
+  "editorRetryTheCatalogOperationWhenReady": "준비되면 카탈로그 작업을 다시 시도하세요.",
+  "editorTheStarCraftTileRenderingHelperTimedOut": "StarCraft 타일 렌더링 도우미의 제한 시간이 초과되었습니다.",
+  "editorTheStarCraftTileHelperProducedTooMuchOutput": "StarCraft 타일 도우미의 출력량이 한도를 넘었습니다.",
+  "editorTheStarCraftTileHelperCouldNotBeStarted": "StarCraft 타일 도우미를 시작하지 못했습니다.",
+  "editorTheStarCraftTileAtlasCouldNotBeReadSafely": "StarCraft 타일 아틀라스를 안전하게 읽지 못했습니다.",
+  "editorTheStarCraftTileHelperReturnedAnInvalidResponse": "StarCraft 타일 도우미가 유효하지 않은 응답을 반환했습니다.",
+  "editorOpenTheReportedEpScriptModuleAndFixThisLine": "보고된 epScript 모듈을 열어 이 줄을 수정하세요.",
+  "editorEuddraftInspectionIsSupportedOnlyOnWindows": "euddraft 검사는 Windows에서만 지원됩니다.",
+  "editorRunTheEditorOnWindows10OrWindows11": "Windows 10 또는 Windows 11에서 편집기를 실행하세요.",
+  "editorAnEuddraftInstallationPathHasNotBeenConfigured": "euddraft 설치 경로가 설정되지 않았습니다.",
+  "editorSelectTheExtractedEuddraftDirectoryOrEuddraftExe": "압축을 푼 euddraft 폴더 또는 euddraft.exe를 선택하세요.",
+  "editorTheEuddraftInstallationCouldNotBeInspected": "euddraft 설치를 검사하지 못했습니다.",
+  "editorCheckPathPermissionsAndRetry": "경로 권한을 확인하고 다시 시도하세요.",
+  "editorTheEuddraftPathMustBeAnAbsoluteWindowsPath": "euddraft 경로는 Windows 절대 경로여야 합니다.",
+  "editorSelectThePathUsingTheEditorSettings": "편집기 설정에서 경로를 선택하세요.",
+  "editorTheConfiguredFileIsNotEuddraftExe": "설정된 파일은 euddraft.exe가 아닙니다.",
+  "editorSelectTheOfficialEuddraftExeOrItsInstallationFolder": "공식 euddraft.exe 또는 설치 폴더를 선택하세요.",
+  "editorTheConfiguredEuddraftPathDoesNotExist": "설정된 euddraft 경로가 없습니다.",
+  "editorExtractTheOfficialEuddraftReleaseAndRetry": "공식 euddraft 릴리스의 압축을 풀고 다시 시도하세요.",
+  "editorTheConfiguredEuddraftPathIsNotARegularFile": "설정된 euddraft 경로는 일반 파일 또는 폴더가 아닙니다.",
+  "editorSelectALocalExtractedEuddraftInstallation": "로컬에 압축을 푼 euddraft 설치를 선택하세요.",
+  "editorTheInstallationDoesNotContainAUsableEuddraftExe": "설치에 사용할 수 있는 euddraft.exe가 없습니다.",
+  "editorReExtractTheOfficialEuddraftRelease": "공식 euddraft 릴리스의 압축을 다시 푸세요.",
+  "editorTheEuddraftVERSIONFileIsMissing": "euddraft VERSION 파일이 없습니다.",
+  "editorUseACompleteOfficialEuddraftReleaseArchive": "완전한 공식 euddraft 릴리스 아카이브를 사용하세요.",
+  "editorTheEuddraftVERSIONFileHasAnInvalidSize": "euddraft VERSION 파일 크기가 유효하지 않습니다.",
+  "editorTheEuddraftVERSIONValueIsNotRecognized": "euddraft VERSION 값을 인식할 수 없습니다.",
+  "editorUseAnOfficialFourComponentEuddraftRelease": "네 부분 버전 번호를 사용하는 공식 euddraft 릴리스를 사용하세요.",
+  "editorEuddraftIsNotSupportedByThisEditor": "이 편집기는 euddraft {value0}을 지원하지 않습니다.",
+  "@editorEuddraftIsNotSupportedByThisEditor": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInstallASupportedRelease": "지원되는 릴리스를 설치하세요: {value0}.",
+  "@editorInstallASupportedRelease": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheEuddraftInstallationIsIncomplete": "euddraft 설치가 불완전합니다.",
+  "editorReExtractTheCompleteOfficialEuddraftRelease": "완전한 공식 euddraft 릴리스의 압축을 다시 푸세요.",
+  "editorTheAppHasNoTrustedInventoryForThisBundled": "앱에 이 포함 도구의 신뢰할 수 있는 파일 목록이 없습니다.",
+  "editorUseAVerifiedAppPackageOrExplicitlySelectAn": "검증된 앱 패키지를 사용하거나 외부 설치를 명시적으로 선택하세요.",
+  "editorBundledToolIntegrityVerificationFailed": "포함 도구의 무결성 검증에 실패했습니다.",
+  "editorRepairTheBundledInstallationOrExplicitlySelectAnExternal": "포함 설치를 복구하거나 외부 도구를 명시적으로 선택하세요.",
+  "editorAnEUDBuildWithTheSameIDIsAlready": "같은 ID의 EUD 빌드가 이미 실행 중입니다.",
+  "editorWaitForTheActiveBuildOrCancelItFirst": "실행 중인 빌드를 기다리거나 먼저 취소하세요.",
+  "editorEuddraftCouldNotBeStarted": "euddraft를 시작하지 못했습니다.",
+  "editorReinspectTheEuddraftInstallationAndRetry": "euddraft 설치를 다시 검사하고 재시도하세요.",
+  "editorTheEuddraftBuildTimedOut": "euddraft 빌드의 제한 시간이 초과되었습니다.",
+  "editorInspectTheBuildLogThenRetryOrCancel": "빌드 로그를 검사한 후 재시도하거나 취소하세요.",
+  "editorEuddraftProducedMoreOutputThanTheSafetyLimit": "euddraft 출력량이 안전 한도를 넘었습니다.",
+  "editorInspectTheSourceForRunawayLoggingBeforeRetrying": "재시도하기 전에 소스에서 과도한 로그 출력을 확인하세요.",
+  "editorEuddraftExitedWithAFailureCode": "euddraft가 실패 코드로 종료되었습니다.",
+  "editorReviewStdoutAndStderrForTheCompilerError": "stdout과 stderr에서 컴파일러 오류를 검토하세요.",
+  "editorTheEUDBuildCouldNotAccessARequiredFile": "EUD 빌드가 필수 파일에 접근하지 못했습니다.",
+  "editorCheckFilePermissionsAndRetry": "파일 권한을 확인하고 다시 시도하세요.",
+  "editorTheEUDBuildFailedUnexpectedly": "EUD 빌드에 예기치 않은 오류가 발생했습니다.",
+  "editorRetryTheBuildOrReportTheFailure": "빌드를 다시 시도하거나 실패를 보고하세요.",
+  "editorEuddraftBuildsAreSupportedOnlyOnWindows": "euddraft 빌드는 Windows에서만 지원됩니다.",
+  "editorTheEuddraftExecutablePathMustBeAbsolute": "euddraft 실행 파일 경로는 절대 경로여야 합니다.",
+  "editorInspectAndSelectTheEuddraftInstallationAgain": "euddraft 설치를 검사하고 다시 선택하세요.",
+  "editorTheInspectedEuddraftExecutableIsNoLongerAvailable": "검사한 euddraft 실행 파일을 더 이상 사용할 수 없습니다.",
+  "editorInspectTheEuddraftInstallationAgain": "euddraft 설치를 다시 검사하세요.",
+  "editorTheEuddraftSettingsPathMustBeAnAbsoluteEds": "euddraft 설정 경로는 .eds 파일의 절대 경로여야 합니다.",
+  "editorChooseAGeneratedOneShotEdsSettingsFile": "생성된 일회성 .eds 설정 파일을 선택하세요.",
+  "editorTheEuddraftSettingsFileIsMissingOrEmpty": "euddraft 설정 파일이 없거나 비어 있습니다.",
+  "editorGenerateTheBuildSettingsAgainAndRetry": "빌드 설정을 다시 생성하고 재시도하세요.",
+  "editorTheEUDBuildWasCancelled": "EUD 빌드가 취소되었습니다.",
+  "editorStartTheBuildAgainWhenReady": "준비되면 빌드를 다시 시작하세요.",
+  "editorInactive": "비활성",
+  "editorRescuePassive": "구조 대상 (수동)",
+  "editorComputer": "컴퓨터",
+  "editorHuman": "사용자",
+  "editorNeutral": "중립",
+  "editorZerg": "저그",
+  "editorTerran": "테란",
+  "editorProtoss": "프로토스",
+  "editorIndependent": "독립",
+  "editorUserSelectable": "사용자 선택",
+  "editorRandom": "무작위",
+  "editorRed": "빨강",
+  "editorBlue": "파랑",
+  "editorTeal": "청록",
+  "editorPurple": "보라",
+  "editorOrange": "주황",
+  "editorBrown": "갈색",
+  "editorWhite": "흰색",
+  "editorYellow": "노랑",
+  "editorGreen": "초록",
+  "editorPaleYellow": "연노랑",
+  "editorTan": "황갈색",
+  "editorAzure": "하늘색",
+  "editorExpectedOneSectionFound": "{value0}: 섹션이 하나여야 하지만 {value1}개 있습니다.",
+  "@editorExpectedOneSectionFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorExpectedBytesFound": "{value0}: {value1}바이트여야 하지만 {value2}바이트입니다.",
+  "@editorExpectedBytesFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorASingleKnownVERSectionIsRequired": "알려진 VER 섹션이 정확히 하나 필요합니다.",
+  "editorCRGBColorSettingsArePresentCOLREditingIsUnavailable": "CRGB 색상 설정이 있습니다. 두 설정의 상호작용을 지원할 때까지 COLR를 편집할 수 없습니다.",
+  "editorAPlayerFieldMayBeUpdatedOnlyOnce": "플레이어 필드는 한 번만 변경할 수 있습니다.",
+  "editorUnsupportedID": "지원하지 않는 {value0} ID: {value1}.",
+  "@editorUnsupportedID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStartLocationsCannotBeCheckedAUNITSectionIs": "시작 위치를 검사할 수 없습니다: UNIT 섹션의 형식이 잘못되었습니다.",
+  "editorStartLocationHasNonPlayableOwnerID": "시작 위치의 소유자 ID {value0}은 플레이 가능하지 않습니다.",
+  "@editorStartLocationHasNonPlayableOwnerID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerHasStartLocations": "플레이어 {value0}의 시작 위치가 {value1}개 있습니다.",
+  "@editorPlayerHasStartLocations": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerHasNoStartLocationCheckTheIntendedUMS": "플레이어 {value0}의 시작 위치가 없습니다. 의도한 UMS 설정인지 확인하세요.",
+  "@editorPlayerHasNoStartLocationCheckTheIntendedUMS": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInactivePlayerOwnsAStartLocation": "비활성 플레이어 {value0}에 시작 위치가 있습니다.",
+  "@editorInactivePlayerOwnsAStartLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForceNamesRequireOneSafeSTROrSTRxTable": "세력 이름에는 안전한 STR 또는 STRx 테이블이 하나 필요합니다.",
+  "editorForceSettingsRequireOneKnownVERAndOne20": "세력 설정에는 알려진 VER 섹션 하나와 20바이트 FORC 섹션 하나가 필요합니다.",
+  "editorInvalidForceNameStringID": "세력 이름 문자열 ID {value0}이 유효하지 않습니다.",
+  "@editorInvalidForceNameStringID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForceNamesCannotContainNUL": "세력 이름에는 NUL을 포함할 수 없습니다.",
+  "editorFORCStringIDsCannotExceed65535": "FORC 문자열 ID는 65535를 넘을 수 없습니다.",
+  "editorUseDefaults": "기본값 사용",
+  "editorHitPoints": "체력",
+  "editorShields": "보호막",
+  "editorArmor": "방어력",
+  "editorBuildTime160S": "생산 시간 (1/60초)",
+  "editorMineralCost": "미네랄 비용",
+  "editorGasCost": "가스 비용",
+  "editorHitPointsRequireANonnegativeDecimalInStepsOf": "체력은 1/256 단위의 음수가 아닌 소수여야 합니다.",
+  "editorHitPointsMustBeAMultipleOf1256": "체력은 1/256의 배수여야 합니다.",
+  "editorRequiresANonnegativeInteger": "{value0}에는 음수가 아닌 정수가 필요합니다.",
+  "@editorRequiresANonnegativeInteger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInvalidUnitNameStringID": "유닛 이름 문자열 ID {value0}이 유효하지 않습니다.",
+  "@editorInvalidUnitNameStringID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitSettingsRequireOneKnownVERSection": "유닛 설정에는 알려진 VER 섹션이 하나 필요합니다.",
+  "editorUnitNamesRequireOneSafeSTROrSTRxTable": "유닛 이름에는 안전한 STR 또는 STRx 테이블이 하나 필요합니다.",
+  "editorUnitNamesCannotContainNUL": "유닛 이름에는 NUL을 포함할 수 없습니다.",
+  "editorUnitNameIDsCannotExceed65535": "유닛 이름 ID는 65535를 넘을 수 없습니다.",
+  "editorGlobalAvailabilityHasNoPlayer": "전체 사용 가능 여부에는 플레이어가 없습니다.",
+  "editorAPlayerIsRequired": "플레이어가 필요합니다.",
+  "editorUnitAvailabilityRequiresOneKnownVERSection": "유닛 사용 가능 여부에는 알려진 VER 섹션이 하나 필요합니다.",
+  "editorPUNIExpectedOneSectionFound": "PUNI: 섹션이 하나여야 하지만 {value0}개 있습니다.",
+  "@editorPUNIExpectedOneSectionFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPUNIExpected5700BytesFound": "PUNI: 5700바이트여야 하지만 {value0}바이트입니다.",
+  "@editorPUNIExpected5700BytesFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorResearchTime160S": "연구 시간 (1/60초)",
+  "editorEnergyCost": "에너지 비용",
+  "editorCostsHaveNoPlayer": "비용에는 플레이어가 없습니다.",
+  "editorInheritanceRequiresAPlayer": "상속에는 플레이어가 필요합니다.",
+  "editorTechSettingsRequireOneKnownVERSection": "기술 설정에는 알려진 VER 섹션이 하나 필요합니다.",
+  "editorBaseMineralCost": "기본 미네랄 비용",
+  "editorMineralCostPerLevel": "레벨당 미네랄 비용",
+  "editorBaseGasCost": "기본 가스 비용",
+  "editorGasCostPerLevel": "레벨당 가스 비용",
+  "editorBaseResearchTime160S": "기본 연구 시간 (1/60초)",
+  "editorResearchTimePerLevel160S": "레벨당 연구 시간 (1/60초)",
+  "editorMaximumLevel": "최대 레벨",
+  "editorStartingLevel": "시작 레벨",
+  "editorUpgradeSettingsRequireOneKnownVERSection": "업그레이드 설정에는 알려진 VER 섹션이 하나 필요합니다.",
+  "editorUpgradeStartingLevelMustNotExceedMaximumLevel": "업그레이드 #{value0} {value1}: 시작 레벨은 최대 레벨을 넘을 수 없습니다.",
+  "@editorUpgradeStartingLevelMustNotExceedMaximumLevel": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEnterIDsSuchAs025": "0, 2-5 형식으로 ID를 입력하세요.",
+  "editorUseCommaSeparatedIDsOrAscendingRanges": "쉼표로 구분한 ID 또는 오름차순 범위를 사용하세요.",
+  "editorIDsMustBeBetweenAndInAscendingRanges": "ID는 {value0}~{value1} 범위에 있어야 하며 범위는 오름차순이어야 합니다.",
+  "@editorIDsMustBeBetweenAndInAscendingRanges": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorOneStructurallySafeSTRSTRxTableIsRequiredFor": "편집하려면 구조적으로 안전한 STR/STRx 테이블이 하나 필요합니다.",
+  "editorTruncated": "잘린 {value0}",
+  "@editorTruncated": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedSPRP": "SPRP 형식 오류",
+  "editorMalformedFORC": "FORC 형식 오류",
+  "editorForcef1368d9": "세력 {value0}",
+  "@editorForcef1368d9": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedMRGN": "MRGN 형식 오류",
+  "editorLocation": "위치 {value0}",
+  "@editorLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedSWNM": "SWNM 형식 오류",
+  "editorSwitchffe3c882": "스위치 {value0}",
+  "@editorSwitchffe3c882": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedWAV": "WAV 형식 오류",
+  "editorSoundSlot": "사운드 슬롯 {value0}",
+  "@editorSoundSlot": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformed": "{value0} 형식 오류",
+  "@editorMalformed": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitc6ee345c": "유닛 {value0}",
+  "@editorUnitc6ee345c": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawConditionInTrigger": "트리거 {value0}의 원시 조건",
+  "@editorRawConditionInTrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawActionInTrigger": "트리거 {value0}의 원시 액션",
+  "@editorRawActionInTrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTriggerAction": "트리거 {value0} 액션 {value1} {value2}",
+  "@editorTriggerAction": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawBriefingAction": "원시 브리핑 액션",
+  "editorBriefingActionText": "브리핑 {value0} 액션 {value1} 텍스트",
+  "@editorBriefingActionText": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorBriefingActionSound": "브리핑 {value0} 액션 {value1} 사운드",
+  "@editorBriefingActionSound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUninterpretedSection": "해석하지 않은 {value0} 섹션",
+  "@editorUninterpretedSection": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDuplicateCHKSections": "중복 CHK 섹션",
+  "editorInvalidStringID": "유효하지 않은 문자열 ID입니다.",
+  "editorSoundPathReferencesAreManagedThroughSoundImportDelete": "사운드 경로 참조는 사운드 가져오기·삭제로 관리합니다. 텍스트를 편집하려면 텍스트 참조를 분리하세요.",
+  "editorReferencedOrIncompletelyTracedStringsCannotBeCleared": "참조되거나 참조 검사가 불완전한 문자열은 비울 수 없습니다.",
+  "editorNULIsNotAllowed": "NUL은 허용되지 않습니다.",
+  "editorTheSelectedReferenceChanged": "선택한 참조가 변경되었습니다.",
+  "editorThisReferenceRequiresA16BitStringID": "이 참조에는 16비트 문자열 ID가 필요합니다.",
+  "editorOneValidWAVTableIsRequired": "유효한 WAV 테이블이 하나 필요합니다.",
+  "editorAll512SoundSlotsAreOccupied": "사운드 슬롯 512개가 모두 사용 중입니다.",
+  "editorSoundIsReferencedOrReferenceCoverageIsIncomplete": "사운드가 참조되거나 참조 검사 범위가 불완전합니다.",
+  "editorAmbiguousOrMalformedSection": "{value0} 섹션이 모호하거나 형식이 잘못되었습니다.",
+  "@editorAmbiguousOrMalformedSection": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTextCannotContainNUL": "텍스트에는 NUL을 포함할 수 없습니다.",
+  "editorOneSafeStringTableIsRequired": "안전한 문자열 테이블이 하나 필요합니다.",
+  "editorSwitch8e2b60a2": "스위치 {value0}",
+  "@editorSwitch8e2b60a2": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorHitpoints": "체력 %",
+  "editorShields83e6a3a": "보호막 %",
+  "editorEnergy": "에너지 %",
+  "editorResourceAmount": "자원량",
+  "editorHangarCount": "격납고 수",
+  "editorCloaked": "은폐",
+  "editorBurrowed": "잠복",
+  "editorLifted": "이륙",
+  "editorHallucinated": "환상",
+  "editorInvincible": "무적",
+  "editorInvalid8650455": "유효하지 않은 {value0}",
+  "@editorInvalid8650455": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorFiveSpecialPropertyStatesRequired": "특수 속성 상태가 5개 필요합니다.",
+  "editorOpenAMapFirst": "먼저 맵을 여세요.",
+  "editorMapChangedDuringImport": "가져오는 동안 맵이 변경되었습니다.",
+  "editorThisPathAlreadyHasASoundReferenceChooseA": "이 경로에 이미 사운드 참조가 있습니다. 다른 파일 이름을 선택하세요.",
+  "editorASoundAlreadyUsesThisPathChooseADifferent": "사운드가 이미 이 경로를 사용합니다. 다른 파일 이름을 선택하세요.",
+  "editorIncompleteArchiveListingNameCollisionsCannotBeRuledOut": "불완전한 아카이브 목록: 이름 충돌 가능성을 배제할 수 없습니다.",
+  "editorAmbiguousArchiveEntryDeletionIsBlocked": "모호한 아카이브 항목: 삭제를 차단했습니다.",
+  "editorSoundIsDeleted": "삭제된 사운드입니다.",
+  "editorTheSoundIsNotStoredInThisNewMap": "이 새 맵에 사운드가 저장되어 있지 않습니다.",
+  "editorSoundGatewayUnavailable": "사운드 인터페이스를 사용할 수 없습니다.",
+  "editorSourceMapChangedOnDisk": "디스크의 원본 맵이 변경되었습니다.",
+  "editorMapChangedDuringSoundRead": "사운드를 읽는 동안 맵이 변경되었습니다.",
+  "editorTheSoundIsNotStoredInThisMap": "이 맵에 사운드가 저장되어 있지 않습니다.",
+  "editorOpenAnEditableMap": "편집 가능한 맵을 여세요.",
+  "editorMapChangedReopenTriggerResources": "맵이 변경되었습니다. 트리거 리소스를 다시 여세요.",
+  "editorPendingSoundEditsExceed64EntriesOr64MiB": "대기 중인 사운드 변경이 64개 또는 64 MiB를 넘었습니다. 먼저 저장하세요.",
+  "editorResourceEditsCannotRemoveSections": "리소스 편집으로 섹션을 삭제할 수 없습니다.",
+  "editorUnsupportedAppendedResource": "지원하지 않는 추가 리소스입니다.",
+  "editorUnsupportedResourceChange": "지원하지 않는 리소스 변경입니다.",
+  "editorEditTriggerResources": "트리거 리소스 편집",
+  "editorMapChangedReopenTheTriggerEditor": "맵이 변경되었습니다. 트리거 편집기를 다시 여세요.",
+  "editorTRIGAndMBRFRecordsCannotBeMixed": "TRIG와 MBRF 레코드를 섞을 수 없습니다.",
+  "editorCreateBriefing": "브리핑 생성",
+  "editorEditBriefing": "브리핑 편집",
+  "editorEditTriggers": "트리거 편집",
+  "editorOpenAnEditableMapBeforeChangingTechs": "기술을 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenTechSettingsBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 기술 설정을 다시 여세요.",
+  "editorEditTechSettings": "기술 설정 편집",
+  "editorOpenAnEditableMapBeforeChangingUpgrades": "업그레이드를 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenUpgradeSettingsBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 업그레이드 설정을 다시 여세요.",
+  "editorEditUpgradeSettings": "업그레이드 설정 편집",
+  "editorOpenAnEditableMapBeforeChangingAvailability": "사용 가능 여부를 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenUnitAvailabilityBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 유닛 사용 가능 여부를 다시 여세요.",
+  "editorEditUnitAvailability": "유닛 사용 가능 여부 편집",
+  "editorOpenAnEditableMapBeforeChangingUnitSettings": "유닛 설정을 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenUnitSettingsBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 유닛 설정을 다시 여세요.",
+  "editorEditUnitSettings": "유닛 설정 편집",
+  "editorOpenAnEditableMapBeforeChangingForceSettings": "세력 설정을 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenForceSettingsBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 세력 설정을 다시 여세요.",
+  "editorEditForceSettings": "세력 설정 편집",
+  "editorOpenAnEditableMapBeforeChangingPlayerSettings": "플레이어 설정을 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenPlayerSettingsBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 플레이어 설정을 다시 여세요.",
+  "editorEditPlayerSettings": "플레이어 설정 편집",
+  "editorOpenAnEditableMapBeforeChangingMapInformation": "맵 정보를 변경하기 전에 편집 가능한 맵을 여세요.",
+  "editorTheMapChangedReopenMapInformationBeforeApplying": "맵이 변경되었습니다. 적용하기 전에 맵 정보를 다시 여세요.",
+  "editorEditMapInformation": "맵 정보 편집",
+  "editorABuildOrPreparationIsAlreadyRunning": "빌드 또는 준비 작업이 이미 실행 중입니다.",
+  "editorConfirmThatYouTrustTheEpScriptSourceAndIts": "epScript 소스와 가져오는 코드를 신뢰하는지 확인하세요.",
+  "editorEnableTheUnverifiedSettingsTestBuildToCompileProject": "프로젝트 설정을 컴파일하려면 미검증 설정 테스트 빌드를 활성화하세요.",
+  "editorVerifyTheSavedMapAndEUDProjectBindingBefore": "빌드 전에 저장된 맵과 EUD 프로젝트 연결을 검증하세요.",
+  "editorTheBuildBaseMustBeTheMapBoundTo": "빌드 기본 맵은 이 EUD 프로젝트에 연결된 맵이어야 합니다.",
+  "editorFinishOrRetryEUDToolsSettingsFirst": "EUD 도구 설정을 먼저 완료하거나 다시 시도하세요.",
+  "editorChooseAnOutputSeparateFromTheBaseMap": "기본 맵과 별도의 출력을 선택하세요.",
+  "editorOutputAlreadyExistsChooseANewScxPath": "출력이 이미 존재합니다. 새 .scx 경로를 선택하세요.",
+  "editorPreparationCancelled": "준비가 취소되었습니다.",
+  "editorToolSelectionChangedPrepareAgain": "도구 선택이 변경되었습니다. 다시 준비하세요.",
+  "editorProjectOrMapChangedPrepareAgain": "프로젝트 또는 맵이 변경되었습니다. 다시 준비하세요.",
+  "editorBuildPreparationFailed": "빌드 준비 실패: {value0}",
+  "@editorBuildPreparationFailed": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheToolDirectoryCouldNotBeSelected": "도구 폴더를 선택하지 못했습니다: {value0}",
+  "@editorTheToolDirectoryCouldNotBeSelected": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEnterAnAbsoluteEuddraftInstallationPath": "euddraft 설치의 절대 경로를 입력하세요.",
+  "editorToolSettingsCouldNotBeUpdated": "도구 설정을 갱신하지 못했습니다: {value0}",
+  "@editorToolSettingsCouldNotBeUpdated": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRangeErrorInvalidValueNotInInclusiveRange": "{value0}: {value3}은 허용 범위 {value1}~{value2} 밖의 값입니다.",
+  "@editorRangeErrorInvalidValueNotInInclusiveRange": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRecovery": "복구",
+  "editorSaveAs": "다른 이름으로 저장",
+  "editorOpenMap": "맵 열기",
+  "editorEUDBuild": "EUD 빌드",
+  "editorTheMapCouldNotBeSaved": "맵을 저장하지 못했습니다.",
+  "editorRepairTheApplicationOrReportTheObjectRenderingError": "앱을 복구하거나 객체 렌더링 오류를 보고하세요.",
+  "editorRepairTheApplicationOrReportTheStarCraftTileHelper": "앱을 복구하거나 StarCraft 타일 도우미 오류를 보고하세요.",
+  "editorTheEUDOutputMustBeAbsentOrARegular": "EUD 출력은 존재하지 않거나 일반 파일이어야 합니다.",
+  "editorTheCanonicalEUDEntrySourceIsOutsideTheSource": "실제 EUD 진입 소스 경로가 소스 루트 밖에 있습니다.",
+  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "실제 EUD 출력 폴더 경로가 소스 루트 안에 있습니다."
 }

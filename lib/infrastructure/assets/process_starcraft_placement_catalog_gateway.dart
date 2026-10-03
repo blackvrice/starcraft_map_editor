@@ -76,8 +76,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.installationPathInvalid,
         message: 'The StarCraft installation path is invalid.',
+        messageId: 'editorTheStarCraftInstallationPathIsInvalid',
         filePath: request.installationPath,
         remediation: 'Choose the StarCraft installation folder again.',
+        remediationId: 'editorChooseTheStarCraftInstallationFolderAgain',
       );
     }
     if (request.kind != StarCraftPlacementKind.tile &&
@@ -88,8 +90,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
         message: 'This helper version does not support that catalog kind.',
+        messageId: 'editorThisHelperVersionDoesNotSupportThatCatalogKind',
         filePath: request.installationPath,
         remediation: 'Choose the Tile, Doodad, Unit, or pure Sprite catalog.',
+        remediationId: 'editorChooseTheTileDoodadUnitOrPureSpriteCatalog',
       );
     }
     if (_reservedOperations.contains(request.operationId)) {
@@ -97,8 +101,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
         message: 'A catalog operation with this ID is already active.',
+        messageId: 'editorACatalogOperationWithThisIDIsAlreadyActive',
         filePath: request.installationPath,
         remediation: 'Wait for the active catalog operation to finish.',
+        remediationId: 'editorWaitForTheActiveCatalogOperationToFinish',
       );
     }
     _reservedOperations.add(request.operationId);
@@ -111,8 +117,10 @@ final class ProcessStarCraftPlacementCatalogGateway
           request,
           code: StarCraftPlacementCatalogDiagnosticCodes.helperNotFound,
           message: 'The bundled StarCraft CASC helper is missing.',
+          messageId: 'editorTheBundledStarCraftCASCHelperIsMissing',
           filePath: helperExecutablePath,
           remediation: 'Repair or reinstall the application.',
+          remediationId: 'editorRepairOrReinstallTheApplication',
         );
       }
       if (_cancelledOperations.contains(request.operationId)) {
@@ -166,8 +174,10 @@ final class ProcessStarCraftPlacementCatalogGateway
           request,
           code: StarCraftPlacementCatalogDiagnosticCodes.helperTimedOut,
           message: 'The StarCraft catalog helper timed out.',
+          messageId: 'editorTheStarCraftCatalogHelperTimedOut',
           filePath: request.installationPath,
           remediation: 'Repair the StarCraft installation and retry.',
+          remediationId: 'editorRepairTheStarCraftInstallationAndRetry',
           rawDetails: _rawProcessDetails(stderr: stderr),
         );
       }
@@ -186,8 +196,10 @@ final class ProcessStarCraftPlacementCatalogGateway
           code: StarCraftPlacementCatalogDiagnosticCodes
               .helperOutputLimitExceeded,
           message: 'The StarCraft catalog helper produced too much output.',
+          messageId: 'editorTheStarCraftCatalogHelperProducedTooMuchOutput',
           filePath: request.installationPath,
           remediation: 'Repair the application or report the helper error.',
+          remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
         );
       }
@@ -205,8 +217,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.helperStartFailed,
         message: 'The StarCraft catalog helper could not be started.',
+        messageId: 'editorTheStarCraftCatalogHelperCouldNotBeStarted',
         filePath: helperExecutablePath,
         remediation: 'Repair or reinstall the application.',
+        remediationId: 'editorRepairOrReinstallTheApplication',
         rawDetails: error.errorCode.toString(),
       );
     } on FileSystemException catch (error) {
@@ -214,8 +228,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.listingFailed,
         message: 'The StarCraft catalog could not be listed safely.',
+        messageId: 'editorTheStarCraftCatalogCouldNotBeListedSafely',
         filePath: error.path ?? request.installationPath,
         remediation: 'Check directory permissions and retry.',
+        remediationId: 'editorCheckDirectoryPermissionsAndRetry',
         rawDetails: error.toString(),
       );
     } finally {
@@ -536,8 +552,10 @@ final class ProcessStarCraftPlacementCatalogGateway
         request,
         code: StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
         message: 'The StarCraft catalog helper returned an invalid response.',
+        messageId: 'editorTheStarCraftCatalogHelperReturnedAnInvalidResponse',
         filePath: request.installationPath,
         remediation: 'Repair the application or report the helper error.',
+        remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
         rawDetails: _rawProcessDetails(
           exitCode: exitCode,
           stderr: stderr,
@@ -750,6 +768,14 @@ final class ProcessStarCraftPlacementCatalogGateway
           code == StarCraftPlacementCatalogDiagnosticCodes.storageOpenFailed
           ? 'Repair the StarCraft installation in Battle.net and retry.'
           : 'Repair the application or report the catalog helper error.',
+      remediationId:
+          code == StarCraftPlacementCatalogDiagnosticCodes.storageOpenFailed
+          ? 'editorRepairTheStarCraftInstallationInBattleNetAndRetry'
+          : 'editorRepairTheApplicationOrReportTheCatalogHelperError',
+      remediationArguments:
+          code == StarCraftPlacementCatalogDiagnosticCodes.storageOpenFailed
+          ? []
+          : [],
       rawDetails: _rawProcessDetails(
         exitCode: exitCode,
         stderr: stderr,
@@ -843,15 +869,23 @@ StarCraftPlacementCatalogPage _failure(
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) => StarCraftPlacementCatalogPage.failed(
   request: request,
   diagnostic: EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.warning,
     stage: DiagnosticStage.validate,
     filePath: filePath,
     remediation: remediation,
+    remediationId: remediationId,
+    remediationArguments: remediationArguments,
     rawDetails: rawDetails,
   ),
 );
@@ -863,8 +897,10 @@ StarCraftPlacementCatalogPage _cancelledFailure(
   request,
   code: StarCraftPlacementCatalogDiagnosticCodes.helperCancelled,
   message: 'The StarCraft catalog operation was cancelled.',
+  messageId: 'editorTheStarCraftCatalogOperationWasCancelled',
   filePath: request.installationPath,
   remediation: 'Retry the catalog operation when ready.',
+  remediationId: 'editorRetryTheCatalogOperationWhenReady',
   rawDetails: rawDetails,
 );
 

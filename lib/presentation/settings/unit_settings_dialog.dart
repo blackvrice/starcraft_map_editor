@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'default_settings_names.dart';
 import 'default_unit_names.dart';
 import 'settings_surface.dart';
@@ -140,7 +142,7 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
       snapshot: _snapshot,
       hasDraft: dirty,
       onReload: () => setState(_reload),
-      title: const Text('Unit Settings'),
+      title: Text(context.l10n.editorUnitSettings),
       content: SizedBox(
         width: 680,
         height: 560,
@@ -148,12 +150,22 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Map-wide unit types, separate from placed-unit properties.',
+              Text(
+                context
+                    .l10n
+                    .editorMapWideUnitTypesSeparateFromPlacedUnitProperties,
               ),
               if (settings != null)
                 Text(
-                  'Editing ${settings.sectionName}${settings.hasAlternate ? '; alternate section preserved without synchronization' : ''}.',
+                  context.l10n.editorEditing4dc9e6e6(
+                    (settings.sectionName).toString(),
+                    (settings.hasAlternate
+                            ? context
+                                  .l10n
+                                  .editorAlternateSectionPreservedWithoutSynchronization
+                            : '')
+                        .toString(),
+                  ),
                 ),
               SettingsSelection(
                 revision: _snapshot,
@@ -177,11 +189,15 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   final name = custom == null || custom.isEmpty
                       ? defaultUnitNames[id]
                       : custom;
-                  return '$name (Unit #$id)';
+                  return context.l10n.editorUnit38894196(
+                    (name).toString(),
+                    (id).toString(),
+                  );
                 },
                 onSelected: _selectUnit,
-                scope:
-                    'Unit values, names and default flags only. Shared weapon damage uses its own selection below.',
+                scope: context
+                    .l10n
+                    .editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon,
                 onCopy: settings == null
                     ? null
                     : (ids) {
@@ -230,19 +246,21 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                 value: mode,
                 isExpanded: true,
                 items: [
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 0,
-                    child: Text('Use custom values'),
+                    child: Text(context.l10n.editorUseCustomValues),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 1,
-                    child: Text('Use game defaults'),
+                    child: Text(context.l10n.editorUseGameDefaults),
                   ),
                   if (storedMode != null && storedMode > 1)
                     DropdownMenuItem(
                       value: storedMode,
                       child: Text(
-                        'Stored default flag $storedMode (preserved)',
+                        context.l10n.editorStoredDefaultFlagPreserved(
+                          (storedMode).toString(),
+                        ),
                       ),
                     ),
                 ],
@@ -256,8 +274,10 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                         }
                       }),
               ),
-              const Text(
-                'Fields show stored custom values. Game default numbers are not loaded.',
+              Text(
+                context
+                    .l10n
+                    .editorFieldsShowStoredCustomValuesGameDefaultNumbersAre,
               ),
               TextButton(
                 key: const Key('unit-settings-restore'),
@@ -273,14 +293,14 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                         _names.remove(_unit);
                         _generation++;
                       }),
-                child: const Text('Restore selected unit defaults'),
+                child: Text(context.l10n.editorRestoreSelectedUnitDefaults),
               ),
               TextFormField(
                 key: ValueKey('unit-name-$_unit-$_generation'),
                 initialValue: _names[_unit] ?? name ?? '',
                 enabled: mode == 0 && nameIssue == null && settings != null,
-                decoration: const InputDecoration(
-                  labelText: 'Unit name (empty = game name)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.editorUnitNameEmptyGameName,
                 ),
                 onChanged: (v) => setState(() {
                   if (v == name) {
@@ -290,7 +310,8 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   }
                 }),
               ),
-              if (nameIssue != null) Text(nameIssue),
+              if (nameIssue != null)
+                Text(context.localizeEditorText(nameIssue)),
               Wrap(
                 spacing: 16,
                 runSpacing: 8,
@@ -308,7 +329,9 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                                 ? ''
                                 : field.display(settings.value(_unit, field))),
                         enabled: settings != null && mode == 0,
-                        decoration: InputDecoration(labelText: field.label),
+                        decoration: InputDecoration(
+                          labelText: context.localizeEditorText(field.label),
+                        ),
                         onChanged: (v) => setState(() {
                           if (v ==
                               field.display(settings!.value(_unit, field))) {
@@ -322,9 +345,9 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                 ],
               ),
               const Divider(),
-              const Text('Shared weapon damage'),
-              const Text(
-                'A weapon change affects every unit using that weapon. Restoring a unit does not reset shared weapon damage.',
+              Text(context.l10n.editorSharedWeaponDamage),
+              Text(
+                context.l10n.editorAWeaponChangeAffectsEveryUnitUsingThatWeapon,
               ),
               if (settings != null)
                 SettingsSelection(
@@ -333,10 +356,15 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   selectorKey: const Key('unit-settings-weapon'),
                   count: settings.weaponCount,
                   selected: _weapon,
-                  label: (id) => settingsName('Weapon', id, defaultWeaponNames),
+                  label: (id) => settingsName(
+                    context.l10n.editorWeapon,
+                    id,
+                    defaultWeaponNames,
+                  ),
                   onSelected: (id) => setState(() => _weapon = id),
-                  scope:
-                      'Shared weapon damage only. All units referencing target weapons may be affected.',
+                  scope: context
+                      .l10n
+                      .editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons,
                   onCopy: (ids) {
                     final copies = copySettingsDraft(
                       _damage,
@@ -369,7 +397,9 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                           : '${settings.damage(_weapon, bonus: bonus)}'),
                   enabled: settings != null,
                   decoration: InputDecoration(
-                    labelText: bonus ? 'Damage per upgrade' : 'Base damage',
+                    labelText: bonus
+                        ? context.l10n.editorDamagePerUpgrade
+                        : context.l10n.editorBaseDamage,
                   ),
                   onChanged: (v) => setState(() {
                     if (v == '${settings!.damage(_weapon, bonus: bonus)}') {
@@ -379,12 +409,12 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                     }
                   }),
                 ),
-              const Text(
-                'Apply updates all edited unit types and weapons. Save As writes the map.',
+              Text(
+                context.l10n.editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave,
               ),
               if (_error != null)
                 Text(
-                  _error!,
+                  context.localizeEditorText(_error!),
                   key: const Key('unit-settings-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -394,25 +424,36 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('settings-undo'),
           onPressed: widget.controller.canUndo
               ? () => _run(widget.controller.undo)
               : null,
-          child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorUndo(
+              context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-redo'),
           onPressed: widget.controller.canRedo
               ? () => _run(widget.controller.redo)
               : null,
-          child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorRedo(
+              context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('unit-settings-apply'),
           onPressed: _snapshot != null && dirty ? () => _run(_apply) : null,
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

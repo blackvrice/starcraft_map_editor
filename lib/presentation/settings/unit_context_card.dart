@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -174,31 +176,41 @@ class _UnitContextCardState extends State<UnitContextCard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '${defaultUnitNames[widget.unit]}\nUnit #${widget.unit}',
+                    context.l10n.editorUnit88a3c859(
+                      (defaultUnitNames[widget.unit]).toString(),
+                      (widget.unit).toString(),
+                    ),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
               ],
             ),
             if (_image == null)
-              const Text('Unit preview requires local StarCraft graphics.'),
+              Text(
+                context.l10n.editorUnitPreviewRequiresLocalStarCraftGraphics,
+              ),
             if (_loading) const LinearProgressIndicator(),
-            if (_error != null) Text(_error!),
+            if (_error != null) Text(context.localizeEditorText(_error!)),
             if (widget.catalog == null)
-              const Text('Configure StarCraft assets to load unit links.'),
+              Text(context.l10n.editorConfigureStarCraftAssetsToLoadUnitLinks),
             if (ref != null) ...[
               Wrap(
                 spacing: 8,
                 children: [
-                  for (final slot in [('Ground', ref.ground), ('Air', ref.air)])
+                  for (final slot in [
+                    (context.l10n.editorGround, ref.ground),
+                    (context.l10n.editorAir, ref.air),
+                  ])
                     ActionChip(
                       avatar: Icon(
-                        slot.$1 == 'Ground' ? Icons.gps_fixed : Icons.flight,
+                        slot.$1 == context.l10n.editorGround
+                            ? Icons.gps_fixed
+                            : Icons.flight,
                         size: 18,
                       ),
                       label: Text(
                         slot.$2 == 130
-                            ? '${slot.$1}: None'
+                            ? context.l10n.editorNone((slot.$1).toString())
                             : '${slot.$1}: ${defaultWeaponNames[slot.$2]} (#${slot.$2})',
                       ),
                       onPressed: slot.$2 == 130
@@ -212,14 +224,17 @@ class _UnitContextCardState extends State<UnitContextCard> {
                     ActionChip(
                       avatar: const Icon(Icons.account_tree, size: 18),
                       label: Text(
-                        'Subunit: ${defaultUnitNames[subunit]} (#$subunit)',
+                        context.l10n.editorSubunit(
+                          (defaultUnitNames[subunit]).toString(),
+                          (subunit).toString(),
+                        ),
                       ),
                       onPressed: () => widget.onUnit(subunit),
                     ),
                 ],
               ),
               if (subunitWeapons.isNotEmpty) ...[
-                const Text('Subunit weapons — keeps the selected unit'),
+                Text(context.l10n.editorSubunitWeaponsKeepsTheSelectedUnit),
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
@@ -234,7 +249,7 @@ class _UnitContextCardState extends State<UnitContextCard> {
                           size: 18,
                         ),
                         label: Text(
-                          '${defaultUnitNames[link.unit]} (#${link.unit}) · ${link.air ? "Air" : "Ground"}: ${defaultWeaponNames[link.weapon]} (#${link.weapon})',
+                          '${defaultUnitNames[link.unit]} (#${link.unit}) · ${link.air ? context.l10n.editorAir : context.l10n.editorGround}: ${defaultWeaponNames[link.weapon]} (#${link.weapon})',
                         ),
                         onPressed: () => widget.onWeapon(link.weapon),
                       ),
@@ -243,14 +258,19 @@ class _UnitContextCardState extends State<UnitContextCard> {
               ],
               Text(
                 preferred == null
-                    ? 'No linked weapon. Select a weapon manually.'
-                    : 'Auto-selected: ${defaultWeaponNames[preferred.weapon]} (#${preferred.weapon}) from ${defaultUnitNames[preferred.unit]}. Weapon changes affect all units sharing it.',
+                    ? context.l10n.editorNoLinkedWeaponSelectAWeaponManually
+                    : context.l10n
+                          .editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing(
+                            (defaultWeaponNames[preferred.weapon]).toString(),
+                            (preferred.weapon).toString(),
+                            (defaultUnitNames[preferred.unit]).toString(),
+                          ),
               ),
             ],
             if (_error != null)
               TextButton(
                 onPressed: _load,
-                child: const Text('Retry unit links'),
+                child: Text(context.l10n.editorRetryUnitLinks),
               ),
           ],
         ),

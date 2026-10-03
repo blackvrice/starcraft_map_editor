@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../application/settings/eud_tool_settings_controller.dart';
@@ -38,7 +40,7 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
       final state = snapshot.data ?? widget.controller.state;
       final tool = state.result?.tool;
       return AlertDialog(
-        title: const Text('EUD Tools'),
+        title: Text(context.l10n.editorEUDTools),
         content: SizedBox(
           width: 620,
           child: SingleChildScrollView(
@@ -46,18 +48,21 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'Choose an external euddraft installation or use the app default. Project-specific paths take priority.',
+                Text(
+                  context
+                      .l10n
+                      .editorChooseAnExternalEuddraftInstallationOrUseTheApp,
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _path,
                   enabled: !state.busy,
-                  decoration: const InputDecoration(
-                    labelText: 'External euddraft path',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.editorExternalEuddraftPath,
                     hintText: r'C:\Tools\euddraft-0.10.2.5',
-                    helperText:
-                        'Installation directory or euddraft.exe (absolute path)',
+                    helperText: context
+                        .l10n
+                        .editorInstallationDirectoryOrEuddraftExeAbsolutePath,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -75,42 +80,47 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
                               }
                             },
                       icon: const Icon(Icons.folder_open),
-                      label: const Text('Browse installation folder'),
+                      label: Text(context.l10n.editorBrowseInstallationFolder),
                     ),
                   ),
                 SelectableText(
                   state.path == null
-                      ? 'Selection: App default'
-                      : 'Selection: External\n${state.path}',
+                      ? context.l10n.editorSelectionAppDefault
+                      : context.l10n.editorSelectionExternal(
+                          (state.path).toString(),
+                        ),
                 ),
                 if (state.path == null && widget.controller.bundledPath == null)
-                  const Text(
-                    'No bundled tool is included in this app yet. Select an external installation.',
-                  ),
+                  Text(context.l10n.editorNoBundledToolIsIncludedInThisAppYet),
                 if (state.path == null && widget.controller.bundledPath != null)
                   SelectableText(
-                    'Bundled euddraft 0.10.2.5 (editor.1)\n'
-                    'No separate Python installation is required. Updates are managed with the app.\n'
-                    '${widget.controller.bundledPath}\n'
-                    'Licenses and modification details: BUNDLE-NOTICE.txt in this folder.',
+                    context.l10n.editorBundledEuddraft01025Editor1No(
+                      (widget.controller.bundledPath).toString(),
+                    ),
                   ),
                 if (state.busy) const LinearProgressIndicator(),
                 if (tool != null)
                   SelectableText(
-                    'Inspection passed — euddraft ${tool.version}\n${tool.executablePath}',
+                    context.l10n.editorInspectionPassedEuddraft(
+                      (tool.version).toString(),
+                      (tool.executablePath).toString(),
+                    ),
                   ),
-                if (state.error != null) Text(state.error!),
+                if (state.error != null)
+                  Text(context.localizeEditorText(state.error!)),
                 for (final diagnostic in state.result?.diagnostics ?? []) ...[
                   const SizedBox(height: 8),
                   SelectableText(
-                    '${diagnostic.code}: ${diagnostic.message}\n${diagnostic.remediation ?? ''}',
+                    '${diagnostic.code}: ${context.diagnosticMessage(diagnostic)}\n${context.diagnosticRemediation(diagnostic) ?? ''}',
                   ),
                   if (diagnostic.rawDetails != null)
                     SelectableText(diagnostic.rawDetails!),
                 ],
                 const SizedBox(height: 12),
-                const Text(
-                  'Inspection does not run the compiler. Saving this choice does not prepare a build or change an existing build plan.',
+                Text(
+                  context
+                      .l10n
+                      .editorInspectionDoesNotRunTheCompilerSavingThisChoice,
                 ),
               ],
             ),
@@ -126,21 +136,21 @@ class _EudToolSettingsDialogState extends State<EudToolSettingsDialog> {
                       _path.clear();
                     }
                   },
-            child: const Text('Use app default'),
+            child: Text(context.l10n.editorUseAppDefault),
           ),
           TextButton(
             onPressed: state.busy ? null : widget.controller.refresh,
-            child: const Text('Reinspect'),
+            child: Text(context.l10n.editorReinspect),
           ),
           FilledButton(
             onPressed: state.busy
                 ? null
                 : () => widget.controller.selectExternal(_path.text),
-            child: const Text('Save and inspect'),
+            child: Text(context.l10n.editorSaveAndInspect),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(context.l10n.editorClose),
           ),
         ],
       );

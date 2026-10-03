@@ -2819,4 +2819,3166 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get resizeCoordinateScope =>
       '트리거·EUD 코드 좌표는 그대로 유지됩니다. 크기 변경 후 직접 지정한 좌표를 확인하세요. 미확인 지형이나 모호한 두다드는 적용을 차단합니다.';
+
+  @override
+  String get editorPrepareEUDBuild => 'EUD 빌드 준비';
+
+  @override
+  String get editorBuildSavedFilesOnDiskSaveMapAndSource =>
+      '디스크에 저장된 파일로 빌드합니다. 맵과 소스 변경사항을 먼저 저장하세요. 프로젝트 설정만 빌드하려면 소스 폴더와 진입 파일을 비워 두세요. 출력은 새로운 .scx 파일이어야 합니다.';
+
+  @override
+  String get editorBaseMapPath => '기본 맵 경로';
+
+  @override
+  String get editorSourceFolderPath => '소스 폴더 경로';
+
+  @override
+  String get editorEntryEpsPath => '진입 .eps 파일 경로';
+
+  @override
+  String get editorNewOutputScxPath => '새 출력 .scx 경로';
+
+  @override
+  String get editorToolOverrideForThisBuildOptional => '이 빌드에 사용할 도구 경로 (선택)';
+
+  @override
+  String get editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare =>
+      '도구 경로를 비워 두면 EUD 도구 설정을 사용합니다. 준비 단계는 파일을 검사하고, 빌드는 별도로 컴파일러를 실행합니다.';
+
+  @override
+  String get editorITrustThisSourceAndItsImportsToRun =>
+      '이 소스와 가져오는 코드가 이 컴퓨터에서 실행되는 것을 신뢰합니다.';
+
+  @override
+  String get editorIncludeProjectSettingsInAnUnverifiedTestBuild =>
+      '미검증 테스트 빌드에 프로젝트 설정 포함';
+
+  @override
+  String get editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter =>
+      '종류 설정은 한 번 초기화됩니다. 규칙은 트리거 실행 전후에 적용되며, 인스턴스 규칙은 조건으로 보호된 유닛을 변경할 수 있습니다. 실제 게임과 멀티플레이 동작은 별도 테스트가 필요합니다.';
+
+  @override
+  String get editorCancel => '취소';
+
+  @override
+  String get editorPrepare => '준비';
+
+  @override
+  String get editorEUDTools => 'EUD 도구';
+
+  @override
+  String get editorChooseAnExternalEuddraftInstallationOrUseTheApp =>
+      '외부 euddraft 설치를 선택하거나 앱 기본값을 사용하세요. 프로젝트별 경로가 우선합니다.';
+
+  @override
+  String get editorExternalEuddraftPath => '외부 euddraft 경로';
+
+  @override
+  String get editorInstallationDirectoryOrEuddraftExeAbsolutePath =>
+      '설치 폴더 또는 euddraft.exe의 절대 경로';
+
+  @override
+  String get editorBrowseInstallationFolder => '설치 폴더 찾아보기';
+
+  @override
+  String get editorSelectionAppDefault => '선택: 앱 기본값';
+
+  @override
+  String editorSelectionExternal(String value0) {
+    return '선택: 외부 도구\n$value0';
+  }
+
+  @override
+  String get editorNoBundledToolIsIncludedInThisAppYet =>
+      '이 앱에는 아직 도구가 포함되어 있지 않습니다. 외부 설치를 선택하세요.';
+
+  @override
+  String editorBundledEuddraft01025Editor1No(String value0) {
+    return '포함된 euddraft 0.10.2.5 (editor.1)\n별도 Python 설치가 필요하지 않습니다. 앱과 함께 업데이트됩니다.\n$value0\n라이선스 및 수정 내역: 이 폴더의 BUNDLE-NOTICE.txt';
+  }
+
+  @override
+  String editorInspectionPassedEuddraft(String value0, String value1) {
+    return '검사 통과: euddraft $value0\n$value1';
+  }
+
+  @override
+  String get editorInspectionDoesNotRunTheCompilerSavingThisChoice =>
+      '검사는 컴파일러를 실행하지 않습니다. 이 선택을 저장해도 빌드를 준비하거나 기존 빌드 계획을 변경하지 않습니다.';
+
+  @override
+  String get editorUseAppDefault => '앱 기본값 사용';
+
+  @override
+  String get editorReinspect => '다시 검사';
+
+  @override
+  String get editorSaveAndInspect => '저장 후 검사';
+
+  @override
+  String get editorClose => '닫기';
+
+  @override
+  String get editorForceSettings => '세력 설정';
+
+  @override
+  String get editorPlayerAssignment => '플레이어 배정';
+
+  @override
+  String editorPlayer(String value0) {
+    return '플레이어 $value0';
+  }
+
+  @override
+  String get editorCopiesOnlyTheEditedForceAssignmentToPlayers1 =>
+      '변경한 세력 배정만 플레이어 1~8에 복사합니다.';
+
+  @override
+  String editorAssignToForce(String value0) {
+    return '세력 $value0에 배정';
+  }
+
+  @override
+  String editorStoredIDPreserved(String value0) {
+    return '저장된 ID $value0 (유지)';
+  }
+
+  @override
+  String editorForce(String value0) {
+    return '세력 $value0';
+  }
+
+  @override
+  String get editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments =>
+      '변경한 세력 이름과 옵션만 복사합니다. 플레이어 배정은 별도입니다.';
+
+  @override
+  String get editorForceName => '세력 이름';
+
+  @override
+  String get editorRandomizeStartLocations => '시작 위치 무작위 배정';
+
+  @override
+  String get editorAllies => '동맹';
+
+  @override
+  String get editorAlliedVictory => '동맹 승리';
+
+  @override
+  String get editorSharedVision => '시야 공유';
+
+  @override
+  String get editorApplyUpdatesAllEditedPlayersAndForcesSaveAs =>
+      '적용하면 변경한 모든 플레이어와 세력이 반영됩니다. 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+
+  @override
+  String editorUndo(String value0) {
+    return '실행 취소: $value0';
+  }
+
+  @override
+  String editorRedo(String value0) {
+    return '다시 실행: $value0';
+  }
+
+  @override
+  String get editorApply => '적용';
+
+  @override
+  String get editorTheExistingTextIsNotValidUTF8Its =>
+      '기존 텍스트는 올바른 UTF-8이 아닙니다. 원본 바이트를 유지하며 편집할 수 없습니다.';
+
+  @override
+  String get editorMapInformation => '맵 정보';
+
+  @override
+  String get editorMapTitle => '맵 제목';
+
+  @override
+  String get editorDescription => '설명';
+
+  @override
+  String get editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged =>
+      '적용은 이 맵에만 반영됩니다. 공유 이름은 변경하지 않습니다. 편집한 맵은 다른 이름으로 저장하세요.';
+
+  @override
+  String get editorDiscardUnappliedSettings => '적용하지 않은 설정을 버릴까요?';
+
+  @override
+  String get editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges =>
+      '적용하지 않은 변경사항이 있는 탭이 있습니다. 이미 적용한 변경사항은 맵에 남으며 실행 취소할 수 있습니다.';
+
+  @override
+  String get editorKeepEditing => '계속 편집';
+
+  @override
+  String get editorDiscardAndClose => '버리고 닫기';
+
+  @override
+  String get editorMapSettings => '맵 설정';
+
+  @override
+  String get editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced =>
+      '맵 전체 설정입니다. 캔버스 속성 패널은 배치된 개별 객체를 편집합니다. 적용은 현재 탭에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+
+  @override
+  String get editorEUDExecutionRules => 'EUD 실행 규칙';
+
+  @override
+  String get editorMap => '맵';
+
+  @override
+  String get editorPlayers => '플레이어';
+
+  @override
+  String get editorForces => '세력';
+
+  @override
+  String get editorUnits => '유닛';
+
+  @override
+  String get editorAvailability => '사용 가능 여부';
+
+  @override
+  String get editorUpgrades => '업그레이드';
+
+  @override
+  String get editorTech => '기술';
+
+  @override
+  String get editorSlotType => '슬롯 종류';
+
+  @override
+  String get editorRace => '종족';
+
+  @override
+  String get editorColor => '색상';
+
+  @override
+  String get editorUnavailable => '사용 불가';
+
+  @override
+  String get editorPlayerSettings => '플레이어 설정';
+
+  @override
+  String editorPlayer203c6551(String value0, String value1) {
+    return '플레이어 $value0$value1';
+  }
+
+  @override
+  String get editorReadOnly => ' (읽기 전용)';
+
+  @override
+  String get editorSlotTypeRaceAndColorEditsForPlayablePlayers =>
+      '플레이 가능한 플레이어 1~8의 슬롯 종류, 종족, 색상만 편집합니다.';
+
+  @override
+  String get editorOnlyTheEightPlayableSlotsCanBeEditedPlayers =>
+      '플레이 가능한 8개 슬롯만 편집할 수 있습니다. 플레이어 9~12에는 COLR 색상 항목이 없습니다.';
+
+  @override
+  String get editorColorSettingsAreSavedToTheMapCanvasPreviews =>
+      '색상 설정은 맵에 저장됩니다. 현재 캔버스 미리보기는 기본 플레이어 색상을 사용합니다.';
+
+  @override
+  String editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave(
+    String value0,
+  ) {
+    return '대기 중인 필드 변경 $value0개. 적용은 변경한 모든 플레이어에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+  }
+
+  @override
+  String get editorNoEditedFieldsInTheCurrentSelection =>
+      '현재 선택에는 변경한 필드가 없습니다.';
+
+  @override
+  String editorDraftFieldCopiesPreparedForIDsReviewThenApply(
+    String value0,
+    String value1,
+  ) {
+    return 'ID $value1개에 필드 초안 $value0개를 복사했습니다. 확인 후 적용하세요.';
+  }
+
+  @override
+  String get editorSearchNameOrID12ForExactID => '이름 또는 ID 검색 (정확한 ID는 #12)';
+
+  @override
+  String editorCurrent(String value0) {
+    return '현재: $value0';
+  }
+
+  @override
+  String get editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged =>
+      '일치하는 ID가 없습니다. 현재 선택과 초안은 유지됩니다.';
+
+  @override
+  String get editorCopyEditedFieldsToIDs => '변경한 필드를 ID에 복사';
+
+  @override
+  String editorSource(String value0, String value1) {
+    return '원본: $value0. $value1';
+  }
+
+  @override
+  String get editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt =>
+      '변경한 필드만 복사하며 대상 ID의 해당 초안 필드를 교체합니다. 검색으로 대상이 선택되지는 않습니다. 적용해야 맵이 변경됩니다.';
+
+  @override
+  String editorTargetIDs(String value0, String value1) {
+    return '대상 ID ($value0~$value1)';
+  }
+
+  @override
+  String get editorPrepareDraftCopies => '초안 복사 준비';
+
+  @override
+  String get editorUnappliedDraft => '미적용 초안';
+
+  @override
+  String get editorTheMapChangedInAnotherEditorOrThroughUndo =>
+      '다른 편집기 또는 실행 취소·다시 실행으로 맵이 변경되었습니다. 이 탭을 적용하기 전에 다시 불러오세요.';
+
+  @override
+  String get editorReloadAndDiscardThisDraft => '초안을 버리고 다시 불러오기';
+
+  @override
+  String get editorDiscardTabDraft => '탭 초안 버리기';
+
+  @override
+  String get editorStarCraftDataAssets => 'StarCraft 데이터 자산';
+
+  @override
+  String
+  get editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads =>
+      '설치된 StarCraft: Remastered 폴더를 선택하세요. 편집기는 포함된 CascLib 도우미로 로컬 CASC 저장소를 읽으며, 저작권이 있는 게임 데이터를 추출하거나 복사하지 않습니다.';
+
+  @override
+  String get editorClear => '지우기';
+
+  @override
+  String get editorRefresh => '새로고침';
+
+  @override
+  String get editorChooseInstallation => '설치 폴더 선택…';
+
+  @override
+  String editorCASCBuildMiBCheckedCascLibHelper(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+    String value4,
+  ) {
+    return 'CASC $value0 • 빌드 $value1 • 검사 $value2 MiB • CascLib $value3 • 도우미 $value4';
+  }
+
+  @override
+  String get editorConfiguredPath => '설정된 경로';
+
+  @override
+  String get editorNotConfigured => '미설정';
+
+  @override
+  String get editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd =>
+      'StarCraft.exe, .build.info, Data\\가 있는 폴더를 선택하세요.';
+
+  @override
+  String get editorLoadingSettings => '설정 불러오는 중…';
+
+  @override
+  String get editorInspectingAssets => '자산 검사 중…';
+
+  @override
+  String editorRequiredAssetsReady(String value0, String value1) {
+    return '필수 자산 $value0/$value1개 준비 완료';
+  }
+
+  @override
+  String get editorStarCraftInstallationIsNotConfigured =>
+      'StarCraft 설치가 설정되지 않았습니다';
+
+  @override
+  String get editorStarCraftCASCDataIsUnavailable =>
+      'StarCraft CASC 데이터를 사용할 수 없습니다';
+
+  @override
+  String editorRequiredAssetsFound(String value0, String value1) {
+    return '필수 자산 $value0/$value1개 발견';
+  }
+
+  @override
+  String get editorMissing => '누락';
+
+  @override
+  String get editorInvalid => '유효하지 않음';
+
+  @override
+  String get editorUnavailableAssetFiles => '사용할 수 없는 자산 파일';
+
+  @override
+  String editorAndMore(String value0) {
+    return '…외 $value0개';
+  }
+
+  @override
+  String editorStoredFlagPreserved(String value0) {
+    return '저장된 플래그 $value0 (유지)';
+  }
+
+  @override
+  String editorTechd52bce90(String value0, String value1, String value2) {
+    return '기술 #$value0, $value1: $value2';
+  }
+
+  @override
+  String get editorEffectiveStateUnknownStoredFlagPreserved =>
+      '실제 적용 상태: 알 수 없음 (저장된 플래그 유지)';
+
+  @override
+  String editorEffectiveStateAvailableResearched(String value0, String value1) {
+    return '실제 적용 상태: 사용 가능 $value0, 연구 완료 $value1';
+  }
+
+  @override
+  String get editorTechSettings => '기술 설정';
+
+  @override
+  String editorEditing(String value0, String value1, String value2) {
+    return '편집 중: $value0 / $value1$value2.';
+  }
+
+  @override
+  String get editorAlternateSectionsPreserved => '; 다른 섹션 유지';
+
+  @override
+  String editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf(String value0) {
+    return '맵 비용과 $value0만 편집합니다. 상속 플래그는 편집한 경우에만 변경됩니다.';
+  }
+
+  @override
+  String get editorMapDefaults => '맵 기본값';
+
+  @override
+  String get editorUseCustomCosts => '사용자 지정 비용 사용';
+
+  @override
+  String get editorUseGameDefaults => '게임 기본값 사용';
+
+  @override
+  String get editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues =>
+      '게임 기본값을 사용해도 저장된 사용자 지정 비용은 유지됩니다. 이 화면은 게임 기본 수치를 불러오지 않습니다.';
+
+  @override
+  String get editorMapDefaultSettings => '맵 기본 설정';
+
+  @override
+  String editorCopiesOnlyCurrentTechPlayerEditsToPlayers1(String value0) {
+    return '현재 기술 #$value0의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 비용과 기본값은 제외합니다.';
+  }
+
+  @override
+  String get editorUsePlayerSettings => '플레이어 설정 사용';
+
+  @override
+  String get editorInheritMapSettings => '맵 설정 상속';
+
+  @override
+  String get editorAvailable => '사용 가능';
+
+  @override
+  String get editorNotResearched => '미연구';
+
+  @override
+  String get editorAlreadyResearched => '연구 완료';
+
+  @override
+  String
+  get editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer =>
+      '맵 설정은 이를 상속하는 플레이어에 적용됩니다. 상속해도 저장된 플레이어 플래그는 유지됩니다. 사용 가능 여부와 연구 상태는 독립적입니다.';
+
+  @override
+  String editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe(
+    String value0,
+  ) {
+    return '기술과 플레이어에 대기 중인 변경 $value0개. 적용은 문서에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+  }
+
+  @override
+  String get editorUnitAvailability => '유닛 사용 가능 여부';
+
+  @override
+  String get editorMapWideUnitProductionSettingsSeparateFromPlacedUnit =>
+      '맵 전체의 유닛 생산 설정입니다. 배치된 유닛의 속성 패널과는 별도입니다.';
+
+  @override
+  String get editorUnit => '유닛';
+
+  @override
+  String editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf(String value0) {
+    return '맵 기본값과 플레이어 $value0만 편집합니다. 상속은 편집한 경우에만 변경됩니다.';
+  }
+
+  @override
+  String get editorMapDefaultAffectsAllInheritingPlayers =>
+      '맵 기본값: 상속하는 모든 플레이어에 적용';
+
+  @override
+  String get editorDefaultProhibited => '기본값: 금지';
+
+  @override
+  String get editorDefaultAllowed => '기본값: 허용';
+
+  @override
+  String editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1(String value0) {
+    return '현재 유닛 #$value0의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 기본값은 제외합니다.';
+  }
+
+  @override
+  String get editorPlayerSettingSource => '플레이어 설정 원본';
+
+  @override
+  String get editorUsePlayerOverride => '플레이어 개별 설정 사용';
+
+  @override
+  String get editorInheritMapDefault => '맵 기본값 상속';
+
+  @override
+  String get editorStoredPlayerOverride => '저장된 플레이어 개별 설정';
+
+  @override
+  String get editorPlayerProhibited => '플레이어: 금지';
+
+  @override
+  String get editorPlayerAllowed => '플레이어: 허용';
+
+  @override
+  String editorEffectiveAvailability(String value0) {
+    return '실제 사용 가능 여부: $value0';
+  }
+
+  @override
+  String get editorUnknownStoredFlagsPreserved => '알 수 없음 (저장된 플래그 유지)';
+
+  @override
+  String
+  get editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass =>
+      '상속해도 저장된 개별 설정은 유지됩니다. 사용 가능 설정은 게임 선행 조건을 무시하거나 유닛을 배치하지 않습니다.';
+
+  @override
+  String editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers(
+    String value0,
+  ) {
+    return '대기 중인 변경 $value0개. 적용은 변경한 모든 유닛과 플레이어에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+  }
+
+  @override
+  String
+  get editorLocalWeaponReferencesUnavailableConfigureStarCraftAssetsAndRetry =>
+      '로컬 무기 참조를 사용할 수 없습니다. StarCraft 자산을 설정한 후 다시 시도하세요.';
+
+  @override
+  String editorUnit88a3c859(String value0, String value1) {
+    return '$value0\n유닛 #$value1';
+  }
+
+  @override
+  String get editorUnitPreviewRequiresLocalStarCraftGraphics =>
+      '유닛 미리보기에는 로컬 StarCraft 그래픽이 필요합니다.';
+
+  @override
+  String get editorConfigureStarCraftAssetsToLoadUnitLinks =>
+      '유닛 연결을 불러오려면 StarCraft 자산을 설정하세요.';
+
+  @override
+  String get editorGround => '지상';
+
+  @override
+  String get editorAir => '공중';
+
+  @override
+  String editorNone(String value0) {
+    return '$value0: 없음';
+  }
+
+  @override
+  String editorSubunit(String value0, String value1) {
+    return '하위 유닛: $value0 (#$value1)';
+  }
+
+  @override
+  String get editorSubunitWeaponsKeepsTheSelectedUnit => '하위 유닛 무기: 선택한 유닛 유지';
+
+  @override
+  String get editorNoLinkedWeaponSelectAWeaponManually =>
+      '연결된 무기가 없습니다. 무기를 직접 선택하세요.';
+
+  @override
+  String editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '자동 선택: $value2의 $value0 (#$value1). 무기 변경은 이를 공유하는 모든 유닛에 적용됩니다.';
+  }
+
+  @override
+  String get editorRetryUnitLinks => '유닛 연결 다시 불러오기';
+
+  @override
+  String editorUnit24496eb9(String value0, String value1) {
+    return '유닛 #$value0: $value1';
+  }
+
+  @override
+  String editorWeaponDamageMustBeAnIntegerFrom0To(String value0) {
+    return '무기 #$value0: 피해량은 0~65535의 정수여야 합니다.';
+  }
+
+  @override
+  String get editorUnitSettings => '유닛 설정';
+
+  @override
+  String get editorMapWideUnitTypesSeparateFromPlacedUnitProperties =>
+      '맵 전체의 유닛 종류 설정입니다. 배치된 유닛의 속성과는 별도입니다.';
+
+  @override
+  String editorEditing4dc9e6e6(String value0, String value1) {
+    return '편집 중: $value0$value1.';
+  }
+
+  @override
+  String get editorAlternateSectionPreservedWithoutSynchronization =>
+      '; 다른 섹션은 동기화하지 않고 유지';
+
+  @override
+  String editorUnit38894196(String value0, String value1) {
+    return '$value0 (유닛 #$value1)';
+  }
+
+  @override
+  String get editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon =>
+      '유닛 수치, 이름, 기본값 플래그만 편집합니다. 공유 무기 피해량은 아래에서 별도로 선택합니다.';
+
+  @override
+  String get editorUseCustomValues => '사용자 지정 수치 사용';
+
+  @override
+  String editorStoredDefaultFlagPreserved(String value0) {
+    return '저장된 기본값 플래그 $value0 (유지)';
+  }
+
+  @override
+  String get editorFieldsShowStoredCustomValuesGameDefaultNumbersAre =>
+      '필드는 저장된 사용자 지정 수치를 표시합니다. 게임 기본 수치는 불러오지 않습니다.';
+
+  @override
+  String get editorRestoreSelectedUnitDefaults => '선택한 유닛 기본값 복원';
+
+  @override
+  String get editorUnitNameEmptyGameName => '유닛 이름 (비워 두면 게임 이름)';
+
+  @override
+  String get editorSharedWeaponDamage => '공유 무기 피해량';
+
+  @override
+  String get editorAWeaponChangeAffectsEveryUnitUsingThatWeapon =>
+      '무기 변경은 해당 무기를 사용하는 모든 유닛에 적용됩니다. 유닛 복원은 공유 무기 피해량을 초기화하지 않습니다.';
+
+  @override
+  String get editorWeapon => '무기';
+
+  @override
+  String get editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons =>
+      '공유 무기 피해량만 편집합니다. 대상 무기를 참조하는 모든 유닛에 영향을 줄 수 있습니다.';
+
+  @override
+  String get editorDamagePerUpgrade => '업그레이드당 피해량';
+
+  @override
+  String get editorBaseDamage => '기본 피해량';
+
+  @override
+  String get editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave =>
+      '적용은 변경한 모든 유닛 종류와 무기에 반영합니다. 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+
+  @override
+  String editorUpgrade(String value0, String value1, String value2) {
+    return '업그레이드 #$value0, $value1: $value2';
+  }
+
+  @override
+  String get editorEffectiveLevelsUnknownStoredFlagPreserved =>
+      '실제 적용 레벨: 알 수 없음 (저장된 플래그 유지)';
+
+  @override
+  String editorEffectiveLevelsStartMaximum(String value0, String value1) {
+    return '실제 적용 레벨: $value0 / $value1 (시작 / 최대)';
+  }
+
+  @override
+  String get editorUpgradeSettings => '업그레이드 설정';
+
+  @override
+  String get editorUpgraded423b17 => '업그레이드';
+
+  @override
+  String get editorMapDefaultLevels => '맵 기본 레벨';
+
+  @override
+  String editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1(String value0) {
+    return '현재 업그레이드 #$value0의 플레이어 변경사항만 플레이어 1~8에 복사합니다. 맵 비용과 기본값은 제외합니다.';
+  }
+
+  @override
+  String get editorUsePlayerLevels => '플레이어 레벨 사용';
+
+  @override
+  String get editorInheritMapLevels => '맵 레벨 상속';
+
+  @override
+  String
+  get editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer =>
+      '맵 레벨은 이를 상속하는 플레이어에 적용됩니다. 상속해도 저장된 플레이어 레벨은 유지됩니다. 시작 레벨은 최대 레벨을 넘을 수 없습니다.';
+
+  @override
+  String editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe(
+    String value0,
+  ) {
+    return '업그레이드와 플레이어에 대기 중인 변경 $value0개. 적용은 문서에 반영하며, 다른 이름으로 저장하면 맵 파일에 기록합니다.';
+  }
+
+  @override
+  String get editorLoadingLocalWeaponReferences => '로컬 무기 참조 불러오는 중…';
+
+  @override
+  String editorWeaponReferenceListUnavailable(String value0) {
+    return '무기 참조 목록을 사용할 수 없음: $value0';
+  }
+
+  @override
+  String get editorSourceChanged => '원본 변경';
+
+  @override
+  String get editorReloadWeaponReferences => '무기 참조 다시 불러오기';
+
+  @override
+  String get editorNoneInThisDATSnapshot => '이 DAT 스냅샷에는 없음';
+
+  @override
+  String editorWeaponDirectGroundAirReferences(String value0, String value1) {
+    return '무기 #$value0: 직접 지상·공중 참조: $value1';
+  }
+
+  @override
+  String editorUnitsReferencingThoseSubunits(String value0) {
+    return '해당 하위 유닛을 참조하는 유닛: $value0';
+  }
+
+  @override
+  String editorSource854c792f(String value0) {
+    return '원본: $value0';
+  }
+
+  @override
+  String get editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD =>
+      'DAT 참조만 표시합니다. 주문, 생성되는 투사체·유닛, EUD 실행 중 변경에는 추가 영향이 있을 수 있습니다.';
+
+  @override
+  String get editorOpenAMapToManageResources => '리소스를 관리하려면 맵을 여세요.';
+
+  @override
+  String get editorResources => '리소스';
+
+  @override
+  String get editorUndo71fd4acf => '실행 취소';
+
+  @override
+  String get editorRedo7412e5e9 => '다시 실행';
+
+  @override
+  String get editorAddString => '문자열 추가';
+
+  @override
+  String get editorImportPCMWAV => 'PCM WAV 가져오기';
+
+  @override
+  String get editorStopPreview => '미리보기 중지';
+
+  @override
+  String editorStringsBytesOffsetLimitSaveAsWritesPendingResource(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '문자열 $value0개 • $value1바이트 • 오프셋 한도 $value2 • 다른 이름으로 저장하면 대기 중인 리소스 변경을 기록합니다.';
+  }
+
+  @override
+  String get editorReferenceCoverageIncompleteDeletionRestricted =>
+      '참조 검사 범위 불완전: 삭제 제한';
+
+  @override
+  String
+  get editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions =>
+      '아카이브 목록이 불완전합니다. 목록에 없는 사운드가 있을 수 있어 가져오기와 삭제를 제한합니다.';
+
+  @override
+  String get editorSearchTextStringIDOrSoundPath => '텍스트, 문자열 ID 또는 사운드 경로 검색';
+
+  @override
+  String get editorWorking => '작업 중…';
+
+  @override
+  String get editorStrings => '문자열';
+
+  @override
+  String get editorSounds => '사운드';
+
+  @override
+  String get editorInvalidUTF8RawBytesPreserved => '잘못된 UTF-8: 원본 바이트 유지';
+
+  @override
+  String editorBytesKnownUseS(String value0, String value1, String value2) {
+    return '$value0바이트 • 확인된 사용 $value1곳$value2';
+  }
+
+  @override
+  String get editorExplicitReplacementRequired => ' • 명시적 교체 필요';
+
+  @override
+  String get editorClearUnreferencedString => '미참조 문자열 비우기';
+
+  @override
+  String editorBytesPendingImport(String value0) {
+    return '$value0바이트 • 가져오기 대기';
+  }
+
+  @override
+  String get editorReferencedPathNotListedInThisMap => '참조된 경로: 이 맵의 목록에는 없음';
+
+  @override
+  String editorBytesLocale(String value0, String value1) {
+    return '$value0바이트 • 로캘 $value1';
+  }
+
+  @override
+  String get editorPreviewSound => '사운드 미리보기';
+
+  @override
+  String get editorExportSound => '사운드 내보내기';
+
+  @override
+  String get editorDeleteSound => '사운드 삭제';
+
+  @override
+  String get editorDeleteSoundf1d564e6 => '사운드를 삭제할까요?';
+
+  @override
+  String editorRemovalAppliesOnSaveAsUndoRestoresThisEdit(String value0) {
+    return '$value0\n다른 이름으로 저장하면 삭제가 반영됩니다. 실행 취소로 복원할 수 있습니다.';
+  }
+
+  @override
+  String get editorDelete => '삭제';
+
+  @override
+  String get editorMapChanged => '맵이 변경되었습니다.';
+
+  @override
+  String editorResourcesAreReadOnly(String value0) {
+    return '리소스는 읽기 전용입니다: $value0';
+  }
+
+  @override
+  String get editorInvalidUTF8EnterExplicitReplacementTextOriginalBytes =>
+      '잘못된 UTF-8입니다. 교체할 텍스트를 직접 입력하세요. 적용 전까지 원본 바이트는 유지됩니다.';
+
+  @override
+  String editorString(String value0) {
+    return '문자열 #$value0';
+  }
+
+  @override
+  String get editorEditSharedIDAffectsAllReferences => '공유 ID 편집: 모든 참조에 적용';
+
+  @override
+  String editorSeparate(String value0) {
+    return '분리: $value0';
+  }
+
+  @override
+  String get editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs =>
+      '확인되지 않은 사용처가 더 있을 수 있습니다. 자동 정리는 수행하지 않습니다.';
+
+  @override
+  String get editorUTF8Text => 'UTF-8 텍스트';
+
+  @override
+  String editorKnownReferences(String value0) {
+    return '확인된 참조 $value0개';
+  }
+
+  @override
+  String get editorWriteEpScriptHere => '// 여기에 epScript를 작성하세요';
+
+  @override
+  String get editorModified => '수정됨';
+
+  @override
+  String get editorClean => '변경 없음';
+
+  @override
+  String get editorInMemoryDraft => '메모리 초안';
+
+  @override
+  String editorLnCol(String value0, String value1) {
+    return '$value0행, $value1열';
+  }
+
+  @override
+  String editorActionSReferenceThisSlotApplyingChangesAffectsAll(
+    String value0,
+  ) {
+    return '액션 $value0개가 이 슬롯을 참조합니다. 적용하면 모두에 영향을 줍니다.';
+  }
+
+  @override
+  String editorNewStringIDUseThisIDInATrigger(String value0) {
+    return '새 문자열 ID: $value0. 트리거 액션에서 이 ID를 사용하세요.';
+  }
+
+  @override
+  String get editorAddTriggerText => '트리거 텍스트 추가';
+
+  @override
+  String get editorSwitchNames => '스위치 이름';
+
+  @override
+  String get editorUnitPropertySlots => '유닛 속성 슬롯';
+
+  @override
+  String editorID(String value0, String value1) {
+    return '$value0 ID $value1';
+  }
+
+  @override
+  String get editorProperty => '속성';
+
+  @override
+  String get editorSwitch => '스위치';
+
+  @override
+  String get editorText => '텍스트';
+
+  @override
+  String get editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan =>
+      '선택하지 않은 값은 게임 기본값을 상속합니다. 특수 상태는 상속, 활성화, 비활성화를 선택할 수 있습니다.';
+
+  @override
+  String get editorInherit => '상속';
+
+  @override
+  String get editorEnabled => '활성화';
+
+  @override
+  String get editorDisabled => '비활성화';
+
+  @override
+  String get editorPrepareChanges => '변경 준비';
+
+  @override
+  String get editorApplyToMap => '맵에 적용';
+
+  @override
+  String get editorYes => '예';
+
+  @override
+  String get editorNo => '아니요';
+
+  @override
+  String get editorUnknown => '알 수 없음';
+
+  @override
+  String get editorAllowed => '허용';
+
+  @override
+  String get editorProhibited => '금지';
+
+  @override
+  String get editorMapdfa2efb1 => '맵';
+
+  @override
+  String editorTheCHKSectionHeaderIsTruncatedAtByteOffset(String value0) {
+    return '바이트 오프셋 $value0에서 CHK 섹션 헤더가 잘렸습니다.';
+  }
+
+  @override
+  String get editorUseAnIntactScenarioChkOrOpenTheMap =>
+      '정상적인 scenario.chk를 사용하거나 맵을 읽기 전용으로 여세요.';
+
+  @override
+  String editorSectionDeclaresBytesButOnlyBytesRemain(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '섹션 \"$value0\"은 $value1바이트를 선언했지만 $value2바이트만 남았습니다.';
+  }
+
+  @override
+  String editorSectionMustContainExactlyPayloadBytesButContains(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '섹션 \"$value0\"의 데이터는 정확히 $value1바이트여야 하지만 $value2바이트입니다.';
+  }
+
+  @override
+  String get editorKeepThisSectionUnchangedAndTreatTheMapAs =>
+      '이 섹션은 변경하지 말고 맵을 읽기 전용으로 취급하세요.';
+
+  @override
+  String editorIsOutsideTheMapPixelBounds(String value0, String value1) {
+    return '$value0 $value1의 위치가 맵 픽셀 경계를 벗어났습니다.';
+  }
+
+  @override
+  String editorMoveTheObjectInside0By0OrKeep(String value0, String value1) {
+    return '객체를 0~$value0, 0~$value1 범위 안으로 옮기세요. 의도적인 EUD 값이라면 원본 레코드를 유지하세요.';
+  }
+
+  @override
+  String editorRefersToPlayerValueOutsideTheSupported011(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '$value0 $value1이 지원 범위 0~11 밖의 플레이어 값 $value2를 참조합니다.';
+  }
+
+  @override
+  String get editorChoosePlayer1ThroughPlayer12OrKeepThe =>
+      '플레이어 1~12를 선택하세요. 의도적인 EUD 데이터라면 원본 값을 유지하세요.';
+
+  @override
+  String editorLocationDoesNotFormAValidRectangleInsideThe(String value0) {
+    return '위치 $value0이 맵 내부의 유효한 직사각형이 아닙니다.';
+  }
+
+  @override
+  String editorUseLeftRightAndTopBottomInside0By(String value0, String value1) {
+    return '0~$value0, 0~$value1 범위에서 왼쪽 < 오른쪽, 위 < 아래가 되도록 설정하세요. 의도적인 값이라면 원본을 유지하세요.';
+  }
+
+  @override
+  String editorUsesStringIDButMultipleSTRSTRxTablesMake(
+    String value0,
+    String value1,
+  ) {
+    return '$value0이 문자열 ID $value1을 사용하지만 STR/STRx 테이블이 여러 개여서 참조가 모호합니다.';
+  }
+
+  @override
+  String get editorInspectTheRawStringSectionsTheEditorWillNot =>
+      '원본 문자열 섹션을 검사하세요. 편집기는 활성 테이블을 추측하지 않습니다.';
+
+  @override
+  String editorUsesStringIDButNoReadableSTRSTRxTable(
+    String value0,
+    String value1,
+  ) {
+    return '$value0이 문자열 ID $value1을 사용하지만 읽을 수 있는 STR/STRx 테이블이 없습니다.';
+  }
+
+  @override
+  String get editorInspectTheRawStringTableBeforeChangingThisReference =>
+      '이 참조를 변경하기 전에 원본 문자열 테이블을 검사하세요.';
+
+  @override
+  String editorUsesStringIDButTheTableContainsOnlyEntries(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '$value0이 문자열 ID $value1을 사용하지만 테이블에는 항목이 $value2개뿐입니다.';
+  }
+
+  @override
+  String get editorChooseAnExistingStringIDOrClearTheReference =>
+      '기존 문자열 ID를 선택하거나 ID 0으로 참조를 해제하세요.';
+
+  @override
+  String editorUsesStringIDWhoseRawEntryCannotBeResolved(
+    String value0,
+    String value1,
+  ) {
+    return '$value0이 사용하는 문자열 ID $value1의 원본 항목을 안전하게 해석할 수 없습니다.';
+  }
+
+  @override
+  String get editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe =>
+      '문자열 테이블 구조 진단을 검사하세요. 원인을 파악할 때까지 원본 참조를 유지하세요.';
+
+  @override
+  String editorSectionEndsWithAnIncompleteByteRecord(
+    String value0,
+    String value1,
+    String value2,
+  ) {
+    return '섹션 \"$value0\"이 불완전한 $value1바이트 $value2 레코드로 끝납니다.';
+  }
+
+  @override
+  String get editorKeepThisObjectSectionUnchangedAndReadOnly =>
+      '이 객체 섹션을 변경하지 말고 읽기 전용으로 유지하세요.';
+
+  @override
+  String editorSectionMustContainEither64Or255CompleteLocation(String value0) {
+    return '섹션 \"$value0\"에는 완전한 위치 레코드가 64개 또는 255개 있어야 합니다.';
+  }
+
+  @override
+  String get editorKeepThisLocationSectionUnchangedAndReadOnly =>
+      '이 위치 섹션을 변경하지 말고 읽기 전용으로 유지하세요.';
+
+  @override
+  String editorSectionDoesNotContainItsCompleteByteStringCount(
+    String value0,
+    String value1,
+  ) {
+    return '섹션 \"$value0\"의 $value1바이트 문자열 개수 필드가 불완전합니다.';
+  }
+
+  @override
+  String get editorKeepThisStringTableUnchangedAndReadOnly =>
+      '이 문자열 테이블을 변경하지 말고 읽기 전용으로 유지하세요.';
+
+  @override
+  String editorSectionDeclaresStringsButItsOffsetTableExceedsThe(
+    String value0,
+    String value1,
+  ) {
+    return '섹션 \"$value0\"이 문자열 $value1개를 선언했지만 오프셋 테이블이 데이터 범위를 넘습니다.';
+  }
+
+  @override
+  String editorStringInSectionPointsOutsideThePayload(
+    String value0,
+    String value1,
+  ) {
+    return '섹션 \"$value1\"의 문자열 $value0이 데이터 범위 밖을 가리킵니다.';
+  }
+
+  @override
+  String editorStringInSectionPointsIntoTheCountOrOffset(
+    String value0,
+    String value1,
+  ) {
+    return '섹션 \"$value1\"의 문자열 $value0이 개수 또는 오프셋 테이블 내부를 가리킵니다.';
+  }
+
+  @override
+  String editorStringInSectionHasNoNullTerminatorBeforeThe(
+    String value0,
+    String value1,
+  ) {
+    return '섹션 \"$value1\"의 문자열 $value0이 데이터 끝까지 널 종료자를 갖고 있지 않습니다.';
+  }
+
+  @override
+  String editorSectionEndsWithAnIncomplete2ByteTileRecord(String value0) {
+    return '섹션 \"$value0\"이 불완전한 2바이트 타일 레코드로 끝납니다.';
+  }
+
+  @override
+  String get editorKeepThisTerrainSectionUnchangedAndReadOnly =>
+      '이 지형 섹션을 변경하지 말고 읽기 전용으로 유지하세요.';
+
+  @override
+  String editorSectionContainsTilesButXMapDimensionsRequire(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+    String value4,
+  ) {
+    return '섹션 \"$value0\"에는 타일이 $value1개지만 ${value2}x$value3 맵 크기에는 $value4개가 필요합니다.';
+  }
+
+  @override
+  String get editorRecoveryOpened => '복구본을 열었습니다';
+
+  @override
+  String get editorOnlyScmAndScxMapFilesCanBeOpened =>
+      '.scm 및 .scx 맵 파일만 열 수 있습니다.';
+
+  @override
+  String get editorChooseAStarCraftMapWithAScmOrScx =>
+      '확장자가 .scm 또는 .scx인 StarCraft 맵을 선택하세요.';
+
+  @override
+  String get editorAnotherEditorOperationIsAlreadyRunning =>
+      '다른 편집 작업이 이미 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheCurrentOperationToFinishAndTry =>
+      '현재 작업이 끝날 때까지 기다린 후 다시 시도하세요.';
+
+  @override
+  String get editorReadingMapArchive => '맵 아카이브 읽는 중';
+
+  @override
+  String get editorFingerprintingSourceMap => '원본 맵 지문 계산 중';
+
+  @override
+  String get editorParsingScenarioChk => 'scenario.chk 분석 중';
+
+  @override
+  String get editorValidatingMapMetadata => '맵 메타데이터 검증 중';
+
+  @override
+  String get editorTheSourceMapChangedWhileItWasBeingOpened =>
+      '맵을 여는 동안 원본 맵이 변경되었습니다.';
+
+  @override
+  String get editorCloseTheOtherProgramThatIsEditingTheMap =>
+      '맵을 편집하는 다른 프로그램을 닫고 다시 여세요.';
+
+  @override
+  String get editorTheMapOpenedButTheRecentMapsListWas =>
+      '맵을 열었지만 최근 맵 목록은 갱신하지 못했습니다.';
+
+  @override
+  String get editorCheckAccessToTheApplicationSettingsFolderAndReopen =>
+      '앱 설정 폴더 접근 권한을 확인한 후 맵을 다시 여세요.';
+
+  @override
+  String get editorMapOpenedInRestrictedReadOnlyMode =>
+      '제한된 읽기 전용 모드로 맵을 열었습니다';
+
+  @override
+  String get editorMapOpened => '맵을 열었습니다';
+
+  @override
+  String get editorTheMapCouldNotBeOpenedBecauseOfAn =>
+      '예기치 않은 오류로 맵을 열지 못했습니다.';
+
+  @override
+  String get editorRetryTheOperationIfItFailsAgainInspectThe =>
+      '다시 시도하세요. 계속 실패하면 앱 로그를 검사하세요.';
+
+  @override
+  String get editorTheMapWasSavedButTheRecentMapsList =>
+      '맵을 저장했지만 최근 맵 목록은 갱신하지 못했습니다.';
+
+  @override
+  String get editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0 =>
+      '앱 설정 폴더 접근 권한을 확인한 후 저장된 맵을 다시 여세요.';
+
+  @override
+  String get editorTheMapFileDialogCouldNotBeOpened => '맵 파일 대화상자를 열지 못했습니다.';
+
+  @override
+  String get editorRetryTheOperationOrRestartTheApplication =>
+      '다시 시도하거나 앱을 다시 시작하세요.';
+
+  @override
+  String get editorTheSourceMapFingerprintCouldNotBeVerified =>
+      '원본 맵 지문을 검증하지 못했습니다.';
+
+  @override
+  String get editorCheckThatTheMapStillExistsIsReadableAnd =>
+      '맵이 존재하고 읽을 수 있으며 다른 프로그램이 변경 중이 아닌지 확인하세요.';
+
+  @override
+  String get editorOpenAMapBeforeUsingSaveAs => '다른 이름으로 저장하기 전에 맵을 여세요.';
+
+  @override
+  String get editorOpenAScmOrScxMapAndTryAgain =>
+      '.scm 또는 .scx 맵을 열고 다시 시도하세요.';
+
+  @override
+  String editorEditedContainInvalidFieldValuesOrReferences(String value0) {
+    return '편집한 $value0에 유효하지 않은 필드 값 또는 참조가 있습니다.';
+  }
+
+  @override
+  String editorOpenValidateReferencesAndCorrectTheReportedSlots(String value0) {
+    return '$value0 → 참조 검증을 열고 보고된 슬롯을 수정하세요.';
+  }
+
+  @override
+  String get editorBriefing => '브리핑';
+
+  @override
+  String get editorTriggers => '트리거';
+
+  @override
+  String get editorTheSaveAsDestinationMustBeAnAbsoluteWindows =>
+      '저장 대상은 Windows 절대 경로여야 합니다.';
+
+  @override
+  String get editorChooseTheDestinationUsingTheSaveAsDialog =>
+      '다른 이름으로 저장 대화상자에서 대상을 선택하세요.';
+
+  @override
+  String get editorNewBroodWarMapsMustBeSavedAsScx =>
+      '새 Brood War 맵은 .scx로 저장해야 합니다.';
+
+  @override
+  String get editorSaveAsSupportsOnlyScmAndScxMapFiles =>
+      '다른 이름으로 저장은 .scm 및 .scx 맵 파일만 지원합니다.';
+
+  @override
+  String get editorChooseADestinationEndingInScx => '.scx로 끝나는 대상을 선택하세요.';
+
+  @override
+  String get editorChooseADestinationEndingInScmOrScx =>
+      '.scm 또는 .scx로 끝나는 대상을 선택하세요.';
+
+  @override
+  String get editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap =>
+      '현재 열려 있는 원본 맵을 덮어쓸 수 없습니다.';
+
+  @override
+  String get editorChooseADifferentOutputFileName => '다른 출력 파일 이름을 선택하세요.';
+
+  @override
+  String get editorTheSaveAsDestinationAlreadyExists => '저장 대상이 이미 존재합니다.';
+
+  @override
+  String get editorChooseANewFileNameOrExplicitlyConfirmReplacement =>
+      '새 파일 이름을 선택하거나 다른 이름으로 저장 대화상자에서 교체를 명시적으로 확인하세요.';
+
+  @override
+  String get editorPreparingNewMap => '새 맵 준비 중';
+
+  @override
+  String get editorCheckingSourceMap => '원본 맵 검사 중';
+
+  @override
+  String get editorValidatingNewMap => '새 맵 검증 중';
+
+  @override
+  String get editorCheckingSourceMapFingerprint => '원본 맵 지문 검사 중';
+
+  @override
+  String get editorTheSourceMapChangedAfterItWasOpenedSo =>
+      '맵을 연 뒤 원본이 변경되어 저장을 중단했습니다.';
+
+  @override
+  String get editorReopenTheSourceMapToReviewTheExternalChanges =>
+      '저장 전에 원본 맵을 다시 열어 외부 변경사항을 검토하세요.';
+
+  @override
+  String get editorCheckingExistingDestinationFingerprint => '기존 대상 지문 검사 중';
+
+  @override
+  String get editorATemporarySaveAsWorkspaceCouldNotBeCreated =>
+      '임시 저장 작업 폴더를 만들지 못했습니다.';
+
+  @override
+  String get editorCheckDestinationFolderPermissionsAndFreeDiskSpace =>
+      '대상 폴더 권한과 디스크 여유 공간을 확인하세요.';
+
+  @override
+  String get editorWritingTemporaryMapArchive => '임시 맵 아카이브 기록 중';
+
+  @override
+  String get editorReopeningAndVerifyingTemporaryMap => '임시 맵 다시 열어 검증 중';
+
+  @override
+  String get editorTheReopenedTemporaryMapDoesNotContainTheExpected =>
+      '다시 연 임시 맵의 scenario.chk 바이트가 예상 값과 다릅니다.';
+
+  @override
+  String get editorKeepTheSourceMapUnchangedAndReportTheArchive =>
+      '원본 맵을 유지하고 아카이브 기록 실패를 보고하세요.';
+
+  @override
+  String get editorTheReopenedTemporaryMapFailedCHKValidation =>
+      '다시 연 임시 맵이 CHK 검증에 실패했습니다.';
+
+  @override
+  String get editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics =>
+      '원본 맵을 유지하고 파서 진단을 검사하세요.';
+
+  @override
+  String get editorFingerprintingVerifiedOutput => '검증된 출력 지문 계산 중';
+
+  @override
+  String get editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated =>
+      '검증된 임시 맵의 지문을 계산하지 못했습니다.';
+
+  @override
+  String get editorRecheckingSourceMapFingerprint => '원본 맵 지문 재검사 중';
+
+  @override
+  String get editorTheSourceMapChangedDuringSaveAsSoThe =>
+      '저장 중 원본 맵이 변경되어 검증된 출력을 최종 대상으로 옮기지 않았습니다.';
+
+  @override
+  String get editorReopenTheSourceMapToReviewTheExternalChangesf53fd806 =>
+      '원본 맵을 다시 열어 외부 변경사항을 검토하고 새 출력 이름으로 재시도하세요.';
+
+  @override
+  String get editorRecheckingSaveAsDestination => '저장 대상 재검사 중';
+
+  @override
+  String get editorPromotingVerifiedMapToFinalDestination =>
+      '검증된 맵을 최종 대상으로 이동 중';
+
+  @override
+  String get editorTheExistingDestinationIsSafeInABackupBut =>
+      '기존 대상은 백업에 안전하게 보관되었지만 자동 복원에 실패했습니다.';
+
+  @override
+  String editorRestoreTheBackupToBeforeRetryingSaveAs(String value0) {
+    return '저장을 재시도하기 전에 백업을 $value0에 복원하세요.';
+  }
+
+  @override
+  String get editorTheVerifiedMapCouldNotBePromotedToIts =>
+      '검증된 맵을 최종 대상으로 옮기지 못했습니다.';
+
+  @override
+  String get editorCheckDestinationFolderPermissionsAndChooseANewName =>
+      '대상 폴더 권한을 확인하고 새 이름을 선택하세요.';
+
+  @override
+  String get editorThePreviousDestinationWasPreservedAsARecoveryBackup =>
+      '이전 대상은 복구 백업으로 보관되었습니다.';
+
+  @override
+  String get editorKeepTheBackupUntilTheReplacementMapHasBeen =>
+      '교체한 맵을 검증할 때까지 백업을 유지하세요.';
+
+  @override
+  String get editorMapSavedAndVerified => '맵 저장 및 검증 완료';
+
+  @override
+  String get editorMapSavedVerifiedAndBackedUp => '맵 저장, 검증 및 백업 완료';
+
+  @override
+  String get editorSaveAsFailedBecauseOfAnUnexpectedError =>
+      '예기치 않은 오류로 저장에 실패했습니다.';
+
+  @override
+  String get editorRetryWithANewOutputNameTheSourceMap =>
+      '새 출력 이름으로 다시 시도하세요. 원본 맵은 수정하지 않았습니다.';
+
+  @override
+  String get editorTheSaveAsDialogCouldNotBeOpened =>
+      '다른 이름으로 저장 대화상자를 열지 못했습니다.';
+
+  @override
+  String get editorCheckThatTheSourceMapStillExistsIsReadable =>
+      '원본 맵이 존재하고 읽을 수 있으며 다른 프로그램이 변경 중이 아닌지 확인하세요.';
+
+  @override
+  String get editorTheExistingSaveAsDestinationCouldNotBeVerified =>
+      '기존 저장 대상을 검증하지 못했습니다.';
+
+  @override
+  String get editorCheckThatTheDestinationIsAReadableRegularFile =>
+      '대상이 읽을 수 있는 일반 파일인지 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheSaveAsDestinationChangedWhileTheMapWas =>
+      '맵을 준비하는 동안 저장 대상이 변경되었습니다.';
+
+  @override
+  String get editorReviewTheDestinationInAnotherProgramThenRetryAnd =>
+      '다른 프로그램에서 대상을 검토한 후 재시도하고 교체를 다시 확인하세요.';
+
+  @override
+  String get editorWaitingForEuddraftToStart => 'euddraft 시작 대기 중';
+
+  @override
+  String get editorTheEuddraftEventStreamFailedUnexpectedly =>
+      'euddraft 이벤트 스트림에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheEuddraftBuildCouldNotBeStarted =>
+      'euddraft 빌드를 시작하지 못했습니다.';
+
+  @override
+  String get editorStoppingEuddraft => 'euddraft 중지 중';
+
+  @override
+  String get editorTheEUDBuildCancellationRequestFailed =>
+      'EUD 빌드 취소 요청에 실패했습니다.';
+
+  @override
+  String get editorEuddraftIsStillRunning => 'euddraft가 아직 실행 중입니다';
+
+  @override
+  String get editorEuddraftReturnedAnEventForADifferentBuild =>
+      'euddraft가 다른 빌드의 이벤트를 반환했습니다.';
+
+  @override
+  String editorEuddraftIsRunning(String value0) {
+    return 'euddraft $value0 실행 중';
+  }
+
+  @override
+  String get editorValidatingAndPromotingTheGeneratedEUDMap =>
+      '생성된 EUD 맵 검증 및 이동 중';
+
+  @override
+  String get editorEUDBuildWasCancelled => 'EUD 빌드가 취소되었습니다';
+
+  @override
+  String get editorEUDBuildFailed => 'EUD 빌드 실패';
+
+  @override
+  String get editorEUDMapBuiltVerifiedAndPromoted => 'EUD 맵 빌드, 검증 및 이동 완료';
+
+  @override
+  String get editorTheEuddraftEventStreamEndedWithoutAResult =>
+      'euddraft 이벤트 스트림이 결과 없이 종료되었습니다.';
+
+  @override
+  String get editorInspectTheBuildLogAndRetry => '빌드 로그를 검사하고 다시 시도하세요.';
+
+  @override
+  String get editorABuildWithThisIDIsAlreadyActive => '이 ID의 빌드가 이미 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheActiveBuildToFinishAndRetry =>
+      '실행 중인 빌드가 끝나면 다시 시도하세요.';
+
+  @override
+  String get editorTheEUDBuildInputsAreNotSafeRegularFiles =>
+      'EUD 빌드 입력이 안전한 일반 파일이 아닙니다.';
+
+  @override
+  String get editorCheckTheBaseMapSourceRootEntrySourceAnd =>
+      '기본 맵, 소스 루트, 진입 소스 및 출력 폴더를 확인하세요.';
+
+  @override
+  String get editorTheEUDOutputResolvesToTheBaseMap =>
+      'EUD 출력이 기본 맵과 같은 파일을 가리킵니다.';
+
+  @override
+  String get editorChooseASeparateOutputFile => '별도의 출력 파일을 선택하세요.';
+
+  @override
+  String get editorTheEUDBaseMapFingerprintCouldNotBeCalculated =>
+      'EUD 기본 맵 지문을 계산하지 못했습니다.';
+
+  @override
+  String get editorTheBaseMapDoesNotMatchTheEUDProject =>
+      '기본 맵이 EUD 프로젝트 연결 정보와 일치하지 않습니다.';
+
+  @override
+  String get editorOpenAndVerifyTheBoundMapThenPrepareAgain =>
+      '연결된 맵을 열어 검증한 후 다시 준비하세요.';
+
+  @override
+  String get editorTheEpScriptEntrySourceFingerprintCouldNotBeCalculated =>
+      'epScript 진입 소스 지문을 계산하지 못했습니다.';
+
+  @override
+  String get editorTheEUDOutputAlreadyExists => 'EUD 출력이 이미 존재합니다.';
+
+  @override
+  String get editorChooseANewOutputOrExplicitlyConfirmReplacement =>
+      '새 출력을 선택하거나 교체를 명시적으로 확인하세요.';
+
+  @override
+  String get editorTheExistingEUDOutputFingerprintCouldNotBeCalculated =>
+      '기존 EUD 출력 지문을 계산하지 못했습니다.';
+
+  @override
+  String get editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated =>
+      '임시 EUD 빌드 작업 폴더를 만들지 못했습니다.';
+
+  @override
+  String get editorCheckOutputFolderPermissionsAndAvailableDiskSpace =>
+      '출력 폴더 권한과 디스크 여유 공간을 확인하세요.';
+
+  @override
+  String get editorEuddraftExitedSuccessfullyButDidNotCreateAReadable =>
+      'euddraft가 정상 종료했지만 읽을 수 있는 임시 맵을 생성하지 않았습니다.';
+
+  @override
+  String get editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap =>
+      'euddraft가 정상 종료했지만 빈 임시 맵을 생성했습니다.';
+
+  @override
+  String get editorInspectTheEuddraftOutputAndEpScriptSource =>
+      'euddraft 출력과 epScript 소스를 검사하세요.';
+
+  @override
+  String get editorTheTemporaryEUDOutputIsNotAReadableMap =>
+      '임시 EUD 출력은 읽을 수 있는 맵 아카이브가 아닙니다.';
+
+  @override
+  String get editorInspectTheEuddraftLogAndKeepTheBaseMap =>
+      'euddraft 로그를 검사하고 기본 맵을 유지하세요.';
+
+  @override
+  String get editorTheTemporaryEUDOutputContainsAnInvalidCHK =>
+      '임시 EUD 출력에 유효하지 않은 CHK가 있습니다.';
+
+  @override
+  String get editorTheTemporaryEUDOutputFailedCHKMetadataValidation =>
+      '임시 EUD 출력이 CHK 메타데이터 검증에 실패했습니다.';
+
+  @override
+  String get editorInspectTheMapValidationDiagnosticsAndEuddraftLog =>
+      '맵 검증 진단과 euddraft 로그를 검사하세요.';
+
+  @override
+  String get editorTheTemporaryEUDOutputIsMissingRequiredVERDIM =>
+      '임시 EUD 출력에 필수 VER, DIM 또는 ERA 맵 메타데이터가 없습니다.';
+
+  @override
+  String get editorUseAnIntactStarCraftMapAsTheEUDBase =>
+      '정상적인 StarCraft 맵을 EUD 기본 맵으로 사용하세요.';
+
+  @override
+  String get editorTheEUDBaseMapFingerprintCouldNotBeRechecked =>
+      'EUD 기본 맵 지문을 재검사하지 못했습니다.';
+
+  @override
+  String get editorTheBaseMapChangedDuringTheEUDBuildSo =>
+      'EUD 빌드 중 기본 맵이 변경되어 출력을 최종 대상으로 옮기지 않았습니다.';
+
+  @override
+  String get editorReviewTheBaseMapChangesAndRebuild =>
+      '기본 맵 변경사항을 검토하고 다시 빌드하세요.';
+
+  @override
+  String get editorTheEpScriptEntryFingerprintCouldNotBeRechecked =>
+      'epScript 진입 파일 지문을 재검사하지 못했습니다.';
+
+  @override
+  String get editorTheEpScriptEntryChangedDuringTheEUDBuildSo =>
+      'EUD 빌드 중 epScript 진입 파일이 변경되어 출력을 최종 대상으로 옮기지 않았습니다.';
+
+  @override
+  String get editorSaveTheSourceChangesAndRebuild => '소스 변경사항을 저장하고 다시 빌드하세요.';
+
+  @override
+  String get editorThePreviousEUDOutputIsSafeInABackup =>
+      '이전 EUD 출력은 백업에 안전하게 보관되었지만 자동 복원에 실패했습니다.';
+
+  @override
+  String editorRestoreTheBackupToBeforeBuildingAgain(String value0) {
+    return '다시 빌드하기 전에 백업을 $value0에 복원하세요.';
+  }
+
+  @override
+  String get editorTheVerifiedEUDMapCouldNotBePromotedTo =>
+      '검증된 EUD 맵을 출력 대상으로 옮기지 못했습니다.';
+
+  @override
+  String get editorCheckOutputFolderPermissionsAndChooseANewName =>
+      '출력 폴더 권한을 확인하고 새 이름을 선택하세요.';
+
+  @override
+  String get editorThePreviousEUDOutputWasPreservedAsARecovery =>
+      '이전 EUD 출력은 복구 백업으로 보관되었습니다.';
+
+  @override
+  String get editorKeepTheBackupUntilTheGeneratedMapHasBeen =>
+      '생성된 맵을 테스트할 때까지 백업을 유지하세요.';
+
+  @override
+  String get editorTheSafeEUDBuildPipelineFailedUnexpectedly =>
+      '안전한 EUD 빌드 파이프라인에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheTemporaryEUDBuildWorkspaceWasNotRemoved =>
+      '임시 EUD 빌드 작업 폴더를 삭제하지 못했습니다.';
+
+  @override
+  String get editorCloseProcessesUsingTheFolderThenRemoveItManually =>
+      '이 폴더를 사용하는 프로세스를 닫고 직접 삭제하세요.';
+
+  @override
+  String get editorMapSourceOrEUDProjectChangedPrepareTheBuild =>
+      '맵, 소스 또는 EUD 프로젝트가 변경되었습니다. 빌드를 다시 준비하세요.';
+
+  @override
+  String get editorSaveAndVerifyTheCurrentInputsThenPrepareAgain =>
+      '현재 입력을 저장하고 검증한 후 다시 준비하세요.';
+
+  @override
+  String get editorTheSelectedEuddraftInstallationCouldNotBeRechecked =>
+      '선택한 euddraft 설치를 재검사하지 못했습니다.';
+
+  @override
+  String get editorInspectTheToolAndPrepareANewBuild => '도구를 검사하고 새 빌드를 준비하세요.';
+
+  @override
+  String get editorTheSelectedEuddraftInstallationChangedOrIsNotReady =>
+      '선택한 euddraft 설치가 변경되었거나 준비되지 않았습니다.';
+
+  @override
+  String get editorCheckThatTheFileIsReadableAndIsNot =>
+      '파일을 읽을 수 있고 변경 중이 아닌지 확인하세요.';
+
+  @override
+  String get editorTheExistingEUDOutputCouldNotBeRechecked =>
+      '기존 EUD 출력을 재검사하지 못했습니다.';
+
+  @override
+  String get editorTheEUDOutputChangedWhileTheMapWasBeing =>
+      '맵 빌드 중 EUD 출력이 변경되어 임시 출력을 최종 대상으로 옮기지 않았습니다.';
+
+  @override
+  String get editorReviewTheOtherProgramUsingTheOutputAndRebuild =>
+      '출력을 사용하는 다른 프로그램을 확인하고 다시 빌드하세요.';
+
+  @override
+  String get editorTheObjectCatalogRequestFailedUnexpectedly =>
+      '객체 카탈로그 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorRetryOrRepairTheApplicationInstallation =>
+      '다시 시도하거나 앱 설치를 복구하세요.';
+
+  @override
+  String get editorTheObjectThumbnailRequestFailedUnexpectedly =>
+      '객체 미리보기 이미지 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheObjectCatalogRequestIsNoLongerCurrent =>
+      '객체 카탈로그 요청이 더 이상 최신 상태가 아닙니다.';
+
+  @override
+  String get editorLoadTheCurrentlySelectedCatalog => '현재 선택한 카탈로그를 불러오세요.';
+
+  @override
+  String get editorTheObjectCatalogAndThumbnailResultsDidNotMatch =>
+      '객체 카탈로그와 미리보기 이미지 결과가 일치하지 않습니다.';
+
+  @override
+  String get editorRepairTheApplicationOrReportTheHelperError =>
+      '앱을 복구하거나 도우미 오류를 보고하세요.';
+
+  @override
+  String get editorTheStarCraftObjectAtlasRequestFailedUnexpectedly =>
+      'StarCraft 객체 아틀라스 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheStarCraftObjectAtlasResultDidNotMatchIts =>
+      'StarCraft 객체 아틀라스 결과가 요청 묶음과 일치하지 않습니다.';
+
+  @override
+  String get editorOpenAMapBeforeBrowsingThePlacementCatalog =>
+      '배치 카탈로그를 탐색하기 전에 맵을 여세요.';
+
+  @override
+  String get editorSetTheStarCraftRemasteredDataFolderInSettingsFirst =>
+      '설정에서 StarCraft: Remastered 데이터 폴더를 먼저 지정하세요.';
+
+  @override
+  String get editorTheMapNeedsExactlyOneERASectionWithA =>
+      '맵에 알려진 타일셋을 가진 ERA 섹션이 정확히 하나 있어야 합니다.';
+
+  @override
+  String get editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe =>
+      '카탈로그가 변경되었거나 중복된 페이지가 반환되었습니다. 종류를 다시 선택하여 불러오세요.';
+
+  @override
+  String get editorThePlacementCatalogIsUnavailableInThisBuild =>
+      '이 빌드에서는 배치 카탈로그를 사용할 수 없습니다.';
+
+  @override
+  String get editorStarCraftDataAssetSettingsCouldNotBeLoaded =>
+      'StarCraft 데이터 자산 설정을 불러오지 못했습니다.';
+
+  @override
+  String get editorCheckAccessToTheApplicationSettingsFolderAndRetry =>
+      '앱 설정 폴더 접근 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheStarCraftInstallationFolderPickerCouldNotBeOpened =>
+      'StarCraft 설치 폴더 선택창을 열지 못했습니다.';
+
+  @override
+  String get editorRetryOrCheckWindowsDialogPermissions =>
+      '다시 시도하거나 Windows 대화상자 권한을 확인하세요.';
+
+  @override
+  String get editorTheStarCraftInstallationPathCouldNotBeSaved =>
+      'StarCraft 설치 경로를 저장하지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftInstallationPathCouldNotBeCleared =>
+      'StarCraft 설치 경로를 지우지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftCASCStorageCouldNotBeInspected =>
+      'StarCraft CASC 저장소를 검사하지 못했습니다.';
+
+  @override
+  String get editorCheckDirectoryAccessAndRetry => '폴더 접근 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheStarCraftInstallationIsNotConfigured =>
+      'StarCraft 설치가 설정되지 않았습니다.';
+
+  @override
+  String get editorOpenSettingsAndChooseTheStarCraftInstallationDirectory =>
+      '설정을 열어 StarCraft 설치 폴더를 선택하세요.';
+
+  @override
+  String get editorTheStarCraftTileAtlasRequestFailedUnexpectedly =>
+      'StarCraft 타일 아틀라스 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheStarCraftTileAtlasResultDidNotMatchIts =>
+      'StarCraft 타일 아틀라스 결과가 요청 묶음과 일치하지 않습니다.';
+
+  @override
+  String get editorTheTileCatalogRequestFailedUnexpectedly =>
+      '타일 카탈로그 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheTileThumbnailRequestFailedUnexpectedly =>
+      '타일 미리보기 이미지 요청에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorTheTileCatalogRequestIsNoLongerCurrent =>
+      '타일 카탈로그 요청이 더 이상 최신 상태가 아닙니다.';
+
+  @override
+  String get editorTheTileCatalogAndThumbnailResultsDidNotMatch =>
+      '타일 카탈로그와 미리보기 이미지 결과가 일치하지 않습니다.';
+
+  @override
+  String get editorTheMapPathMustBeAnAbsoluteWindowsPath =>
+      '맵 경로는 Windows 절대 경로여야 합니다.';
+
+  @override
+  String get editorChooseTheMapAgainUsingTheOpenMapDialog =>
+      '맵 열기 대화상자에서 맵을 다시 선택하세요.';
+
+  @override
+  String get editorAnArchiveOperationWithTheSameIDIsAlready =>
+      '같은 ID의 아카이브 작업이 이미 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheActiveOperationOrCancelItFirst =>
+      '실행 중인 작업을 기다리거나 먼저 취소하세요.';
+
+  @override
+  String get editorTheBundledMapArchiveHelperIsMissing =>
+      '포함된 맵 아카이브 도우미가 없습니다.';
+
+  @override
+  String get editorRepairOrReinstallTheApplication => '앱을 복구하거나 다시 설치하세요.';
+
+  @override
+  String get editorATemporaryArchiveWorkspaceCouldNotBeCreated =>
+      '임시 아카이브 작업 폴더를 만들지 못했습니다.';
+
+  @override
+  String get editorCheckFreeDiskSpaceAndTemporaryFolderPermissions =>
+      '디스크 여유 공간과 임시 폴더 권한을 확인하세요.';
+
+  @override
+  String get editorTheMapArchiveHelperTimedOut => '맵 아카이브 도우미의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorRetryTheOperationOrInspectTheMapForCorruption =>
+      '작업을 다시 시도하거나 맵 손상 여부를 검사하세요.';
+
+  @override
+  String get editorTheMapArchiveOperationWasCancelled => '맵 아카이브 작업이 취소되었습니다.';
+
+  @override
+  String get editorOpenTheMapAgainWhenReady => '준비되면 맵을 다시 여세요.';
+
+  @override
+  String get editorTheMapArchiveHelperProducedTooMuchOutput =>
+      '맵 아카이브 도우미의 출력량이 한도를 넘었습니다.';
+
+  @override
+  String get editorRepairTheApplicationOrReportTheHelperFailure =>
+      '앱을 복구하거나 도우미 실패를 보고하세요.';
+
+  @override
+  String get editorScenarioChkExceedsTheConfiguredExtractionSizeLimit =>
+      'scenario.chk가 설정된 추출 크기 한도를 넘었습니다.';
+
+  @override
+  String get editorRaiseTheReviewedSizeLimitOnlyForATrusted =>
+      '신뢰할 수 있는 맵에만 검토 후 크기 한도를 높이세요.';
+
+  @override
+  String get editorTheExtractedScenarioChkCouldNotBeRead =>
+      '추출한 scenario.chk를 읽지 못했습니다.';
+
+  @override
+  String get editorRetryTheOperationAndCheckTemporaryDiskAccess =>
+      '작업을 다시 시도하고 임시 디스크 접근 권한을 확인하세요.';
+
+  @override
+  String get editorTheExtractedScenarioChkDoesNotMatchHelperMetadata =>
+      '추출한 scenario.chk가 도우미 메타데이터와 일치하지 않습니다.';
+
+  @override
+  String get editorTheMapArchiveHelperCouldNotBeStarted =>
+      '맵 아카이브 도우미를 시작하지 못했습니다.';
+
+  @override
+  String get editorTheMapArchiveHelperReturnedAnInvalidResponse =>
+      '맵 아카이브 도우미가 유효하지 않은 응답을 반환했습니다.';
+
+  @override
+  String get editorTheSourceMapPathMustBeAnAbsoluteWindows =>
+      '원본 맵 경로는 Windows 절대 경로여야 합니다.';
+
+  @override
+  String get editorOpenTheSourceMapAgainUsingTheOpenMap =>
+      '맵 열기 대화상자에서 원본 맵을 다시 여세요.';
+
+  @override
+  String get editorTheTemporaryOutputPathMustBeAnAbsoluteWindows =>
+      '임시 출력 경로는 Windows 절대 경로여야 합니다.';
+
+  @override
+  String get editorCreateTheSaveAsWorkspaceAgain => '임시 저장 작업 폴더를 다시 만드세요.';
+
+  @override
+  String get editorTheSourceMapCannotBeUsedAsTemporaryOutput =>
+      '원본 맵을 임시 출력으로 사용할 수 없습니다.';
+
+  @override
+  String get editorChooseADifferentSaveAsDestination => '다른 저장 대상을 선택하세요.';
+
+  @override
+  String get editorTheTemporaryArchiveOutputAlreadyExists =>
+      '임시 아카이브 출력이 이미 존재합니다.';
+
+  @override
+  String get editorCreateAFreshSaveAsWorkspaceAndRetry =>
+      '새 임시 저장 작업 폴더를 만들고 다시 시도하세요.';
+
+  @override
+  String get editorTheTemporarySaveAsWorkspaceDoesNotExist =>
+      '임시 저장 작업 폴더가 없습니다.';
+
+  @override
+  String get editorTheTemporarySaveAsWorkspaceCouldNotBeInspected =>
+      '임시 저장 작업 폴더를 검사하지 못했습니다.';
+
+  @override
+  String get editorCheckDestinationFolderPermissionsAndRetry =>
+      '대상 폴더 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheTemporaryScenarioInputPathAlreadyExists =>
+      '임시 시나리오 입력 경로가 이미 존재합니다.';
+
+  @override
+  String get editorTheTemporaryArchiveWriterTimedOut =>
+      '임시 아카이브 기록의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorTheMapArchiveWriteWasCancelled => '맵 아카이브 기록이 취소되었습니다.';
+
+  @override
+  String get editorRunSaveAsAgainWhenReady => '준비되면 다른 이름으로 저장을 다시 실행하세요.';
+
+  @override
+  String get editorTheHelperReportedAnUnexpectedScenarioChkSize =>
+      '도우미가 예상과 다른 scenario.chk 크기를 보고했습니다.';
+
+  @override
+  String get editorTheHelperDidNotCreateTheTemporaryMapArchive =>
+      '도우미가 임시 맵 아카이브를 생성하지 않았습니다.';
+
+  @override
+  String get editorRetrySaveAsOrRepairTheApplication =>
+      '저장을 다시 시도하거나 앱을 복구하세요.';
+
+  @override
+  String get editorTheTemporaryMapArchiveCouldNotBeInspected =>
+      '임시 맵 아카이브를 검사하지 못했습니다.';
+
+  @override
+  String get editorTheTemporaryMapSizeDoesNotMatchHelperMetadata =>
+      '임시 맵 크기가 도우미 메타데이터와 일치하지 않습니다.';
+
+  @override
+  String get editorTheTemporaryScenarioInputCouldNotBeWritten =>
+      '임시 시나리오 입력을 기록하지 못했습니다.';
+
+  @override
+  String get editorTheArchiveEntryListingIsIncomplete => '아카이브 항목 목록이 불완전합니다.';
+
+  @override
+  String get editorEditingCanContinueButVerifyProtectedOrUnnamedEntries =>
+      '편집은 계속할 수 있지만 저장 전에 보호되거나 이름이 없는 항목을 검증하세요.';
+
+  @override
+  String get editorSomeArchiveEntryNamesWereRecoveredSynthetically =>
+      '일부 아카이브 항목에는 합성된 이름을 사용했습니다.';
+
+  @override
+  String get editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths =>
+      '합성 이름은 원본 경로가 아니라 진단용 표시로 취급하세요.';
+
+  @override
+  String get editorTheArchiveContainsDuplicateEntryPaths =>
+      '아카이브에 중복 항목 경로가 있습니다.';
+
+  @override
+  String get editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving =>
+      '저장 전에 로캘 변형과 중복 항목을 검토하세요.';
+
+  @override
+  String get editorTheMapUsesAnUnexpectedMPQFormatVersion =>
+      '맵이 예상하지 않은 MPQ 형식 버전을 사용합니다.';
+
+  @override
+  String get editorUseSaveAsAndReOpenTheOutputBefore =>
+      '다른 이름으로 저장한 뒤 출력을 다시 열어 확인하고 맵을 교체하세요.';
+
+  @override
+  String get editorTheArchiveContainsEncryptedEntries => '아카이브에 암호화된 항목이 있습니다.';
+
+  @override
+  String get editorEncryptedEntriesAreReportedWithoutAttemptingRecovery =>
+      '암호화된 항목은 복구를 시도하지 않고 보고합니다.';
+
+  @override
+  String get editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows =>
+      'StarCraft 설치 경로는 Windows 드라이브 또는 UNC 폴더의 절대 경로여야 합니다.';
+
+  @override
+  String get editorChooseTheStarCraftInstallationUsingTheSettingsDialog =>
+      '설정 대화상자에서 StarCraft 설치를 선택하세요.';
+
+  @override
+  String get editorTheBundledStarCraftCASCHelperIsMissing =>
+      '포함된 StarCraft CASC 도우미가 없습니다.';
+
+  @override
+  String get editorTheStarCraftCASCInspectionTimedOut =>
+      'StarCraft CASC 검사의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorRetryAfterRepairingTheStarCraftInstallationInBattleNet =>
+      'Battle.net에서 StarCraft 설치를 복구한 후 다시 시도하세요.';
+
+  @override
+  String get editorTheStarCraftCASCHelperProducedTooMuchOutput =>
+      'StarCraft CASC 도우미의 출력량이 한도를 넘었습니다.';
+
+  @override
+  String get editorTheStarCraftCASCHelperCouldNotBeStarted =>
+      'StarCraft CASC 도우미를 시작하지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftInstallationCouldNotBeInspected =>
+      'StarCraft 설치를 검사하지 못했습니다.';
+
+  @override
+  String get editorCheckDirectoryPermissionsAndRetry => '폴더 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String editorRequiredStarCraftCASCTilesetMissing(
+    String value0,
+    String value1,
+  ) {
+    return '필수 StarCraft CASC 타일셋 자산 $value0개가 누락되었습니다.';
+  }
+
+  @override
+  String get editorAssetIs => '자산이';
+
+  @override
+  String get editorAssetsAre => '자산이';
+
+  @override
+  String get editorRepairTheStarCraftInstallationInBattleNetAndRetry =>
+      'Battle.net에서 StarCraft 설치를 복구하고 다시 시도하세요.';
+
+  @override
+  String editorRequiredStarCraftCASCTilesetUnreadable(
+    String value0,
+    String value1,
+  ) {
+    return '필수 StarCraft CASC 타일셋 자산 $value0개를 읽을 수 없습니다.';
+  }
+
+  @override
+  String get editorTheStarCraftCASCHelperReturnedAnInvalidResponse =>
+      'StarCraft CASC 도우미가 유효하지 않은 응답을 반환했습니다.';
+
+  @override
+  String get editorTheStarCraftInstallationPathIsInvalid =>
+      'StarCraft 설치 경로가 유효하지 않습니다.';
+
+  @override
+  String get editorChooseTheStarCraftInstallationFolderAgain =>
+      'StarCraft 설치 폴더를 다시 선택하세요.';
+
+  @override
+  String get editorAnObjectRenderingOperationWithThisIDIsActive =>
+      '이 ID의 객체 렌더링 작업이 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheCurrentMapRenderingOperationToFinish =>
+      '현재 맵 렌더링 작업이 끝날 때까지 기다리세요.';
+
+  @override
+  String get editorTheStarCraftObjectRenderingHelperTimedOut =>
+      'StarCraft 객체 렌더링 도우미의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorRepairTheStarCraftInstallationAndRetry =>
+      'StarCraft 설치를 복구하고 다시 시도하세요.';
+
+  @override
+  String get editorTheStarCraftObjectHelperProducedTooMuchOutput =>
+      'StarCraft 객체 도우미의 출력량이 한도를 넘었습니다.';
+
+  @override
+  String get editorTheStarCraftObjectHelperCouldNotBeStarted =>
+      'StarCraft 객체 도우미를 시작하지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftObjectAtlasCouldNotBeReadSafely =>
+      'StarCraft 객체 아틀라스를 안전하게 읽지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftObjectHelperReturnedAnInvalidResponse =>
+      'StarCraft 객체 도우미가 유효하지 않은 응답을 반환했습니다.';
+
+  @override
+  String get editorTheStarCraftObjectRenderingOperationWasCancelled =>
+      'StarCraft 객체 렌더링 작업이 취소되었습니다.';
+
+  @override
+  String get editorRetryAfterTheVisibleMapStateBecomesStable =>
+      '표시되는 맵 상태가 안정되면 다시 시도하세요.';
+
+  @override
+  String get editorThisHelperVersionDoesNotSupportThatCatalogKind =>
+      '이 도우미 버전은 해당 카탈로그 종류를 지원하지 않습니다.';
+
+  @override
+  String get editorChooseTheTileDoodadUnitOrPureSpriteCatalog =>
+      '타일, 두대드, 유닛 또는 순수 스프라이트 카탈로그를 선택하세요.';
+
+  @override
+  String get editorACatalogOperationWithThisIDIsAlreadyActive =>
+      '이 ID의 카탈로그 작업이 이미 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheActiveCatalogOperationToFinish =>
+      '실행 중인 카탈로그 작업이 끝날 때까지 기다리세요.';
+
+  @override
+  String get editorTheStarCraftCatalogHelperTimedOut =>
+      'StarCraft 카탈로그 도우미의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorTheStarCraftCatalogHelperProducedTooMuchOutput =>
+      'StarCraft 카탈로그 도우미의 출력량이 한도를 넘었습니다.';
+
+  @override
+  String get editorTheStarCraftCatalogHelperCouldNotBeStarted =>
+      'StarCraft 카탈로그 도우미를 시작하지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftCatalogCouldNotBeListedSafely =>
+      'StarCraft 카탈로그 목록을 안전하게 읽지 못했습니다.';
+
+  @override
+  String get editorTheLocalDoodadRecipeIsInvalid => '로컬 두대드 레시피가 유효하지 않습니다.';
+
+  @override
+  String get editorTheLocalObjectPreviewIsUnavailable =>
+      '로컬 객체 미리보기를 사용할 수 없습니다.';
+
+  @override
+  String get editorVerifiedUnitCapabilityDataIsUnavailable =>
+      '검증된 유닛 기능 데이터를 사용할 수 없습니다.';
+
+  @override
+  String get editorThisUnitNeedsAnAddonOrNydusRelation =>
+      '이 유닛에는 애드온 또는 나이더스 연결이 필요합니다.';
+
+  @override
+  String get editorTheStarCraftCatalogHelperReturnedAnInvalidResponse =>
+      'StarCraft 카탈로그 도우미가 유효하지 않은 응답을 반환했습니다.';
+
+  @override
+  String get editorRepairTheApplicationOrReportTheCatalogHelperError =>
+      '앱을 복구하거나 카탈로그 도우미 오류를 보고하세요.';
+
+  @override
+  String get editorTheStarCraftCatalogOperationWasCancelled =>
+      'StarCraft 카탈로그 작업이 취소되었습니다.';
+
+  @override
+  String get editorRetryTheCatalogOperationWhenReady =>
+      '준비되면 카탈로그 작업을 다시 시도하세요.';
+
+  @override
+  String get editorTheStarCraftTileRenderingHelperTimedOut =>
+      'StarCraft 타일 렌더링 도우미의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorTheStarCraftTileHelperProducedTooMuchOutput =>
+      'StarCraft 타일 도우미의 출력량이 한도를 넘었습니다.';
+
+  @override
+  String get editorTheStarCraftTileHelperCouldNotBeStarted =>
+      'StarCraft 타일 도우미를 시작하지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftTileAtlasCouldNotBeReadSafely =>
+      'StarCraft 타일 아틀라스를 안전하게 읽지 못했습니다.';
+
+  @override
+  String get editorTheStarCraftTileHelperReturnedAnInvalidResponse =>
+      'StarCraft 타일 도우미가 유효하지 않은 응답을 반환했습니다.';
+
+  @override
+  String get editorOpenTheReportedEpScriptModuleAndFixThisLine =>
+      '보고된 epScript 모듈을 열어 이 줄을 수정하세요.';
+
+  @override
+  String get editorEuddraftInspectionIsSupportedOnlyOnWindows =>
+      'euddraft 검사는 Windows에서만 지원됩니다.';
+
+  @override
+  String get editorRunTheEditorOnWindows10OrWindows11 =>
+      'Windows 10 또는 Windows 11에서 편집기를 실행하세요.';
+
+  @override
+  String get editorAnEuddraftInstallationPathHasNotBeenConfigured =>
+      'euddraft 설치 경로가 설정되지 않았습니다.';
+
+  @override
+  String get editorSelectTheExtractedEuddraftDirectoryOrEuddraftExe =>
+      '압축을 푼 euddraft 폴더 또는 euddraft.exe를 선택하세요.';
+
+  @override
+  String get editorTheEuddraftInstallationCouldNotBeInspected =>
+      'euddraft 설치를 검사하지 못했습니다.';
+
+  @override
+  String get editorCheckPathPermissionsAndRetry => '경로 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheEuddraftPathMustBeAnAbsoluteWindowsPath =>
+      'euddraft 경로는 Windows 절대 경로여야 합니다.';
+
+  @override
+  String get editorSelectThePathUsingTheEditorSettings => '편집기 설정에서 경로를 선택하세요.';
+
+  @override
+  String get editorTheConfiguredFileIsNotEuddraftExe =>
+      '설정된 파일은 euddraft.exe가 아닙니다.';
+
+  @override
+  String get editorSelectTheOfficialEuddraftExeOrItsInstallationFolder =>
+      '공식 euddraft.exe 또는 설치 폴더를 선택하세요.';
+
+  @override
+  String get editorTheConfiguredEuddraftPathDoesNotExist =>
+      '설정된 euddraft 경로가 없습니다.';
+
+  @override
+  String get editorExtractTheOfficialEuddraftReleaseAndRetry =>
+      '공식 euddraft 릴리스의 압축을 풀고 다시 시도하세요.';
+
+  @override
+  String get editorTheConfiguredEuddraftPathIsNotARegularFile =>
+      '설정된 euddraft 경로는 일반 파일 또는 폴더가 아닙니다.';
+
+  @override
+  String get editorSelectALocalExtractedEuddraftInstallation =>
+      '로컬에 압축을 푼 euddraft 설치를 선택하세요.';
+
+  @override
+  String get editorTheInstallationDoesNotContainAUsableEuddraftExe =>
+      '설치에 사용할 수 있는 euddraft.exe가 없습니다.';
+
+  @override
+  String get editorReExtractTheOfficialEuddraftRelease =>
+      '공식 euddraft 릴리스의 압축을 다시 푸세요.';
+
+  @override
+  String get editorTheEuddraftVERSIONFileIsMissing =>
+      'euddraft VERSION 파일이 없습니다.';
+
+  @override
+  String get editorUseACompleteOfficialEuddraftReleaseArchive =>
+      '완전한 공식 euddraft 릴리스 아카이브를 사용하세요.';
+
+  @override
+  String get editorTheEuddraftVERSIONFileHasAnInvalidSize =>
+      'euddraft VERSION 파일 크기가 유효하지 않습니다.';
+
+  @override
+  String get editorTheEuddraftVERSIONValueIsNotRecognized =>
+      'euddraft VERSION 값을 인식할 수 없습니다.';
+
+  @override
+  String get editorUseAnOfficialFourComponentEuddraftRelease =>
+      '네 부분 버전 번호를 사용하는 공식 euddraft 릴리스를 사용하세요.';
+
+  @override
+  String editorEuddraftIsNotSupportedByThisEditor(String value0) {
+    return '이 편집기는 euddraft $value0을 지원하지 않습니다.';
+  }
+
+  @override
+  String editorInstallASupportedRelease(String value0) {
+    return '지원되는 릴리스를 설치하세요: $value0.';
+  }
+
+  @override
+  String get editorTheEuddraftInstallationIsIncomplete =>
+      'euddraft 설치가 불완전합니다.';
+
+  @override
+  String get editorReExtractTheCompleteOfficialEuddraftRelease =>
+      '완전한 공식 euddraft 릴리스의 압축을 다시 푸세요.';
+
+  @override
+  String get editorTheAppHasNoTrustedInventoryForThisBundled =>
+      '앱에 이 포함 도구의 신뢰할 수 있는 파일 목록이 없습니다.';
+
+  @override
+  String get editorUseAVerifiedAppPackageOrExplicitlySelectAn =>
+      '검증된 앱 패키지를 사용하거나 외부 설치를 명시적으로 선택하세요.';
+
+  @override
+  String get editorBundledToolIntegrityVerificationFailed =>
+      '포함 도구의 무결성 검증에 실패했습니다.';
+
+  @override
+  String get editorRepairTheBundledInstallationOrExplicitlySelectAnExternal =>
+      '포함 설치를 복구하거나 외부 도구를 명시적으로 선택하세요.';
+
+  @override
+  String get editorAnEUDBuildWithTheSameIDIsAlready =>
+      '같은 ID의 EUD 빌드가 이미 실행 중입니다.';
+
+  @override
+  String get editorWaitForTheActiveBuildOrCancelItFirst =>
+      '실행 중인 빌드를 기다리거나 먼저 취소하세요.';
+
+  @override
+  String get editorEuddraftCouldNotBeStarted => 'euddraft를 시작하지 못했습니다.';
+
+  @override
+  String get editorReinspectTheEuddraftInstallationAndRetry =>
+      'euddraft 설치를 다시 검사하고 재시도하세요.';
+
+  @override
+  String get editorTheEuddraftBuildTimedOut => 'euddraft 빌드의 제한 시간이 초과되었습니다.';
+
+  @override
+  String get editorInspectTheBuildLogThenRetryOrCancel =>
+      '빌드 로그를 검사한 후 재시도하거나 취소하세요.';
+
+  @override
+  String get editorEuddraftProducedMoreOutputThanTheSafetyLimit =>
+      'euddraft 출력량이 안전 한도를 넘었습니다.';
+
+  @override
+  String get editorInspectTheSourceForRunawayLoggingBeforeRetrying =>
+      '재시도하기 전에 소스에서 과도한 로그 출력을 확인하세요.';
+
+  @override
+  String get editorEuddraftExitedWithAFailureCode =>
+      'euddraft가 실패 코드로 종료되었습니다.';
+
+  @override
+  String get editorReviewStdoutAndStderrForTheCompilerError =>
+      'stdout과 stderr에서 컴파일러 오류를 검토하세요.';
+
+  @override
+  String get editorTheEUDBuildCouldNotAccessARequiredFile =>
+      'EUD 빌드가 필수 파일에 접근하지 못했습니다.';
+
+  @override
+  String get editorCheckFilePermissionsAndRetry => '파일 권한을 확인하고 다시 시도하세요.';
+
+  @override
+  String get editorTheEUDBuildFailedUnexpectedly =>
+      'EUD 빌드에 예기치 않은 오류가 발생했습니다.';
+
+  @override
+  String get editorRetryTheBuildOrReportTheFailure => '빌드를 다시 시도하거나 실패를 보고하세요.';
+
+  @override
+  String get editorEuddraftBuildsAreSupportedOnlyOnWindows =>
+      'euddraft 빌드는 Windows에서만 지원됩니다.';
+
+  @override
+  String get editorTheEuddraftExecutablePathMustBeAbsolute =>
+      'euddraft 실행 파일 경로는 절대 경로여야 합니다.';
+
+  @override
+  String get editorInspectAndSelectTheEuddraftInstallationAgain =>
+      'euddraft 설치를 검사하고 다시 선택하세요.';
+
+  @override
+  String get editorTheInspectedEuddraftExecutableIsNoLongerAvailable =>
+      '검사한 euddraft 실행 파일을 더 이상 사용할 수 없습니다.';
+
+  @override
+  String get editorInspectTheEuddraftInstallationAgain =>
+      'euddraft 설치를 다시 검사하세요.';
+
+  @override
+  String get editorTheEuddraftSettingsPathMustBeAnAbsoluteEds =>
+      'euddraft 설정 경로는 .eds 파일의 절대 경로여야 합니다.';
+
+  @override
+  String get editorChooseAGeneratedOneShotEdsSettingsFile =>
+      '생성된 일회성 .eds 설정 파일을 선택하세요.';
+
+  @override
+  String get editorTheEuddraftSettingsFileIsMissingOrEmpty =>
+      'euddraft 설정 파일이 없거나 비어 있습니다.';
+
+  @override
+  String get editorGenerateTheBuildSettingsAgainAndRetry =>
+      '빌드 설정을 다시 생성하고 재시도하세요.';
+
+  @override
+  String get editorTheEUDBuildWasCancelled => 'EUD 빌드가 취소되었습니다.';
+
+  @override
+  String get editorStartTheBuildAgainWhenReady => '준비되면 빌드를 다시 시작하세요.';
+
+  @override
+  String get editorInactive => '비활성';
+
+  @override
+  String get editorRescuePassive => '구조 대상 (수동)';
+
+  @override
+  String get editorComputer => '컴퓨터';
+
+  @override
+  String get editorHuman => '사용자';
+
+  @override
+  String get editorNeutral => '중립';
+
+  @override
+  String get editorZerg => '저그';
+
+  @override
+  String get editorTerran => '테란';
+
+  @override
+  String get editorProtoss => '프로토스';
+
+  @override
+  String get editorIndependent => '독립';
+
+  @override
+  String get editorUserSelectable => '사용자 선택';
+
+  @override
+  String get editorRandom => '무작위';
+
+  @override
+  String get editorRed => '빨강';
+
+  @override
+  String get editorBlue => '파랑';
+
+  @override
+  String get editorTeal => '청록';
+
+  @override
+  String get editorPurple => '보라';
+
+  @override
+  String get editorOrange => '주황';
+
+  @override
+  String get editorBrown => '갈색';
+
+  @override
+  String get editorWhite => '흰색';
+
+  @override
+  String get editorYellow => '노랑';
+
+  @override
+  String get editorGreen => '초록';
+
+  @override
+  String get editorPaleYellow => '연노랑';
+
+  @override
+  String get editorTan => '황갈색';
+
+  @override
+  String get editorAzure => '하늘색';
+
+  @override
+  String editorExpectedOneSectionFound(String value0, String value1) {
+    return '$value0: 섹션이 하나여야 하지만 $value1개 있습니다.';
+  }
+
+  @override
+  String editorExpectedBytesFound(String value0, String value1, String value2) {
+    return '$value0: $value1바이트여야 하지만 $value2바이트입니다.';
+  }
+
+  @override
+  String get editorASingleKnownVERSectionIsRequired =>
+      '알려진 VER 섹션이 정확히 하나 필요합니다.';
+
+  @override
+  String get editorCRGBColorSettingsArePresentCOLREditingIsUnavailable =>
+      'CRGB 색상 설정이 있습니다. 두 설정의 상호작용을 지원할 때까지 COLR를 편집할 수 없습니다.';
+
+  @override
+  String get editorAPlayerFieldMayBeUpdatedOnlyOnce =>
+      '플레이어 필드는 한 번만 변경할 수 있습니다.';
+
+  @override
+  String editorUnsupportedID(String value0, String value1) {
+    return '지원하지 않는 $value0 ID: $value1.';
+  }
+
+  @override
+  String get editorStartLocationsCannotBeCheckedAUNITSectionIs =>
+      '시작 위치를 검사할 수 없습니다: UNIT 섹션의 형식이 잘못되었습니다.';
+
+  @override
+  String editorStartLocationHasNonPlayableOwnerID(String value0) {
+    return '시작 위치의 소유자 ID $value0은 플레이 가능하지 않습니다.';
+  }
+
+  @override
+  String editorPlayerHasStartLocations(String value0, String value1) {
+    return '플레이어 $value0의 시작 위치가 $value1개 있습니다.';
+  }
+
+  @override
+  String editorPlayerHasNoStartLocationCheckTheIntendedUMS(String value0) {
+    return '플레이어 $value0의 시작 위치가 없습니다. 의도한 UMS 설정인지 확인하세요.';
+  }
+
+  @override
+  String editorInactivePlayerOwnsAStartLocation(String value0) {
+    return '비활성 플레이어 $value0에 시작 위치가 있습니다.';
+  }
+
+  @override
+  String get editorForceNamesRequireOneSafeSTROrSTRxTable =>
+      '세력 이름에는 안전한 STR 또는 STRx 테이블이 하나 필요합니다.';
+
+  @override
+  String get editorForceSettingsRequireOneKnownVERAndOne20 =>
+      '세력 설정에는 알려진 VER 섹션 하나와 20바이트 FORC 섹션 하나가 필요합니다.';
+
+  @override
+  String editorInvalidForceNameStringID(String value0) {
+    return '세력 이름 문자열 ID $value0이 유효하지 않습니다.';
+  }
+
+  @override
+  String get editorForceNamesCannotContainNUL => '세력 이름에는 NUL을 포함할 수 없습니다.';
+
+  @override
+  String get editorFORCStringIDsCannotExceed65535 =>
+      'FORC 문자열 ID는 65535를 넘을 수 없습니다.';
+
+  @override
+  String get editorUseDefaults => '기본값 사용';
+
+  @override
+  String get editorHitPoints => '체력';
+
+  @override
+  String get editorShields => '보호막';
+
+  @override
+  String get editorArmor => '방어력';
+
+  @override
+  String get editorBuildTime160S => '생산 시간 (1/60초)';
+
+  @override
+  String get editorMineralCost => '미네랄 비용';
+
+  @override
+  String get editorGasCost => '가스 비용';
+
+  @override
+  String get editorHitPointsRequireANonnegativeDecimalInStepsOf =>
+      '체력은 1/256 단위의 음수가 아닌 소수여야 합니다.';
+
+  @override
+  String get editorHitPointsMustBeAMultipleOf1256 => '체력은 1/256의 배수여야 합니다.';
+
+  @override
+  String editorRequiresANonnegativeInteger(String value0) {
+    return '$value0에는 음수가 아닌 정수가 필요합니다.';
+  }
+
+  @override
+  String editorInvalidUnitNameStringID(String value0) {
+    return '유닛 이름 문자열 ID $value0이 유효하지 않습니다.';
+  }
+
+  @override
+  String get editorUnitSettingsRequireOneKnownVERSection =>
+      '유닛 설정에는 알려진 VER 섹션이 하나 필요합니다.';
+
+  @override
+  String get editorUnitNamesRequireOneSafeSTROrSTRxTable =>
+      '유닛 이름에는 안전한 STR 또는 STRx 테이블이 하나 필요합니다.';
+
+  @override
+  String get editorUnitNamesCannotContainNUL => '유닛 이름에는 NUL을 포함할 수 없습니다.';
+
+  @override
+  String get editorUnitNameIDsCannotExceed65535 =>
+      '유닛 이름 ID는 65535를 넘을 수 없습니다.';
+
+  @override
+  String get editorGlobalAvailabilityHasNoPlayer => '전체 사용 가능 여부에는 플레이어가 없습니다.';
+
+  @override
+  String get editorAPlayerIsRequired => '플레이어가 필요합니다.';
+
+  @override
+  String get editorUnitAvailabilityRequiresOneKnownVERSection =>
+      '유닛 사용 가능 여부에는 알려진 VER 섹션이 하나 필요합니다.';
+
+  @override
+  String editorPUNIExpectedOneSectionFound(String value0) {
+    return 'PUNI: 섹션이 하나여야 하지만 $value0개 있습니다.';
+  }
+
+  @override
+  String editorPUNIExpected5700BytesFound(String value0) {
+    return 'PUNI: 5700바이트여야 하지만 $value0바이트입니다.';
+  }
+
+  @override
+  String get editorResearchTime160S => '연구 시간 (1/60초)';
+
+  @override
+  String get editorEnergyCost => '에너지 비용';
+
+  @override
+  String get editorCostsHaveNoPlayer => '비용에는 플레이어가 없습니다.';
+
+  @override
+  String get editorInheritanceRequiresAPlayer => '상속에는 플레이어가 필요합니다.';
+
+  @override
+  String get editorTechSettingsRequireOneKnownVERSection =>
+      '기술 설정에는 알려진 VER 섹션이 하나 필요합니다.';
+
+  @override
+  String get editorBaseMineralCost => '기본 미네랄 비용';
+
+  @override
+  String get editorMineralCostPerLevel => '레벨당 미네랄 비용';
+
+  @override
+  String get editorBaseGasCost => '기본 가스 비용';
+
+  @override
+  String get editorGasCostPerLevel => '레벨당 가스 비용';
+
+  @override
+  String get editorBaseResearchTime160S => '기본 연구 시간 (1/60초)';
+
+  @override
+  String get editorResearchTimePerLevel160S => '레벨당 연구 시간 (1/60초)';
+
+  @override
+  String get editorMaximumLevel => '최대 레벨';
+
+  @override
+  String get editorStartingLevel => '시작 레벨';
+
+  @override
+  String get editorUpgradeSettingsRequireOneKnownVERSection =>
+      '업그레이드 설정에는 알려진 VER 섹션이 하나 필요합니다.';
+
+  @override
+  String editorUpgradeStartingLevelMustNotExceedMaximumLevel(
+    String value0,
+    String value1,
+  ) {
+    return '업그레이드 #$value0 $value1: 시작 레벨은 최대 레벨을 넘을 수 없습니다.';
+  }
+
+  @override
+  String get editorEnterIDsSuchAs025 => '0, 2-5 형식으로 ID를 입력하세요.';
+
+  @override
+  String get editorUseCommaSeparatedIDsOrAscendingRanges =>
+      '쉼표로 구분한 ID 또는 오름차순 범위를 사용하세요.';
+
+  @override
+  String editorIDsMustBeBetweenAndInAscendingRanges(
+    String value0,
+    String value1,
+  ) {
+    return 'ID는 $value0~$value1 범위에 있어야 하며 범위는 오름차순이어야 합니다.';
+  }
+
+  @override
+  String get editorOneStructurallySafeSTRSTRxTableIsRequiredFor =>
+      '편집하려면 구조적으로 안전한 STR/STRx 테이블이 하나 필요합니다.';
+
+  @override
+  String editorTruncated(String value0) {
+    return '잘린 $value0';
+  }
+
+  @override
+  String get editorMalformedSPRP => 'SPRP 형식 오류';
+
+  @override
+  String get editorMalformedFORC => 'FORC 형식 오류';
+
+  @override
+  String editorForcef1368d9(String value0) {
+    return '세력 $value0';
+  }
+
+  @override
+  String get editorMalformedMRGN => 'MRGN 형식 오류';
+
+  @override
+  String editorLocation(String value0) {
+    return '위치 $value0';
+  }
+
+  @override
+  String get editorMalformedSWNM => 'SWNM 형식 오류';
+
+  @override
+  String editorSwitchffe3c882(String value0) {
+    return '스위치 $value0';
+  }
+
+  @override
+  String get editorMalformedWAV => 'WAV 형식 오류';
+
+  @override
+  String editorSoundSlot(String value0) {
+    return '사운드 슬롯 $value0';
+  }
+
+  @override
+  String editorMalformed(String value0) {
+    return '$value0 형식 오류';
+  }
+
+  @override
+  String editorUnitc6ee345c(String value0) {
+    return '유닛 $value0';
+  }
+
+  @override
+  String editorRawConditionInTrigger(String value0) {
+    return '트리거 $value0의 원시 조건';
+  }
+
+  @override
+  String editorRawActionInTrigger(String value0) {
+    return '트리거 $value0의 원시 액션';
+  }
+
+  @override
+  String editorTriggerAction(String value0, String value1, String value2) {
+    return '트리거 $value0 액션 $value1 $value2';
+  }
+
+  @override
+  String get editorRawBriefingAction => '원시 브리핑 액션';
+
+  @override
+  String editorBriefingActionText(String value0, String value1) {
+    return '브리핑 $value0 액션 $value1 텍스트';
+  }
+
+  @override
+  String editorBriefingActionSound(String value0, String value1) {
+    return '브리핑 $value0 액션 $value1 사운드';
+  }
+
+  @override
+  String editorUninterpretedSection(String value0) {
+    return '해석하지 않은 $value0 섹션';
+  }
+
+  @override
+  String get editorDuplicateCHKSections => '중복 CHK 섹션';
+
+  @override
+  String get editorInvalidStringID => '유효하지 않은 문자열 ID입니다.';
+
+  @override
+  String get editorSoundPathReferencesAreManagedThroughSoundImportDelete =>
+      '사운드 경로 참조는 사운드 가져오기·삭제로 관리합니다. 텍스트를 편집하려면 텍스트 참조를 분리하세요.';
+
+  @override
+  String get editorReferencedOrIncompletelyTracedStringsCannotBeCleared =>
+      '참조되거나 참조 검사가 불완전한 문자열은 비울 수 없습니다.';
+
+  @override
+  String get editorNULIsNotAllowed => 'NUL은 허용되지 않습니다.';
+
+  @override
+  String get editorTheSelectedReferenceChanged => '선택한 참조가 변경되었습니다.';
+
+  @override
+  String get editorThisReferenceRequiresA16BitStringID =>
+      '이 참조에는 16비트 문자열 ID가 필요합니다.';
+
+  @override
+  String get editorOneValidWAVTableIsRequired => '유효한 WAV 테이블이 하나 필요합니다.';
+
+  @override
+  String get editorAll512SoundSlotsAreOccupied => '사운드 슬롯 512개가 모두 사용 중입니다.';
+
+  @override
+  String get editorSoundIsReferencedOrReferenceCoverageIsIncomplete =>
+      '사운드가 참조되거나 참조 검사 범위가 불완전합니다.';
+
+  @override
+  String editorAmbiguousOrMalformedSection(String value0) {
+    return '$value0 섹션이 모호하거나 형식이 잘못되었습니다.';
+  }
+
+  @override
+  String get editorTextCannotContainNUL => '텍스트에는 NUL을 포함할 수 없습니다.';
+
+  @override
+  String get editorOneSafeStringTableIsRequired => '안전한 문자열 테이블이 하나 필요합니다.';
+
+  @override
+  String editorSwitch8e2b60a2(String value0) {
+    return '스위치 $value0';
+  }
+
+  @override
+  String get editorHitpoints => '체력 %';
+
+  @override
+  String get editorShields83e6a3a => '보호막 %';
+
+  @override
+  String get editorEnergy => '에너지 %';
+
+  @override
+  String get editorResourceAmount => '자원량';
+
+  @override
+  String get editorHangarCount => '격납고 수';
+
+  @override
+  String get editorCloaked => '은폐';
+
+  @override
+  String get editorBurrowed => '잠복';
+
+  @override
+  String get editorLifted => '이륙';
+
+  @override
+  String get editorHallucinated => '환상';
+
+  @override
+  String get editorInvincible => '무적';
+
+  @override
+  String editorInvalid8650455(String value0) {
+    return '유효하지 않은 $value0';
+  }
+
+  @override
+  String get editorFiveSpecialPropertyStatesRequired => '특수 속성 상태가 5개 필요합니다.';
+
+  @override
+  String get editorOpenAMapFirst => '먼저 맵을 여세요.';
+
+  @override
+  String get editorMapChangedDuringImport => '가져오는 동안 맵이 변경되었습니다.';
+
+  @override
+  String get editorThisPathAlreadyHasASoundReferenceChooseA =>
+      '이 경로에 이미 사운드 참조가 있습니다. 다른 파일 이름을 선택하세요.';
+
+  @override
+  String get editorASoundAlreadyUsesThisPathChooseADifferent =>
+      '사운드가 이미 이 경로를 사용합니다. 다른 파일 이름을 선택하세요.';
+
+  @override
+  String get editorIncompleteArchiveListingNameCollisionsCannotBeRuledOut =>
+      '불완전한 아카이브 목록: 이름 충돌 가능성을 배제할 수 없습니다.';
+
+  @override
+  String get editorAmbiguousArchiveEntryDeletionIsBlocked =>
+      '모호한 아카이브 항목: 삭제를 차단했습니다.';
+
+  @override
+  String get editorSoundIsDeleted => '삭제된 사운드입니다.';
+
+  @override
+  String get editorTheSoundIsNotStoredInThisNewMap =>
+      '이 새 맵에 사운드가 저장되어 있지 않습니다.';
+
+  @override
+  String get editorSoundGatewayUnavailable => '사운드 인터페이스를 사용할 수 없습니다.';
+
+  @override
+  String get editorSourceMapChangedOnDisk => '디스크의 원본 맵이 변경되었습니다.';
+
+  @override
+  String get editorMapChangedDuringSoundRead => '사운드를 읽는 동안 맵이 변경되었습니다.';
+
+  @override
+  String get editorTheSoundIsNotStoredInThisMap => '이 맵에 사운드가 저장되어 있지 않습니다.';
+
+  @override
+  String get editorOpenAnEditableMap => '편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorMapChangedReopenTriggerResources =>
+      '맵이 변경되었습니다. 트리거 리소스를 다시 여세요.';
+
+  @override
+  String get editorPendingSoundEditsExceed64EntriesOr64MiB =>
+      '대기 중인 사운드 변경이 64개 또는 64 MiB를 넘었습니다. 먼저 저장하세요.';
+
+  @override
+  String get editorResourceEditsCannotRemoveSections =>
+      '리소스 편집으로 섹션을 삭제할 수 없습니다.';
+
+  @override
+  String get editorUnsupportedAppendedResource => '지원하지 않는 추가 리소스입니다.';
+
+  @override
+  String get editorUnsupportedResourceChange => '지원하지 않는 리소스 변경입니다.';
+
+  @override
+  String get editorEditTriggerResources => '트리거 리소스 편집';
+
+  @override
+  String get editorMapChangedReopenTheTriggerEditor =>
+      '맵이 변경되었습니다. 트리거 편집기를 다시 여세요.';
+
+  @override
+  String get editorTRIGAndMBRFRecordsCannotBeMixed =>
+      'TRIG와 MBRF 레코드를 섞을 수 없습니다.';
+
+  @override
+  String get editorCreateBriefing => '브리핑 생성';
+
+  @override
+  String get editorEditBriefing => '브리핑 편집';
+
+  @override
+  String get editorEditTriggers => '트리거 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingTechs =>
+      '기술을 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenTechSettingsBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 기술 설정을 다시 여세요.';
+
+  @override
+  String get editorEditTechSettings => '기술 설정 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingUpgrades =>
+      '업그레이드를 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenUpgradeSettingsBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 업그레이드 설정을 다시 여세요.';
+
+  @override
+  String get editorEditUpgradeSettings => '업그레이드 설정 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingAvailability =>
+      '사용 가능 여부를 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenUnitAvailabilityBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 유닛 사용 가능 여부를 다시 여세요.';
+
+  @override
+  String get editorEditUnitAvailability => '유닛 사용 가능 여부 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingUnitSettings =>
+      '유닛 설정을 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenUnitSettingsBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 유닛 설정을 다시 여세요.';
+
+  @override
+  String get editorEditUnitSettings => '유닛 설정 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingForceSettings =>
+      '세력 설정을 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenForceSettingsBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 세력 설정을 다시 여세요.';
+
+  @override
+  String get editorEditForceSettings => '세력 설정 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingPlayerSettings =>
+      '플레이어 설정을 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenPlayerSettingsBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 플레이어 설정을 다시 여세요.';
+
+  @override
+  String get editorEditPlayerSettings => '플레이어 설정 편집';
+
+  @override
+  String get editorOpenAnEditableMapBeforeChangingMapInformation =>
+      '맵 정보를 변경하기 전에 편집 가능한 맵을 여세요.';
+
+  @override
+  String get editorTheMapChangedReopenMapInformationBeforeApplying =>
+      '맵이 변경되었습니다. 적용하기 전에 맵 정보를 다시 여세요.';
+
+  @override
+  String get editorEditMapInformation => '맵 정보 편집';
+
+  @override
+  String get editorABuildOrPreparationIsAlreadyRunning =>
+      '빌드 또는 준비 작업이 이미 실행 중입니다.';
+
+  @override
+  String get editorConfirmThatYouTrustTheEpScriptSourceAndIts =>
+      'epScript 소스와 가져오는 코드를 신뢰하는지 확인하세요.';
+
+  @override
+  String get editorEnableTheUnverifiedSettingsTestBuildToCompileProject =>
+      '프로젝트 설정을 컴파일하려면 미검증 설정 테스트 빌드를 활성화하세요.';
+
+  @override
+  String get editorVerifyTheSavedMapAndEUDProjectBindingBefore =>
+      '빌드 전에 저장된 맵과 EUD 프로젝트 연결을 검증하세요.';
+
+  @override
+  String get editorTheBuildBaseMustBeTheMapBoundTo =>
+      '빌드 기본 맵은 이 EUD 프로젝트에 연결된 맵이어야 합니다.';
+
+  @override
+  String get editorFinishOrRetryEUDToolsSettingsFirst =>
+      'EUD 도구 설정을 먼저 완료하거나 다시 시도하세요.';
+
+  @override
+  String get editorChooseAnOutputSeparateFromTheBaseMap =>
+      '기본 맵과 별도의 출력을 선택하세요.';
+
+  @override
+  String get editorOutputAlreadyExistsChooseANewScxPath =>
+      '출력이 이미 존재합니다. 새 .scx 경로를 선택하세요.';
+
+  @override
+  String get editorPreparationCancelled => '준비가 취소되었습니다.';
+
+  @override
+  String get editorToolSelectionChangedPrepareAgain =>
+      '도구 선택이 변경되었습니다. 다시 준비하세요.';
+
+  @override
+  String get editorProjectOrMapChangedPrepareAgain =>
+      '프로젝트 또는 맵이 변경되었습니다. 다시 준비하세요.';
+
+  @override
+  String editorBuildPreparationFailed(String value0) {
+    return '빌드 준비 실패: $value0';
+  }
+
+  @override
+  String editorTheToolDirectoryCouldNotBeSelected(String value0) {
+    return '도구 폴더를 선택하지 못했습니다: $value0';
+  }
+
+  @override
+  String get editorEnterAnAbsoluteEuddraftInstallationPath =>
+      'euddraft 설치의 절대 경로를 입력하세요.';
+
+  @override
+  String editorToolSettingsCouldNotBeUpdated(String value0) {
+    return '도구 설정을 갱신하지 못했습니다: $value0';
+  }
+
+  @override
+  String editorRangeErrorInvalidValueNotInInclusiveRange(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+  ) {
+    return '$value0: $value3은 허용 범위 $value1~$value2 밖의 값입니다.';
+  }
+
+  @override
+  String get editorRecovery => '복구';
+
+  @override
+  String get editorSaveAs => '다른 이름으로 저장';
+
+  @override
+  String get editorOpenMap => '맵 열기';
+
+  @override
+  String get editorEUDBuild => 'EUD 빌드';
+
+  @override
+  String get editorTheMapCouldNotBeSaved => '맵을 저장하지 못했습니다.';
+
+  @override
+  String get editorRepairTheApplicationOrReportTheObjectRenderingError =>
+      '앱을 복구하거나 객체 렌더링 오류를 보고하세요.';
+
+  @override
+  String get editorRepairTheApplicationOrReportTheStarCraftTileHelper =>
+      '앱을 복구하거나 StarCraft 타일 도우미 오류를 보고하세요.';
+
+  @override
+  String get editorTheEUDOutputMustBeAbsentOrARegular =>
+      'EUD 출력은 존재하지 않거나 일반 파일이어야 합니다.';
+
+  @override
+  String get editorTheCanonicalEUDEntrySourceIsOutsideTheSource =>
+      '실제 EUD 진입 소스 경로가 소스 루트 밖에 있습니다.';
+
+  @override
+  String get editorTheCanonicalEUDOutputDirectoryIsInsideTheSource =>
+      '실제 EUD 출력 폴더 경로가 소스 루트 안에 있습니다.';
 }

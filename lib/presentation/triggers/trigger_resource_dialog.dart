@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' show AppExitResponse;
 import '../../domain/chk/raw_chk_document.dart';
@@ -92,9 +94,9 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
   @override
   Widget build(BuildContext context) => AlertDialog(
     title: Text(switch (widget.kind) {
-      TriggerResourceKind.text => 'Add trigger text',
-      TriggerResourceKind.switchName => 'Switch names',
-      TriggerResourceKind.property => 'Unit property slots',
+      TriggerResourceKind.text => context.l10n.editorAddTriggerText,
+      TriggerResourceKind.switchName => context.l10n.editorSwitchNames,
+      TriggerResourceKind.property => context.l10n.editorUnitPropertySlots,
     }),
     content: SizedBox(
       width: 560,
@@ -119,7 +121,13 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
                     DropdownMenuItem(
                       value: i,
                       child: Text(
-                        '${widget.kind == TriggerResourceKind.property ? 'Property' : 'Switch'} ID $i',
+                        context.l10n.editorID(
+                          (widget.kind == TriggerResourceKind.property
+                                  ? context.l10n.editorProperty
+                                  : context.l10n.editorSwitch)
+                              .toString(),
+                          (i).toString(),
+                        ),
                       ),
                     ),
                 ],
@@ -134,15 +142,17 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
                 initialValue: _text,
                 minLines: 2,
                 maxLines: 6,
-                decoration: const InputDecoration(labelText: 'Text'),
+                decoration: InputDecoration(labelText: context.l10n.editorText),
                 onChanged: (s) => setState(() {
                   _text = s;
                   _prepared = null;
                 }),
               ),
             if (widget.kind == TriggerResourceKind.property) ...[
-              const Text(
-                'Unchecked values inherit the game default. Special states can inherit, enable or disable.',
+              Text(
+                context
+                    .l10n
+                    .editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan,
               ),
               for (final arg in ChkTriggerResources.propertyFields)
                 Row(
@@ -160,7 +170,9 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
                         key: ValueKey((_generation, arg.name)),
                         enabled: _values[arg.name] != null,
                         initialValue: '${_values[arg.name] ?? 0}',
-                        decoration: InputDecoration(labelText: arg.name),
+                        decoration: InputDecoration(
+                          labelText: context.localizeEditorText(arg.name),
+                        ),
                         onChanged: (s) => setState(() {
                           _values[arg.name] = int.tryParse(s) ?? -1;
                           _prepared = null;
@@ -179,14 +191,14 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
                       : 2,
                   items: [
                     for (final e in {
-                      0: 'Inherit',
-                      1: 'Enabled',
-                      2: 'Disabled',
+                      0: context.l10n.editorInherit,
+                      1: context.l10n.editorEnabled,
+                      2: context.l10n.editorDisabled,
                     }.entries)
                       DropdownMenuItem(
                         value: e.key,
                         child: Text(
-                          '${ChkTriggerResources.specialNames[i]}: ${e.value}',
+                          '${context.localizeEditorText(ChkTriggerResources.specialNames[i])}: ${e.value}',
                         ),
                       ),
                   ],
@@ -196,28 +208,29 @@ class _TriggerResourceDialogState extends State<TriggerResourceDialog> {
                   }),
                 ),
             ],
-            if (_message.isNotEmpty) Text(_message),
-            if (_error != null) Text(_error!),
+            if (_message.isNotEmpty) Text(context.localizeEditorText(_message)),
+            if (_error != null) Text(context.localizeEditorText(_error!)),
           ],
         ),
       ),
     ),
     actions: [
       TextButton(
+        key: const Key('settings-cancel'),
         onPressed: () => Navigator.pop(context),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.editorCancel),
       ),
       if (_prepared == null)
         FilledButton(
           key: const Key('trigger-resource-prepare'),
           onPressed: _prepare,
-          child: const Text('Prepare changes'),
+          child: Text(context.l10n.editorPrepareChanges),
         )
       else
         FilledButton(
           key: const Key('trigger-resource-apply'),
           onPressed: () => Navigator.pop(context, _prepared),
-          child: const Text('Apply to map'),
+          child: Text(context.l10n.editorApplyToMap),
         ),
     ],
   );

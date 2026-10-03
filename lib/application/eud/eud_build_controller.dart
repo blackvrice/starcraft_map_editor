@@ -503,6 +503,7 @@ final class EudBuildController {
         stage: DiagnosticStage.compile,
         filePath: plan.configuration.entrySourcePath,
         remediation: 'Inspect the build log and retry.',
+        remediationId: 'editorInspectTheBuildLogAndRetry',
         rawDetails: rawDetails,
       ),
     );

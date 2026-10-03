@@ -213,6 +213,11 @@ void _validatePoint(
       code: ChkObjectReferenceDiagnosticCodes.coordinateOutOfBounds,
       message:
           '$objectLabel ${recordIndex + 1} is outside the map pixel bounds.',
+      messageId: 'editorIsOutsideTheMapPixelBounds',
+      messageArguments: [
+        (objectLabel).toString(),
+        (recordIndex + 1).toString(),
+      ],
       sectionName: sectionName,
       byteOffset:
           sectionSourceOffset +
@@ -222,6 +227,8 @@ void _validatePoint(
       remediation:
           'Move the object inside 0..$maximumX by 0..$maximumY, or keep the '
           'raw record unchanged if the value is intentional EUD data.',
+      remediationId: 'editorMoveTheObjectInside0By0OrKeep',
+      remediationArguments: [(maximumX).toString(), (maximumY).toString()],
       rawDetails:
           'sectionIndex=$sectionIndex; recordIndex=$recordIndex; '
           'x=$x; y=$y; maximumX=$maximumX; maximumY=$maximumY',
@@ -250,6 +257,12 @@ void _validatePlayer(
       message:
           '$objectLabel ${recordIndex + 1} refers to player value $player, '
           'outside the supported 0..11 range.',
+      messageId: 'editorRefersToPlayerValueOutsideTheSupported011',
+      messageArguments: [
+        (objectLabel).toString(),
+        (recordIndex + 1).toString(),
+        (player).toString(),
+      ],
       sectionName: sectionName,
       byteOffset:
           sectionSourceOffset +
@@ -259,6 +272,7 @@ void _validatePlayer(
       remediation:
           'Choose Player 1 through Player 12, or keep the raw value unchanged '
           'if it is intentional EUD data.',
+      remediationId: 'editorChoosePlayer1ThroughPlayer12OrKeepThe',
       rawDetails:
           'sectionIndex=$sectionIndex; recordIndex=$recordIndex; owner=$player',
     ),
@@ -295,6 +309,8 @@ void _validateLocationBounds(
       message:
           'Location ${location.locationId} does not form a valid rectangle '
           'inside the map.',
+      messageId: 'editorLocationDoesNotFormAValidRectangleInsideThe',
+      messageArguments: [(location.locationId).toString()],
       sectionName: section.rawSection.name,
       byteOffset:
           section.rawSection.sourceOffset +
@@ -303,6 +319,8 @@ void _validateLocationBounds(
       remediation:
           'Use left < right and top < bottom inside 0..$maximumX by '
           '0..$maximumY, or preserve the raw value if intentional.',
+      remediationId: 'editorUseLeftRightAndTopBottomInside0By',
+      remediationArguments: [(maximumX).toString(), (maximumY).toString()],
       rawDetails:
           'sectionIndex=${section.sectionIndex}; '
           'recordIndex=${location.recordIndex}; '
@@ -337,11 +355,14 @@ void _validateStringReference(
         message:
             '$referenceLabel uses string ID $stringId, but multiple STR/STRx '
             'tables make the reference ambiguous.',
+        messageId: 'editorUsesStringIDButMultipleSTRSTRxTablesMake',
+        messageArguments: [(referenceLabel).toString(), (stringId).toString()],
         sectionName: sectionName,
         byteOffset: byteOffset,
         remediation:
             'Inspect the raw string sections; the editor will not guess an '
             'active table.',
+        remediationId: 'editorInspectTheRawStringSectionsTheEditorWillNot',
         rawDetails:
             '$rawDetails; stringId=$stringId; tableCount=${tables.length}; '
             'tableSectionIndexes=${tables.map((table) => table.sectionIndex).join(',')}',
@@ -356,10 +377,14 @@ void _validateStringReference(
         message:
             '$referenceLabel uses string ID $stringId, but no readable '
             'STR/STRx table is available.',
+        messageId: 'editorUsesStringIDButNoReadableSTRSTRxTable',
+        messageArguments: [(referenceLabel).toString(), (stringId).toString()],
         sectionName: sectionName,
         byteOffset: byteOffset,
         remediation:
             'Inspect the raw string table before changing this reference.',
+        remediationId:
+            'editorInspectTheRawStringTableBeforeChangingThisReference',
         rawDetails: '$rawDetails; stringId=$stringId; tableCount=0',
       ),
     );
@@ -374,10 +399,17 @@ void _validateStringReference(
         message:
             '$referenceLabel uses string ID $stringId, but the table contains '
             'only ${table.declaredStringCount} entries.',
+        messageId: 'editorUsesStringIDButTheTableContainsOnlyEntries',
+        messageArguments: [
+          (referenceLabel).toString(),
+          (stringId).toString(),
+          (table.declaredStringCount).toString(),
+        ],
         sectionName: sectionName,
         byteOffset: byteOffset,
         remediation:
             'Choose an existing string ID or clear the reference to ID 0.',
+        remediationId: 'editorChooseAnExistingStringIDOrClearTheReference',
         rawDetails:
             '$rawDetails; stringId=$stringId; '
             'tableSectionIndex=${table.sectionIndex}; '
@@ -391,11 +423,15 @@ void _validateStringReference(
         message:
             '$referenceLabel uses string ID $stringId, whose raw entry cannot '
             'be resolved safely.',
+        messageId: 'editorUsesStringIDWhoseRawEntryCannotBeResolved',
+        messageArguments: [(referenceLabel).toString(), (stringId).toString()],
         sectionName: sectionName,
         byteOffset: byteOffset,
         remediation:
             'Inspect the string table structural diagnostics and preserve the '
             'raw reference until the source is understood.',
+        remediationId:
+            'editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe',
         rawDetails:
             '$rawDetails; stringId=$stringId; '
             'tableSectionIndex=${table.sectionIndex}; '
@@ -412,13 +448,21 @@ EditorDiagnostic _warning({
   required int byteOffset,
   required String remediation,
   required String rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) => EditorDiagnostic(
   code: code,
   message: message,
+  messageId: messageId,
+  messageArguments: messageArguments,
   severity: DiagnosticSeverity.warning,
   stage: DiagnosticStage.validate,
   sectionName: sectionName,
   byteOffset: byteOffset,
   remediation: remediation,
+  remediationId: remediationId,
+  remediationArguments: remediationArguments,
   rawDetails: rawDetails,
 );

@@ -75,8 +75,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         diagnostic: _diagnostic(
           code: EudBuildPipelineDiagnosticCodes.duplicateBuildId,
           message: 'A build with this ID is already active.',
+          messageId: 'editorABuildWithThisIDIsAlreadyActive',
           filePath: plan.configuration.entrySourcePath,
           remediation: 'Wait for the active build to finish and retry.',
+          remediationId: 'editorWaitForTheActiveBuildToFinishAndRetry',
         ),
       );
       return;
@@ -102,10 +104,12 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.invalidInputs,
             message: 'The EUD build inputs are not safe regular files.',
+            messageId: 'editorTheEUDBuildInputsAreNotSafeRegularFiles',
             filePath: plan.configuration.entrySourcePath,
             remediation:
                 'Check the base map, source root, entry source, and output '
                 'folder.',
+            remediationId: 'editorCheckTheBaseMapSourceRootEntrySourceAnd',
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -120,8 +124,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.inputOutputSame,
             message: 'The EUD output resolves to the base map.',
+            messageId: 'editorTheEUDOutputResolvesToTheBaseMap',
             filePath: plan.configuration.outputMapPath,
             remediation: 'Choose a separate output file.',
+            remediationId: 'editorChooseASeparateOutputFile',
           ),
         );
       }
@@ -145,8 +151,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.projectChanged,
             message: 'The base map does not match the EUD project binding.',
+            messageId: 'editorTheBaseMapDoesNotMatchTheEUDProject',
             filePath: plan.configuration.baseMapPath,
             remediation: 'Open and verify the bound map, then prepare again.',
+            remediationId: 'editorOpenAndVerifyTheBoundMapThenPrepareAgain',
           ),
         );
       }
@@ -166,9 +174,12 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.destinationExists,
             message: 'The EUD output already exists.',
+            messageId: 'editorTheEUDOutputAlreadyExists',
             filePath: plan.configuration.outputMapPath,
             remediation:
                 'Choose a new output or explicitly confirm replacement.',
+            remediationId:
+                'editorChooseANewOutputOrExplicitlyConfirmReplacement',
           ),
         );
       }
@@ -190,9 +201,12 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.workspaceFailed,
             message: 'The temporary EUD build workspace could not be created.',
+            messageId: 'editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated',
             filePath: plan.configuration.outputMapPath,
             remediation:
                 'Check output folder permissions and available disk space.',
+            remediationId:
+                'editorCheckOutputFolderPermissionsAndAvailableDiskSpace',
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -214,8 +228,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               _diagnostic(
                 code: EudBuildPipelineDiagnosticCodes.eventBuildIdMismatch,
                 message: 'euddraft returned an event for a different build.',
+                messageId: 'editorEuddraftReturnedAnEventForADifferentBuild',
                 filePath: workspace.settingsFilePath,
                 remediation: 'Inspect the build log and retry.',
+                remediationId: 'editorInspectTheBuildLogAndRetry',
                 rawDetails: 'expected=${plan.buildId}; actual=${event.buildId}',
               ),
             );
@@ -240,8 +256,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           _diagnostic(
             code: EudBuildPipelineDiagnosticCodes.processStreamEnded,
             message: 'The euddraft event stream ended without a result.',
+            messageId: 'editorTheEuddraftEventStreamEndedWithoutAResult',
             filePath: workspace.settingsFilePath,
             remediation: 'Inspect the build log and retry.',
+            remediationId: 'editorInspectTheBuildLogAndRetry',
           ),
         );
       }
@@ -264,8 +282,11 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'euddraft exited successfully but created an empty '
                   'temporary map.',
+              messageId:
+                  'editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap',
               filePath: workspace.temporaryOutputMapPath,
               remediation: 'Inspect the euddraft output and epScript source.',
+              remediationId: 'editorInspectTheEuddraftOutputAndEpScriptSource',
             ),
             exitCode: 0,
           );
@@ -284,9 +305,11 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               code: EudBuildPipelineDiagnosticCodes.outputArchiveInvalid,
               message:
                   'The temporary EUD output is not a readable map archive.',
+              messageId: 'editorTheTemporaryEUDOutputIsNotAReadableMap',
               filePath: workspace.temporaryOutputMapPath,
               remediation:
                   'Inspect the euddraft log and keep the base map unchanged.',
+              remediationId: 'editorInspectTheEuddraftLogAndKeepTheBaseMap',
             ),
             diagnostics: archiveResult.diagnostics,
             exitCode: 0,
@@ -307,9 +330,11 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
             _diagnostic(
               code: EudBuildPipelineDiagnosticCodes.outputChkInvalid,
               message: 'The temporary EUD output contains an invalid CHK.',
+              messageId: 'editorTheTemporaryEUDOutputContainsAnInvalidCHK',
               filePath: workspace.temporaryOutputMapPath,
               remediation:
                   'Inspect the euddraft log and keep the base map unchanged.',
+              remediationId: 'editorInspectTheEuddraftLogAndKeepTheBaseMap',
             ),
             diagnostics: parseResult.diagnostics,
             exitCode: 0,
@@ -323,9 +348,13 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               code: EudBuildPipelineDiagnosticCodes.outputStructureInvalid,
               message:
                   'The temporary EUD output failed CHK metadata validation.',
+              messageId:
+                  'editorTheTemporaryEUDOutputFailedCHKMetadataValidation',
               filePath: workspace.temporaryOutputMapPath,
               remediation:
                   'Inspect the map validation diagnostics and euddraft log.',
+              remediationId:
+                  'editorInspectTheMapValidationDiagnosticsAndEuddraftLog',
             ),
             diagnostics: metadata.diagnostics,
             exitCode: 0,
@@ -351,8 +380,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'The temporary EUD output is missing required VER, DIM, '
                   'or ERA map metadata.',
+              messageId: 'editorTheTemporaryEUDOutputIsMissingRequiredVERDIM',
               filePath: workspace.temporaryOutputMapPath,
               remediation: 'Use an intact StarCraft map as the EUD base map.',
+              remediationId: 'editorUseAnIntactStarCraftMapAsTheEUDBase',
             ),
             exitCode: 0,
           );
@@ -371,8 +402,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'The base map changed during the EUD build, so the output '
                   'was not promoted.',
+              messageId: 'editorTheBaseMapChangedDuringTheEUDBuildSo',
               filePath: plan.configuration.baseMapPath,
               remediation: 'Review the base map changes and rebuild.',
+              remediationId: 'editorReviewTheBaseMapChangesAndRebuild',
               rawDetails:
                   'start=$inputFingerprintAtStart; '
                   'beforePromotion=$inputFingerprintBeforePromotion',
@@ -397,8 +430,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'The epScript entry changed during the EUD build, so the '
                   'output was not promoted.',
+              messageId: 'editorTheEpScriptEntryChangedDuringTheEUDBuildSo',
               filePath: plan.configuration.entrySourcePath,
               remediation: 'Save the source changes and rebuild.',
+              remediationId: 'editorSaveTheSourceChangesAndRebuild',
               rawDetails:
                   'start=$sourceFingerprintAtStart; '
                   'beforePromotion=$sourceFingerprintBeforePromotion',
@@ -430,10 +465,13 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'The previous EUD output is safe in a backup, but automatic '
                   'restoration failed.',
+              messageId: 'editorThePreviousEUDOutputIsSafeInABackup',
               filePath: error.backupPath,
               remediation:
                   'Restore the backup to ${error.destinationPath} before '
                   'building again.',
+              remediationId: 'editorRestoreTheBackupToBeforeBuildingAgain',
+              remediationArguments: [(error.destinationPath).toString()],
               rawDetails: '$error\n$stackTrace',
             ),
             exitCode: 0,
@@ -444,9 +482,12 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               code: EudBuildPipelineDiagnosticCodes.promotionFailed,
               message:
                   'The verified EUD map could not be promoted to its output.',
+              messageId: 'editorTheVerifiedEUDMapCouldNotBePromotedTo',
               filePath: plan.configuration.outputMapPath,
               remediation:
                   'Check output folder permissions and choose a new name.',
+              remediationId:
+                  'editorCheckOutputFolderPermissionsAndChooseANewName',
               rawDetails: '$error\n$stackTrace',
             ),
             exitCode: 0,
@@ -461,11 +502,13 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
               message:
                   'The previous EUD output was preserved as a recovery '
                   'backup.',
+              messageId: 'editorThePreviousEUDOutputWasPreservedAsARecovery',
               severity: DiagnosticSeverity.info,
               stage: DiagnosticStage.compile,
               filePath: backupPath,
               remediation:
                   'Keep the backup until the generated map has been tested.',
+              remediationId: 'editorKeepTheBackupUntilTheGeneratedMapHasBeen',
             ),
           );
         }
@@ -487,8 +530,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         diagnostic: _diagnostic(
           code: EudBuildPipelineDiagnosticCodes.unexpectedFailure,
           message: 'The safe EUD build pipeline failed unexpectedly.',
+          messageId: 'editorTheSafeEUDBuildPipelineFailedUnexpectedly',
           filePath: plan.configuration.outputMapPath,
           remediation: 'Inspect the build log and retry.',
+          remediationId: 'editorInspectTheBuildLogAndRetry',
           rawDetails: '$error\n$stackTrace',
         ),
       );
@@ -501,11 +546,14 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
             EditorDiagnostic(
               code: EudBuildPipelineDiagnosticCodes.cleanupFailed,
               message: 'The temporary EUD build workspace was not removed.',
+              messageId: 'editorTheTemporaryEUDBuildWorkspaceWasNotRemoved',
               severity: DiagnosticSeverity.warning,
               stage: DiagnosticStage.compile,
               filePath: workspace.directoryPath,
               remediation:
                   'Close processes using the folder, then remove it manually.',
+              remediationId:
+                  'editorCloseProcessesUsingTheFolderThenRemoveItManually',
               rawDetails: '$error\n$stackTrace',
             ),
           );
@@ -535,9 +583,11 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           code: EudBuildPipelineDiagnosticCodes.projectChanged,
           message:
               'Map, source or EUD project changed. Prepare the build again.',
+          messageId: 'editorMapSourceOrEUDProjectChangedPrepareTheBuild',
           filePath: plan.configuration.baseMapPath,
           remediation:
               'Save and verify the current inputs, then prepare again.',
+          remediationId: 'editorSaveAndVerifyTheCurrentInputsThenPrepareAgain',
         ),
       );
     }
@@ -573,8 +623,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         _diagnostic(
           code: EudBuildPipelineDiagnosticCodes.toolChanged,
           message: 'The selected euddraft installation could not be rechecked.',
+          messageId: 'editorTheSelectedEuddraftInstallationCouldNotBeRechecked',
           filePath: plan.tool.executablePath,
           remediation: 'Inspect the tool and prepare a new build.',
+          remediationId: 'editorInspectTheToolAndPrepareANewBuild',
           rawDetails: '$error\n$stackTrace',
         ),
         exitCode: processExitCode,
@@ -601,8 +653,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           code: EudBuildPipelineDiagnosticCodes.toolChanged,
           message:
               'The selected euddraft installation changed or is not ready.',
+          messageId: 'editorTheSelectedEuddraftInstallationChangedOrIsNotReady',
           filePath: plan.tool.executablePath,
           remediation: 'Inspect the tool and prepare a new build.',
+          remediationId: 'editorInspectTheToolAndPrepareANewBuild',
           rawDetails:
               'expectedVersion=${plan.tool.version}; '
               'actualVersion=${actual?.version}; '
@@ -632,6 +686,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           message: message,
           filePath: path,
           remediation: 'Check that the file is readable and is not changing.',
+          remediationId: 'editorCheckThatTheFileIsReadableAndIsNot',
           rawDetails: '$error\n$stackTrace',
         ),
         exitCode: processExitCode,
@@ -682,8 +737,10 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         message:
             'The EUD output changed while the map was being built, so the '
             'temporary output was not promoted.',
+        messageId: 'editorTheEUDOutputChangedWhileTheMapWasBeing',
         filePath: path,
         remediation: 'Review the other program using the output and rebuild.',
+        remediationId: 'editorReviewTheOtherProgramUsingTheOutputAndRebuild',
         rawDetails: rawDetails,
       ),
       exitCode: 0,
@@ -696,14 +753,22 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     required String remediation,
     String? filePath,
     String? rawDetails,
+    String? messageId,
+    List<String> messageArguments = const [],
+    String? remediationId,
+    List<String> remediationArguments = const [],
   }) {
     return EditorDiagnostic(
       code: code,
       message: message,
+      messageId: messageId,
+      messageArguments: messageArguments,
       severity: DiagnosticSeverity.error,
       stage: DiagnosticStage.compile,
       filePath: filePath,
       remediation: remediation,
+      remediationId: remediationId,
+      remediationArguments: remediationArguments,
       rawDetails: rawDetails,
     );
   }

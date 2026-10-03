@@ -82,9 +82,12 @@ final class ProcessStarCraftTileAtlasGateway
         message:
             'The StarCraft installation path must be an absolute Windows '
             'drive or UNC directory.',
+        messageId: 'editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows',
         filePath: request.installationPath,
         remediation:
             'Choose the StarCraft installation using the Settings dialog.',
+        remediationId:
+            'editorChooseTheStarCraftInstallationUsingTheSettingsDialog',
       );
     }
     if (!await File(helperExecutablePath).exists()) {
@@ -92,8 +95,10 @@ final class ProcessStarCraftTileAtlasGateway
         request,
         code: StarCraftTileAtlasDiagnosticCodes.helperNotFound,
         message: 'The bundled StarCraft CASC helper is missing.',
+        messageId: 'editorTheBundledStarCraftCASCHelperIsMissing',
         filePath: helperExecutablePath,
         remediation: 'Repair or reinstall the application.',
+        remediationId: 'editorRepairOrReinstallTheApplication',
       );
     }
 
@@ -143,9 +148,12 @@ final class ProcessStarCraftTileAtlasGateway
           request,
           code: StarCraftTileAtlasDiagnosticCodes.helperTimedOut,
           message: 'The StarCraft tile rendering helper timed out.',
+          messageId: 'editorTheStarCraftTileRenderingHelperTimedOut',
           filePath: request.installationPath,
           remediation:
               'Retry after repairing the StarCraft installation in Battle.net.',
+          remediationId:
+              'editorRetryAfterRepairingTheStarCraftInstallationInBattleNet',
           rawDetails: _rawProcessDetails(stderr: stderr),
         );
       }
@@ -157,8 +165,10 @@ final class ProcessStarCraftTileAtlasGateway
           request,
           code: StarCraftTileAtlasDiagnosticCodes.helperOutputLimitExceeded,
           message: 'The StarCraft tile helper produced too much output.',
+          messageId: 'editorTheStarCraftTileHelperProducedTooMuchOutput',
           filePath: request.installationPath,
           remediation: 'Repair the application or report the helper error.',
+          remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
         );
       }
@@ -175,8 +185,10 @@ final class ProcessStarCraftTileAtlasGateway
         request,
         code: StarCraftTileAtlasDiagnosticCodes.helperStartFailed,
         message: 'The StarCraft tile helper could not be started.',
+        messageId: 'editorTheStarCraftTileHelperCouldNotBeStarted',
         filePath: helperExecutablePath,
         remediation: 'Repair or reinstall the application.',
+        remediationId: 'editorRepairOrReinstallTheApplication',
         rawDetails: error.errorCode.toString(),
       );
     } on FileSystemException catch (error) {
@@ -184,8 +196,10 @@ final class ProcessStarCraftTileAtlasGateway
         request,
         code: StarCraftTileAtlasDiagnosticCodes.renderFailed,
         message: 'The StarCraft tile atlas could not be read safely.',
+        messageId: 'editorTheStarCraftTileAtlasCouldNotBeReadSafely',
         filePath: error.path ?? request.installationPath,
         remediation: 'Check directory permissions and retry.',
+        remediationId: 'editorCheckDirectoryPermissionsAndRetry',
         rawDetails: error.toString(),
       );
     } finally {
@@ -343,8 +357,10 @@ final class ProcessStarCraftTileAtlasGateway
         request,
         code: StarCraftTileAtlasDiagnosticCodes.helperInvalidResponse,
         message: 'The StarCraft tile helper returned an invalid response.',
+        messageId: 'editorTheStarCraftTileHelperReturnedAnInvalidResponse',
         filePath: request.installationPath,
         remediation: 'Repair the application or report the helper error.',
+        remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
         rawDetails: _rawProcessDetails(
           exitCode: exitCode,
           stderr: stderr,
@@ -548,16 +564,24 @@ StarCraftTileAtlasResult _failure(
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return StarCraftTileAtlasResult.failed(
     request: request,
     diagnostic: EditorDiagnostic(
       code: code,
       message: message,
+      messageId: messageId,
+      messageArguments: messageArguments,
       severity: DiagnosticSeverity.warning,
       stage: DiagnosticStage.validate,
       filePath: filePath,
       remediation: remediation,
+      remediationId: remediationId,
+      remediationArguments: remediationArguments,
       rawDetails: rawDetails,
     ),
   );

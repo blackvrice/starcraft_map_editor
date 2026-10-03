@@ -52,6 +52,7 @@ final class EuddraftDiagnosticParser implements EudCompilerDiagnosticParser {
       filePath: filePath,
       sourceLine: sourceLine,
       remediation: 'Open the reported epScript module and fix this line.',
+      remediationId: 'editorOpenTheReportedEpScriptModuleAndFixThisLine',
       rawDetails: text,
     );
   }

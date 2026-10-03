@@ -56,8 +56,10 @@ final class TilePlacementCatalogLoader {
       final diagnostic = _diagnostic(
         code: TilePlacementCatalogDiagnosticCodes.catalogGatewayFailed,
         message: 'The Tile catalog request failed unexpectedly.',
+        messageId: 'editorTheTileCatalogRequestFailedUnexpectedly',
         filePath: request.installationPath,
         remediation: 'Retry or repair the application installation.',
+        remediationId: 'editorRetryOrRepairTheApplicationInstallation',
         rawDetails: error.toString(),
       );
       return TilePlacementCatalogBatch(
@@ -95,8 +97,10 @@ final class TilePlacementCatalogLoader {
           _diagnostic(
             code: TilePlacementCatalogDiagnosticCodes.atlasGatewayFailed,
             message: 'The Tile thumbnail request failed unexpectedly.',
+            messageId: 'editorTheTileThumbnailRequestFailedUnexpectedly',
             filePath: request.installationPath,
             remediation: 'Retry or repair the application installation.',
+            remediationId: 'editorRetryOrRepairTheApplicationInstallation',
             rawDetails: error.toString(),
           ),
         ],
@@ -140,8 +144,10 @@ final class TilePlacementCatalogLoader {
     final diagnostic = _diagnostic(
       code: TilePlacementCatalogDiagnosticCodes.requestCancelled,
       message: 'The Tile catalog request is no longer current.',
+      messageId: 'editorTheTileCatalogRequestIsNoLongerCurrent',
       filePath: request.installationPath,
       remediation: 'Load the currently selected catalog.',
+      remediationId: 'editorLoadTheCurrentlySelectedCatalog',
     );
     return TilePlacementCatalogBatch(
       page: StarCraftPlacementCatalogPage.failed(
@@ -161,8 +167,10 @@ final class TilePlacementCatalogLoader {
       _diagnostic(
         code: TilePlacementCatalogDiagnosticCodes.resultMismatch,
         message: 'The Tile catalog and thumbnail results did not match.',
+        messageId: 'editorTheTileCatalogAndThumbnailResultsDidNotMatch',
         filePath: request.installationPath,
         remediation: 'Repair the application or report the helper error.',
+        remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
       ),
     ],
   );
@@ -215,12 +223,20 @@ EditorDiagnostic _diagnostic({
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) => EditorDiagnostic(
   code: code,
   message: message,
+  messageId: messageId,
+  messageArguments: messageArguments,
   severity: DiagnosticSeverity.warning,
   stage: DiagnosticStage.validate,
   filePath: filePath,
   remediation: remediation,
+  remediationId: remediationId,
+  remediationArguments: remediationArguments,
   rawDetails: rawDetails,
 );

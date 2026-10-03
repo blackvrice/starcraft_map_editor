@@ -235,6 +235,8 @@ EditorDiagnostic _truncatedTileRecordDiagnostic({
     message:
         'Section "${section.name}" ends with an incomplete 2-byte tile '
         'record.',
+    messageId: 'editorSectionEndsWithAnIncomplete2ByteTileRecord',
+    messageArguments: [(section.name).toString()],
     severity: DiagnosticSeverity.error,
     stage: DiagnosticStage.validate,
     sectionName: section.name,
@@ -244,6 +246,7 @@ EditorDiagnostic _truncatedTileRecordDiagnostic({
         section.declaredLength -
         1,
     remediation: 'Keep this terrain section unchanged and read-only.',
+    remediationId: 'editorKeepThisTerrainSectionUnchangedAndReadOnly',
     rawDetails:
         'sectionIndex=$sectionIndex; '
         'tileRecordBytes=${ChkTerrainTileMapView.tileRecordLength}; '
@@ -264,11 +267,20 @@ EditorDiagnostic _tileCountMismatchDiagnostic({
         'Section "${section.name}" contains $actualTileCount tiles, but '
         '${dimensions.width}x${dimensions.height} map dimensions require '
         '$expectedTileCount.',
+    messageId: 'editorSectionContainsTilesButXMapDimensionsRequire',
+    messageArguments: [
+      (section.name).toString(),
+      (actualTileCount).toString(),
+      (dimensions.width).toString(),
+      (dimensions.height).toString(),
+      (expectedTileCount).toString(),
+    ],
     severity: DiagnosticSeverity.error,
     stage: DiagnosticStage.validate,
     sectionName: section.name,
     byteOffset: section.sourceOffset + RawChkParser.headerLength,
     remediation: 'Keep this terrain section unchanged and read-only.',
+    remediationId: 'editorKeepThisTerrainSectionUnchangedAndReadOnly',
     rawDetails:
         'sectionIndex=$sectionIndex; '
         'mapWidth=${dimensions.width}; '

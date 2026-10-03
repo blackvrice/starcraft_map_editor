@@ -317,12 +317,19 @@ class ChkMetadataViewDecoder {
             'Section "${section.name}" must contain exactly '
             '$expectedLength payload bytes, but contains '
             '${section.declaredLength}.',
+        messageId: 'editorSectionMustContainExactlyPayloadBytesButContains',
+        messageArguments: [
+          (section.name).toString(),
+          (expectedLength).toString(),
+          (section.declaredLength).toString(),
+        ],
         severity: DiagnosticSeverity.error,
         stage: DiagnosticStage.validate,
         sectionName: section.name,
         byteOffset: section.sourceOffset + RawChkParser.headerLength,
         remediation:
             'Keep this section unchanged and treat the map as read-only.',
+        remediationId: 'editorKeepThisSectionUnchangedAndTreatTheMapAs',
         rawDetails:
             'sectionIndex=$sectionIndex; '
             'sectionOffset=${section.sourceOffset}; '

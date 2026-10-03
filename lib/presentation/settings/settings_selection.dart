@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/settings_id_selection.dart';
 
@@ -97,8 +99,8 @@ class _SettingsSelectionState extends State<SettingsSelection> {
       children: [
         TextField(
           key: Key('${widget.prefix}-search'),
-          decoration: const InputDecoration(
-            labelText: 'Search name or ID (#12 for exact ID)',
+          decoration: InputDecoration(
+            labelText: context.l10n.editorSearchNameOrID12ForExactID,
           ),
           onChanged: (v) => setState(() => _query = v),
         ),
@@ -106,7 +108,11 @@ class _SettingsSelectionState extends State<SettingsSelection> {
           key: widget.selectorKey,
           isExpanded: true,
           value: filtered.contains(widget.selected) ? widget.selected : null,
-          hint: Text('Current: ${widget.label(widget.selected)}'),
+          hint: Text(
+            context.l10n.editorCurrent(
+              (widget.label(widget.selected)).toString(),
+            ),
+          ),
           items: [
             for (final id in filtered)
               DropdownMenuItem(
@@ -117,23 +123,35 @@ class _SettingsSelectionState extends State<SettingsSelection> {
           onChanged: filtered.isEmpty ? null : (v) => widget.onSelected(v!),
         ),
         if (filtered.isEmpty)
-          const Text(
-            'No matching IDs. Current selection and drafts are unchanged.',
+          Text(
+            context
+                .l10n
+                .editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged,
           ),
         ExpansionTile(
           key: Key('${widget.prefix}-bulk'),
-          title: const Text('Copy edited fields to IDs'),
+          title: Text(context.l10n.editorCopyEditedFieldsToIDs),
           tilePadding: EdgeInsets.zero,
           children: [
-            Text('Source: ${widget.label(widget.selected)}. ${widget.scope}'),
-            const Text(
-              'Copies only edited fields, replacing those draft fields at the target IDs. Search does not select targets. The map changes only after Apply.',
+            Text(
+              context.l10n.editorSource(
+                (widget.label(widget.selected)).toString(),
+                (widget.scope).toString(),
+              ),
+            ),
+            Text(
+              context
+                  .l10n
+                  .editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt,
             ),
             TextField(
               key: Key('${widget.prefix}-range'),
               decoration: InputDecoration(
-                labelText:
-                    'Target IDs (${widget.idBase}–${(widget.copyCount ?? widget.count) - 1 + widget.idBase})',
+                labelText: context.l10n.editorTargetIDs(
+                  (widget.idBase).toString(),
+                  ((widget.copyCount ?? widget.count) - 1 + widget.idBase)
+                      .toString(),
+                ),
                 hintText: widget.idBase == 0 ? '0, 2-5' : '1, 3-5',
               ),
               onChanged: (v) => setState(() {
@@ -144,11 +162,11 @@ class _SettingsSelectionState extends State<SettingsSelection> {
             TextButton(
               key: Key('${widget.prefix}-copy'),
               onPressed: widget.onCopy == null ? null : _copy,
-              child: const Text('Prepare draft copies'),
+              child: Text(context.l10n.editorPrepareDraftCopies),
             ),
             if (_message != null)
               Text(
-                _message!,
+                context.localizeEditorText(_message!),
                 key: Key('${widget.prefix}-copy-result'),
                 style: _failed
                     ? TextStyle(color: Theme.of(context).colorScheme.error)

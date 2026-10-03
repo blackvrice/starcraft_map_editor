@@ -5161,6 +5161,4975 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application.'**
   String get resizeCoordinateScope;
+
+  /// No description provided for @editorPrepareEUDBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare EUD Build'**
+  String get editorPrepareEUDBuild;
+
+  /// No description provided for @editorBuildSavedFilesOnDiskSaveMapAndSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Build saved files on disk. Save map and source edits first. With project settings, leave source folder and entry blank for a settings-only build. Output must be a new .scx.'**
+  String get editorBuildSavedFilesOnDiskSaveMapAndSource;
+
+  /// No description provided for @editorBaseMapPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Base map path'**
+  String get editorBaseMapPath;
+
+  /// No description provided for @editorSourceFolderPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Source folder path'**
+  String get editorSourceFolderPath;
+
+  /// No description provided for @editorEntryEpsPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry .eps path'**
+  String get editorEntryEpsPath;
+
+  /// No description provided for @editorNewOutputScxPath.
+  ///
+  /// In en, this message translates to:
+  /// **'New output .scx path'**
+  String get editorNewOutputScxPath;
+
+  /// No description provided for @editorToolOverrideForThisBuildOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool override for this build (optional)'**
+  String get editorToolOverrideForThisBuildOptional;
+
+  /// No description provided for @editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare.
+  ///
+  /// In en, this message translates to:
+  /// **'Blank tool override uses your EUD Tools selection. Prepare checks files; Build runs the compiler separately.'**
+  String get editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare;
+
+  /// No description provided for @editorITrustThisSourceAndItsImportsToRun.
+  ///
+  /// In en, this message translates to:
+  /// **'I trust this source and its imports to run code on this computer.'**
+  String get editorITrustThisSourceAndItsImportsToRun;
+
+  /// No description provided for @editorIncludeProjectSettingsInAnUnverifiedTestBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Include project settings in an unverified test build'**
+  String get editorIncludeProjectSettingsInAnUnverifiedTestBuild;
+
+  /// No description provided for @editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Type settings initialize once. Rules use their before/after trigger hook; instance rules can change a guarded unit. Game and multiplayer behavior still require testing.'**
+  String get editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter;
+
+  /// No description provided for @editorCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get editorCancel;
+
+  /// No description provided for @editorPrepare.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare'**
+  String get editorPrepare;
+
+  /// No description provided for @editorEUDTools.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD Tools'**
+  String get editorEUDTools;
+
+  /// No description provided for @editorChooseAnExternalEuddraftInstallationOrUseTheApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an external euddraft installation or use the app default. Project-specific paths take priority.'**
+  String get editorChooseAnExternalEuddraftInstallationOrUseTheApp;
+
+  /// No description provided for @editorExternalEuddraftPath.
+  ///
+  /// In en, this message translates to:
+  /// **'External euddraft path'**
+  String get editorExternalEuddraftPath;
+
+  /// No description provided for @editorInstallationDirectoryOrEuddraftExeAbsolutePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Installation directory or euddraft.exe (absolute path)'**
+  String get editorInstallationDirectoryOrEuddraftExeAbsolutePath;
+
+  /// No description provided for @editorBrowseInstallationFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse installation folder'**
+  String get editorBrowseInstallationFolder;
+
+  /// No description provided for @editorSelectionAppDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection: App default'**
+  String get editorSelectionAppDefault;
+
+  /// No description provided for @editorSelectionExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection: External\n{value0}'**
+  String editorSelectionExternal(String value0);
+
+  /// No description provided for @editorNoBundledToolIsIncludedInThisAppYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No bundled tool is included in this app yet. Select an external installation.'**
+  String get editorNoBundledToolIsIncludedInThisAppYet;
+
+  /// No description provided for @editorBundledEuddraft01025Editor1No.
+  ///
+  /// In en, this message translates to:
+  /// **'Bundled euddraft 0.10.2.5 (editor.1)\nNo separate Python installation is required. Updates are managed with the app.\n{value0}\nLicenses and modification details: BUNDLE-NOTICE.txt in this folder.'**
+  String editorBundledEuddraft01025Editor1No(String value0);
+
+  /// No description provided for @editorInspectionPassedEuddraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspection passed — euddraft {value0}\n{value1}'**
+  String editorInspectionPassedEuddraft(String value0, String value1);
+
+  /// No description provided for @editorInspectionDoesNotRunTheCompilerSavingThisChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspection does not run the compiler. Saving this choice does not prepare a build or change an existing build plan.'**
+  String get editorInspectionDoesNotRunTheCompilerSavingThisChoice;
+
+  /// No description provided for @editorUseAppDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Use app default'**
+  String get editorUseAppDefault;
+
+  /// No description provided for @editorReinspect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reinspect'**
+  String get editorReinspect;
+
+  /// No description provided for @editorSaveAndInspect.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and inspect'**
+  String get editorSaveAndInspect;
+
+  /// No description provided for @editorClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get editorClose;
+
+  /// No description provided for @editorForceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Force Settings'**
+  String get editorForceSettings;
+
+  /// No description provided for @editorPlayerAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Player assignment'**
+  String get editorPlayerAssignment;
+
+  /// No description provided for @editorPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {value0}'**
+  String editorPlayer(String value0);
+
+  /// No description provided for @editorCopiesOnlyTheEditedForceAssignmentToPlayers1.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies only the edited force assignment to Players 1–8.'**
+  String get editorCopiesOnlyTheEditedForceAssignmentToPlayers1;
+
+  /// No description provided for @editorAssignToForce.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to Force {value0}'**
+  String editorAssignToForce(String value0);
+
+  /// No description provided for @editorStoredIDPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored ID {value0} (preserved)'**
+  String editorStoredIDPreserved(String value0);
+
+  /// No description provided for @editorForce.
+  ///
+  /// In en, this message translates to:
+  /// **'Force {value0}'**
+  String editorForce(String value0);
+
+  /// No description provided for @editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies edited force names and options only. Player assignments are separate.'**
+  String get editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments;
+
+  /// No description provided for @editorForceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Force name'**
+  String get editorForceName;
+
+  /// No description provided for @editorRandomizeStartLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Randomize start locations'**
+  String get editorRandomizeStartLocations;
+
+  /// No description provided for @editorAllies.
+  ///
+  /// In en, this message translates to:
+  /// **'Allies'**
+  String get editorAllies;
+
+  /// No description provided for @editorAlliedVictory.
+  ///
+  /// In en, this message translates to:
+  /// **'Allied victory'**
+  String get editorAlliedVictory;
+
+  /// No description provided for @editorSharedVision.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared vision'**
+  String get editorSharedVision;
+
+  /// No description provided for @editorApplyUpdatesAllEditedPlayersAndForcesSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply updates all edited players and forces. Save As writes the map.'**
+  String get editorApplyUpdatesAllEditedPlayersAndForcesSaveAs;
+
+  /// No description provided for @editorUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo: {value0}'**
+  String editorUndo(String value0);
+
+  /// No description provided for @editorRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo: {value0}'**
+  String editorRedo(String value0);
+
+  /// No description provided for @editorApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get editorApply;
+
+  /// No description provided for @editorTheExistingTextIsNotValidUTF8Its.
+  ///
+  /// In en, this message translates to:
+  /// **'The existing text is not valid UTF-8. Its original bytes are preserved; editing is unavailable.'**
+  String get editorTheExistingTextIsNotValidUTF8Its;
+
+  /// No description provided for @editorMapInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Map Information'**
+  String get editorMapInformation;
+
+  /// No description provided for @editorMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map title'**
+  String get editorMapTitle;
+
+  /// No description provided for @editorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get editorDescription;
+
+  /// No description provided for @editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply updates this map only. Shared names remain unchanged. Use Save As to write the edited map.'**
+  String get editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged;
+
+  /// No description provided for @editorDiscardUnappliedSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unapplied settings?'**
+  String get editorDiscardUnappliedSettings;
+
+  /// No description provided for @editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'One or more tabs have unapplied drafts. Applied changes remain in the map and can be undone.'**
+  String get editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges;
+
+  /// No description provided for @editorKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get editorKeepEditing;
+
+  /// No description provided for @editorDiscardAndClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and close'**
+  String get editorDiscardAndClose;
+
+  /// No description provided for @editorMapSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Map Settings'**
+  String get editorMapSettings;
+
+  /// No description provided for @editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Map-wide settings. The canvas Inspector edits individual placed objects. Apply affects the current tab; Save As writes the map.'**
+  String get editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced;
+
+  /// No description provided for @editorEUDExecutionRules.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD execution rules'**
+  String get editorEUDExecutionRules;
+
+  /// No description provided for @editorMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Map'**
+  String get editorMap;
+
+  /// No description provided for @editorPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get editorPlayers;
+
+  /// No description provided for @editorForces.
+  ///
+  /// In en, this message translates to:
+  /// **'Forces'**
+  String get editorForces;
+
+  /// No description provided for @editorUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get editorUnits;
+
+  /// No description provided for @editorAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get editorAvailability;
+
+  /// No description provided for @editorUpgrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrades'**
+  String get editorUpgrades;
+
+  /// No description provided for @editorTech.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech'**
+  String get editorTech;
+
+  /// No description provided for @editorSlotType.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot type'**
+  String get editorSlotType;
+
+  /// No description provided for @editorRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race'**
+  String get editorRace;
+
+  /// No description provided for @editorColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get editorColor;
+
+  /// No description provided for @editorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get editorUnavailable;
+
+  /// No description provided for @editorPlayerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Player Settings'**
+  String get editorPlayerSettings;
+
+  /// No description provided for @editorPlayer203c6551.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {value0}{value1}'**
+  String editorPlayer203c6551(String value0, String value1);
+
+  /// No description provided for @editorReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **' (read-only)'**
+  String get editorReadOnly;
+
+  /// No description provided for @editorSlotTypeRaceAndColorEditsForPlayablePlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Slot type, race and color edits for playable Players 1–8 only.'**
+  String get editorSlotTypeRaceAndColorEditsForPlayablePlayers;
+
+  /// No description provided for @editorOnlyTheEightPlayableSlotsCanBeEditedPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the eight playable slots can be edited. Players 9–12 have no COLR color entry.'**
+  String get editorOnlyTheEightPlayableSlotsCanBeEditedPlayers;
+
+  /// No description provided for @editorColorSettingsAreSavedToTheMapCanvasPreviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Color settings are saved to the map. Canvas previews currently use default player colors.'**
+  String get editorColorSettingsAreSavedToTheMapCanvasPreviews;
+
+  /// No description provided for @editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} pending field changes. Apply updates all edited players; Save As writes the map.'**
+  String editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave(
+    String value0,
+  );
+
+  /// No description provided for @editorNoEditedFieldsInTheCurrentSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'No edited fields in the current selection.'**
+  String get editorNoEditedFieldsInTheCurrentSelection;
+
+  /// No description provided for @editorDraftFieldCopiesPreparedForIDsReviewThenApply.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} draft field copies prepared for {value1} IDs. Review, then Apply.'**
+  String editorDraftFieldCopiesPreparedForIDsReviewThenApply(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorSearchNameOrID12ForExactID.
+  ///
+  /// In en, this message translates to:
+  /// **'Search name or ID (#12 for exact ID)'**
+  String get editorSearchNameOrID12ForExactID;
+
+  /// No description provided for @editorCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current: {value0}'**
+  String editorCurrent(String value0);
+
+  /// No description provided for @editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching IDs. Current selection and drafts are unchanged.'**
+  String get editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged;
+
+  /// No description provided for @editorCopyEditedFieldsToIDs.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy edited fields to IDs'**
+  String get editorCopyEditedFieldsToIDs;
+
+  /// No description provided for @editorSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {value0}. {value1}'**
+  String editorSource(String value0, String value1);
+
+  /// No description provided for @editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies only edited fields, replacing those draft fields at the target IDs. Search does not select targets. The map changes only after Apply.'**
+  String get editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt;
+
+  /// No description provided for @editorTargetIDs.
+  ///
+  /// In en, this message translates to:
+  /// **'Target IDs ({value0}–{value1})'**
+  String editorTargetIDs(String value0, String value1);
+
+  /// No description provided for @editorPrepareDraftCopies.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare draft copies'**
+  String get editorPrepareDraftCopies;
+
+  /// No description provided for @editorUnappliedDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Unapplied draft'**
+  String get editorUnappliedDraft;
+
+  /// No description provided for @editorTheMapChangedInAnotherEditorOrThroughUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed in another editor or through Undo/Redo. Reload before applying this tab.'**
+  String get editorTheMapChangedInAnotherEditorOrThroughUndo;
+
+  /// No description provided for @editorReloadAndDiscardThisDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload and discard this draft'**
+  String get editorReloadAndDiscardThisDraft;
+
+  /// No description provided for @editorDiscardTabDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard tab draft'**
+  String get editorDiscardTabDraft;
+
+  /// No description provided for @editorStarCraftDataAssets.
+  ///
+  /// In en, this message translates to:
+  /// **'StarCraft Data Assets'**
+  String get editorStarCraftDataAssets;
+
+  /// No description provided for @editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the installed StarCraft: Remastered directory. The editor reads its local CASC storage through the bundled CascLib helper without extracting or copying copyrighted game data.'**
+  String get editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads;
+
+  /// No description provided for @editorClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get editorClear;
+
+  /// No description provided for @editorRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get editorRefresh;
+
+  /// No description provided for @editorChooseInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Installation…'**
+  String get editorChooseInstallation;
+
+  /// No description provided for @editorCASCBuildMiBCheckedCascLibHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'CASC {value0} • build {value1} • {value2} MiB checked • CascLib {value3} • helper {value4}'**
+  String editorCASCBuildMiBCheckedCascLibHelper(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+    String value4,
+  );
+
+  /// No description provided for @editorConfiguredPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Configured path'**
+  String get editorConfiguredPath;
+
+  /// No description provided for @editorNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get editorNotConfigured;
+
+  /// No description provided for @editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected: the folder containing StarCraft.exe, .build.info, and Data\\.'**
+  String get editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd;
+
+  /// No description provided for @editorLoadingSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading settings…'**
+  String get editorLoadingSettings;
+
+  /// No description provided for @editorInspectingAssets.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspecting assets…'**
+  String get editorInspectingAssets;
+
+  /// No description provided for @editorRequiredAssetsReady.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}/{value1} required assets ready'**
+  String editorRequiredAssetsReady(String value0, String value1);
+
+  /// No description provided for @editorStarCraftInstallationIsNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'StarCraft installation is not configured'**
+  String get editorStarCraftInstallationIsNotConfigured;
+
+  /// No description provided for @editorStarCraftCASCDataIsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'StarCraft CASC data is unavailable'**
+  String get editorStarCraftCASCDataIsUnavailable;
+
+  /// No description provided for @editorRequiredAssetsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}/{value1} required assets found'**
+  String editorRequiredAssetsFound(String value0, String value1);
+
+  /// No description provided for @editorMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get editorMissing;
+
+  /// No description provided for @editorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid'**
+  String get editorInvalid;
+
+  /// No description provided for @editorUnavailableAssetFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable asset files'**
+  String get editorUnavailableAssetFiles;
+
+  /// No description provided for @editorAndMore.
+  ///
+  /// In en, this message translates to:
+  /// **'…and {value0} more'**
+  String editorAndMore(String value0);
+
+  /// No description provided for @editorStoredFlagPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored flag {value0} (preserved)'**
+  String editorStoredFlagPreserved(String value0);
+
+  /// No description provided for @editorTechd52bce90.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech #{value0}, {value1}: {value2}'**
+  String editorTechd52bce90(String value0, String value1, String value2);
+
+  /// No description provided for @editorEffectiveStateUnknownStoredFlagPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective state: unknown (stored flag preserved)'**
+  String get editorEffectiveStateUnknownStoredFlagPreserved;
+
+  /// No description provided for @editorEffectiveStateAvailableResearched.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective state: available {value0}, researched {value1}'**
+  String editorEffectiveStateAvailableResearched(String value0, String value1);
+
+  /// No description provided for @editorTechSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech Settings'**
+  String get editorTechSettings;
+
+  /// No description provided for @editorEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing {value0} / {value1}{value2}.'**
+  String editorEditing(String value0, String value1, String value2);
+
+  /// No description provided for @editorAlternateSectionsPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'; alternate sections preserved'**
+  String get editorAlternateSectionsPreserved;
+
+  /// No description provided for @editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf.
+  ///
+  /// In en, this message translates to:
+  /// **'Map costs and {value0} only. Inheritance flags change only if edited.'**
+  String editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf(String value0);
+
+  /// No description provided for @editorMapDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'map defaults'**
+  String get editorMapDefaults;
+
+  /// No description provided for @editorUseCustomCosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Use custom costs'**
+  String get editorUseCustomCosts;
+
+  /// No description provided for @editorUseGameDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Use game defaults'**
+  String get editorUseGameDefaults;
+
+  /// No description provided for @editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Game defaults preserve stored custom costs. Default game values are not loaded here.'**
+  String get editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues;
+
+  /// No description provided for @editorMapDefaultSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Map default settings'**
+  String get editorMapDefaultSettings;
+
+  /// No description provided for @editorCopiesOnlyCurrentTechPlayerEditsToPlayers1.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies only current tech #{value0} player edits to Players 1–8. Map costs and defaults are excluded.'**
+  String editorCopiesOnlyCurrentTechPlayerEditsToPlayers1(String value0);
+
+  /// No description provided for @editorUsePlayerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Use player settings'**
+  String get editorUsePlayerSettings;
+
+  /// No description provided for @editorInheritMapSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherit map settings'**
+  String get editorInheritMapSettings;
+
+  /// No description provided for @editorAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get editorAvailable;
+
+  /// No description provided for @editorNotResearched.
+  ///
+  /// In en, this message translates to:
+  /// **'Not researched'**
+  String get editorNotResearched;
+
+  /// No description provided for @editorAlreadyResearched.
+  ///
+  /// In en, this message translates to:
+  /// **'Already researched'**
+  String get editorAlreadyResearched;
+
+  /// No description provided for @editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Map settings affect inheriting players. Inheritance preserves stored player flags. Availability and research status are independent.'**
+  String
+  get editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer;
+
+  /// No description provided for @editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} pending changes across techs and players. Apply updates the document; Save As writes the map.'**
+  String editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe(
+    String value0,
+  );
+
+  /// No description provided for @editorUnitAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Availability'**
+  String get editorUnitAvailability;
+
+  /// No description provided for @editorMapWideUnitProductionSettingsSeparateFromPlacedUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Map-wide unit production settings, separate from placed-unit Inspector properties.'**
+  String get editorMapWideUnitProductionSettingsSeparateFromPlacedUnit;
+
+  /// No description provided for @editorUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get editorUnit;
+
+  /// No description provided for @editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf.
+  ///
+  /// In en, this message translates to:
+  /// **'Map defaults and Player {value0} only. Inheritance changes only if edited.'**
+  String editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf(String value0);
+
+  /// No description provided for @editorMapDefaultAffectsAllInheritingPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Map default — affects all inheriting players'**
+  String get editorMapDefaultAffectsAllInheritingPlayers;
+
+  /// No description provided for @editorDefaultProhibited.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: prohibited'**
+  String get editorDefaultProhibited;
+
+  /// No description provided for @editorDefaultAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: allowed'**
+  String get editorDefaultAllowed;
+
+  /// No description provided for @editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies only current Unit #{value0} player edits to Players 1–8. Map defaults are excluded.'**
+  String editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1(String value0);
+
+  /// No description provided for @editorPlayerSettingSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Player setting source'**
+  String get editorPlayerSettingSource;
+
+  /// No description provided for @editorUsePlayerOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Use player override'**
+  String get editorUsePlayerOverride;
+
+  /// No description provided for @editorInheritMapDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherit map default'**
+  String get editorInheritMapDefault;
+
+  /// No description provided for @editorStoredPlayerOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored player override'**
+  String get editorStoredPlayerOverride;
+
+  /// No description provided for @editorPlayerProhibited.
+  ///
+  /// In en, this message translates to:
+  /// **'Player: prohibited'**
+  String get editorPlayerProhibited;
+
+  /// No description provided for @editorPlayerAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Player: allowed'**
+  String get editorPlayerAllowed;
+
+  /// No description provided for @editorEffectiveAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective availability: {value0}'**
+  String editorEffectiveAvailability(String value0);
+
+  /// No description provided for @editorUnknownStoredFlagsPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown (stored flags preserved)'**
+  String get editorUnknownStoredFlagsPreserved;
+
+  /// No description provided for @editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass.
+  ///
+  /// In en, this message translates to:
+  /// **'Inheritance preserves the stored override. Availability does not bypass game prerequisites or create placed units.'**
+  String
+  get editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass;
+
+  /// No description provided for @editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} pending changes. Apply updates all edited units and players; Save As writes the map.'**
+  String editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers(
+    String value0,
+  );
+
+  /// No description provided for @editorLocalWeaponReferencesUnavailableConfigureStarCraftAssetsAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Local weapon references unavailable. Configure StarCraft assets and retry.'**
+  String
+  get editorLocalWeaponReferencesUnavailableConfigureStarCraftAssetsAndRetry;
+
+  /// No description provided for @editorUnit88a3c859.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}\nUnit #{value1}'**
+  String editorUnit88a3c859(String value0, String value1);
+
+  /// No description provided for @editorUnitPreviewRequiresLocalStarCraftGraphics.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit preview requires local StarCraft graphics.'**
+  String get editorUnitPreviewRequiresLocalStarCraftGraphics;
+
+  /// No description provided for @editorConfigureStarCraftAssetsToLoadUnitLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure StarCraft assets to load unit links.'**
+  String get editorConfigureStarCraftAssetsToLoadUnitLinks;
+
+  /// No description provided for @editorGround.
+  ///
+  /// In en, this message translates to:
+  /// **'Ground'**
+  String get editorGround;
+
+  /// No description provided for @editorAir.
+  ///
+  /// In en, this message translates to:
+  /// **'Air'**
+  String get editorAir;
+
+  /// No description provided for @editorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}: None'**
+  String editorNone(String value0);
+
+  /// No description provided for @editorSubunit.
+  ///
+  /// In en, this message translates to:
+  /// **'Subunit: {value0} (#{value1})'**
+  String editorSubunit(String value0, String value1);
+
+  /// No description provided for @editorSubunitWeaponsKeepsTheSelectedUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Subunit weapons — keeps the selected unit'**
+  String get editorSubunitWeaponsKeepsTheSelectedUnit;
+
+  /// No description provided for @editorNoLinkedWeaponSelectAWeaponManually.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked weapon. Select a weapon manually.'**
+  String get editorNoLinkedWeaponSelectAWeaponManually;
+
+  /// No description provided for @editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-selected: {value0} (#{value1}) from {value2}. Weapon changes affect all units sharing it.'**
+  String editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorRetryUnitLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry unit links'**
+  String get editorRetryUnitLinks;
+
+  /// No description provided for @editorUnit24496eb9.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit #{value0}: {value1}'**
+  String editorUnit24496eb9(String value0, String value1);
+
+  /// No description provided for @editorWeaponDamageMustBeAnIntegerFrom0To.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon #{value0}: damage must be an integer from 0 to 65535.'**
+  String editorWeaponDamageMustBeAnIntegerFrom0To(String value0);
+
+  /// No description provided for @editorUnitSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit Settings'**
+  String get editorUnitSettings;
+
+  /// No description provided for @editorMapWideUnitTypesSeparateFromPlacedUnitProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Map-wide unit types, separate from placed-unit properties.'**
+  String get editorMapWideUnitTypesSeparateFromPlacedUnitProperties;
+
+  /// No description provided for @editorEditing4dc9e6e6.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing {value0}{value1}.'**
+  String editorEditing4dc9e6e6(String value0, String value1);
+
+  /// No description provided for @editorAlternateSectionPreservedWithoutSynchronization.
+  ///
+  /// In en, this message translates to:
+  /// **'; alternate section preserved without synchronization'**
+  String get editorAlternateSectionPreservedWithoutSynchronization;
+
+  /// No description provided for @editorUnit38894196.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} (Unit #{value1})'**
+  String editorUnit38894196(String value0, String value1);
+
+  /// No description provided for @editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit values, names and default flags only. Shared weapon damage uses its own selection below.'**
+  String get editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon;
+
+  /// No description provided for @editorUseCustomValues.
+  ///
+  /// In en, this message translates to:
+  /// **'Use custom values'**
+  String get editorUseCustomValues;
+
+  /// No description provided for @editorStoredDefaultFlagPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Stored default flag {value0} (preserved)'**
+  String editorStoredDefaultFlagPreserved(String value0);
+
+  /// No description provided for @editorFieldsShowStoredCustomValuesGameDefaultNumbersAre.
+  ///
+  /// In en, this message translates to:
+  /// **'Fields show stored custom values. Game default numbers are not loaded.'**
+  String get editorFieldsShowStoredCustomValuesGameDefaultNumbersAre;
+
+  /// No description provided for @editorRestoreSelectedUnitDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore selected unit defaults'**
+  String get editorRestoreSelectedUnitDefaults;
+
+  /// No description provided for @editorUnitNameEmptyGameName.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit name (empty = game name)'**
+  String get editorUnitNameEmptyGameName;
+
+  /// No description provided for @editorSharedWeaponDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared weapon damage'**
+  String get editorSharedWeaponDamage;
+
+  /// No description provided for @editorAWeaponChangeAffectsEveryUnitUsingThatWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'A weapon change affects every unit using that weapon. Restoring a unit does not reset shared weapon damage.'**
+  String get editorAWeaponChangeAffectsEveryUnitUsingThatWeapon;
+
+  /// No description provided for @editorWeapon.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon'**
+  String get editorWeapon;
+
+  /// No description provided for @editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared weapon damage only. All units referencing target weapons may be affected.'**
+  String get editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons;
+
+  /// No description provided for @editorDamagePerUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage per upgrade'**
+  String get editorDamagePerUpgrade;
+
+  /// No description provided for @editorBaseDamage.
+  ///
+  /// In en, this message translates to:
+  /// **'Base damage'**
+  String get editorBaseDamage;
+
+  /// No description provided for @editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply updates all edited unit types and weapons. Save As writes the map.'**
+  String get editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave;
+
+  /// No description provided for @editorUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade #{value0}, {value1}: {value2}'**
+  String editorUpgrade(String value0, String value1, String value2);
+
+  /// No description provided for @editorEffectiveLevelsUnknownStoredFlagPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective levels: unknown (stored flag preserved)'**
+  String get editorEffectiveLevelsUnknownStoredFlagPreserved;
+
+  /// No description provided for @editorEffectiveLevelsStartMaximum.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective levels: {value0} / {value1} (start / maximum)'**
+  String editorEffectiveLevelsStartMaximum(String value0, String value1);
+
+  /// No description provided for @editorUpgradeSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade Settings'**
+  String get editorUpgradeSettings;
+
+  /// No description provided for @editorUpgraded423b17.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get editorUpgraded423b17;
+
+  /// No description provided for @editorMapDefaultLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Map default levels'**
+  String get editorMapDefaultLevels;
+
+  /// No description provided for @editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1.
+  ///
+  /// In en, this message translates to:
+  /// **'Copies only current upgrade #{value0} player edits to Players 1–8. Map costs and defaults are excluded.'**
+  String editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1(String value0);
+
+  /// No description provided for @editorUsePlayerLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Use player levels'**
+  String get editorUsePlayerLevels;
+
+  /// No description provided for @editorInheritMapLevels.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherit map levels'**
+  String get editorInheritMapLevels;
+
+  /// No description provided for @editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Map levels affect inheriting players. Inheritance preserves stored player levels. Starting level must not exceed maximum.'**
+  String
+  get editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer;
+
+  /// No description provided for @editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} pending changes across upgrades and players. Apply updates the document; Save As writes the map.'**
+  String editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe(
+    String value0,
+  );
+
+  /// No description provided for @editorLoadingLocalWeaponReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading local weapon references…'**
+  String get editorLoadingLocalWeaponReferences;
+
+  /// No description provided for @editorWeaponReferenceListUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon reference list unavailable: {value0}'**
+  String editorWeaponReferenceListUnavailable(String value0);
+
+  /// No description provided for @editorSourceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'source changed'**
+  String get editorSourceChanged;
+
+  /// No description provided for @editorReloadWeaponReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload weapon references'**
+  String get editorReloadWeaponReferences;
+
+  /// No description provided for @editorNoneInThisDATSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'None in this DAT snapshot'**
+  String get editorNoneInThisDATSnapshot;
+
+  /// No description provided for @editorWeaponDirectGroundAirReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Weapon #{value0} — direct ground/air references: {value1}'**
+  String editorWeaponDirectGroundAirReferences(String value0, String value1);
+
+  /// No description provided for @editorUnitsReferencingThoseSubunits.
+  ///
+  /// In en, this message translates to:
+  /// **'Units referencing those subunits: {value0}'**
+  String editorUnitsReferencingThoseSubunits(String value0);
+
+  /// No description provided for @editorSource854c792f.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {value0}'**
+  String editorSource854c792f(String value0);
+
+  /// No description provided for @editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD.
+  ///
+  /// In en, this message translates to:
+  /// **'DAT references only. Spells, spawned projectiles/units and EUD runtime changes may have additional effects.'**
+  String get editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD;
+
+  /// No description provided for @editorOpenAMapToManageResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a map to manage resources.'**
+  String get editorOpenAMapToManageResources;
+
+  /// No description provided for @editorResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources'**
+  String get editorResources;
+
+  /// No description provided for @editorUndo71fd4acf.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get editorUndo71fd4acf;
+
+  /// No description provided for @editorRedo7412e5e9.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get editorRedo7412e5e9;
+
+  /// No description provided for @editorAddString.
+  ///
+  /// In en, this message translates to:
+  /// **'Add string'**
+  String get editorAddString;
+
+  /// No description provided for @editorImportPCMWAV.
+  ///
+  /// In en, this message translates to:
+  /// **'Import PCM WAV'**
+  String get editorImportPCMWAV;
+
+  /// No description provided for @editorStopPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop preview'**
+  String get editorStopPreview;
+
+  /// No description provided for @editorStringsBytesOffsetLimitSaveAsWritesPendingResource.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} strings • {value1} bytes • offset limit {value2} • Save As writes pending resource changes.'**
+  String editorStringsBytesOffsetLimitSaveAsWritesPendingResource(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorReferenceCoverageIncompleteDeletionRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference coverage incomplete — deletion restricted'**
+  String get editorReferenceCoverageIncompleteDeletionRestricted;
+
+  /// No description provided for @editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive listing incomplete. Unlisted sounds may exist; imports/deletions are restricted.'**
+  String
+  get editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions;
+
+  /// No description provided for @editorSearchTextStringIDOrSoundPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Search text, string ID or sound path'**
+  String get editorSearchTextStringIDOrSoundPath;
+
+  /// No description provided for @editorWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working…'**
+  String get editorWorking;
+
+  /// No description provided for @editorStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'Strings'**
+  String get editorStrings;
+
+  /// No description provided for @editorSounds.
+  ///
+  /// In en, this message translates to:
+  /// **'Sounds'**
+  String get editorSounds;
+
+  /// No description provided for @editorInvalidUTF8RawBytesPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid UTF-8 — raw bytes preserved'**
+  String get editorInvalidUTF8RawBytesPreserved;
+
+  /// No description provided for @editorBytesKnownUseS.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} bytes • {value1} known use(s){value2}'**
+  String editorBytesKnownUseS(String value0, String value1, String value2);
+
+  /// No description provided for @editorExplicitReplacementRequired.
+  ///
+  /// In en, this message translates to:
+  /// **' • explicit replacement required'**
+  String get editorExplicitReplacementRequired;
+
+  /// No description provided for @editorClearUnreferencedString.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear unreferenced string'**
+  String get editorClearUnreferencedString;
+
+  /// No description provided for @editorBytesPendingImport.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} bytes • pending import'**
+  String editorBytesPendingImport(String value0);
+
+  /// No description provided for @editorReferencedPathNotListedInThisMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Referenced path; not listed in this map'**
+  String get editorReferencedPathNotListedInThisMap;
+
+  /// No description provided for @editorBytesLocale.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} bytes • locale {value1}'**
+  String editorBytesLocale(String value0, String value1);
+
+  /// No description provided for @editorPreviewSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview sound'**
+  String get editorPreviewSound;
+
+  /// No description provided for @editorExportSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Export sound'**
+  String get editorExportSound;
+
+  /// No description provided for @editorDeleteSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete sound'**
+  String get editorDeleteSound;
+
+  /// No description provided for @editorDeleteSoundf1d564e6.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete sound?'**
+  String get editorDeleteSoundf1d564e6;
+
+  /// No description provided for @editorRemovalAppliesOnSaveAsUndoRestoresThisEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}\nRemoval applies on Save As. Undo restores this edit.'**
+  String editorRemovalAppliesOnSaveAsUndoRestoresThisEdit(String value0);
+
+  /// No description provided for @editorDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get editorDelete;
+
+  /// No description provided for @editorMapChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed.'**
+  String get editorMapChanged;
+
+  /// No description provided for @editorResourcesAreReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Resources are read-only: {value0}'**
+  String editorResourcesAreReadOnly(String value0);
+
+  /// No description provided for @editorInvalidUTF8EnterExplicitReplacementTextOriginalBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid UTF-8. Enter explicit replacement text; original bytes remain until Apply.'**
+  String get editorInvalidUTF8EnterExplicitReplacementTextOriginalBytes;
+
+  /// No description provided for @editorString.
+  ///
+  /// In en, this message translates to:
+  /// **'String #{value0}'**
+  String editorString(String value0);
+
+  /// No description provided for @editorEditSharedIDAffectsAllReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit shared ID — affects all references'**
+  String get editorEditSharedIDAffectsAllReferences;
+
+  /// No description provided for @editorSeparate.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate: {value0}'**
+  String editorSeparate(String value0);
+
+  /// No description provided for @editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional unknown uses may exist. No automatic cleanup is performed.'**
+  String get editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs;
+
+  /// No description provided for @editorUTF8Text.
+  ///
+  /// In en, this message translates to:
+  /// **'UTF-8 text'**
+  String get editorUTF8Text;
+
+  /// No description provided for @editorKnownReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} known references'**
+  String editorKnownReferences(String value0);
+
+  /// No description provided for @editorWriteEpScriptHere.
+  ///
+  /// In en, this message translates to:
+  /// **'// Write epScript here'**
+  String get editorWriteEpScriptHere;
+
+  /// No description provided for @editorModified.
+  ///
+  /// In en, this message translates to:
+  /// **'Modified'**
+  String get editorModified;
+
+  /// No description provided for @editorClean.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean'**
+  String get editorClean;
+
+  /// No description provided for @editorInMemoryDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'In-memory draft'**
+  String get editorInMemoryDraft;
+
+  /// No description provided for @editorLnCol.
+  ///
+  /// In en, this message translates to:
+  /// **'Ln {value0}, Col {value1}'**
+  String editorLnCol(String value0, String value1);
+
+  /// No description provided for @editorActionSReferenceThisSlotApplyingChangesAffectsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} action(s) reference this slot. Applying changes affects all of them.'**
+  String editorActionSReferenceThisSlotApplyingChangesAffectsAll(String value0);
+
+  /// No description provided for @editorNewStringIDUseThisIDInATrigger.
+  ///
+  /// In en, this message translates to:
+  /// **'New string ID: {value0}. Use this ID in a trigger action.'**
+  String editorNewStringIDUseThisIDInATrigger(String value0);
+
+  /// No description provided for @editorAddTriggerText.
+  ///
+  /// In en, this message translates to:
+  /// **'Add trigger text'**
+  String get editorAddTriggerText;
+
+  /// No description provided for @editorSwitchNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch names'**
+  String get editorSwitchNames;
+
+  /// No description provided for @editorUnitPropertySlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit property slots'**
+  String get editorUnitPropertySlots;
+
+  /// No description provided for @editorID.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} ID {value1}'**
+  String editorID(String value0, String value1);
+
+  /// No description provided for @editorProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'Property'**
+  String get editorProperty;
+
+  /// No description provided for @editorSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get editorSwitch;
+
+  /// No description provided for @editorText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get editorText;
+
+  /// No description provided for @editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan.
+  ///
+  /// In en, this message translates to:
+  /// **'Unchecked values inherit the game default. Special states can inherit, enable or disable.'**
+  String get editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan;
+
+  /// No description provided for @editorInherit.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherit'**
+  String get editorInherit;
+
+  /// No description provided for @editorEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get editorEnabled;
+
+  /// No description provided for @editorDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get editorDisabled;
+
+  /// No description provided for @editorPrepareChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare changes'**
+  String get editorPrepareChanges;
+
+  /// No description provided for @editorApplyToMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to map'**
+  String get editorApplyToMap;
+
+  /// No description provided for @editorYes.
+  ///
+  /// In en, this message translates to:
+  /// **'yes'**
+  String get editorYes;
+
+  /// No description provided for @editorNo.
+  ///
+  /// In en, this message translates to:
+  /// **'no'**
+  String get editorNo;
+
+  /// No description provided for @editorUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'unknown'**
+  String get editorUnknown;
+
+  /// No description provided for @editorAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'allowed'**
+  String get editorAllowed;
+
+  /// No description provided for @editorProhibited.
+  ///
+  /// In en, this message translates to:
+  /// **'prohibited'**
+  String get editorProhibited;
+
+  /// No description provided for @editorMapdfa2efb1.
+  ///
+  /// In en, this message translates to:
+  /// **'map'**
+  String get editorMapdfa2efb1;
+
+  /// No description provided for @editorTheCHKSectionHeaderIsTruncatedAtByteOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'The CHK section header is truncated at byte offset {value0}.'**
+  String editorTheCHKSectionHeaderIsTruncatedAtByteOffset(String value0);
+
+  /// No description provided for @editorUseAnIntactScenarioChkOrOpenTheMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an intact scenario.chk or open the map as read-only.'**
+  String get editorUseAnIntactScenarioChkOrOpenTheMap;
+
+  /// No description provided for @editorSectionDeclaresBytesButOnlyBytesRemain.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" declares {value1} bytes, but only {value2} bytes remain.'**
+  String editorSectionDeclaresBytesButOnlyBytesRemain(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorSectionMustContainExactlyPayloadBytesButContains.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" must contain exactly {value1} payload bytes, but contains {value2}.'**
+  String editorSectionMustContainExactlyPayloadBytesButContains(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorKeepThisSectionUnchangedAndTreatTheMapAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this section unchanged and treat the map as read-only.'**
+  String get editorKeepThisSectionUnchangedAndTreatTheMapAs;
+
+  /// No description provided for @editorIsOutsideTheMapPixelBounds.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} {value1} is outside the map pixel bounds.'**
+  String editorIsOutsideTheMapPixelBounds(String value0, String value1);
+
+  /// No description provided for @editorMoveTheObjectInside0By0OrKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the object inside 0..{value0} by 0..{value1}, or keep the raw record unchanged if the value is intentional EUD data.'**
+  String editorMoveTheObjectInside0By0OrKeep(String value0, String value1);
+
+  /// No description provided for @editorRefersToPlayerValueOutsideTheSupported011.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} {value1} refers to player value {value2}, outside the supported 0..11 range.'**
+  String editorRefersToPlayerValueOutsideTheSupported011(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorChoosePlayer1ThroughPlayer12OrKeepThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Player 1 through Player 12, or keep the raw value unchanged if it is intentional EUD data.'**
+  String get editorChoosePlayer1ThroughPlayer12OrKeepThe;
+
+  /// No description provided for @editorLocationDoesNotFormAValidRectangleInsideThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Location {value0} does not form a valid rectangle inside the map.'**
+  String editorLocationDoesNotFormAValidRectangleInsideThe(String value0);
+
+  /// No description provided for @editorUseLeftRightAndTopBottomInside0By.
+  ///
+  /// In en, this message translates to:
+  /// **'Use left < right and top < bottom inside 0..{value0} by 0..{value1}, or preserve the raw value if intentional.'**
+  String editorUseLeftRightAndTopBottomInside0By(String value0, String value1);
+
+  /// No description provided for @editorUsesStringIDButMultipleSTRSTRxTablesMake.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} uses string ID {value1}, but multiple STR/STRx tables make the reference ambiguous.'**
+  String editorUsesStringIDButMultipleSTRSTRxTablesMake(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorInspectTheRawStringSectionsTheEditorWillNot.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the raw string sections; the editor will not guess an active table.'**
+  String get editorInspectTheRawStringSectionsTheEditorWillNot;
+
+  /// No description provided for @editorUsesStringIDButNoReadableSTRSTRxTable.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} uses string ID {value1}, but no readable STR/STRx table is available.'**
+  String editorUsesStringIDButNoReadableSTRSTRxTable(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorInspectTheRawStringTableBeforeChangingThisReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the raw string table before changing this reference.'**
+  String get editorInspectTheRawStringTableBeforeChangingThisReference;
+
+  /// No description provided for @editorUsesStringIDButTheTableContainsOnlyEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} uses string ID {value1}, but the table contains only {value2} entries.'**
+  String editorUsesStringIDButTheTableContainsOnlyEntries(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorChooseAnExistingStringIDOrClearTheReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an existing string ID or clear the reference to ID 0.'**
+  String get editorChooseAnExistingStringIDOrClearTheReference;
+
+  /// No description provided for @editorUsesStringIDWhoseRawEntryCannotBeResolved.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} uses string ID {value1}, whose raw entry cannot be resolved safely.'**
+  String editorUsesStringIDWhoseRawEntryCannotBeResolved(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the string table structural diagnostics and preserve the raw reference until the source is understood.'**
+  String get editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe;
+
+  /// No description provided for @editorSectionEndsWithAnIncompleteByteRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" ends with an incomplete {value1}-byte {value2} record.'**
+  String editorSectionEndsWithAnIncompleteByteRecord(
+    String value0,
+    String value1,
+    String value2,
+  );
+
+  /// No description provided for @editorKeepThisObjectSectionUnchangedAndReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this object section unchanged and read-only.'**
+  String get editorKeepThisObjectSectionUnchangedAndReadOnly;
+
+  /// No description provided for @editorSectionMustContainEither64Or255CompleteLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" must contain either 64 or 255 complete location records.'**
+  String editorSectionMustContainEither64Or255CompleteLocation(String value0);
+
+  /// No description provided for @editorKeepThisLocationSectionUnchangedAndReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this location section unchanged and read-only.'**
+  String get editorKeepThisLocationSectionUnchangedAndReadOnly;
+
+  /// No description provided for @editorSectionDoesNotContainItsCompleteByteStringCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" does not contain its complete {value1}-byte string count.'**
+  String editorSectionDoesNotContainItsCompleteByteStringCount(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorKeepThisStringTableUnchangedAndReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this string table unchanged and read-only.'**
+  String get editorKeepThisStringTableUnchangedAndReadOnly;
+
+  /// No description provided for @editorSectionDeclaresStringsButItsOffsetTableExceedsThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" declares {value1} strings, but its offset table exceeds the payload.'**
+  String editorSectionDeclaresStringsButItsOffsetTableExceedsThe(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorStringInSectionPointsOutsideThePayload.
+  ///
+  /// In en, this message translates to:
+  /// **'String {value0} in section \"{value1}\" points outside the payload.'**
+  String editorStringInSectionPointsOutsideThePayload(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorStringInSectionPointsIntoTheCountOrOffset.
+  ///
+  /// In en, this message translates to:
+  /// **'String {value0} in section \"{value1}\" points into the count or offset table.'**
+  String editorStringInSectionPointsIntoTheCountOrOffset(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorStringInSectionHasNoNullTerminatorBeforeThe.
+  ///
+  /// In en, this message translates to:
+  /// **'String {value0} in section \"{value1}\" has no null terminator before the payload ends.'**
+  String editorStringInSectionHasNoNullTerminatorBeforeThe(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorSectionEndsWithAnIncomplete2ByteTileRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" ends with an incomplete 2-byte tile record.'**
+  String editorSectionEndsWithAnIncomplete2ByteTileRecord(String value0);
+
+  /// No description provided for @editorKeepThisTerrainSectionUnchangedAndReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this terrain section unchanged and read-only.'**
+  String get editorKeepThisTerrainSectionUnchangedAndReadOnly;
+
+  /// No description provided for @editorSectionContainsTilesButXMapDimensionsRequire.
+  ///
+  /// In en, this message translates to:
+  /// **'Section \"{value0}\" contains {value1} tiles, but {value2}x{value3} map dimensions require {value4}.'**
+  String editorSectionContainsTilesButXMapDimensionsRequire(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+    String value4,
+  );
+
+  /// No description provided for @editorRecoveryOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery opened'**
+  String get editorRecoveryOpened;
+
+  /// No description provided for @editorOnlyScmAndScxMapFilesCanBeOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Only .scm and .scx map files can be opened.'**
+  String get editorOnlyScmAndScxMapFilesCanBeOpened;
+
+  /// No description provided for @editorChooseAStarCraftMapWithAScmOrScx.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a StarCraft map with a .scm or .scx extension.'**
+  String get editorChooseAStarCraftMapWithAScmOrScx;
+
+  /// No description provided for @editorAnotherEditorOperationIsAlreadyRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Another editor operation is already running.'**
+  String get editorAnotherEditorOperationIsAlreadyRunning;
+
+  /// No description provided for @editorWaitForTheCurrentOperationToFinishAndTry.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the current operation to finish and try again.'**
+  String get editorWaitForTheCurrentOperationToFinishAndTry;
+
+  /// No description provided for @editorReadingMapArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading map archive'**
+  String get editorReadingMapArchive;
+
+  /// No description provided for @editorFingerprintingSourceMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Fingerprinting source map'**
+  String get editorFingerprintingSourceMap;
+
+  /// No description provided for @editorParsingScenarioChk.
+  ///
+  /// In en, this message translates to:
+  /// **'Parsing scenario.chk'**
+  String get editorParsingScenarioChk;
+
+  /// No description provided for @editorValidatingMapMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Validating map metadata'**
+  String get editorValidatingMapMetadata;
+
+  /// No description provided for @editorTheSourceMapChangedWhileItWasBeingOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map changed while it was being opened.'**
+  String get editorTheSourceMapChangedWhileItWasBeingOpened;
+
+  /// No description provided for @editorCloseTheOtherProgramThatIsEditingTheMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the other program that is editing the map and open it again.'**
+  String get editorCloseTheOtherProgramThatIsEditingTheMap;
+
+  /// No description provided for @editorTheMapOpenedButTheRecentMapsListWas.
+  ///
+  /// In en, this message translates to:
+  /// **'The map opened, but the recent maps list was not updated.'**
+  String get editorTheMapOpenedButTheRecentMapsListWas;
+
+  /// No description provided for @editorCheckAccessToTheApplicationSettingsFolderAndReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check access to the application settings folder and reopen the map.'**
+  String get editorCheckAccessToTheApplicationSettingsFolderAndReopen;
+
+  /// No description provided for @editorMapOpenedInRestrictedReadOnlyMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Map opened in restricted read-only mode'**
+  String get editorMapOpenedInRestrictedReadOnlyMode;
+
+  /// No description provided for @editorMapOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'Map opened'**
+  String get editorMapOpened;
+
+  /// No description provided for @editorTheMapCouldNotBeOpenedBecauseOfAn.
+  ///
+  /// In en, this message translates to:
+  /// **'The map could not be opened because of an unexpected error.'**
+  String get editorTheMapCouldNotBeOpenedBecauseOfAn;
+
+  /// No description provided for @editorRetryTheOperationIfItFailsAgainInspectThe.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the operation. If it fails again, inspect the application log.'**
+  String get editorRetryTheOperationIfItFailsAgainInspectThe;
+
+  /// No description provided for @editorTheMapWasSavedButTheRecentMapsList.
+  ///
+  /// In en, this message translates to:
+  /// **'The map was saved, but the recent maps list was not updated.'**
+  String get editorTheMapWasSavedButTheRecentMapsList;
+
+  /// No description provided for @editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0.
+  ///
+  /// In en, this message translates to:
+  /// **'Check access to the application settings folder and reopen the saved map.'**
+  String get editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0;
+
+  /// No description provided for @editorTheMapFileDialogCouldNotBeOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'The map file dialog could not be opened.'**
+  String get editorTheMapFileDialogCouldNotBeOpened;
+
+  /// No description provided for @editorRetryTheOperationOrRestartTheApplication.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the operation or restart the application.'**
+  String get editorRetryTheOperationOrRestartTheApplication;
+
+  /// No description provided for @editorTheSourceMapFingerprintCouldNotBeVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map fingerprint could not be verified.'**
+  String get editorTheSourceMapFingerprintCouldNotBeVerified;
+
+  /// No description provided for @editorCheckThatTheMapStillExistsIsReadableAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the map still exists, is readable, and is not being changed by another program.'**
+  String get editorCheckThatTheMapStillExistsIsReadableAnd;
+
+  /// No description provided for @editorOpenAMapBeforeUsingSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a map before using Save As.'**
+  String get editorOpenAMapBeforeUsingSaveAs;
+
+  /// No description provided for @editorOpenAScmOrScxMapAndTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a .scm or .scx map and try again.'**
+  String get editorOpenAScmOrScxMapAndTryAgain;
+
+  /// No description provided for @editorEditedContainInvalidFieldValuesOrReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited {value0} contain invalid field values or references.'**
+  String editorEditedContainInvalidFieldValuesOrReferences(String value0);
+
+  /// No description provided for @editorOpenValidateReferencesAndCorrectTheReportedSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {value0} → Validate references and correct the reported slots.'**
+  String editorOpenValidateReferencesAndCorrectTheReportedSlots(String value0);
+
+  /// No description provided for @editorBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Briefing'**
+  String get editorBriefing;
+
+  /// No description provided for @editorTriggers.
+  ///
+  /// In en, this message translates to:
+  /// **'Triggers'**
+  String get editorTriggers;
+
+  /// No description provided for @editorTheSaveAsDestinationMustBeAnAbsoluteWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'The Save As destination must be an absolute Windows path.'**
+  String get editorTheSaveAsDestinationMustBeAnAbsoluteWindows;
+
+  /// No description provided for @editorChooseTheDestinationUsingTheSaveAsDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the destination using the Save As dialog.'**
+  String get editorChooseTheDestinationUsingTheSaveAsDialog;
+
+  /// No description provided for @editorNewBroodWarMapsMustBeSavedAsScx.
+  ///
+  /// In en, this message translates to:
+  /// **'New Brood War maps must be saved as .scx.'**
+  String get editorNewBroodWarMapsMustBeSavedAsScx;
+
+  /// No description provided for @editorSaveAsSupportsOnlyScmAndScxMapFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As supports only .scm and .scx map files.'**
+  String get editorSaveAsSupportsOnlyScmAndScxMapFiles;
+
+  /// No description provided for @editorChooseADestinationEndingInScx.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a destination ending in .scx.'**
+  String get editorChooseADestinationEndingInScx;
+
+  /// No description provided for @editorChooseADestinationEndingInScmOrScx.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a destination ending in .scm or .scx.'**
+  String get editorChooseADestinationEndingInScmOrScx;
+
+  /// No description provided for @editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As cannot overwrite the currently open source map.'**
+  String get editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap;
+
+  /// No description provided for @editorChooseADifferentOutputFileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a different output file name.'**
+  String get editorChooseADifferentOutputFileName;
+
+  /// No description provided for @editorTheSaveAsDestinationAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The Save As destination already exists.'**
+  String get editorTheSaveAsDestinationAlreadyExists;
+
+  /// No description provided for @editorChooseANewFileNameOrExplicitlyConfirmReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new file name or explicitly confirm replacement in the Save As dialog.'**
+  String get editorChooseANewFileNameOrExplicitlyConfirmReplacement;
+
+  /// No description provided for @editorPreparingNewMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing new map'**
+  String get editorPreparingNewMap;
+
+  /// No description provided for @editorCheckingSourceMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking source map'**
+  String get editorCheckingSourceMap;
+
+  /// No description provided for @editorValidatingNewMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Validating new map'**
+  String get editorValidatingNewMap;
+
+  /// No description provided for @editorCheckingSourceMapFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking source map fingerprint'**
+  String get editorCheckingSourceMapFingerprint;
+
+  /// No description provided for @editorTheSourceMapChangedAfterItWasOpenedSo.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map changed after it was opened, so Save As was stopped.'**
+  String get editorTheSourceMapChangedAfterItWasOpenedSo;
+
+  /// No description provided for @editorReopenTheSourceMapToReviewTheExternalChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen the source map to review the external changes before saving.'**
+  String get editorReopenTheSourceMapToReviewTheExternalChanges;
+
+  /// No description provided for @editorCheckingExistingDestinationFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking existing destination fingerprint'**
+  String get editorCheckingExistingDestinationFingerprint;
+
+  /// No description provided for @editorATemporarySaveAsWorkspaceCouldNotBeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'A temporary Save As workspace could not be created.'**
+  String get editorATemporarySaveAsWorkspaceCouldNotBeCreated;
+
+  /// No description provided for @editorCheckDestinationFolderPermissionsAndFreeDiskSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Check destination folder permissions and free disk space.'**
+  String get editorCheckDestinationFolderPermissionsAndFreeDiskSpace;
+
+  /// No description provided for @editorWritingTemporaryMapArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing temporary map archive'**
+  String get editorWritingTemporaryMapArchive;
+
+  /// No description provided for @editorReopeningAndVerifyingTemporaryMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopening and verifying temporary map'**
+  String get editorReopeningAndVerifyingTemporaryMap;
+
+  /// No description provided for @editorTheReopenedTemporaryMapDoesNotContainTheExpected.
+  ///
+  /// In en, this message translates to:
+  /// **'The reopened temporary map does not contain the expected scenario.chk bytes.'**
+  String get editorTheReopenedTemporaryMapDoesNotContainTheExpected;
+
+  /// No description provided for @editorKeepTheSourceMapUnchangedAndReportTheArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the source map unchanged and report the archive writer failure.'**
+  String get editorKeepTheSourceMapUnchangedAndReportTheArchive;
+
+  /// No description provided for @editorTheReopenedTemporaryMapFailedCHKValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'The reopened temporary map failed CHK validation.'**
+  String get editorTheReopenedTemporaryMapFailedCHKValidation;
+
+  /// No description provided for @editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the source map unchanged and inspect parser diagnostics.'**
+  String get editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics;
+
+  /// No description provided for @editorFingerprintingVerifiedOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'Fingerprinting verified output'**
+  String get editorFingerprintingVerifiedOutput;
+
+  /// No description provided for @editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'The verified temporary map fingerprint could not be calculated.'**
+  String get editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated;
+
+  /// No description provided for @editorRecheckingSourceMapFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Rechecking source map fingerprint'**
+  String get editorRecheckingSourceMapFingerprint;
+
+  /// No description provided for @editorTheSourceMapChangedDuringSaveAsSoThe.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map changed during Save As, so the verified output was not promoted.'**
+  String get editorTheSourceMapChangedDuringSaveAsSoThe;
+
+  /// No description provided for @editorReopenTheSourceMapToReviewTheExternalChangesf53fd806.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen the source map to review the external changes and retry with a new output name.'**
+  String get editorReopenTheSourceMapToReviewTheExternalChangesf53fd806;
+
+  /// No description provided for @editorRecheckingSaveAsDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Rechecking Save As destination'**
+  String get editorRecheckingSaveAsDestination;
+
+  /// No description provided for @editorPromotingVerifiedMapToFinalDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Promoting verified map to final destination'**
+  String get editorPromotingVerifiedMapToFinalDestination;
+
+  /// No description provided for @editorTheExistingDestinationIsSafeInABackupBut.
+  ///
+  /// In en, this message translates to:
+  /// **'The existing destination is safe in a backup, but automatic restoration failed.'**
+  String get editorTheExistingDestinationIsSafeInABackupBut;
+
+  /// No description provided for @editorRestoreTheBackupToBeforeRetryingSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore the backup to {value0} before retrying Save As.'**
+  String editorRestoreTheBackupToBeforeRetryingSaveAs(String value0);
+
+  /// No description provided for @editorTheVerifiedMapCouldNotBePromotedToIts.
+  ///
+  /// In en, this message translates to:
+  /// **'The verified map could not be promoted to its destination.'**
+  String get editorTheVerifiedMapCouldNotBePromotedToIts;
+
+  /// No description provided for @editorCheckDestinationFolderPermissionsAndChooseANewName.
+  ///
+  /// In en, this message translates to:
+  /// **'Check destination folder permissions and choose a new name.'**
+  String get editorCheckDestinationFolderPermissionsAndChooseANewName;
+
+  /// No description provided for @editorThePreviousDestinationWasPreservedAsARecoveryBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous destination was preserved as a recovery backup.'**
+  String get editorThePreviousDestinationWasPreservedAsARecoveryBackup;
+
+  /// No description provided for @editorKeepTheBackupUntilTheReplacementMapHasBeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the backup until the replacement map has been verified.'**
+  String get editorKeepTheBackupUntilTheReplacementMapHasBeen;
+
+  /// No description provided for @editorMapSavedAndVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Map saved and verified'**
+  String get editorMapSavedAndVerified;
+
+  /// No description provided for @editorMapSavedVerifiedAndBackedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Map saved, verified, and backed up'**
+  String get editorMapSavedVerifiedAndBackedUp;
+
+  /// No description provided for @editorSaveAsFailedBecauseOfAnUnexpectedError.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As failed because of an unexpected error.'**
+  String get editorSaveAsFailedBecauseOfAnUnexpectedError;
+
+  /// No description provided for @editorRetryWithANewOutputNameTheSourceMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry with a new output name. The source map was not modified.'**
+  String get editorRetryWithANewOutputNameTheSourceMap;
+
+  /// No description provided for @editorTheSaveAsDialogCouldNotBeOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'The Save As dialog could not be opened.'**
+  String get editorTheSaveAsDialogCouldNotBeOpened;
+
+  /// No description provided for @editorCheckThatTheSourceMapStillExistsIsReadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the source map still exists, is readable, and is not being changed by another program.'**
+  String get editorCheckThatTheSourceMapStillExistsIsReadable;
+
+  /// No description provided for @editorTheExistingSaveAsDestinationCouldNotBeVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'The existing Save As destination could not be verified.'**
+  String get editorTheExistingSaveAsDestinationCouldNotBeVerified;
+
+  /// No description provided for @editorCheckThatTheDestinationIsAReadableRegularFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the destination is a readable regular file and retry.'**
+  String get editorCheckThatTheDestinationIsAReadableRegularFile;
+
+  /// No description provided for @editorTheSaveAsDestinationChangedWhileTheMapWas.
+  ///
+  /// In en, this message translates to:
+  /// **'The Save As destination changed while the map was being prepared.'**
+  String get editorTheSaveAsDestinationChangedWhileTheMapWas;
+
+  /// No description provided for @editorReviewTheDestinationInAnotherProgramThenRetryAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the destination in another program, then retry and confirm replacement again.'**
+  String get editorReviewTheDestinationInAnotherProgramThenRetryAnd;
+
+  /// No description provided for @editorWaitingForEuddraftToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for euddraft to start'**
+  String get editorWaitingForEuddraftToStart;
+
+  /// No description provided for @editorTheEuddraftEventStreamFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft event stream failed unexpectedly.'**
+  String get editorTheEuddraftEventStreamFailedUnexpectedly;
+
+  /// No description provided for @editorTheEuddraftBuildCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft build could not be started.'**
+  String get editorTheEuddraftBuildCouldNotBeStarted;
+
+  /// No description provided for @editorStoppingEuddraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping euddraft'**
+  String get editorStoppingEuddraft;
+
+  /// No description provided for @editorTheEUDBuildCancellationRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD build cancellation request failed.'**
+  String get editorTheEUDBuildCancellationRequestFailed;
+
+  /// No description provided for @editorEuddraftIsStillRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft is still running'**
+  String get editorEuddraftIsStillRunning;
+
+  /// No description provided for @editorEuddraftReturnedAnEventForADifferentBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft returned an event for a different build.'**
+  String get editorEuddraftReturnedAnEventForADifferentBuild;
+
+  /// No description provided for @editorEuddraftIsRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft {value0} is running'**
+  String editorEuddraftIsRunning(String value0);
+
+  /// No description provided for @editorValidatingAndPromotingTheGeneratedEUDMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Validating and promoting the generated EUD map'**
+  String get editorValidatingAndPromotingTheGeneratedEUDMap;
+
+  /// No description provided for @editorEUDBuildWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD build was cancelled'**
+  String get editorEUDBuildWasCancelled;
+
+  /// No description provided for @editorEUDBuildFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD build failed'**
+  String get editorEUDBuildFailed;
+
+  /// No description provided for @editorEUDMapBuiltVerifiedAndPromoted.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD map built, verified, and promoted'**
+  String get editorEUDMapBuiltVerifiedAndPromoted;
+
+  /// No description provided for @editorTheEuddraftEventStreamEndedWithoutAResult.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft event stream ended without a result.'**
+  String get editorTheEuddraftEventStreamEndedWithoutAResult;
+
+  /// No description provided for @editorInspectTheBuildLogAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the build log and retry.'**
+  String get editorInspectTheBuildLogAndRetry;
+
+  /// No description provided for @editorABuildWithThisIDIsAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'A build with this ID is already active.'**
+  String get editorABuildWithThisIDIsAlreadyActive;
+
+  /// No description provided for @editorWaitForTheActiveBuildToFinishAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the active build to finish and retry.'**
+  String get editorWaitForTheActiveBuildToFinishAndRetry;
+
+  /// No description provided for @editorTheEUDBuildInputsAreNotSafeRegularFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD build inputs are not safe regular files.'**
+  String get editorTheEUDBuildInputsAreNotSafeRegularFiles;
+
+  /// No description provided for @editorCheckTheBaseMapSourceRootEntrySourceAnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the base map, source root, entry source, and output folder.'**
+  String get editorCheckTheBaseMapSourceRootEntrySourceAnd;
+
+  /// No description provided for @editorTheEUDOutputResolvesToTheBaseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD output resolves to the base map.'**
+  String get editorTheEUDOutputResolvesToTheBaseMap;
+
+  /// No description provided for @editorChooseASeparateOutputFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a separate output file.'**
+  String get editorChooseASeparateOutputFile;
+
+  /// No description provided for @editorTheEUDBaseMapFingerprintCouldNotBeCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD base map fingerprint could not be calculated.'**
+  String get editorTheEUDBaseMapFingerprintCouldNotBeCalculated;
+
+  /// No description provided for @editorTheBaseMapDoesNotMatchTheEUDProject.
+  ///
+  /// In en, this message translates to:
+  /// **'The base map does not match the EUD project binding.'**
+  String get editorTheBaseMapDoesNotMatchTheEUDProject;
+
+  /// No description provided for @editorOpenAndVerifyTheBoundMapThenPrepareAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Open and verify the bound map, then prepare again.'**
+  String get editorOpenAndVerifyTheBoundMapThenPrepareAgain;
+
+  /// No description provided for @editorTheEpScriptEntrySourceFingerprintCouldNotBeCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'The epScript entry source fingerprint could not be calculated.'**
+  String get editorTheEpScriptEntrySourceFingerprintCouldNotBeCalculated;
+
+  /// No description provided for @editorTheEUDOutputAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD output already exists.'**
+  String get editorTheEUDOutputAlreadyExists;
+
+  /// No description provided for @editorChooseANewOutputOrExplicitlyConfirmReplacement.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new output or explicitly confirm replacement.'**
+  String get editorChooseANewOutputOrExplicitlyConfirmReplacement;
+
+  /// No description provided for @editorTheExistingEUDOutputFingerprintCouldNotBeCalculated.
+  ///
+  /// In en, this message translates to:
+  /// **'The existing EUD output fingerprint could not be calculated.'**
+  String get editorTheExistingEUDOutputFingerprintCouldNotBeCalculated;
+
+  /// No description provided for @editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD build workspace could not be created.'**
+  String get editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated;
+
+  /// No description provided for @editorCheckOutputFolderPermissionsAndAvailableDiskSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Check output folder permissions and available disk space.'**
+  String get editorCheckOutputFolderPermissionsAndAvailableDiskSpace;
+
+  /// No description provided for @editorEuddraftExitedSuccessfullyButDidNotCreateAReadable.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft exited successfully but did not create a readable temporary map.'**
+  String get editorEuddraftExitedSuccessfullyButDidNotCreateAReadable;
+
+  /// No description provided for @editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft exited successfully but created an empty temporary map.'**
+  String get editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap;
+
+  /// No description provided for @editorInspectTheEuddraftOutputAndEpScriptSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the euddraft output and epScript source.'**
+  String get editorInspectTheEuddraftOutputAndEpScriptSource;
+
+  /// No description provided for @editorTheTemporaryEUDOutputIsNotAReadableMap.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD output is not a readable map archive.'**
+  String get editorTheTemporaryEUDOutputIsNotAReadableMap;
+
+  /// No description provided for @editorInspectTheEuddraftLogAndKeepTheBaseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the euddraft log and keep the base map unchanged.'**
+  String get editorInspectTheEuddraftLogAndKeepTheBaseMap;
+
+  /// No description provided for @editorTheTemporaryEUDOutputContainsAnInvalidCHK.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD output contains an invalid CHK.'**
+  String get editorTheTemporaryEUDOutputContainsAnInvalidCHK;
+
+  /// No description provided for @editorTheTemporaryEUDOutputFailedCHKMetadataValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD output failed CHK metadata validation.'**
+  String get editorTheTemporaryEUDOutputFailedCHKMetadataValidation;
+
+  /// No description provided for @editorInspectTheMapValidationDiagnosticsAndEuddraftLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the map validation diagnostics and euddraft log.'**
+  String get editorInspectTheMapValidationDiagnosticsAndEuddraftLog;
+
+  /// No description provided for @editorTheTemporaryEUDOutputIsMissingRequiredVERDIM.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD output is missing required VER, DIM, or ERA map metadata.'**
+  String get editorTheTemporaryEUDOutputIsMissingRequiredVERDIM;
+
+  /// No description provided for @editorUseAnIntactStarCraftMapAsTheEUDBase.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an intact StarCraft map as the EUD base map.'**
+  String get editorUseAnIntactStarCraftMapAsTheEUDBase;
+
+  /// No description provided for @editorTheEUDBaseMapFingerprintCouldNotBeRechecked.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD base map fingerprint could not be rechecked.'**
+  String get editorTheEUDBaseMapFingerprintCouldNotBeRechecked;
+
+  /// No description provided for @editorTheBaseMapChangedDuringTheEUDBuildSo.
+  ///
+  /// In en, this message translates to:
+  /// **'The base map changed during the EUD build, so the output was not promoted.'**
+  String get editorTheBaseMapChangedDuringTheEUDBuildSo;
+
+  /// No description provided for @editorReviewTheBaseMapChangesAndRebuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the base map changes and rebuild.'**
+  String get editorReviewTheBaseMapChangesAndRebuild;
+
+  /// No description provided for @editorTheEpScriptEntryFingerprintCouldNotBeRechecked.
+  ///
+  /// In en, this message translates to:
+  /// **'The epScript entry fingerprint could not be rechecked.'**
+  String get editorTheEpScriptEntryFingerprintCouldNotBeRechecked;
+
+  /// No description provided for @editorTheEpScriptEntryChangedDuringTheEUDBuildSo.
+  ///
+  /// In en, this message translates to:
+  /// **'The epScript entry changed during the EUD build, so the output was not promoted.'**
+  String get editorTheEpScriptEntryChangedDuringTheEUDBuildSo;
+
+  /// No description provided for @editorSaveTheSourceChangesAndRebuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the source changes and rebuild.'**
+  String get editorSaveTheSourceChangesAndRebuild;
+
+  /// No description provided for @editorThePreviousEUDOutputIsSafeInABackup.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous EUD output is safe in a backup, but automatic restoration failed.'**
+  String get editorThePreviousEUDOutputIsSafeInABackup;
+
+  /// No description provided for @editorRestoreTheBackupToBeforeBuildingAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore the backup to {value0} before building again.'**
+  String editorRestoreTheBackupToBeforeBuildingAgain(String value0);
+
+  /// No description provided for @editorTheVerifiedEUDMapCouldNotBePromotedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'The verified EUD map could not be promoted to its output.'**
+  String get editorTheVerifiedEUDMapCouldNotBePromotedTo;
+
+  /// No description provided for @editorCheckOutputFolderPermissionsAndChooseANewName.
+  ///
+  /// In en, this message translates to:
+  /// **'Check output folder permissions and choose a new name.'**
+  String get editorCheckOutputFolderPermissionsAndChooseANewName;
+
+  /// No description provided for @editorThePreviousEUDOutputWasPreservedAsARecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'The previous EUD output was preserved as a recovery backup.'**
+  String get editorThePreviousEUDOutputWasPreservedAsARecovery;
+
+  /// No description provided for @editorKeepTheBackupUntilTheGeneratedMapHasBeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the backup until the generated map has been tested.'**
+  String get editorKeepTheBackupUntilTheGeneratedMapHasBeen;
+
+  /// No description provided for @editorTheSafeEUDBuildPipelineFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The safe EUD build pipeline failed unexpectedly.'**
+  String get editorTheSafeEUDBuildPipelineFailedUnexpectedly;
+
+  /// No description provided for @editorTheTemporaryEUDBuildWorkspaceWasNotRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary EUD build workspace was not removed.'**
+  String get editorTheTemporaryEUDBuildWorkspaceWasNotRemoved;
+
+  /// No description provided for @editorCloseProcessesUsingTheFolderThenRemoveItManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Close processes using the folder, then remove it manually.'**
+  String get editorCloseProcessesUsingTheFolderThenRemoveItManually;
+
+  /// No description provided for @editorMapSourceOrEUDProjectChangedPrepareTheBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Map, source or EUD project changed. Prepare the build again.'**
+  String get editorMapSourceOrEUDProjectChangedPrepareTheBuild;
+
+  /// No description provided for @editorSaveAndVerifyTheCurrentInputsThenPrepareAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and verify the current inputs, then prepare again.'**
+  String get editorSaveAndVerifyTheCurrentInputsThenPrepareAgain;
+
+  /// No description provided for @editorTheSelectedEuddraftInstallationCouldNotBeRechecked.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected euddraft installation could not be rechecked.'**
+  String get editorTheSelectedEuddraftInstallationCouldNotBeRechecked;
+
+  /// No description provided for @editorInspectTheToolAndPrepareANewBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the tool and prepare a new build.'**
+  String get editorInspectTheToolAndPrepareANewBuild;
+
+  /// No description provided for @editorTheSelectedEuddraftInstallationChangedOrIsNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected euddraft installation changed or is not ready.'**
+  String get editorTheSelectedEuddraftInstallationChangedOrIsNotReady;
+
+  /// No description provided for @editorCheckThatTheFileIsReadableAndIsNot.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that the file is readable and is not changing.'**
+  String get editorCheckThatTheFileIsReadableAndIsNot;
+
+  /// No description provided for @editorTheExistingEUDOutputCouldNotBeRechecked.
+  ///
+  /// In en, this message translates to:
+  /// **'The existing EUD output could not be rechecked.'**
+  String get editorTheExistingEUDOutputCouldNotBeRechecked;
+
+  /// No description provided for @editorTheEUDOutputChangedWhileTheMapWasBeing.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD output changed while the map was being built, so the temporary output was not promoted.'**
+  String get editorTheEUDOutputChangedWhileTheMapWasBeing;
+
+  /// No description provided for @editorReviewTheOtherProgramUsingTheOutputAndRebuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the other program using the output and rebuild.'**
+  String get editorReviewTheOtherProgramUsingTheOutputAndRebuild;
+
+  /// No description provided for @editorTheObjectCatalogRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The object catalog request failed unexpectedly.'**
+  String get editorTheObjectCatalogRequestFailedUnexpectedly;
+
+  /// No description provided for @editorRetryOrRepairTheApplicationInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry or repair the application installation.'**
+  String get editorRetryOrRepairTheApplicationInstallation;
+
+  /// No description provided for @editorTheObjectThumbnailRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The object thumbnail request failed unexpectedly.'**
+  String get editorTheObjectThumbnailRequestFailedUnexpectedly;
+
+  /// No description provided for @editorTheObjectCatalogRequestIsNoLongerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'The object catalog request is no longer current.'**
+  String get editorTheObjectCatalogRequestIsNoLongerCurrent;
+
+  /// No description provided for @editorLoadTheCurrentlySelectedCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Load the currently selected catalog.'**
+  String get editorLoadTheCurrentlySelectedCatalog;
+
+  /// No description provided for @editorTheObjectCatalogAndThumbnailResultsDidNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The object catalog and thumbnail results did not match.'**
+  String get editorTheObjectCatalogAndThumbnailResultsDidNotMatch;
+
+  /// No description provided for @editorRepairTheApplicationOrReportTheHelperError.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the application or report the helper error.'**
+  String get editorRepairTheApplicationOrReportTheHelperError;
+
+  /// No description provided for @editorTheStarCraftObjectAtlasRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object atlas request failed unexpectedly.'**
+  String get editorTheStarCraftObjectAtlasRequestFailedUnexpectedly;
+
+  /// No description provided for @editorTheStarCraftObjectAtlasResultDidNotMatchIts.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object atlas result did not match its batch.'**
+  String get editorTheStarCraftObjectAtlasResultDidNotMatchIts;
+
+  /// No description provided for @editorOpenAMapBeforeBrowsingThePlacementCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a map before browsing the placement catalog.'**
+  String get editorOpenAMapBeforeBrowsingThePlacementCatalog;
+
+  /// No description provided for @editorSetTheStarCraftRemasteredDataFolderInSettingsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the StarCraft: Remastered data folder in settings first.'**
+  String get editorSetTheStarCraftRemasteredDataFolderInSettingsFirst;
+
+  /// No description provided for @editorTheMapNeedsExactlyOneERASectionWithA.
+  ///
+  /// In en, this message translates to:
+  /// **'The map needs exactly one ERA section with a known tileset.'**
+  String get editorTheMapNeedsExactlyOneERASectionWithA;
+
+  /// No description provided for @editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe.
+  ///
+  /// In en, this message translates to:
+  /// **'The catalog changed or returned overlapping pages. Select the catalog kind again to reload.'**
+  String get editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe;
+
+  /// No description provided for @editorThePlacementCatalogIsUnavailableInThisBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'The placement catalog is unavailable in this build.'**
+  String get editorThePlacementCatalogIsUnavailableInThisBuild;
+
+  /// No description provided for @editorStarCraftDataAssetSettingsCouldNotBeLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'StarCraft data asset settings could not be loaded.'**
+  String get editorStarCraftDataAssetSettingsCouldNotBeLoaded;
+
+  /// No description provided for @editorCheckAccessToTheApplicationSettingsFolderAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check access to the application settings folder and retry.'**
+  String get editorCheckAccessToTheApplicationSettingsFolderAndRetry;
+
+  /// No description provided for @editorTheStarCraftInstallationFolderPickerCouldNotBeOpened.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation folder picker could not be opened.'**
+  String get editorTheStarCraftInstallationFolderPickerCouldNotBeOpened;
+
+  /// No description provided for @editorRetryOrCheckWindowsDialogPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry or check Windows dialog permissions.'**
+  String get editorRetryOrCheckWindowsDialogPermissions;
+
+  /// No description provided for @editorTheStarCraftInstallationPathCouldNotBeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation path could not be saved.'**
+  String get editorTheStarCraftInstallationPathCouldNotBeSaved;
+
+  /// No description provided for @editorTheStarCraftInstallationPathCouldNotBeCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation path could not be cleared.'**
+  String get editorTheStarCraftInstallationPathCouldNotBeCleared;
+
+  /// No description provided for @editorTheStarCraftCASCStorageCouldNotBeInspected.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft CASC storage could not be inspected.'**
+  String get editorTheStarCraftCASCStorageCouldNotBeInspected;
+
+  /// No description provided for @editorCheckDirectoryAccessAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check directory access and retry.'**
+  String get editorCheckDirectoryAccessAndRetry;
+
+  /// No description provided for @editorTheStarCraftInstallationIsNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation is not configured.'**
+  String get editorTheStarCraftInstallationIsNotConfigured;
+
+  /// No description provided for @editorOpenSettingsAndChooseTheStarCraftInstallationDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings and choose the StarCraft installation directory.'**
+  String get editorOpenSettingsAndChooseTheStarCraftInstallationDirectory;
+
+  /// No description provided for @editorTheStarCraftTileAtlasRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile atlas request failed unexpectedly.'**
+  String get editorTheStarCraftTileAtlasRequestFailedUnexpectedly;
+
+  /// No description provided for @editorTheStarCraftTileAtlasResultDidNotMatchIts.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile atlas result did not match its batch.'**
+  String get editorTheStarCraftTileAtlasResultDidNotMatchIts;
+
+  /// No description provided for @editorTheTileCatalogRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The Tile catalog request failed unexpectedly.'**
+  String get editorTheTileCatalogRequestFailedUnexpectedly;
+
+  /// No description provided for @editorTheTileThumbnailRequestFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The Tile thumbnail request failed unexpectedly.'**
+  String get editorTheTileThumbnailRequestFailedUnexpectedly;
+
+  /// No description provided for @editorTheTileCatalogRequestIsNoLongerCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'The Tile catalog request is no longer current.'**
+  String get editorTheTileCatalogRequestIsNoLongerCurrent;
+
+  /// No description provided for @editorTheTileCatalogAndThumbnailResultsDidNotMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The Tile catalog and thumbnail results did not match.'**
+  String get editorTheTileCatalogAndThumbnailResultsDidNotMatch;
+
+  /// No description provided for @editorTheMapPathMustBeAnAbsoluteWindowsPath.
+  ///
+  /// In en, this message translates to:
+  /// **'The map path must be an absolute Windows path.'**
+  String get editorTheMapPathMustBeAnAbsoluteWindowsPath;
+
+  /// No description provided for @editorChooseTheMapAgainUsingTheOpenMapDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the map again using the Open Map dialog.'**
+  String get editorChooseTheMapAgainUsingTheOpenMapDialog;
+
+  /// No description provided for @editorAnArchiveOperationWithTheSameIDIsAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'An archive operation with the same ID is already active.'**
+  String get editorAnArchiveOperationWithTheSameIDIsAlready;
+
+  /// No description provided for @editorWaitForTheActiveOperationOrCancelItFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the active operation or cancel it first.'**
+  String get editorWaitForTheActiveOperationOrCancelItFirst;
+
+  /// No description provided for @editorTheBundledMapArchiveHelperIsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The bundled map archive helper is missing.'**
+  String get editorTheBundledMapArchiveHelperIsMissing;
+
+  /// No description provided for @editorRepairOrReinstallTheApplication.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair or reinstall the application.'**
+  String get editorRepairOrReinstallTheApplication;
+
+  /// No description provided for @editorATemporaryArchiveWorkspaceCouldNotBeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'A temporary archive workspace could not be created.'**
+  String get editorATemporaryArchiveWorkspaceCouldNotBeCreated;
+
+  /// No description provided for @editorCheckFreeDiskSpaceAndTemporaryFolderPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Check free disk space and temporary folder permissions.'**
+  String get editorCheckFreeDiskSpaceAndTemporaryFolderPermissions;
+
+  /// No description provided for @editorTheMapArchiveHelperTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive helper timed out.'**
+  String get editorTheMapArchiveHelperTimedOut;
+
+  /// No description provided for @editorRetryTheOperationOrInspectTheMapForCorruption.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the operation or inspect the map for corruption.'**
+  String get editorRetryTheOperationOrInspectTheMapForCorruption;
+
+  /// No description provided for @editorTheMapArchiveOperationWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive operation was cancelled.'**
+  String get editorTheMapArchiveOperationWasCancelled;
+
+  /// No description provided for @editorOpenTheMapAgainWhenReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the map again when ready.'**
+  String get editorOpenTheMapAgainWhenReady;
+
+  /// No description provided for @editorTheMapArchiveHelperProducedTooMuchOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive helper produced too much output.'**
+  String get editorTheMapArchiveHelperProducedTooMuchOutput;
+
+  /// No description provided for @editorRepairTheApplicationOrReportTheHelperFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the application or report the helper failure.'**
+  String get editorRepairTheApplicationOrReportTheHelperFailure;
+
+  /// No description provided for @editorScenarioChkExceedsTheConfiguredExtractionSizeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'scenario.chk exceeds the configured extraction size limit.'**
+  String get editorScenarioChkExceedsTheConfiguredExtractionSizeLimit;
+
+  /// No description provided for @editorRaiseTheReviewedSizeLimitOnlyForATrusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Raise the reviewed size limit only for a trusted map.'**
+  String get editorRaiseTheReviewedSizeLimitOnlyForATrusted;
+
+  /// No description provided for @editorTheExtractedScenarioChkCouldNotBeRead.
+  ///
+  /// In en, this message translates to:
+  /// **'The extracted scenario.chk could not be read.'**
+  String get editorTheExtractedScenarioChkCouldNotBeRead;
+
+  /// No description provided for @editorRetryTheOperationAndCheckTemporaryDiskAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the operation and check temporary disk access.'**
+  String get editorRetryTheOperationAndCheckTemporaryDiskAccess;
+
+  /// No description provided for @editorTheExtractedScenarioChkDoesNotMatchHelperMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'The extracted scenario.chk does not match helper metadata.'**
+  String get editorTheExtractedScenarioChkDoesNotMatchHelperMetadata;
+
+  /// No description provided for @editorTheMapArchiveHelperCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive helper could not be started.'**
+  String get editorTheMapArchiveHelperCouldNotBeStarted;
+
+  /// No description provided for @editorTheMapArchiveHelperReturnedAnInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive helper returned an invalid response.'**
+  String get editorTheMapArchiveHelperReturnedAnInvalidResponse;
+
+  /// No description provided for @editorTheSourceMapPathMustBeAnAbsoluteWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map path must be an absolute Windows path.'**
+  String get editorTheSourceMapPathMustBeAnAbsoluteWindows;
+
+  /// No description provided for @editorOpenTheSourceMapAgainUsingTheOpenMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the source map again using the Open Map dialog.'**
+  String get editorOpenTheSourceMapAgainUsingTheOpenMap;
+
+  /// No description provided for @editorTheTemporaryOutputPathMustBeAnAbsoluteWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary output path must be an absolute Windows path.'**
+  String get editorTheTemporaryOutputPathMustBeAnAbsoluteWindows;
+
+  /// No description provided for @editorCreateTheSaveAsWorkspaceAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Create the Save As workspace again.'**
+  String get editorCreateTheSaveAsWorkspaceAgain;
+
+  /// No description provided for @editorTheSourceMapCannotBeUsedAsTemporaryOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The source map cannot be used as temporary output.'**
+  String get editorTheSourceMapCannotBeUsedAsTemporaryOutput;
+
+  /// No description provided for @editorChooseADifferentSaveAsDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a different Save As destination.'**
+  String get editorChooseADifferentSaveAsDestination;
+
+  /// No description provided for @editorTheTemporaryArchiveOutputAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary archive output already exists.'**
+  String get editorTheTemporaryArchiveOutputAlreadyExists;
+
+  /// No description provided for @editorCreateAFreshSaveAsWorkspaceAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a fresh Save As workspace and retry.'**
+  String get editorCreateAFreshSaveAsWorkspaceAndRetry;
+
+  /// No description provided for @editorTheTemporarySaveAsWorkspaceDoesNotExist.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary Save As workspace does not exist.'**
+  String get editorTheTemporarySaveAsWorkspaceDoesNotExist;
+
+  /// No description provided for @editorTheTemporarySaveAsWorkspaceCouldNotBeInspected.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary Save As workspace could not be inspected.'**
+  String get editorTheTemporarySaveAsWorkspaceCouldNotBeInspected;
+
+  /// No description provided for @editorCheckDestinationFolderPermissionsAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check destination folder permissions and retry.'**
+  String get editorCheckDestinationFolderPermissionsAndRetry;
+
+  /// No description provided for @editorTheTemporaryScenarioInputPathAlreadyExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary scenario input path already exists.'**
+  String get editorTheTemporaryScenarioInputPathAlreadyExists;
+
+  /// No description provided for @editorTheTemporaryArchiveWriterTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary archive writer timed out.'**
+  String get editorTheTemporaryArchiveWriterTimedOut;
+
+  /// No description provided for @editorTheMapArchiveWriteWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The map archive write was cancelled.'**
+  String get editorTheMapArchiveWriteWasCancelled;
+
+  /// No description provided for @editorRunSaveAsAgainWhenReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Run Save As again when ready.'**
+  String get editorRunSaveAsAgainWhenReady;
+
+  /// No description provided for @editorTheHelperReportedAnUnexpectedScenarioChkSize.
+  ///
+  /// In en, this message translates to:
+  /// **'The helper reported an unexpected scenario.chk size.'**
+  String get editorTheHelperReportedAnUnexpectedScenarioChkSize;
+
+  /// No description provided for @editorTheHelperDidNotCreateTheTemporaryMapArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'The helper did not create the temporary map archive.'**
+  String get editorTheHelperDidNotCreateTheTemporaryMapArchive;
+
+  /// No description provided for @editorRetrySaveAsOrRepairTheApplication.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry Save As or repair the application.'**
+  String get editorRetrySaveAsOrRepairTheApplication;
+
+  /// No description provided for @editorTheTemporaryMapArchiveCouldNotBeInspected.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary map archive could not be inspected.'**
+  String get editorTheTemporaryMapArchiveCouldNotBeInspected;
+
+  /// No description provided for @editorTheTemporaryMapSizeDoesNotMatchHelperMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary map size does not match helper metadata.'**
+  String get editorTheTemporaryMapSizeDoesNotMatchHelperMetadata;
+
+  /// No description provided for @editorTheTemporaryScenarioInputCouldNotBeWritten.
+  ///
+  /// In en, this message translates to:
+  /// **'The temporary scenario input could not be written.'**
+  String get editorTheTemporaryScenarioInputCouldNotBeWritten;
+
+  /// No description provided for @editorTheArchiveEntryListingIsIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The archive entry listing is incomplete.'**
+  String get editorTheArchiveEntryListingIsIncomplete;
+
+  /// No description provided for @editorEditingCanContinueButVerifyProtectedOrUnnamedEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing can continue, but verify protected or unnamed entries before saving.'**
+  String get editorEditingCanContinueButVerifyProtectedOrUnnamedEntries;
+
+  /// No description provided for @editorSomeArchiveEntryNamesWereRecoveredSynthetically.
+  ///
+  /// In en, this message translates to:
+  /// **'Some archive entry names were recovered synthetically.'**
+  String get editorSomeArchiveEntryNamesWereRecoveredSynthetically;
+
+  /// No description provided for @editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths.
+  ///
+  /// In en, this message translates to:
+  /// **'Treat synthetic names as diagnostic labels, not original paths.'**
+  String get editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths;
+
+  /// No description provided for @editorTheArchiveContainsDuplicateEntryPaths.
+  ///
+  /// In en, this message translates to:
+  /// **'The archive contains duplicate entry paths.'**
+  String get editorTheArchiveContainsDuplicateEntryPaths;
+
+  /// No description provided for @editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Review locale variants and duplicate entries before saving.'**
+  String get editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving;
+
+  /// No description provided for @editorTheMapUsesAnUnexpectedMPQFormatVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'The map uses an unexpected MPQ format version.'**
+  String get editorTheMapUsesAnUnexpectedMPQFormatVersion;
+
+  /// No description provided for @editorUseSaveAsAndReOpenTheOutputBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Save As and re-open the output before replacing any map.'**
+  String get editorUseSaveAsAndReOpenTheOutputBefore;
+
+  /// No description provided for @editorTheArchiveContainsEncryptedEntries.
+  ///
+  /// In en, this message translates to:
+  /// **'The archive contains encrypted entries.'**
+  String get editorTheArchiveContainsEncryptedEntries;
+
+  /// No description provided for @editorEncryptedEntriesAreReportedWithoutAttemptingRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Encrypted entries are reported without attempting recovery.'**
+  String get editorEncryptedEntriesAreReportedWithoutAttemptingRecovery;
+
+  /// No description provided for @editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation path must be an absolute Windows drive or UNC directory.'**
+  String get editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows;
+
+  /// No description provided for @editorChooseTheStarCraftInstallationUsingTheSettingsDialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the StarCraft installation using the Settings dialog.'**
+  String get editorChooseTheStarCraftInstallationUsingTheSettingsDialog;
+
+  /// No description provided for @editorTheBundledStarCraftCASCHelperIsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The bundled StarCraft CASC helper is missing.'**
+  String get editorTheBundledStarCraftCASCHelperIsMissing;
+
+  /// No description provided for @editorTheStarCraftCASCInspectionTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft CASC inspection timed out.'**
+  String get editorTheStarCraftCASCInspectionTimedOut;
+
+  /// No description provided for @editorRetryAfterRepairingTheStarCraftInstallationInBattleNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry after repairing the StarCraft installation in Battle.net.'**
+  String get editorRetryAfterRepairingTheStarCraftInstallationInBattleNet;
+
+  /// No description provided for @editorTheStarCraftCASCHelperProducedTooMuchOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft CASC helper produced too much output.'**
+  String get editorTheStarCraftCASCHelperProducedTooMuchOutput;
+
+  /// No description provided for @editorTheStarCraftCASCHelperCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft CASC helper could not be started.'**
+  String get editorTheStarCraftCASCHelperCouldNotBeStarted;
+
+  /// No description provided for @editorTheStarCraftInstallationCouldNotBeInspected.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation could not be inspected.'**
+  String get editorTheStarCraftInstallationCouldNotBeInspected;
+
+  /// No description provided for @editorCheckDirectoryPermissionsAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check directory permissions and retry.'**
+  String get editorCheckDirectoryPermissionsAndRetry;
+
+  /// No description provided for @editorRequiredStarCraftCASCTilesetMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} required StarCraft CASC tileset {value1} missing.'**
+  String editorRequiredStarCraftCASCTilesetMissing(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorAssetIs.
+  ///
+  /// In en, this message translates to:
+  /// **'asset is'**
+  String get editorAssetIs;
+
+  /// No description provided for @editorAssetsAre.
+  ///
+  /// In en, this message translates to:
+  /// **'assets are'**
+  String get editorAssetsAre;
+
+  /// No description provided for @editorRepairTheStarCraftInstallationInBattleNetAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the StarCraft installation in Battle.net and retry.'**
+  String get editorRepairTheStarCraftInstallationInBattleNetAndRetry;
+
+  /// No description provided for @editorRequiredStarCraftCASCTilesetUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} required StarCraft CASC tileset {value1} unreadable.'**
+  String editorRequiredStarCraftCASCTilesetUnreadable(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorTheStarCraftCASCHelperReturnedAnInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft CASC helper returned an invalid response.'**
+  String get editorTheStarCraftCASCHelperReturnedAnInvalidResponse;
+
+  /// No description provided for @editorTheStarCraftInstallationPathIsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft installation path is invalid.'**
+  String get editorTheStarCraftInstallationPathIsInvalid;
+
+  /// No description provided for @editorChooseTheStarCraftInstallationFolderAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the StarCraft installation folder again.'**
+  String get editorChooseTheStarCraftInstallationFolderAgain;
+
+  /// No description provided for @editorAnObjectRenderingOperationWithThisIDIsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'An object rendering operation with this ID is active.'**
+  String get editorAnObjectRenderingOperationWithThisIDIsActive;
+
+  /// No description provided for @editorWaitForTheCurrentMapRenderingOperationToFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the current map rendering operation to finish.'**
+  String get editorWaitForTheCurrentMapRenderingOperationToFinish;
+
+  /// No description provided for @editorTheStarCraftObjectRenderingHelperTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object rendering helper timed out.'**
+  String get editorTheStarCraftObjectRenderingHelperTimedOut;
+
+  /// No description provided for @editorRepairTheStarCraftInstallationAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the StarCraft installation and retry.'**
+  String get editorRepairTheStarCraftInstallationAndRetry;
+
+  /// No description provided for @editorTheStarCraftObjectHelperProducedTooMuchOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object helper produced too much output.'**
+  String get editorTheStarCraftObjectHelperProducedTooMuchOutput;
+
+  /// No description provided for @editorTheStarCraftObjectHelperCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object helper could not be started.'**
+  String get editorTheStarCraftObjectHelperCouldNotBeStarted;
+
+  /// No description provided for @editorTheStarCraftObjectAtlasCouldNotBeReadSafely.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object atlas could not be read safely.'**
+  String get editorTheStarCraftObjectAtlasCouldNotBeReadSafely;
+
+  /// No description provided for @editorTheStarCraftObjectHelperReturnedAnInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object helper returned an invalid response.'**
+  String get editorTheStarCraftObjectHelperReturnedAnInvalidResponse;
+
+  /// No description provided for @editorTheStarCraftObjectRenderingOperationWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft object rendering operation was cancelled.'**
+  String get editorTheStarCraftObjectRenderingOperationWasCancelled;
+
+  /// No description provided for @editorRetryAfterTheVisibleMapStateBecomesStable.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry after the visible map state becomes stable.'**
+  String get editorRetryAfterTheVisibleMapStateBecomesStable;
+
+  /// No description provided for @editorThisHelperVersionDoesNotSupportThatCatalogKind.
+  ///
+  /// In en, this message translates to:
+  /// **'This helper version does not support that catalog kind.'**
+  String get editorThisHelperVersionDoesNotSupportThatCatalogKind;
+
+  /// No description provided for @editorChooseTheTileDoodadUnitOrPureSpriteCatalog.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the Tile, Doodad, Unit, or pure Sprite catalog.'**
+  String get editorChooseTheTileDoodadUnitOrPureSpriteCatalog;
+
+  /// No description provided for @editorACatalogOperationWithThisIDIsAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'A catalog operation with this ID is already active.'**
+  String get editorACatalogOperationWithThisIDIsAlreadyActive;
+
+  /// No description provided for @editorWaitForTheActiveCatalogOperationToFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the active catalog operation to finish.'**
+  String get editorWaitForTheActiveCatalogOperationToFinish;
+
+  /// No description provided for @editorTheStarCraftCatalogHelperTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog helper timed out.'**
+  String get editorTheStarCraftCatalogHelperTimedOut;
+
+  /// No description provided for @editorTheStarCraftCatalogHelperProducedTooMuchOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog helper produced too much output.'**
+  String get editorTheStarCraftCatalogHelperProducedTooMuchOutput;
+
+  /// No description provided for @editorTheStarCraftCatalogHelperCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog helper could not be started.'**
+  String get editorTheStarCraftCatalogHelperCouldNotBeStarted;
+
+  /// No description provided for @editorTheStarCraftCatalogCouldNotBeListedSafely.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog could not be listed safely.'**
+  String get editorTheStarCraftCatalogCouldNotBeListedSafely;
+
+  /// No description provided for @editorTheLocalDoodadRecipeIsInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The local Doodad recipe is invalid.'**
+  String get editorTheLocalDoodadRecipeIsInvalid;
+
+  /// No description provided for @editorTheLocalObjectPreviewIsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The local object preview is unavailable.'**
+  String get editorTheLocalObjectPreviewIsUnavailable;
+
+  /// No description provided for @editorVerifiedUnitCapabilityDataIsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified unit capability data is unavailable.'**
+  String get editorVerifiedUnitCapabilityDataIsUnavailable;
+
+  /// No description provided for @editorThisUnitNeedsAnAddonOrNydusRelation.
+  ///
+  /// In en, this message translates to:
+  /// **'This unit needs an addon or Nydus relation.'**
+  String get editorThisUnitNeedsAnAddonOrNydusRelation;
+
+  /// No description provided for @editorTheStarCraftCatalogHelperReturnedAnInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog helper returned an invalid response.'**
+  String get editorTheStarCraftCatalogHelperReturnedAnInvalidResponse;
+
+  /// No description provided for @editorRepairTheApplicationOrReportTheCatalogHelperError.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the application or report the catalog helper error.'**
+  String get editorRepairTheApplicationOrReportTheCatalogHelperError;
+
+  /// No description provided for @editorTheStarCraftCatalogOperationWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft catalog operation was cancelled.'**
+  String get editorTheStarCraftCatalogOperationWasCancelled;
+
+  /// No description provided for @editorRetryTheCatalogOperationWhenReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the catalog operation when ready.'**
+  String get editorRetryTheCatalogOperationWhenReady;
+
+  /// No description provided for @editorTheStarCraftTileRenderingHelperTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile rendering helper timed out.'**
+  String get editorTheStarCraftTileRenderingHelperTimedOut;
+
+  /// No description provided for @editorTheStarCraftTileHelperProducedTooMuchOutput.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile helper produced too much output.'**
+  String get editorTheStarCraftTileHelperProducedTooMuchOutput;
+
+  /// No description provided for @editorTheStarCraftTileHelperCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile helper could not be started.'**
+  String get editorTheStarCraftTileHelperCouldNotBeStarted;
+
+  /// No description provided for @editorTheStarCraftTileAtlasCouldNotBeReadSafely.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile atlas could not be read safely.'**
+  String get editorTheStarCraftTileAtlasCouldNotBeReadSafely;
+
+  /// No description provided for @editorTheStarCraftTileHelperReturnedAnInvalidResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'The StarCraft tile helper returned an invalid response.'**
+  String get editorTheStarCraftTileHelperReturnedAnInvalidResponse;
+
+  /// No description provided for @editorOpenTheReportedEpScriptModuleAndFixThisLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the reported epScript module and fix this line.'**
+  String get editorOpenTheReportedEpScriptModuleAndFixThisLine;
+
+  /// No description provided for @editorEuddraftInspectionIsSupportedOnlyOnWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft inspection is supported only on Windows.'**
+  String get editorEuddraftInspectionIsSupportedOnlyOnWindows;
+
+  /// No description provided for @editorRunTheEditorOnWindows10OrWindows11.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the editor on Windows 10 or Windows 11.'**
+  String get editorRunTheEditorOnWindows10OrWindows11;
+
+  /// No description provided for @editorAnEuddraftInstallationPathHasNotBeenConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'An euddraft installation path has not been configured.'**
+  String get editorAnEuddraftInstallationPathHasNotBeenConfigured;
+
+  /// No description provided for @editorSelectTheExtractedEuddraftDirectoryOrEuddraftExe.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the extracted euddraft directory or euddraft.exe.'**
+  String get editorSelectTheExtractedEuddraftDirectoryOrEuddraftExe;
+
+  /// No description provided for @editorTheEuddraftInstallationCouldNotBeInspected.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft installation could not be inspected.'**
+  String get editorTheEuddraftInstallationCouldNotBeInspected;
+
+  /// No description provided for @editorCheckPathPermissionsAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check path permissions and retry.'**
+  String get editorCheckPathPermissionsAndRetry;
+
+  /// No description provided for @editorTheEuddraftPathMustBeAnAbsoluteWindowsPath.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft path must be an absolute Windows path.'**
+  String get editorTheEuddraftPathMustBeAnAbsoluteWindowsPath;
+
+  /// No description provided for @editorSelectThePathUsingTheEditorSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the path using the editor settings.'**
+  String get editorSelectThePathUsingTheEditorSettings;
+
+  /// No description provided for @editorTheConfiguredFileIsNotEuddraftExe.
+  ///
+  /// In en, this message translates to:
+  /// **'The configured file is not euddraft.exe.'**
+  String get editorTheConfiguredFileIsNotEuddraftExe;
+
+  /// No description provided for @editorSelectTheOfficialEuddraftExeOrItsInstallationFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the official euddraft.exe or its installation folder.'**
+  String get editorSelectTheOfficialEuddraftExeOrItsInstallationFolder;
+
+  /// No description provided for @editorTheConfiguredEuddraftPathDoesNotExist.
+  ///
+  /// In en, this message translates to:
+  /// **'The configured euddraft path does not exist.'**
+  String get editorTheConfiguredEuddraftPathDoesNotExist;
+
+  /// No description provided for @editorExtractTheOfficialEuddraftReleaseAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Extract the official euddraft release and retry.'**
+  String get editorExtractTheOfficialEuddraftReleaseAndRetry;
+
+  /// No description provided for @editorTheConfiguredEuddraftPathIsNotARegularFile.
+  ///
+  /// In en, this message translates to:
+  /// **'The configured euddraft path is not a regular file or folder.'**
+  String get editorTheConfiguredEuddraftPathIsNotARegularFile;
+
+  /// No description provided for @editorSelectALocalExtractedEuddraftInstallation.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a local extracted euddraft installation.'**
+  String get editorSelectALocalExtractedEuddraftInstallation;
+
+  /// No description provided for @editorTheInstallationDoesNotContainAUsableEuddraftExe.
+  ///
+  /// In en, this message translates to:
+  /// **'The installation does not contain a usable euddraft.exe.'**
+  String get editorTheInstallationDoesNotContainAUsableEuddraftExe;
+
+  /// No description provided for @editorReExtractTheOfficialEuddraftRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-extract the official euddraft release.'**
+  String get editorReExtractTheOfficialEuddraftRelease;
+
+  /// No description provided for @editorTheEuddraftVERSIONFileIsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft VERSION file is missing.'**
+  String get editorTheEuddraftVERSIONFileIsMissing;
+
+  /// No description provided for @editorUseACompleteOfficialEuddraftReleaseArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a complete official euddraft release archive.'**
+  String get editorUseACompleteOfficialEuddraftReleaseArchive;
+
+  /// No description provided for @editorTheEuddraftVERSIONFileHasAnInvalidSize.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft VERSION file has an invalid size.'**
+  String get editorTheEuddraftVERSIONFileHasAnInvalidSize;
+
+  /// No description provided for @editorTheEuddraftVERSIONValueIsNotRecognized.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft VERSION value is not recognized.'**
+  String get editorTheEuddraftVERSIONValueIsNotRecognized;
+
+  /// No description provided for @editorUseAnOfficialFourComponentEuddraftRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an official four-component euddraft release.'**
+  String get editorUseAnOfficialFourComponentEuddraftRelease;
+
+  /// No description provided for @editorEuddraftIsNotSupportedByThisEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft {value0} is not supported by this editor.'**
+  String editorEuddraftIsNotSupportedByThisEditor(String value0);
+
+  /// No description provided for @editorInstallASupportedRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Install a supported release: {value0}.'**
+  String editorInstallASupportedRelease(String value0);
+
+  /// No description provided for @editorTheEuddraftInstallationIsIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft installation is incomplete.'**
+  String get editorTheEuddraftInstallationIsIncomplete;
+
+  /// No description provided for @editorReExtractTheCompleteOfficialEuddraftRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-extract the complete official euddraft release.'**
+  String get editorReExtractTheCompleteOfficialEuddraftRelease;
+
+  /// No description provided for @editorTheAppHasNoTrustedInventoryForThisBundled.
+  ///
+  /// In en, this message translates to:
+  /// **'The app has no trusted inventory for this bundled tool.'**
+  String get editorTheAppHasNoTrustedInventoryForThisBundled;
+
+  /// No description provided for @editorUseAVerifiedAppPackageOrExplicitlySelectAn.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a verified app package or explicitly select an external installation.'**
+  String get editorUseAVerifiedAppPackageOrExplicitlySelectAn;
+
+  /// No description provided for @editorBundledToolIntegrityVerificationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Bundled tool integrity verification failed.'**
+  String get editorBundledToolIntegrityVerificationFailed;
+
+  /// No description provided for @editorRepairTheBundledInstallationOrExplicitlySelectAnExternal.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the bundled installation or explicitly select an external tool.'**
+  String get editorRepairTheBundledInstallationOrExplicitlySelectAnExternal;
+
+  /// No description provided for @editorAnEUDBuildWithTheSameIDIsAlready.
+  ///
+  /// In en, this message translates to:
+  /// **'An EUD build with the same ID is already active.'**
+  String get editorAnEUDBuildWithTheSameIDIsAlready;
+
+  /// No description provided for @editorWaitForTheActiveBuildOrCancelItFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for the active build or cancel it first.'**
+  String get editorWaitForTheActiveBuildOrCancelItFirst;
+
+  /// No description provided for @editorEuddraftCouldNotBeStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft could not be started.'**
+  String get editorEuddraftCouldNotBeStarted;
+
+  /// No description provided for @editorReinspectTheEuddraftInstallationAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Reinspect the euddraft installation and retry.'**
+  String get editorReinspectTheEuddraftInstallationAndRetry;
+
+  /// No description provided for @editorTheEuddraftBuildTimedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft build timed out.'**
+  String get editorTheEuddraftBuildTimedOut;
+
+  /// No description provided for @editorInspectTheBuildLogThenRetryOrCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the build log, then retry or cancel.'**
+  String get editorInspectTheBuildLogThenRetryOrCancel;
+
+  /// No description provided for @editorEuddraftProducedMoreOutputThanTheSafetyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft produced more output than the safety limit.'**
+  String get editorEuddraftProducedMoreOutputThanTheSafetyLimit;
+
+  /// No description provided for @editorInspectTheSourceForRunawayLoggingBeforeRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the source for runaway logging before retrying.'**
+  String get editorInspectTheSourceForRunawayLoggingBeforeRetrying;
+
+  /// No description provided for @editorEuddraftExitedWithAFailureCode.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft exited with a failure code.'**
+  String get editorEuddraftExitedWithAFailureCode;
+
+  /// No description provided for @editorReviewStdoutAndStderrForTheCompilerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Review stdout and stderr for the compiler error.'**
+  String get editorReviewStdoutAndStderrForTheCompilerError;
+
+  /// No description provided for @editorTheEUDBuildCouldNotAccessARequiredFile.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD build could not access a required file.'**
+  String get editorTheEUDBuildCouldNotAccessARequiredFile;
+
+  /// No description provided for @editorCheckFilePermissionsAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Check file permissions and retry.'**
+  String get editorCheckFilePermissionsAndRetry;
+
+  /// No description provided for @editorTheEUDBuildFailedUnexpectedly.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD build failed unexpectedly.'**
+  String get editorTheEUDBuildFailedUnexpectedly;
+
+  /// No description provided for @editorRetryTheBuildOrReportTheFailure.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry the build or report the failure.'**
+  String get editorRetryTheBuildOrReportTheFailure;
+
+  /// No description provided for @editorEuddraftBuildsAreSupportedOnlyOnWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'euddraft builds are supported only on Windows.'**
+  String get editorEuddraftBuildsAreSupportedOnlyOnWindows;
+
+  /// No description provided for @editorTheEuddraftExecutablePathMustBeAbsolute.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft executable path must be absolute.'**
+  String get editorTheEuddraftExecutablePathMustBeAbsolute;
+
+  /// No description provided for @editorInspectAndSelectTheEuddraftInstallationAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect and select the euddraft installation again.'**
+  String get editorInspectAndSelectTheEuddraftInstallationAgain;
+
+  /// No description provided for @editorTheInspectedEuddraftExecutableIsNoLongerAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The inspected euddraft executable is no longer available.'**
+  String get editorTheInspectedEuddraftExecutableIsNoLongerAvailable;
+
+  /// No description provided for @editorInspectTheEuddraftInstallationAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect the euddraft installation again.'**
+  String get editorInspectTheEuddraftInstallationAgain;
+
+  /// No description provided for @editorTheEuddraftSettingsPathMustBeAnAbsoluteEds.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft settings path must be an absolute .eds path.'**
+  String get editorTheEuddraftSettingsPathMustBeAnAbsoluteEds;
+
+  /// No description provided for @editorChooseAGeneratedOneShotEdsSettingsFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a generated one-shot .eds settings file.'**
+  String get editorChooseAGeneratedOneShotEdsSettingsFile;
+
+  /// No description provided for @editorTheEuddraftSettingsFileIsMissingOrEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The euddraft settings file is missing or empty.'**
+  String get editorTheEuddraftSettingsFileIsMissingOrEmpty;
+
+  /// No description provided for @editorGenerateTheBuildSettingsAgainAndRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate the build settings again and retry.'**
+  String get editorGenerateTheBuildSettingsAgainAndRetry;
+
+  /// No description provided for @editorTheEUDBuildWasCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD build was cancelled.'**
+  String get editorTheEUDBuildWasCancelled;
+
+  /// No description provided for @editorStartTheBuildAgainWhenReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Start the build again when ready.'**
+  String get editorStartTheBuildAgainWhenReady;
+
+  /// No description provided for @editorInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get editorInactive;
+
+  /// No description provided for @editorRescuePassive.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescue passive'**
+  String get editorRescuePassive;
+
+  /// No description provided for @editorComputer.
+  ///
+  /// In en, this message translates to:
+  /// **'Computer'**
+  String get editorComputer;
+
+  /// No description provided for @editorHuman.
+  ///
+  /// In en, this message translates to:
+  /// **'Human'**
+  String get editorHuman;
+
+  /// No description provided for @editorNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get editorNeutral;
+
+  /// No description provided for @editorZerg.
+  ///
+  /// In en, this message translates to:
+  /// **'Zerg'**
+  String get editorZerg;
+
+  /// No description provided for @editorTerran.
+  ///
+  /// In en, this message translates to:
+  /// **'Terran'**
+  String get editorTerran;
+
+  /// No description provided for @editorProtoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Protoss'**
+  String get editorProtoss;
+
+  /// No description provided for @editorIndependent.
+  ///
+  /// In en, this message translates to:
+  /// **'Independent'**
+  String get editorIndependent;
+
+  /// No description provided for @editorUserSelectable.
+  ///
+  /// In en, this message translates to:
+  /// **'User selectable'**
+  String get editorUserSelectable;
+
+  /// No description provided for @editorRandom.
+  ///
+  /// In en, this message translates to:
+  /// **'Random'**
+  String get editorRandom;
+
+  /// No description provided for @editorRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get editorRed;
+
+  /// No description provided for @editorBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get editorBlue;
+
+  /// No description provided for @editorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get editorTeal;
+
+  /// No description provided for @editorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get editorPurple;
+
+  /// No description provided for @editorOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get editorOrange;
+
+  /// No description provided for @editorBrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get editorBrown;
+
+  /// No description provided for @editorWhite.
+  ///
+  /// In en, this message translates to:
+  /// **'White'**
+  String get editorWhite;
+
+  /// No description provided for @editorYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Yellow'**
+  String get editorYellow;
+
+  /// No description provided for @editorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get editorGreen;
+
+  /// No description provided for @editorPaleYellow.
+  ///
+  /// In en, this message translates to:
+  /// **'Pale yellow'**
+  String get editorPaleYellow;
+
+  /// No description provided for @editorTan.
+  ///
+  /// In en, this message translates to:
+  /// **'Tan'**
+  String get editorTan;
+
+  /// No description provided for @editorAzure.
+  ///
+  /// In en, this message translates to:
+  /// **'Azure'**
+  String get editorAzure;
+
+  /// No description provided for @editorExpectedOneSectionFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}: expected one section; found {value1}.'**
+  String editorExpectedOneSectionFound(String value0, String value1);
+
+  /// No description provided for @editorExpectedBytesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0}: expected {value1} bytes; found {value2}.'**
+  String editorExpectedBytesFound(String value0, String value1, String value2);
+
+  /// No description provided for @editorASingleKnownVERSectionIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A single known VER section is required.'**
+  String get editorASingleKnownVERSectionIsRequired;
+
+  /// No description provided for @editorCRGBColorSettingsArePresentCOLREditingIsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'CRGB color settings are present. COLR editing is unavailable until their interaction is supported.'**
+  String get editorCRGBColorSettingsArePresentCOLREditingIsUnavailable;
+
+  /// No description provided for @editorAPlayerFieldMayBeUpdatedOnlyOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'A player field may be updated only once.'**
+  String get editorAPlayerFieldMayBeUpdatedOnlyOnce;
+
+  /// No description provided for @editorUnsupportedID.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported {value0} ID: {value1}.'**
+  String editorUnsupportedID(String value0, String value1);
+
+  /// No description provided for @editorStartLocationsCannotBeCheckedAUNITSectionIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Start locations cannot be checked: a UNIT section is malformed.'**
+  String get editorStartLocationsCannotBeCheckedAUNITSectionIs;
+
+  /// No description provided for @editorStartLocationHasNonPlayableOwnerID.
+  ///
+  /// In en, this message translates to:
+  /// **'Start location has non-playable owner ID {value0}.'**
+  String editorStartLocationHasNonPlayableOwnerID(String value0);
+
+  /// No description provided for @editorPlayerHasStartLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {value0} has {value1} start locations.'**
+  String editorPlayerHasStartLocations(String value0, String value1);
+
+  /// No description provided for @editorPlayerHasNoStartLocationCheckTheIntendedUMS.
+  ///
+  /// In en, this message translates to:
+  /// **'Player {value0} has no start location; check the intended UMS setup.'**
+  String editorPlayerHasNoStartLocationCheckTheIntendedUMS(String value0);
+
+  /// No description provided for @editorInactivePlayerOwnsAStartLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive player {value0} owns a start location.'**
+  String editorInactivePlayerOwnsAStartLocation(String value0);
+
+  /// No description provided for @editorForceNamesRequireOneSafeSTROrSTRxTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Force names require one safe STR or STRx table.'**
+  String get editorForceNamesRequireOneSafeSTROrSTRxTable;
+
+  /// No description provided for @editorForceSettingsRequireOneKnownVERAndOne20.
+  ///
+  /// In en, this message translates to:
+  /// **'Force settings require one known VER and one 20-byte FORC section.'**
+  String get editorForceSettingsRequireOneKnownVERAndOne20;
+
+  /// No description provided for @editorInvalidForceNameStringID.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid force name string ID {value0}.'**
+  String editorInvalidForceNameStringID(String value0);
+
+  /// No description provided for @editorForceNamesCannotContainNUL.
+  ///
+  /// In en, this message translates to:
+  /// **'Force names cannot contain NUL.'**
+  String get editorForceNamesCannotContainNUL;
+
+  /// No description provided for @editorFORCStringIDsCannotExceed65535.
+  ///
+  /// In en, this message translates to:
+  /// **'FORC string IDs cannot exceed 65535.'**
+  String get editorFORCStringIDsCannotExceed65535;
+
+  /// No description provided for @editorUseDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Use defaults'**
+  String get editorUseDefaults;
+
+  /// No description provided for @editorHitPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit points'**
+  String get editorHitPoints;
+
+  /// No description provided for @editorShields.
+  ///
+  /// In en, this message translates to:
+  /// **'Shields'**
+  String get editorShields;
+
+  /// No description provided for @editorArmor.
+  ///
+  /// In en, this message translates to:
+  /// **'Armor'**
+  String get editorArmor;
+
+  /// No description provided for @editorBuildTime160S.
+  ///
+  /// In en, this message translates to:
+  /// **'Build time (1/60 s)'**
+  String get editorBuildTime160S;
+
+  /// No description provided for @editorMineralCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral cost'**
+  String get editorMineralCost;
+
+  /// No description provided for @editorGasCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas cost'**
+  String get editorGasCost;
+
+  /// No description provided for @editorHitPointsRequireANonnegativeDecimalInStepsOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit points require a nonnegative decimal in steps of 1/256.'**
+  String get editorHitPointsRequireANonnegativeDecimalInStepsOf;
+
+  /// No description provided for @editorHitPointsMustBeAMultipleOf1256.
+  ///
+  /// In en, this message translates to:
+  /// **'Hit points must be a multiple of 1/256.'**
+  String get editorHitPointsMustBeAMultipleOf1256;
+
+  /// No description provided for @editorRequiresANonnegativeInteger.
+  ///
+  /// In en, this message translates to:
+  /// **'{value0} requires a nonnegative integer.'**
+  String editorRequiresANonnegativeInteger(String value0);
+
+  /// No description provided for @editorInvalidUnitNameStringID.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid unit name string ID {value0}.'**
+  String editorInvalidUnitNameStringID(String value0);
+
+  /// No description provided for @editorUnitSettingsRequireOneKnownVERSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit settings require one known VER section.'**
+  String get editorUnitSettingsRequireOneKnownVERSection;
+
+  /// No description provided for @editorUnitNamesRequireOneSafeSTROrSTRxTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit names require one safe STR or STRx table.'**
+  String get editorUnitNamesRequireOneSafeSTROrSTRxTable;
+
+  /// No description provided for @editorUnitNamesCannotContainNUL.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit names cannot contain NUL.'**
+  String get editorUnitNamesCannotContainNUL;
+
+  /// No description provided for @editorUnitNameIDsCannotExceed65535.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit name IDs cannot exceed 65535.'**
+  String get editorUnitNameIDsCannotExceed65535;
+
+  /// No description provided for @editorGlobalAvailabilityHasNoPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Global availability has no player.'**
+  String get editorGlobalAvailabilityHasNoPlayer;
+
+  /// No description provided for @editorAPlayerIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'A player is required.'**
+  String get editorAPlayerIsRequired;
+
+  /// No description provided for @editorUnitAvailabilityRequiresOneKnownVERSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit availability requires one known VER section.'**
+  String get editorUnitAvailabilityRequiresOneKnownVERSection;
+
+  /// No description provided for @editorPUNIExpectedOneSectionFound.
+  ///
+  /// In en, this message translates to:
+  /// **'PUNI: expected one section; found {value0}.'**
+  String editorPUNIExpectedOneSectionFound(String value0);
+
+  /// No description provided for @editorPUNIExpected5700BytesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'PUNI: expected 5700 bytes; found {value0}.'**
+  String editorPUNIExpected5700BytesFound(String value0);
+
+  /// No description provided for @editorResearchTime160S.
+  ///
+  /// In en, this message translates to:
+  /// **'Research time (1/60 s)'**
+  String get editorResearchTime160S;
+
+  /// No description provided for @editorEnergyCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy cost'**
+  String get editorEnergyCost;
+
+  /// No description provided for @editorCostsHaveNoPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Costs have no player.'**
+  String get editorCostsHaveNoPlayer;
+
+  /// No description provided for @editorInheritanceRequiresAPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Inheritance requires a player.'**
+  String get editorInheritanceRequiresAPlayer;
+
+  /// No description provided for @editorTechSettingsRequireOneKnownVERSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Tech settings require one known VER section.'**
+  String get editorTechSettingsRequireOneKnownVERSection;
+
+  /// No description provided for @editorBaseMineralCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Base mineral cost'**
+  String get editorBaseMineralCost;
+
+  /// No description provided for @editorMineralCostPerLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Mineral cost per level'**
+  String get editorMineralCostPerLevel;
+
+  /// No description provided for @editorBaseGasCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Base gas cost'**
+  String get editorBaseGasCost;
+
+  /// No description provided for @editorGasCostPerLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gas cost per level'**
+  String get editorGasCostPerLevel;
+
+  /// No description provided for @editorBaseResearchTime160S.
+  ///
+  /// In en, this message translates to:
+  /// **'Base research time (1/60 s)'**
+  String get editorBaseResearchTime160S;
+
+  /// No description provided for @editorResearchTimePerLevel160S.
+  ///
+  /// In en, this message translates to:
+  /// **'Research time per level (1/60 s)'**
+  String get editorResearchTimePerLevel160S;
+
+  /// No description provided for @editorMaximumLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum level'**
+  String get editorMaximumLevel;
+
+  /// No description provided for @editorStartingLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting level'**
+  String get editorStartingLevel;
+
+  /// No description provided for @editorUpgradeSettingsRequireOneKnownVERSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade settings require one known VER section.'**
+  String get editorUpgradeSettingsRequireOneKnownVERSection;
+
+  /// No description provided for @editorUpgradeStartingLevelMustNotExceedMaximumLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade #{value0} {value1}: starting level must not exceed maximum level.'**
+  String editorUpgradeStartingLevelMustNotExceedMaximumLevel(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorEnterIDsSuchAs025.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter IDs such as 0, 2-5.'**
+  String get editorEnterIDsSuchAs025;
+
+  /// No description provided for @editorUseCommaSeparatedIDsOrAscendingRanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Use comma-separated IDs or ascending ranges.'**
+  String get editorUseCommaSeparatedIDsOrAscendingRanges;
+
+  /// No description provided for @editorIDsMustBeBetweenAndInAscendingRanges.
+  ///
+  /// In en, this message translates to:
+  /// **'IDs must be between {value0} and {value1}, in ascending ranges.'**
+  String editorIDsMustBeBetweenAndInAscendingRanges(
+    String value0,
+    String value1,
+  );
+
+  /// No description provided for @editorOneStructurallySafeSTRSTRxTableIsRequiredFor.
+  ///
+  /// In en, this message translates to:
+  /// **'One structurally safe STR/STRx table is required for editing.'**
+  String get editorOneStructurallySafeSTRSTRxTableIsRequiredFor;
+
+  /// No description provided for @editorTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truncated {value0}'**
+  String editorTruncated(String value0);
+
+  /// No description provided for @editorMalformedSPRP.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed SPRP'**
+  String get editorMalformedSPRP;
+
+  /// No description provided for @editorMalformedFORC.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed FORC'**
+  String get editorMalformedFORC;
+
+  /// No description provided for @editorForcef1368d9.
+  ///
+  /// In en, this message translates to:
+  /// **'force {value0}'**
+  String editorForcef1368d9(String value0);
+
+  /// No description provided for @editorMalformedMRGN.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed MRGN'**
+  String get editorMalformedMRGN;
+
+  /// No description provided for @editorLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'location {value0}'**
+  String editorLocation(String value0);
+
+  /// No description provided for @editorMalformedSWNM.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed SWNM'**
+  String get editorMalformedSWNM;
+
+  /// No description provided for @editorSwitchffe3c882.
+  ///
+  /// In en, this message translates to:
+  /// **'switch {value0}'**
+  String editorSwitchffe3c882(String value0);
+
+  /// No description provided for @editorMalformedWAV.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed WAV'**
+  String get editorMalformedWAV;
+
+  /// No description provided for @editorSoundSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'sound slot {value0}'**
+  String editorSoundSlot(String value0);
+
+  /// No description provided for @editorMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'Malformed {value0}'**
+  String editorMalformed(String value0);
+
+  /// No description provided for @editorUnitc6ee345c.
+  ///
+  /// In en, this message translates to:
+  /// **'unit {value0}'**
+  String editorUnitc6ee345c(String value0);
+
+  /// No description provided for @editorRawConditionInTrigger.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw condition in trigger {value0}'**
+  String editorRawConditionInTrigger(String value0);
+
+  /// No description provided for @editorRawActionInTrigger.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw action in trigger {value0}'**
+  String editorRawActionInTrigger(String value0);
+
+  /// No description provided for @editorTriggerAction.
+  ///
+  /// In en, this message translates to:
+  /// **'trigger {value0} action {value1} {value2}'**
+  String editorTriggerAction(String value0, String value1, String value2);
+
+  /// No description provided for @editorRawBriefingAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw briefing action'**
+  String get editorRawBriefingAction;
+
+  /// No description provided for @editorBriefingActionText.
+  ///
+  /// In en, this message translates to:
+  /// **'briefing {value0} action {value1} text'**
+  String editorBriefingActionText(String value0, String value1);
+
+  /// No description provided for @editorBriefingActionSound.
+  ///
+  /// In en, this message translates to:
+  /// **'briefing {value0} action {value1} sound'**
+  String editorBriefingActionSound(String value0, String value1);
+
+  /// No description provided for @editorUninterpretedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninterpreted {value0} section'**
+  String editorUninterpretedSection(String value0);
+
+  /// No description provided for @editorDuplicateCHKSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate CHK sections'**
+  String get editorDuplicateCHKSections;
+
+  /// No description provided for @editorInvalidStringID.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid string ID.'**
+  String get editorInvalidStringID;
+
+  /// No description provided for @editorSoundPathReferencesAreManagedThroughSoundImportDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound path references are managed through sound import/delete. Separate a text reference to edit its text.'**
+  String get editorSoundPathReferencesAreManagedThroughSoundImportDelete;
+
+  /// No description provided for @editorReferencedOrIncompletelyTracedStringsCannotBeCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Referenced or incompletely traced strings cannot be cleared.'**
+  String get editorReferencedOrIncompletelyTracedStringsCannotBeCleared;
+
+  /// No description provided for @editorNULIsNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'NUL is not allowed.'**
+  String get editorNULIsNotAllowed;
+
+  /// No description provided for @editorTheSelectedReferenceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected reference changed.'**
+  String get editorTheSelectedReferenceChanged;
+
+  /// No description provided for @editorThisReferenceRequiresA16BitStringID.
+  ///
+  /// In en, this message translates to:
+  /// **'This reference requires a 16-bit string ID.'**
+  String get editorThisReferenceRequiresA16BitStringID;
+
+  /// No description provided for @editorOneValidWAVTableIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'One valid WAV table is required.'**
+  String get editorOneValidWAVTableIsRequired;
+
+  /// No description provided for @editorAll512SoundSlotsAreOccupied.
+  ///
+  /// In en, this message translates to:
+  /// **'All 512 sound slots are occupied.'**
+  String get editorAll512SoundSlotsAreOccupied;
+
+  /// No description provided for @editorSoundIsReferencedOrReferenceCoverageIsIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound is referenced, or reference coverage is incomplete.'**
+  String get editorSoundIsReferencedOrReferenceCoverageIsIncomplete;
+
+  /// No description provided for @editorAmbiguousOrMalformedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambiguous or malformed {value0} section.'**
+  String editorAmbiguousOrMalformedSection(String value0);
+
+  /// No description provided for @editorTextCannotContainNUL.
+  ///
+  /// In en, this message translates to:
+  /// **'Text cannot contain NUL.'**
+  String get editorTextCannotContainNUL;
+
+  /// No description provided for @editorOneSafeStringTableIsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'One safe string table is required.'**
+  String get editorOneSafeStringTableIsRequired;
+
+  /// No description provided for @editorSwitch8e2b60a2.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch {value0}'**
+  String editorSwitch8e2b60a2(String value0);
+
+  /// No description provided for @editorHitpoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Hitpoints %'**
+  String get editorHitpoints;
+
+  /// No description provided for @editorShields83e6a3a.
+  ///
+  /// In en, this message translates to:
+  /// **'Shields %'**
+  String get editorShields83e6a3a;
+
+  /// No description provided for @editorEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy %'**
+  String get editorEnergy;
+
+  /// No description provided for @editorResourceAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource amount'**
+  String get editorResourceAmount;
+
+  /// No description provided for @editorHangarCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Hangar count'**
+  String get editorHangarCount;
+
+  /// No description provided for @editorCloaked.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloaked'**
+  String get editorCloaked;
+
+  /// No description provided for @editorBurrowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Burrowed'**
+  String get editorBurrowed;
+
+  /// No description provided for @editorLifted.
+  ///
+  /// In en, this message translates to:
+  /// **'Lifted'**
+  String get editorLifted;
+
+  /// No description provided for @editorHallucinated.
+  ///
+  /// In en, this message translates to:
+  /// **'Hallucinated'**
+  String get editorHallucinated;
+
+  /// No description provided for @editorInvincible.
+  ///
+  /// In en, this message translates to:
+  /// **'Invincible'**
+  String get editorInvincible;
+
+  /// No description provided for @editorInvalid8650455.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid {value0}'**
+  String editorInvalid8650455(String value0);
+
+  /// No description provided for @editorFiveSpecialPropertyStatesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Five special property states required.'**
+  String get editorFiveSpecialPropertyStatesRequired;
+
+  /// No description provided for @editorOpenAMapFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a map first.'**
+  String get editorOpenAMapFirst;
+
+  /// No description provided for @editorMapChangedDuringImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed during import.'**
+  String get editorMapChangedDuringImport;
+
+  /// No description provided for @editorThisPathAlreadyHasASoundReferenceChooseA.
+  ///
+  /// In en, this message translates to:
+  /// **'This path already has a sound reference. Choose a different file name.'**
+  String get editorThisPathAlreadyHasASoundReferenceChooseA;
+
+  /// No description provided for @editorASoundAlreadyUsesThisPathChooseADifferent.
+  ///
+  /// In en, this message translates to:
+  /// **'A sound already uses this path. Choose a different file name.'**
+  String get editorASoundAlreadyUsesThisPathChooseADifferent;
+
+  /// No description provided for @editorIncompleteArchiveListingNameCollisionsCannotBeRuledOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete archive listing: name collisions cannot be ruled out.'**
+  String get editorIncompleteArchiveListingNameCollisionsCannotBeRuledOut;
+
+  /// No description provided for @editorAmbiguousArchiveEntryDeletionIsBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Ambiguous archive entry: deletion is blocked.'**
+  String get editorAmbiguousArchiveEntryDeletionIsBlocked;
+
+  /// No description provided for @editorSoundIsDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound is deleted.'**
+  String get editorSoundIsDeleted;
+
+  /// No description provided for @editorTheSoundIsNotStoredInThisNewMap.
+  ///
+  /// In en, this message translates to:
+  /// **'The sound is not stored in this new map.'**
+  String get editorTheSoundIsNotStoredInThisNewMap;
+
+  /// No description provided for @editorSoundGatewayUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound gateway unavailable.'**
+  String get editorSoundGatewayUnavailable;
+
+  /// No description provided for @editorSourceMapChangedOnDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Source map changed on disk.'**
+  String get editorSourceMapChangedOnDisk;
+
+  /// No description provided for @editorMapChangedDuringSoundRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed during sound read.'**
+  String get editorMapChangedDuringSoundRead;
+
+  /// No description provided for @editorTheSoundIsNotStoredInThisMap.
+  ///
+  /// In en, this message translates to:
+  /// **'The sound is not stored in this map.'**
+  String get editorTheSoundIsNotStoredInThisMap;
+
+  /// No description provided for @editorOpenAnEditableMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map.'**
+  String get editorOpenAnEditableMap;
+
+  /// No description provided for @editorMapChangedReopenTriggerResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed. Reopen trigger resources.'**
+  String get editorMapChangedReopenTriggerResources;
+
+  /// No description provided for @editorPendingSoundEditsExceed64EntriesOr64MiB.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending sound edits exceed 64 entries or 64 MiB. Save first.'**
+  String get editorPendingSoundEditsExceed64EntriesOr64MiB;
+
+  /// No description provided for @editorResourceEditsCannotRemoveSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource edits cannot remove sections.'**
+  String get editorResourceEditsCannotRemoveSections;
+
+  /// No description provided for @editorUnsupportedAppendedResource.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported appended resource.'**
+  String get editorUnsupportedAppendedResource;
+
+  /// No description provided for @editorUnsupportedResourceChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported resource change.'**
+  String get editorUnsupportedResourceChange;
+
+  /// No description provided for @editorEditTriggerResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit trigger resources'**
+  String get editorEditTriggerResources;
+
+  /// No description provided for @editorMapChangedReopenTheTriggerEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed. Reopen the trigger editor.'**
+  String get editorMapChangedReopenTheTriggerEditor;
+
+  /// No description provided for @editorTRIGAndMBRFRecordsCannotBeMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'TRIG and MBRF records cannot be mixed.'**
+  String get editorTRIGAndMBRFRecordsCannotBeMixed;
+
+  /// No description provided for @editorCreateBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Create briefing'**
+  String get editorCreateBriefing;
+
+  /// No description provided for @editorEditBriefing.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit briefing'**
+  String get editorEditBriefing;
+
+  /// No description provided for @editorEditTriggers.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit triggers'**
+  String get editorEditTriggers;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingTechs.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing techs.'**
+  String get editorOpenAnEditableMapBeforeChangingTechs;
+
+  /// No description provided for @editorTheMapChangedReopenTechSettingsBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Tech Settings before applying.'**
+  String get editorTheMapChangedReopenTechSettingsBeforeApplying;
+
+  /// No description provided for @editorEditTechSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tech settings'**
+  String get editorEditTechSettings;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingUpgrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing upgrades.'**
+  String get editorOpenAnEditableMapBeforeChangingUpgrades;
+
+  /// No description provided for @editorTheMapChangedReopenUpgradeSettingsBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Upgrade Settings before applying.'**
+  String get editorTheMapChangedReopenUpgradeSettingsBeforeApplying;
+
+  /// No description provided for @editorEditUpgradeSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit upgrade settings'**
+  String get editorEditUpgradeSettings;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing availability.'**
+  String get editorOpenAnEditableMapBeforeChangingAvailability;
+
+  /// No description provided for @editorTheMapChangedReopenUnitAvailabilityBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Unit Availability before applying.'**
+  String get editorTheMapChangedReopenUnitAvailabilityBeforeApplying;
+
+  /// No description provided for @editorEditUnitAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit unit availability'**
+  String get editorEditUnitAvailability;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingUnitSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing unit settings.'**
+  String get editorOpenAnEditableMapBeforeChangingUnitSettings;
+
+  /// No description provided for @editorTheMapChangedReopenUnitSettingsBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Unit Settings before applying.'**
+  String get editorTheMapChangedReopenUnitSettingsBeforeApplying;
+
+  /// No description provided for @editorEditUnitSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit unit settings'**
+  String get editorEditUnitSettings;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingForceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing force settings.'**
+  String get editorOpenAnEditableMapBeforeChangingForceSettings;
+
+  /// No description provided for @editorTheMapChangedReopenForceSettingsBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Force Settings before applying.'**
+  String get editorTheMapChangedReopenForceSettingsBeforeApplying;
+
+  /// No description provided for @editorEditForceSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit force settings'**
+  String get editorEditForceSettings;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingPlayerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing player settings.'**
+  String get editorOpenAnEditableMapBeforeChangingPlayerSettings;
+
+  /// No description provided for @editorTheMapChangedReopenPlayerSettingsBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Player Settings before applying.'**
+  String get editorTheMapChangedReopenPlayerSettingsBeforeApplying;
+
+  /// No description provided for @editorEditPlayerSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit player settings'**
+  String get editorEditPlayerSettings;
+
+  /// No description provided for @editorOpenAnEditableMapBeforeChangingMapInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Open an editable map before changing map information.'**
+  String get editorOpenAnEditableMapBeforeChangingMapInformation;
+
+  /// No description provided for @editorTheMapChangedReopenMapInformationBeforeApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen Map Information before applying.'**
+  String get editorTheMapChangedReopenMapInformationBeforeApplying;
+
+  /// No description provided for @editorEditMapInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit map information'**
+  String get editorEditMapInformation;
+
+  /// No description provided for @editorABuildOrPreparationIsAlreadyRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'A build or preparation is already running.'**
+  String get editorABuildOrPreparationIsAlreadyRunning;
+
+  /// No description provided for @editorConfirmThatYouTrustTheEpScriptSourceAndIts.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm that you trust the epScript source and its imports.'**
+  String get editorConfirmThatYouTrustTheEpScriptSourceAndIts;
+
+  /// No description provided for @editorEnableTheUnverifiedSettingsTestBuildToCompileProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable the unverified settings test build to compile project settings.'**
+  String get editorEnableTheUnverifiedSettingsTestBuildToCompileProject;
+
+  /// No description provided for @editorVerifyTheSavedMapAndEUDProjectBindingBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify the saved map and EUD project binding before building.'**
+  String get editorVerifyTheSavedMapAndEUDProjectBindingBefore;
+
+  /// No description provided for @editorTheBuildBaseMustBeTheMapBoundTo.
+  ///
+  /// In en, this message translates to:
+  /// **'The build base must be the map bound to this EUD project.'**
+  String get editorTheBuildBaseMustBeTheMapBoundTo;
+
+  /// No description provided for @editorFinishOrRetryEUDToolsSettingsFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish or retry EUD Tools settings first.'**
+  String get editorFinishOrRetryEUDToolsSettingsFirst;
+
+  /// No description provided for @editorChooseAnOutputSeparateFromTheBaseMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an output separate from the base map.'**
+  String get editorChooseAnOutputSeparateFromTheBaseMap;
+
+  /// No description provided for @editorOutputAlreadyExistsChooseANewScxPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Output already exists. Choose a new .scx path.'**
+  String get editorOutputAlreadyExistsChooseANewScxPath;
+
+  /// No description provided for @editorPreparationCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparation cancelled.'**
+  String get editorPreparationCancelled;
+
+  /// No description provided for @editorToolSelectionChangedPrepareAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool selection changed. Prepare again.'**
+  String get editorToolSelectionChangedPrepareAgain;
+
+  /// No description provided for @editorProjectOrMapChangedPrepareAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Project or map changed. Prepare again.'**
+  String get editorProjectOrMapChangedPrepareAgain;
+
+  /// No description provided for @editorBuildPreparationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Build preparation failed: {value0}'**
+  String editorBuildPreparationFailed(String value0);
+
+  /// No description provided for @editorTheToolDirectoryCouldNotBeSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'The tool directory could not be selected: {value0}'**
+  String editorTheToolDirectoryCouldNotBeSelected(String value0);
+
+  /// No description provided for @editorEnterAnAbsoluteEuddraftInstallationPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an absolute euddraft installation path.'**
+  String get editorEnterAnAbsoluteEuddraftInstallationPath;
+
+  /// No description provided for @editorToolSettingsCouldNotBeUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Tool settings could not be updated: {value0}'**
+  String editorToolSettingsCouldNotBeUpdated(String value0);
+
+  /// No description provided for @editorRangeErrorInvalidValueNotInInclusiveRange.
+  ///
+  /// In en, this message translates to:
+  /// **'RangeError ({value0}): Invalid value: Not in inclusive range {value1}..{value2}: {value3}'**
+  String editorRangeErrorInvalidValueNotInInclusiveRange(
+    String value0,
+    String value1,
+    String value2,
+    String value3,
+  );
+
+  /// No description provided for @editorRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get editorRecovery;
+
+  /// No description provided for @editorSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As'**
+  String get editorSaveAs;
+
+  /// No description provided for @editorOpenMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Map'**
+  String get editorOpenMap;
+
+  /// No description provided for @editorEUDBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD Build'**
+  String get editorEUDBuild;
+
+  /// No description provided for @editorTheMapCouldNotBeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'The map could not be saved.'**
+  String get editorTheMapCouldNotBeSaved;
+
+  /// No description provided for @editorRepairTheApplicationOrReportTheObjectRenderingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the application or report the object rendering error.'**
+  String get editorRepairTheApplicationOrReportTheObjectRenderingError;
+
+  /// No description provided for @editorRepairTheApplicationOrReportTheStarCraftTileHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Repair the application or report the StarCraft tile helper error.'**
+  String get editorRepairTheApplicationOrReportTheStarCraftTileHelper;
+
+  /// No description provided for @editorTheEUDOutputMustBeAbsentOrARegular.
+  ///
+  /// In en, this message translates to:
+  /// **'The EUD output must be absent or a regular file.'**
+  String get editorTheEUDOutputMustBeAbsentOrARegular;
+
+  /// No description provided for @editorTheCanonicalEUDEntrySourceIsOutsideTheSource.
+  ///
+  /// In en, this message translates to:
+  /// **'The canonical EUD entry source is outside the source root.'**
+  String get editorTheCanonicalEUDEntrySourceIsOutsideTheSource;
+
+  /// No description provided for @editorTheCanonicalEUDOutputDirectoryIsInsideTheSource.
+  ///
+  /// In en, this message translates to:
+  /// **'The canonical EUD output directory is inside the source root.'**
+  String get editorTheCanonicalEUDOutputDirectoryIsInsideTheSource;
 }
 
 class _AppLocalizationsDelegate

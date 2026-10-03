@@ -1,5 +1,8 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../application/eud/eud_build_preparation_controller.dart';
+import '../../domain/diagnostics/editor_diagnostic.dart';
 
 class EudBuildPreparationDialog extends StatefulWidget {
   const EudBuildPreparationDialog({
@@ -22,6 +25,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
   bool _trusted = false;
   bool _allowUnverified = false;
   String? _message;
+  List<EditorDiagnostic> _diagnostics = const [];
   @override
   void initState() {
     super.initState();
@@ -50,6 +54,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
     setState(() {
       _busy = true;
       _message = null;
+      _diagnostics = const [];
     });
     final error = await widget.controller.prepare(
       baseMap: _fields[0].text,
@@ -64,13 +69,14 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
     setState(() {
       _busy = false;
       _message = error;
+      _diagnostics = widget.controller.diagnostics;
     });
     if (error == null) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Prepare EUD Build'),
+    title: Text(context.l10n.editorPrepareEUDBuild),
     content: SizedBox(
       width: 640,
       child: SingleChildScrollView(
@@ -78,9 +84,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Build saved files on disk. Save map and source edits first. With project settings, leave source folder and entry blank for a settings-only build. Output must be a new .scx.',
-            ),
+            Text(context.l10n.editorBuildSavedFilesOnDiskSaveMapAndSource),
             for (var i = 0; i < _fields.length; i++)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -88,26 +92,28 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
                   controller: _fields[i],
                   enabled: !_busy,
                   decoration: InputDecoration(
-                    labelText: const [
-                      'Base map path',
-                      'Source folder path',
-                      'Entry .eps path',
-                      'New output .scx path',
-                      'Tool override for this build (optional)',
+                    labelText: [
+                      context.l10n.editorBaseMapPath,
+                      context.l10n.editorSourceFolderPath,
+                      context.l10n.editorEntryEpsPath,
+                      context.l10n.editorNewOutputScxPath,
+                      context.l10n.editorToolOverrideForThisBuildOptional,
                     ][i],
                   ),
                 ),
               ),
-            const Text(
-              'Blank tool override uses your EUD Tools selection. Prepare checks files; Build runs the compiler separately.',
+            Text(
+              context
+                  .l10n
+                  .editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare,
             ),
             CheckboxListTile(
               value: _trusted,
               onChanged: _busy
                   ? null
                   : (v) => setState(() => _trusted = v ?? false),
-              title: const Text(
-                'I trust this source and its imports to run code on this computer.',
+              title: Text(
+                context.l10n.editorITrustThisSourceAndItsImportsToRun,
               ),
             ),
             if (_busy) const LinearProgressIndicator(),
@@ -119,26 +125,41 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
                     ? null
                     : (value) =>
                           setState(() => _allowUnverified = value ?? false),
-                title: const Text(
-                  'Include project settings in an unverified test build',
+                title: Text(
+                  context
+                      .l10n
+                      .editorIncludeProjectSettingsInAnUnverifiedTestBuild,
                 ),
-                subtitle: const Text(
-                  'Type settings initialize once. Rules use their before/after trigger hook; instance rules can change a guarded unit. Game and multiplayer behavior still require testing.',
+                subtitle: Text(
+                  context
+                      .l10n
+                      .editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter,
                 ),
               ),
-            if (_message != null) SelectableText(_message!),
+            if (_diagnostics.isNotEmpty)
+              for (final diagnostic in _diagnostics) ...[
+                SelectableText(
+                  '${diagnostic.code}: ${context.diagnosticMessage(diagnostic)}',
+                ),
+                if (context.diagnosticRemediation(diagnostic) case final text?)
+                  SelectableText(text),
+                if (diagnostic.rawDetails case final raw?) SelectableText(raw),
+              ]
+            else if (_message != null)
+              SelectableText(context.localizeEditorText(_message!)),
           ],
         ),
       ),
     ),
     actions: [
       TextButton(
+        key: const Key('settings-cancel'),
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Cancel'),
+        child: Text(context.l10n.editorCancel),
       ),
       FilledButton(
         onPressed: _busy || !_trusted ? null : _prepare,
-        child: const Text('Prepare'),
+        child: Text(context.l10n.editorPrepare),
       ),
     ],
   );

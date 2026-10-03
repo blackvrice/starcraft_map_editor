@@ -7,6 +7,7 @@ import 'eud_project_workspace.dart';
 import '../../domain/eud/eud_generated_settings.dart';
 import '../../domain/eud/eud_conflict_analysis.dart';
 import '../../domain/eud/eud_rule_references.dart';
+import '../../domain/diagnostics/editor_diagnostic.dart';
 
 final class EudBuildPreparationController {
   EudBuildPreparationController({
@@ -23,6 +24,8 @@ final class EudBuildPreparationController {
   final EudProjectWorkspace? projects;
   bool get hasProjectSettings => projects?.hasUnbuiltOverrides ?? false;
   bool busy = false;
+  List<EditorDiagnostic> _diagnostics = const [];
+  List<EditorDiagnostic> get diagnostics => _diagnostics;
   int _revision = 0;
   int _sequence = 0;
   void cancel() {
@@ -42,6 +45,7 @@ final class EudBuildPreparationController {
       return 'A build or preparation is already running.';
     }
     busy = true;
+    _diagnostics = const [];
     final revision = ++_revision;
     try {
       builds.clearPreparation();
@@ -103,6 +107,7 @@ final class EudBuildPreparationController {
       );
       final inspected = await tools.inspector.inspect(request);
       if (!inspected.isReady) {
+        _diagnostics = List.unmodifiable(inspected.diagnostics);
         return inspected.diagnostics
             .map(
               (d) =>

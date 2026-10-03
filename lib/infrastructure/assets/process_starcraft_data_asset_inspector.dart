@@ -83,9 +83,13 @@ final class ProcessStarCraftDataAssetInspector
           message:
               'The StarCraft installation path must be an absolute Windows '
               'drive or UNC directory.',
+          messageId:
+              'editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows',
           filePath: installationPath,
           remediation:
               'Choose the StarCraft installation using the Settings dialog.',
+          remediationId:
+              'editorChooseTheStarCraftInstallationUsingTheSettingsDialog',
         ),
       );
     }
@@ -96,8 +100,10 @@ final class ProcessStarCraftDataAssetInspector
         diagnostic: _diagnostic(
           code: StarCraftDataAssetDiagnosticCodes.helperNotFound,
           message: 'The bundled StarCraft CASC helper is missing.',
+          messageId: 'editorTheBundledStarCraftCASCHelperIsMissing',
           filePath: helperExecutablePath,
           remediation: 'Repair or reinstall the application.',
+          remediationId: 'editorRepairOrReinstallTheApplication',
         ),
       );
     }
@@ -147,10 +153,13 @@ final class ProcessStarCraftDataAssetInspector
           diagnostic: _diagnostic(
             code: StarCraftDataAssetDiagnosticCodes.helperTimedOut,
             message: 'The StarCraft CASC inspection timed out.',
+            messageId: 'editorTheStarCraftCASCInspectionTimedOut',
             filePath: installationPath,
             remediation:
                 'Retry after repairing the StarCraft installation in '
                 'Battle.net.',
+            remediationId:
+                'editorRetryAfterRepairingTheStarCraftInstallationInBattleNet',
             rawDetails: _rawProcessDetails(stderr: stderr),
           ),
         );
@@ -164,8 +173,10 @@ final class ProcessStarCraftDataAssetInspector
           diagnostic: _diagnostic(
             code: StarCraftDataAssetDiagnosticCodes.helperOutputLimitExceeded,
             message: 'The StarCraft CASC helper produced too much output.',
+            messageId: 'editorTheStarCraftCASCHelperProducedTooMuchOutput',
             filePath: installationPath,
             remediation: 'Repair the application or report the helper error.',
+            remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
             rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
           ),
         );
@@ -184,8 +195,10 @@ final class ProcessStarCraftDataAssetInspector
         diagnostic: _diagnostic(
           code: StarCraftDataAssetDiagnosticCodes.helperStartFailed,
           message: 'The StarCraft CASC helper could not be started.',
+          messageId: 'editorTheStarCraftCASCHelperCouldNotBeStarted',
           filePath: helperExecutablePath,
           remediation: 'Repair or reinstall the application.',
+          remediationId: 'editorRepairOrReinstallTheApplication',
           rawDetails: error.errorCode.toString(),
         ),
       );
@@ -195,8 +208,10 @@ final class ProcessStarCraftDataAssetInspector
         diagnostic: _diagnostic(
           code: StarCraftDataAssetDiagnosticCodes.inspectionFailed,
           message: 'The StarCraft installation could not be inspected.',
+          messageId: 'editorTheStarCraftInstallationCouldNotBeInspected',
           filePath: error.path ?? installationPath,
           remediation: 'Check directory permissions and retry.',
+          remediationId: 'editorCheckDirectoryPermissionsAndRetry',
           rawDetails: error.toString(),
         ),
       );
@@ -314,9 +329,16 @@ final class ProcessStarCraftDataAssetInspector
                 '${missingPaths.length} required StarCraft CASC tileset '
                 '${missingPaths.length == 1 ? 'asset is' : 'assets are'} '
                 'missing.',
+            messageId: 'editorRequiredStarCraftCASCTilesetMissing',
+            messageArguments: [
+              (missingPaths.length).toString(),
+              (missingPaths.length == 1 ? 'asset is' : 'assets are').toString(),
+            ],
             filePath: installationPath,
             remediation:
                 'Repair the StarCraft installation in Battle.net and retry.',
+            remediationId:
+                'editorRepairTheStarCraftInstallationInBattleNetAndRetry',
             rawDetails: missingPaths.join('\n'),
           ),
         if (invalidPaths.isNotEmpty)
@@ -326,9 +348,16 @@ final class ProcessStarCraftDataAssetInspector
                 '${invalidPaths.length} required StarCraft CASC tileset '
                 '${invalidPaths.length == 1 ? 'asset is' : 'assets are'} '
                 'unreadable.',
+            messageId: 'editorRequiredStarCraftCASCTilesetUnreadable',
+            messageArguments: [
+              (invalidPaths.length).toString(),
+              (invalidPaths.length == 1 ? 'asset is' : 'assets are').toString(),
+            ],
             filePath: installationPath,
             remediation:
                 'Repair the StarCraft installation in Battle.net and retry.',
+            remediationId:
+                'editorRepairTheStarCraftInstallationInBattleNetAndRetry',
             rawDetails: invalidDetails.join('\n'),
           ),
       ];
@@ -352,8 +381,10 @@ final class ProcessStarCraftDataAssetInspector
         diagnostic: _diagnostic(
           code: StarCraftDataAssetDiagnosticCodes.helperInvalidResponse,
           message: 'The StarCraft CASC helper returned an invalid response.',
+          messageId: 'editorTheStarCraftCASCHelperReturnedAnInvalidResponse',
           filePath: installationPath,
           remediation: 'Repair the application or report the helper error.',
+          remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           rawDetails: _rawProcessDetails(
             exitCode: exitCode,
             stderr: stderr,
@@ -520,14 +551,22 @@ EditorDiagnostic _diagnostic({
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.warning,
     stage: DiagnosticStage.validate,
     filePath: filePath,
     remediation: remediation,
+    remediationId: remediationId,
+    remediationArguments: remediationArguments,
     rawDetails: rawDetails,
   );
 }

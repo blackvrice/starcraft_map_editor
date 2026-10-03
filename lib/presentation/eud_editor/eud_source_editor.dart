@@ -1,3 +1,4 @@
+import '../localization/l10n.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -130,10 +131,10 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
                       fontSize: 14,
                       height: 1.45,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.fromLTRB(14, 16, 18, 24),
-                      hintText: '// Write epScript here',
+                      hintText: context.l10n.editorWriteEpScriptHere,
                       hintStyle: TextStyle(color: Color(0xFF596579)),
                     ),
                   ),
@@ -198,7 +199,7 @@ class _DirtyBadge extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
-        isDirty ? 'Modified' : 'Clean',
+        isDirty ? context.l10n.editorModified : context.l10n.editorClean,
         style: TextStyle(
           color: color,
           fontSize: 11,
@@ -267,15 +268,29 @@ class _EditorFooter extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             children: [
-              Text(
-                document.isUntitled ? 'In-memory draft' : document.sourcePath!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF8994A8), fontSize: 11),
+              Expanded(
+                child: Tooltip(
+                  message:
+                      document.sourcePath ?? context.l10n.editorInMemoryDraft,
+                  child: Text(
+                    document.isUntitled
+                        ? context.l10n.editorInMemoryDraft
+                        : document.sourcePath!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF8994A8),
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 14),
               Text(
-                'Ln ${cursor.line}, Col ${cursor.column}',
+                context.l10n.editorLnCol(
+                  (cursor.line).toString(),
+                  (cursor.column).toString(),
+                ),
                 key: const Key('eud-source-cursor'),
                 style: const TextStyle(color: Color(0xFFB4C0D4), fontSize: 11),
               ),

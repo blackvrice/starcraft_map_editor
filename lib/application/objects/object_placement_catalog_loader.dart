@@ -98,8 +98,10 @@ final class ObjectPlacementCatalogLoader {
       final diagnostic = _diagnostic(
         code: ObjectPlacementCatalogDiagnosticCodes.catalogGatewayFailed,
         message: 'The object catalog request failed unexpectedly.',
+        messageId: 'editorTheObjectCatalogRequestFailedUnexpectedly',
         filePath: request.installationPath,
         remediation: 'Retry or repair the application installation.',
+        remediationId: 'editorRetryOrRepairTheApplicationInstallation',
         rawDetails: error.toString(),
       );
       return ObjectPlacementCatalogBatch(
@@ -145,8 +147,10 @@ final class ObjectPlacementCatalogLoader {
           _diagnostic(
             code: ObjectPlacementCatalogDiagnosticCodes.atlasGatewayFailed,
             message: 'The object thumbnail request failed unexpectedly.',
+            messageId: 'editorTheObjectThumbnailRequestFailedUnexpectedly',
             filePath: request.installationPath,
             remediation: 'Retry or repair the application installation.',
+            remediationId: 'editorRetryOrRepairTheApplicationInstallation',
             rawDetails: error.toString(),
           ),
         ],
@@ -198,8 +202,10 @@ final class ObjectPlacementCatalogLoader {
     final diagnostic = _diagnostic(
       code: ObjectPlacementCatalogDiagnosticCodes.requestCancelled,
       message: 'The object catalog request is no longer current.',
+      messageId: 'editorTheObjectCatalogRequestIsNoLongerCurrent',
       filePath: request.installationPath,
       remediation: 'Load the currently selected catalog.',
+      remediationId: 'editorLoadTheCurrentlySelectedCatalog',
     );
     return ObjectPlacementCatalogBatch(
       page: StarCraftPlacementCatalogPage.failed(
@@ -219,8 +225,10 @@ final class ObjectPlacementCatalogLoader {
       _diagnostic(
         code: ObjectPlacementCatalogDiagnosticCodes.resultMismatch,
         message: 'The object catalog and thumbnail results did not match.',
+        messageId: 'editorTheObjectCatalogAndThumbnailResultsDidNotMatch',
         filePath: request.installationPath,
         remediation: 'Repair the application or report the helper error.',
+        remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
       ),
     ],
   );
@@ -295,12 +303,20 @@ EditorDiagnostic _diagnostic({
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) => EditorDiagnostic(
   code: code,
   message: message,
+  messageId: messageId,
+  messageArguments: messageArguments,
   severity: DiagnosticSeverity.warning,
   stage: DiagnosticStage.validate,
   filePath: filePath,
   remediation: remediation,
+  remediationId: remediationId,
+  remediationArguments: remediationArguments,
   rawDetails: rawDetails,
 );

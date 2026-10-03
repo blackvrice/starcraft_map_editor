@@ -1035,12 +1035,12 @@ ID를 보장하지 않는다. 기본 1700 슬롯 프로필만 대상으로 하�
 - [x] `Edit → Language`·도구 모음 언어 선택, 즉시 적용과 `uiLanguage` 저장
 - [x] 메인 셸 문자열 번역(메뉴, 도구 모음, 레일, 레이어·팔레트, Inspector, 출력 패널, 상태 표시줄, 시작 화면)
 - [x] 작업 공간 레일, 문서 저장 상태 문장, 행동 안내 강조, Problems 심각도·요약, 원시 필드 접기
-- [ ] 설정 대화상자(Map/Unit/Player/Force/Tech/Upgrade/Availability, StarCraft 데이터, EUD 도구) 번역
+- [x] 설정 대화상자(Map/Unit/Player/Force/Tech/Upgrade/Availability, StarCraft 데이터, EUD 도구) 번역(2026-10-03, [한영 번역](LOCALIZATION.md))
 - [x] 새 맵 마법사·배치 카탈로그·EUD 빌드 단계·트리거·EUD 확장 프로젝트 화면 v2와 번역(2026-09-30, [에디터 UX 2.2절](EDITOR_UX.md#22-작업-화면-v2-2026-09-30))
-- [ ] Resources·Briefing 세부 대화상자·epScript 편집기 내부 문구 번역
+- [x] Resources·Briefing 세부 대화상자·epScript 편집기 내부 문구 번역(2026-10-03)
 - [ ] EUD 확장 목업의 유닛 중심 필드 편집(유닛 목록·생존력/공격 묶음·범위 막대) 검토
-- [ ] 애플리케이션/도메인 진단 메시지의 메시지 ID화와 번역(코드는 유지)
-- [ ] 한국어 글꼴 렌더링·긴 문자열 줄바꿈을 Windows 실제 화면에서 확인
+- [x] 애플리케이션/도메인 진단 메시지의 메시지 ID화와 번역(코드는 유지, 2026-10-03)
+- [x] 한국어 글꼴 렌더링·긴 문자열 줄바꿈을 Windows 실제 화면에서 확인(2026-10-03, 11개 화면 × 2개 폭, 렌더링 오류 0)
 - [ ] 명령 검색(Ctrl+K), 캔버스 위 떠 있는 도구 막대 등 목업 v2의 나머지 요소 검토
 
 완료 확인(2026-09-28): 클라우드 Linux에서 Flutter 3.44.8로 `flutter analyze` 무이슈,
@@ -1053,6 +1053,13 @@ Windows 실제 실행과 빌드는 사용자 PC에서 확인해야 한다.
 위젯 테스트 전부 통과(한국어 트리거·EUD 프로젝트 테스트 추가). 전체 `flutter test`
 실패 17건은 위 12건과 새로 들어온 Windows 경로 전용
 `process_terrain_connection_snapshot_gateway_test` 5건이다.
+
+남은 번역 확인(2026-10-03): Windows Flutter 3.47.5/Dart 3.13.4에서 analyze 무이슈,
+전체 테스트 943개 통과/환경 조건부 45개 skip, 새 번역 회귀 테스트 17개 통과.
+언어 전환 중 설정 초안·Undo/Redo, 원문 데이터 보존과 긴 소스 경로를 검사했다.
+Windows 실제 글꼴 렌더링 22개 화면과 debug 빌드를 확인했다. 전체 포맷 게이트는
+기존 infrastructure 테스트 3개의 SDK 포맷 차이로 실패하며 관련 없는 파일은 수정하지 않았다.
+기준 SDK 3.44.8 재검증과 접근성/배포 인수는 별도다. 상세 기록은 [한영 번역](LOCALIZATION.md).
 
 ## M8. 안정화와 배포
 

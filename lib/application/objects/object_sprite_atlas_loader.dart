@@ -227,8 +227,10 @@ final class ObjectSpriteAtlasLoader {
           _diagnostic(
             code: ObjectSpriteAtlasDiagnosticCodes.gatewayFailed,
             message: 'The StarCraft object atlas request failed unexpectedly.',
+            messageId: 'editorTheStarCraftObjectAtlasRequestFailedUnexpectedly',
             filePath: context.identity.installationPath,
             remediation: 'Retry or repair the application installation.',
+            remediationId: 'editorRetryOrRepairTheApplicationInstallation',
             rawDetails: error.toString(),
           ),
         ],
@@ -246,8 +248,10 @@ final class ObjectSpriteAtlasLoader {
             code: ObjectSpriteAtlasDiagnosticCodes.resultMismatch,
             message:
                 'The StarCraft object atlas result did not match its batch.',
+            messageId: 'editorTheStarCraftObjectAtlasResultDidNotMatchIts',
             filePath: context.identity.installationPath,
             remediation: 'Repair the application or report the helper error.',
+            remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           ),
         ],
       );
@@ -356,14 +360,22 @@ EditorDiagnostic _diagnostic({
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.warning,
     stage: DiagnosticStage.validate,
     filePath: filePath,
     remediation: remediation,
+    remediationId: remediationId,
+    remediationArguments: remediationArguments,
     rawDetails: rawDetails,
   );
 }

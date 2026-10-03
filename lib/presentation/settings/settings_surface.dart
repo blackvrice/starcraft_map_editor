@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
@@ -70,21 +72,23 @@ class _SettingsSurfaceState extends State<SettingsSurface> {
               Row(
                 children: [
                   Expanded(child: widget.title),
-                  if (widget.hasDraft) const Text('Unapplied draft'),
+                  if (widget.hasDraft) Text(context.l10n.editorUnappliedDraft),
                 ],
               ),
               if (stale)
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'The map changed in another editor or through Undo/Redo. Reload before applying this tab.',
+                        context
+                            .l10n
+                            .editorTheMapChangedInAnotherEditorOrThroughUndo,
                       ),
                     ),
                     TextButton(
                       key: const Key('settings-reload'),
                       onPressed: widget.onReload,
-                      child: const Text('Reload and discard this draft'),
+                      child: Text(context.l10n.editorReloadAndDiscardThisDraft),
                     ),
                   ],
                 ),
@@ -96,12 +100,10 @@ class _SettingsSurfaceState extends State<SettingsSurface> {
                 spacing: 8,
                 children: [
                   if (!widget.actions.any(
-                    (action) =>
-                        action is TextButton &&
-                        action.child is Text &&
-                        ((action.child as Text).data ?? '').startsWith('Undo:'),
+                    (action) => action.key == const Key('settings-undo'),
                   )) ...[
                     TextButton(
+                      key: const Key('settings-undo'),
                       onPressed: widget.controller.canUndo
                           ? () {
                               widget.controller.undo();
@@ -109,10 +111,15 @@ class _SettingsSurfaceState extends State<SettingsSurface> {
                             }
                           : null,
                       child: Text(
-                        'Undo: ${widget.controller.undoLabel ?? "—"}',
+                        context.l10n.editorUndo(
+                          context.localizeEditorText(
+                            widget.controller.undoLabel ?? "—",
+                          ),
+                        ),
                       ),
                     ),
                     TextButton(
+                      key: const Key('settings-redo'),
                       onPressed: widget.controller.canRedo
                           ? () {
                               widget.controller.redo();
@@ -120,17 +127,20 @@ class _SettingsSurfaceState extends State<SettingsSurface> {
                             }
                           : null,
                       child: Text(
-                        'Redo: ${widget.controller.redoLabel ?? "—"}',
+                        context.l10n.editorRedo(
+                          context.localizeEditorText(
+                            widget.controller.redoLabel ?? "—",
+                          ),
+                        ),
                       ),
                     ),
                   ],
                   for (final action in widget.actions)
-                    if (action is TextButton &&
-                        action.child is Text &&
-                        (action.child as Text).data == 'Cancel')
+                    if (action.key == const Key('settings-cancel'))
                       TextButton(
+                        key: const Key('settings-discard'),
                         onPressed: widget.onReload,
-                        child: const Text('Discard tab draft'),
+                        child: Text(context.l10n.editorDiscardTabDraft),
                       )
                     else if (stale && action is FilledButton)
                       FilledButton(

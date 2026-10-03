@@ -453,10 +453,12 @@ final class ProcessEudCompilerGateway implements EudCompilerGateway {
       diagnostic: EditorDiagnostic(
         code: EudCompilerDiagnosticCodes.cancelled,
         message: 'The EUD build was cancelled.',
+        messageId: 'editorTheEUDBuildWasCancelled',
         severity: DiagnosticSeverity.error,
         stage: DiagnosticStage.compile,
         filePath: request.settingsFilePath,
         remediation: 'Start the build again when ready.',
+        remediationId: 'editorStartTheBuildAgainWhenReady',
       ),
       exitCode: exitCode,
     );

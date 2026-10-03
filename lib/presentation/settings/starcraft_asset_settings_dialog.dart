@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/ports/starcraft_data_asset_inspector.dart';
@@ -18,11 +20,11 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
         final state = snapshot.data ?? controller.state;
         return AlertDialog(
           key: const Key('starcraft-asset-settings-dialog'),
-          title: const Row(
+          title: Row(
             children: [
               Icon(Icons.landscape_outlined, color: Color(0xFF70A1FF)),
               SizedBox(width: 10),
-              Text('StarCraft Data Assets'),
+              Text(context.l10n.editorStarCraftDataAssets),
             ],
           ),
           content: SizedBox(
@@ -32,11 +34,10 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Choose the installed StarCraft: Remastered directory. '
-                    'The editor reads its local CASC storage through the '
-                    'bundled CascLib helper without extracting or copying '
-                    'copyrighted game data.',
+                  Text(
+                    context
+                        .l10n
+                        .editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads,
                     style: TextStyle(color: Color(0xFFB4BECE)),
                   ),
                   const SizedBox(height: 14),
@@ -71,7 +72,7 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
               onPressed: state.configuredPath == null || state.isBusy
                   ? null
                   : () => controller.clear(),
-              child: const Text('Clear'),
+              child: Text(context.l10n.editorClear),
             ),
             TextButton.icon(
               key: const Key('starcraft-assets-refresh'),
@@ -79,7 +80,7 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
                   ? null
                   : () => controller.refresh(),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Refresh'),
+              label: Text(context.l10n.editorRefresh),
             ),
             FilledButton.icon(
               key: const Key('starcraft-assets-choose'),
@@ -87,12 +88,12 @@ class StarCraftAssetSettingsDialog extends StatelessWidget {
                   ? null
                   : () => controller.chooseDirectory(),
               icon: const Icon(Icons.folder_open_rounded),
-              label: const Text('Choose Installation…'),
+              label: Text(context.l10n.editorChooseInstallation),
             ),
             TextButton(
               key: const Key('starcraft-assets-close'),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+              child: Text(context.l10n.editorClose),
             ),
           ],
         );
@@ -110,14 +111,17 @@ class _CascStorageMetadata extends StatelessWidget {
   Widget build(BuildContext context) {
     final revision = inspection.cascLibRevision;
     final revisionLabel = revision == null
-        ? 'unknown'
+        ? context.l10n.editorUnknown
         : revision.substring(0, revision.length < 8 ? revision.length : 8);
     final totalMiB = inspection.totalAssetBytes / (1024 * 1024);
     return Text(
-      'CASC ${inspection.storageProduct} • '
-      'build ${inspection.storageBuildNumber ?? 0} • '
-      '${totalMiB.toStringAsFixed(1)} MiB checked • '
-      'CascLib $revisionLabel • helper ${inspection.helperVersion ?? 'unknown'}',
+      context.l10n.editorCASCBuildMiBCheckedCascLibHelper(
+        (inspection.storageProduct).toString(),
+        (inspection.storageBuildNumber ?? 0).toString(),
+        (totalMiB.toStringAsFixed(1)).toString(),
+        (revisionLabel).toString(),
+        (inspection.helperVersion ?? context.l10n.editorUnknown).toString(),
+      ),
       key: const Key('starcraft-assets-casc-metadata'),
       style: const TextStyle(
         color: Color(0xFF8994A8),
@@ -147,8 +151,8 @@ class _AssetPathCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Configured path',
+            Text(
+              context.l10n.editorConfiguredPath,
               style: TextStyle(
                 color: Color(0xFF8994A8),
                 fontSize: 11,
@@ -157,7 +161,7 @@ class _AssetPathCard extends StatelessWidget {
             ),
             const SizedBox(height: 5),
             SelectableText(
-              path ?? 'Not configured',
+              path ?? context.l10n.editorNotConfigured,
               key: const Key('starcraft-assets-path'),
               style: TextStyle(
                 color: path == null
@@ -168,9 +172,10 @@ class _AssetPathCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 7),
-            const Text(
-              r'Expected: the folder containing StarCraft.exe, .build.info, '
-              r'and Data\.',
+            Text(
+              context
+                  .l10n
+                  .editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd,
               style: TextStyle(color: Color(0xFF7F8A9C), fontSize: 11),
             ),
           ],
@@ -192,31 +197,35 @@ class _AssetInspectionSummary extends StatelessWidget {
       StarCraftDataAssetSettingsStatus.loading => (
         Icons.hourglass_top_rounded,
         const Color(0xFF8EA0BB),
-        'Loading settings…',
+        context.l10n.editorLoadingSettings,
       ),
       StarCraftDataAssetSettingsStatus.inspecting => (
         Icons.search_rounded,
         const Color(0xFF8EA0BB),
-        'Inspecting assets…',
+        context.l10n.editorInspectingAssets,
       ),
       StarCraftDataAssetSettingsStatus.ready => (
         Icons.check_circle_outline_rounded,
         const Color(0xFF7ADAA5),
-        '${inspection?.foundAssetCount ?? 0}/'
-            '${inspection?.requiredAssetCount ?? 0} required assets ready',
+        context.l10n.editorRequiredAssetsReady(
+          (inspection?.foundAssetCount ?? 0).toString(),
+          (inspection?.requiredAssetCount ?? 0).toString(),
+        ),
       ),
       StarCraftDataAssetSettingsStatus.unconfigured => (
         Icons.settings_outlined,
         const Color(0xFFFFC56E),
-        'StarCraft installation is not configured',
+        context.l10n.editorStarCraftInstallationIsNotConfigured,
       ),
       StarCraftDataAssetSettingsStatus.unavailable => (
         Icons.warning_amber_rounded,
         const Color(0xFFFFB454),
         inspection == null
-            ? 'StarCraft CASC data is unavailable'
-            : '${inspection.foundAssetCount}/'
-                  '${inspection.requiredAssetCount} required assets found',
+            ? context.l10n.editorStarCraftCASCDataIsUnavailable
+            : context.l10n.editorRequiredAssetsFound(
+                (inspection.foundAssetCount).toString(),
+                (inspection.requiredAssetCount).toString(),
+              ),
       ),
     };
 
@@ -263,10 +272,11 @@ class _AssetDiagnosticSummary extends StatelessWidget {
           children: [
             for (final diagnostic in diagnostics) ...[
               Text(
-                '[${diagnostic.code}] ${diagnostic.message}',
+                '[${diagnostic.code}] ${context.diagnosticMessage(diagnostic)}',
                 style: const TextStyle(color: Color(0xFFFFD18A), fontSize: 12),
               ),
-              if (diagnostic.remediation case final remediation?)
+              if (context.diagnosticRemediation(diagnostic)
+                  case final remediation?)
                 Padding(
                   padding: const EdgeInsets.only(top: 3),
                   child: Text(
@@ -298,8 +308,10 @@ class _MissingAssetList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = [
-      for (final path in missingPaths) (path: path, label: 'Missing'),
-      for (final path in invalidPaths) (path: path, label: 'Invalid'),
+      for (final path in missingPaths)
+        (path: path, label: context.l10n.editorMissing),
+      for (final path in invalidPaths)
+        (path: path, label: context.l10n.editorInvalid),
     ];
     const maximumVisibleEntries = 8;
     final visibleEntries = entries.take(maximumVisibleEntries).toList();
@@ -317,8 +329,8 @@ class _MissingAssetList extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Unavailable asset files',
+            Text(
+              context.l10n.editorUnavailableAssetFiles,
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
@@ -354,7 +366,7 @@ class _MissingAssetList extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 5),
                 child: Text(
-                  '…and $remaining more',
+                  context.l10n.editorAndMore((remaining).toString()),
                   style: const TextStyle(
                     color: Color(0xFF8994A8),
                     fontSize: 11,

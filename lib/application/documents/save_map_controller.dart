@@ -151,7 +151,9 @@ class SaveMapController {
         _diagnostic(
           code: SaveMapDiagnosticCodes.noMapOpen,
           message: 'Open a map before using Save As.',
+          messageId: 'editorOpenAMapBeforeUsingSaveAs',
           remediation: 'Open a .scm or .scx map and try again.',
+          remediationId: 'editorOpenAScmOrScxMapAndTryAgain',
         ),
       );
     }
@@ -177,8 +179,17 @@ class SaveMapController {
               code: SaveMapDiagnosticCodes.invalidTriggers,
               message:
                   'Edited ${briefing ? 'briefings' : 'triggers'} contain invalid field values or references.',
+              messageId: 'editorEditedContainInvalidFieldValuesOrReferences',
+              messageArguments: [
+                (briefing ? 'briefings' : 'triggers').toString(),
+              ],
               remediation:
                   'Open ${briefing ? 'Briefing' : 'Triggers'} → Validate references and correct the reported slots.',
+              remediationId:
+                  'editorOpenValidateReferencesAndCorrectTheReportedSlots',
+              remediationArguments: [
+                (briefing ? 'Briefing' : 'Triggers').toString(),
+              ],
               rawDetails: issues.join('\n'),
             ),
           );
@@ -198,8 +209,10 @@ class SaveMapController {
             code: SaveMapDiagnosticCodes.invalidDestinationPath,
             message:
                 'The Save As destination must be an absolute Windows path.',
+            messageId: 'editorTheSaveAsDestinationMustBeAnAbsoluteWindows',
             filePath: normalizedPath,
             remediation: 'Choose the destination using the Save As dialog.',
+            remediationId: 'editorChooseTheDestinationUsingTheSaveAsDialog',
           ),
         );
       }
@@ -212,10 +225,18 @@ class SaveMapController {
             message: sourceSession.isNewMap
                 ? 'New Brood War maps must be saved as .scx.'
                 : 'Save As supports only .scm and .scx map files.',
+            messageId: sourceSession.isNewMap
+                ? 'editorNewBroodWarMapsMustBeSavedAsScx'
+                : 'editorSaveAsSupportsOnlyScmAndScxMapFiles',
+            messageArguments: sourceSession.isNewMap ? [] : [],
             filePath: normalizedPath,
             remediation: sourceSession.isNewMap
                 ? 'Choose a destination ending in .scx.'
                 : 'Choose a destination ending in .scm or .scx.',
+            remediationId: sourceSession.isNewMap
+                ? 'editorChooseADestinationEndingInScx'
+                : 'editorChooseADestinationEndingInScmOrScx',
+            remediationArguments: sourceSession.isNewMap ? [] : [],
           ),
         );
       }
@@ -228,8 +249,10 @@ class SaveMapController {
           _diagnostic(
             code: SaveMapDiagnosticCodes.sourceDestinationSame,
             message: 'Save As cannot overwrite the currently open source map.',
+            messageId: 'editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap',
             filePath: normalizedPath,
             remediation: 'Choose a different output file name.',
+            remediationId: 'editorChooseADifferentOutputFileName',
           ),
         );
       }
@@ -241,10 +264,13 @@ class SaveMapController {
           _diagnostic(
             code: SaveMapDiagnosticCodes.destinationExists,
             message: 'The Save As destination already exists.',
+            messageId: 'editorTheSaveAsDestinationAlreadyExists',
             filePath: normalizedPath,
             remediation:
                 'Choose a new file name or explicitly confirm replacement in '
                 'the Save As dialog.',
+            remediationId:
+                'editorChooseANewFileNameOrExplicitlyConfirmReplacement',
           ),
         );
       }
@@ -255,9 +281,11 @@ class SaveMapController {
           _diagnostic(
             code: SaveMapDiagnosticCodes.operationBusy,
             message: 'Another editor operation is already running.',
+            messageId: 'editorAnotherEditorOperationIsAlreadyRunning',
             filePath: normalizedPath,
             remediation:
                 'Wait for the current operation to finish and try again.',
+            remediationId: 'editorWaitForTheCurrentOperationToFinishAndTry',
             rawDetails: 'activeOperationId=${activeProgress.operationId}',
           ),
         );
@@ -306,10 +334,13 @@ class SaveMapController {
               message:
                   'The source map changed after it was opened, so Save As was '
                   'stopped.',
+              messageId: 'editorTheSourceMapChangedAfterItWasOpenedSo',
               filePath: sourcePath,
               remediation:
                   'Reopen the source map to review the external changes before '
                   'saving.',
+              remediationId:
+                  'editorReopenTheSourceMapToReviewTheExternalChanges',
               rawDetails:
                   'opened=${sourceSession.sourceFingerprint}; '
                   'current=$sourceFingerprintAtSaveStart',
@@ -348,9 +379,12 @@ class SaveMapController {
           _diagnostic(
             code: SaveMapDiagnosticCodes.workspaceFailed,
             message: 'A temporary Save As workspace could not be created.',
+            messageId: 'editorATemporarySaveAsWorkspaceCouldNotBeCreated',
             filePath: normalizedPath,
             remediation:
                 'Check destination folder permissions and free disk space.',
+            remediationId:
+                'editorCheckDestinationFolderPermissionsAndFreeDiskSpace',
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -403,10 +437,12 @@ class SaveMapController {
             message:
                 'The reopened temporary map does not contain the expected '
                 'scenario.chk bytes.',
+            messageId: 'editorTheReopenedTemporaryMapDoesNotContainTheExpected',
             filePath: workspace.temporaryOutputPath,
             remediation:
                 'Keep the source map unchanged and report the archive writer '
                 'failure.',
+            remediationId: 'editorKeepTheSourceMapUnchangedAndReportTheArchive',
             rawDetails:
                 'expectedBytes=${encodedChk.length}; '
                 'actualBytes=${verifiedMap.scenarioChkBytes.length}',
@@ -422,9 +458,12 @@ class SaveMapController {
           _diagnostic(
             code: SaveMapDiagnosticCodes.verificationParseFailed,
             message: 'The reopened temporary map failed CHK validation.',
+            messageId: 'editorTheReopenedTemporaryMapFailedCHKValidation',
             filePath: workspace.temporaryOutputPath,
             remediation:
                 'Keep the source map unchanged and inspect parser diagnostics.',
+            remediationId:
+                'editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics',
           ),
         ]);
       }
@@ -489,9 +528,13 @@ class SaveMapController {
             message:
                 'The verified temporary map fingerprint could not be '
                 'calculated.',
+            messageId:
+                'editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated',
             filePath: workspace.temporaryOutputPath,
             remediation:
                 'Check destination folder permissions and free disk space.',
+            remediationId:
+                'editorCheckDestinationFolderPermissionsAndFreeDiskSpace',
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -526,10 +569,13 @@ class SaveMapController {
               message:
                   'The source map changed during Save As, so the verified '
                   'output was not promoted.',
+              messageId: 'editorTheSourceMapChangedDuringSaveAsSoThe',
               filePath: sourcePath,
               remediation:
                   'Reopen the source map to review the external changes and '
                   'retry with a new output name.',
+              remediationId:
+                  'editorReopenTheSourceMapToReviewTheExternalChangesf53fd806',
               rawDetails:
                   'start=$sourceFingerprintAtSaveStart; '
                   'beforePromotion=$sourceFingerprintBeforePromotion',
@@ -620,10 +666,13 @@ class SaveMapController {
             message:
                 'The existing destination is safe in a backup, but automatic '
                 'restoration failed.',
+            messageId: 'editorTheExistingDestinationIsSafeInABackupBut',
             filePath: error.backupPath,
             remediation:
                 'Restore the backup to ${error.destinationPath} before '
                 'retrying Save As.',
+            remediationId: 'editorRestoreTheBackupToBeforeRetryingSaveAs',
+            remediationArguments: [(error.destinationPath).toString()],
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -634,9 +683,12 @@ class SaveMapController {
             code: SaveMapDiagnosticCodes.promotionFailed,
             message:
                 'The verified map could not be promoted to its destination.',
+            messageId: 'editorTheVerifiedMapCouldNotBePromotedToIts',
             filePath: normalizedPath,
             remediation:
                 'Check destination folder permissions and choose a new name.',
+            remediationId:
+                'editorCheckDestinationFolderPermissionsAndChooseANewName',
             rawDetails: '$error\n$stackTrace',
           ),
         );
@@ -667,11 +719,14 @@ class SaveMapController {
             code: SaveMapDiagnosticCodes.backupCreated,
             message:
                 'The previous destination was preserved as a recovery backup.',
+            messageId:
+                'editorThePreviousDestinationWasPreservedAsARecoveryBackup',
             severity: DiagnosticSeverity.info,
             stage: DiagnosticStage.save,
             filePath: backupPath,
             remediation:
                 'Keep the backup until the replacement map has been verified.',
+            remediationId: 'editorKeepTheBackupUntilTheReplacementMapHasBeen',
           ),
         );
       }
@@ -692,9 +747,11 @@ class SaveMapController {
       final diagnostic = _diagnostic(
         code: SaveMapDiagnosticCodes.unexpectedFailure,
         message: 'Save As failed because of an unexpected error.',
+        messageId: 'editorSaveAsFailedBecauseOfAnUnexpectedError',
         filePath: destinationPath,
         remediation:
             'Retry with a new output name. The source map was not modified.',
+        remediationId: 'editorRetryWithANewOutputNameTheSourceMap',
         rawDetails: '$error\n$stackTrace',
       );
       if (operationId != null) {
@@ -726,7 +783,9 @@ class SaveMapController {
         _diagnostic(
           code: SaveMapDiagnosticCodes.fileSelectionFailed,
           message: 'The Save As dialog could not be opened.',
+          messageId: 'editorTheSaveAsDialogCouldNotBeOpened',
           remediation: 'Retry the operation or restart the application.',
+          remediationId: 'editorRetryTheOperationOrRestartTheApplication',
           rawDetails: '$error\n$stackTrace',
         ),
       );
@@ -761,10 +820,12 @@ class SaveMapController {
     return _diagnostic(
       code: SaveMapDiagnosticCodes.sourceFingerprintFailed,
       message: 'The source map fingerprint could not be verified.',
+      messageId: 'editorTheSourceMapFingerprintCouldNotBeVerified',
       filePath: path,
       remediation:
           'Check that the source map still exists, is readable, and is not '
           'being changed by another program.',
+      remediationId: 'editorCheckThatTheSourceMapStillExistsIsReadable',
       rawDetails: '$error\n$stackTrace',
     );
   }
@@ -777,9 +838,11 @@ class SaveMapController {
     return _diagnostic(
       code: SaveMapDiagnosticCodes.destinationFingerprintFailed,
       message: 'The existing Save As destination could not be verified.',
+      messageId: 'editorTheExistingSaveAsDestinationCouldNotBeVerified',
       filePath: path,
       remediation:
           'Check that the destination is a readable regular file and retry.',
+      remediationId: 'editorCheckThatTheDestinationIsAReadableRegularFile',
       rawDetails: '$error\n$stackTrace',
     );
   }
@@ -792,10 +855,12 @@ class SaveMapController {
       code: SaveMapDiagnosticCodes.destinationChangedDuringSave,
       message:
           'The Save As destination changed while the map was being prepared.',
+      messageId: 'editorTheSaveAsDestinationChangedWhileTheMapWas',
       filePath: path,
       remediation:
           'Review the destination in another program, then retry and confirm '
           'replacement again.',
+      remediationId: 'editorReviewTheDestinationInAnotherProgramThenRetryAnd',
       rawDetails: rawDetails,
     );
   }
@@ -812,14 +877,22 @@ class SaveMapController {
     required String remediation,
     String? filePath,
     String? rawDetails,
+    String? messageId,
+    List<String> messageArguments = const [],
+    String? remediationId,
+    List<String> remediationArguments = const [],
   }) {
     return EditorDiagnostic(
       code: code,
       message: message,
+      messageId: messageId,
+      messageArguments: messageArguments,
       severity: DiagnosticSeverity.error,
       stage: DiagnosticStage.save,
       filePath: filePath,
       remediation: remediation,
+      remediationId: remediationId,
+      remediationArguments: remediationArguments,
       rawDetails: rawDetails,
     );
   }

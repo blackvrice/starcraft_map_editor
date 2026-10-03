@@ -4,11 +4,29 @@
   "recoveryEmpty": "No recovery checkpoints.",
   "recoveryDamaged": "Unreadable or damaged checkpoint",
   "recoveryBaseline": "Last saved map: {path}",
-  "@recoveryBaseline": {"placeholders": {"path": {"type": "String"}}},
+  "@recoveryBaseline": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoveryProject": "EUD project: {path}",
-  "@recoveryProject": {"placeholders": {"path": {"type": "String"}}},
+  "@recoveryProject": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoverySource": "epScript: {path}",
-  "@recoverySource": {"placeholders": {"path": {"type": "String"}}},
+  "@recoverySource": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
   "recoveryOpen": "Open recovery copy",
   "recoveryDelete": "Delete checkpoint",
   "recoveryDeleteConfirm": "Permanently delete this recovery checkpoint?",
@@ -17,9 +35,21 @@
   "autosaveSettings": "Autosave Settings",
   "autosaveEnabled": "Automatically save recovery checkpoints",
   "autosaveInterval": "Interval: {seconds} seconds",
-  "@autosaveInterval": {"placeholders": {"seconds": {"type": "int"}}},
+  "@autosaveInterval": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "autosaveRetention": "Checkpoints per workspace: {count}",
-  "@autosaveRetention": {"placeholders": {"count": {"type": "int"}}},
+  "@autosaveRetention": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "autosaveFailed": "Autosave or recovery failed. Check access and free space in the application data folder.",
   "recoveryCancel": "Cancel",
   "recoveryClose": "Close",
@@ -1705,5 +1735,1910 @@
       }
     }
   },
-  "resizeCoordinateScope": "Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application."
+  "resizeCoordinateScope": "Trigger and EUD code coordinates are preserved. Review custom coordinates after resizing. Unknown terrain or ambiguous doodads block application.",
+  "editorPrepareEUDBuild": "Prepare EUD Build",
+  "editorBuildSavedFilesOnDiskSaveMapAndSource": "Build saved files on disk. Save map and source edits first. With project settings, leave source folder and entry blank for a settings-only build. Output must be a new .scx.",
+  "editorBaseMapPath": "Base map path",
+  "editorSourceFolderPath": "Source folder path",
+  "editorEntryEpsPath": "Entry .eps path",
+  "editorNewOutputScxPath": "New output .scx path",
+  "editorToolOverrideForThisBuildOptional": "Tool override for this build (optional)",
+  "editorBlankToolOverrideUsesYourEUDToolsSelectionPrepare": "Blank tool override uses your EUD Tools selection. Prepare checks files; Build runs the compiler separately.",
+  "editorITrustThisSourceAndItsImportsToRun": "I trust this source and its imports to run code on this computer.",
+  "editorIncludeProjectSettingsInAnUnverifiedTestBuild": "Include project settings in an unverified test build",
+  "editorTypeSettingsInitializeOnceRulesUseTheirBeforeAfter": "Type settings initialize once. Rules use their before/after trigger hook; instance rules can change a guarded unit. Game and multiplayer behavior still require testing.",
+  "editorCancel": "Cancel",
+  "editorPrepare": "Prepare",
+  "editorEUDTools": "EUD Tools",
+  "editorChooseAnExternalEuddraftInstallationOrUseTheApp": "Choose an external euddraft installation or use the app default. Project-specific paths take priority.",
+  "editorExternalEuddraftPath": "External euddraft path",
+  "editorInstallationDirectoryOrEuddraftExeAbsolutePath": "Installation directory or euddraft.exe (absolute path)",
+  "editorBrowseInstallationFolder": "Browse installation folder",
+  "editorSelectionAppDefault": "Selection: App default",
+  "editorSelectionExternal": "Selection: External\n{value0}",
+  "@editorSelectionExternal": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoBundledToolIsIncludedInThisAppYet": "No bundled tool is included in this app yet. Select an external installation.",
+  "editorBundledEuddraft01025Editor1No": "Bundled euddraft 0.10.2.5 (editor.1)\nNo separate Python installation is required. Updates are managed with the app.\n{value0}\nLicenses and modification details: BUNDLE-NOTICE.txt in this folder.",
+  "@editorBundledEuddraft01025Editor1No": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectionPassedEuddraft": "Inspection passed — euddraft {value0}\n{value1}",
+  "@editorInspectionPassedEuddraft": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectionDoesNotRunTheCompilerSavingThisChoice": "Inspection does not run the compiler. Saving this choice does not prepare a build or change an existing build plan.",
+  "editorUseAppDefault": "Use app default",
+  "editorReinspect": "Reinspect",
+  "editorSaveAndInspect": "Save and inspect",
+  "editorClose": "Close",
+  "editorForceSettings": "Force Settings",
+  "editorPlayerAssignment": "Player assignment",
+  "editorPlayer": "Player {value0}",
+  "@editorPlayer": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesOnlyTheEditedForceAssignmentToPlayers1": "Copies only the edited force assignment to Players 1–8.",
+  "editorAssignToForce": "Assign to Force {value0}",
+  "@editorAssignToForce": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStoredIDPreserved": "Stored ID {value0} (preserved)",
+  "@editorStoredIDPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForce": "Force {value0}",
+  "@editorForce": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesEditedForceNamesAndOptionsOnlyPlayerAssignments": "Copies edited force names and options only. Player assignments are separate.",
+  "editorForceName": "Force name",
+  "editorRandomizeStartLocations": "Randomize start locations",
+  "editorAllies": "Allies",
+  "editorAlliedVictory": "Allied victory",
+  "editorSharedVision": "Shared vision",
+  "editorApplyUpdatesAllEditedPlayersAndForcesSaveAs": "Apply updates all edited players and forces. Save As writes the map.",
+  "editorUndo": "Undo: {value0}",
+  "@editorUndo": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRedo": "Redo: {value0}",
+  "@editorRedo": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorApply": "Apply",
+  "editorTheExistingTextIsNotValidUTF8Its": "The existing text is not valid UTF-8. Its original bytes are preserved; editing is unavailable.",
+  "editorMapInformation": "Map Information",
+  "editorMapTitle": "Map title",
+  "editorDescription": "Description",
+  "editorApplyUpdatesThisMapOnlySharedNamesRemainUnchanged": "Apply updates this map only. Shared names remain unchanged. Use Save As to write the edited map.",
+  "editorDiscardUnappliedSettings": "Discard unapplied settings?",
+  "editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges": "One or more tabs have unapplied drafts. Applied changes remain in the map and can be undone.",
+  "editorKeepEditing": "Keep editing",
+  "editorDiscardAndClose": "Discard and close",
+  "editorMapSettings": "Map Settings",
+  "editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced": "Map-wide settings. The canvas Inspector edits individual placed objects. Apply affects the current tab; Save As writes the map.",
+  "editorEUDExecutionRules": "EUD execution rules",
+  "editorMap": "Map",
+  "editorPlayers": "Players",
+  "editorForces": "Forces",
+  "editorUnits": "Units",
+  "editorAvailability": "Availability",
+  "editorUpgrades": "Upgrades",
+  "editorTech": "Tech",
+  "editorSlotType": "Slot type",
+  "editorRace": "Race",
+  "editorColor": "Color",
+  "editorUnavailable": "Unavailable",
+  "editorPlayerSettings": "Player Settings",
+  "editorPlayer203c6551": "Player {value0}{value1}",
+  "@editorPlayer203c6551": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReadOnly": " (read-only)",
+  "editorSlotTypeRaceAndColorEditsForPlayablePlayers": "Slot type, race and color edits for playable Players 1–8 only.",
+  "editorOnlyTheEightPlayableSlotsCanBeEditedPlayers": "Only the eight playable slots can be edited. Players 9–12 have no COLR color entry.",
+  "editorColorSettingsAreSavedToTheMapCanvasPreviews": "Color settings are saved to the map. Canvas previews currently use default player colors.",
+  "editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave": "{value0} pending field changes. Apply updates all edited players; Save As writes the map.",
+  "@editorPendingFieldChangesApplyUpdatesAllEditedPlayersSave": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoEditedFieldsInTheCurrentSelection": "No edited fields in the current selection.",
+  "editorDraftFieldCopiesPreparedForIDsReviewThenApply": "{value0} draft field copies prepared for {value1} IDs. Review, then Apply.",
+  "@editorDraftFieldCopiesPreparedForIDsReviewThenApply": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSearchNameOrID12ForExactID": "Search name or ID (#12 for exact ID)",
+  "editorCurrent": "Current: {value0}",
+  "@editorCurrent": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNoMatchingIDsCurrentSelectionAndDraftsAreUnchanged": "No matching IDs. Current selection and drafts are unchanged.",
+  "editorCopyEditedFieldsToIDs": "Copy edited fields to IDs",
+  "editorSource": "Source: {value0}. {value1}",
+  "@editorSource": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorCopiesOnlyEditedFieldsReplacingThoseDraftFieldsAt": "Copies only edited fields, replacing those draft fields at the target IDs. Search does not select targets. The map changes only after Apply.",
+  "editorTargetIDs": "Target IDs ({value0}–{value1})",
+  "@editorTargetIDs": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPrepareDraftCopies": "Prepare draft copies",
+  "editorUnappliedDraft": "Unapplied draft",
+  "editorTheMapChangedInAnotherEditorOrThroughUndo": "The map changed in another editor or through Undo/Redo. Reload before applying this tab.",
+  "editorReloadAndDiscardThisDraft": "Reload and discard this draft",
+  "editorDiscardTabDraft": "Discard tab draft",
+  "editorStarCraftDataAssets": "StarCraft Data Assets",
+  "editorChooseTheInstalledStarCraftRemasteredDirectoryTheEditorReads": "Choose the installed StarCraft: Remastered directory. The editor reads its local CASC storage through the bundled CascLib helper without extracting or copying copyrighted game data.",
+  "editorClear": "Clear",
+  "editorRefresh": "Refresh",
+  "editorChooseInstallation": "Choose Installation…",
+  "editorCASCBuildMiBCheckedCascLibHelper": "CASC {value0} • build {value1} • {value2} MiB checked • CascLib {value3} • helper {value4}",
+  "@editorCASCBuildMiBCheckedCascLibHelper": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      },
+      "value4": {
+        "type": "String"
+      }
+    }
+  },
+  "editorConfiguredPath": "Configured path",
+  "editorNotConfigured": "Not configured",
+  "editorExpectedTheFolderContainingStarCraftExeBuildInfoAnd": "Expected: the folder containing StarCraft.exe, .build.info, and Data\\.",
+  "editorLoadingSettings": "Loading settings…",
+  "editorInspectingAssets": "Inspecting assets…",
+  "editorRequiredAssetsReady": "{value0}/{value1} required assets ready",
+  "@editorRequiredAssetsReady": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStarCraftInstallationIsNotConfigured": "StarCraft installation is not configured",
+  "editorStarCraftCASCDataIsUnavailable": "StarCraft CASC data is unavailable",
+  "editorRequiredAssetsFound": "{value0}/{value1} required assets found",
+  "@editorRequiredAssetsFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMissing": "Missing",
+  "editorInvalid": "Invalid",
+  "editorUnavailableAssetFiles": "Unavailable asset files",
+  "editorAndMore": "…and {value0} more",
+  "@editorAndMore": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStoredFlagPreserved": "Stored flag {value0} (preserved)",
+  "@editorStoredFlagPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTechd52bce90": "Tech #{value0}, {value1}: {value2}",
+  "@editorTechd52bce90": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEffectiveStateUnknownStoredFlagPreserved": "Effective state: unknown (stored flag preserved)",
+  "editorEffectiveStateAvailableResearched": "Effective state: available {value0}, researched {value1}",
+  "@editorEffectiveStateAvailableResearched": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTechSettings": "Tech Settings",
+  "editorEditing": "Editing {value0} / {value1}{value2}.",
+  "@editorEditing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAlternateSectionsPreserved": "; alternate sections preserved",
+  "editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf": "Map costs and {value0} only. Inheritance flags change only if edited.",
+  "@editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMapDefaults": "map defaults",
+  "editorUseCustomCosts": "Use custom costs",
+  "editorUseGameDefaults": "Use game defaults",
+  "editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues": "Game defaults preserve stored custom costs. Default game values are not loaded here.",
+  "editorMapDefaultSettings": "Map default settings",
+  "editorCopiesOnlyCurrentTechPlayerEditsToPlayers1": "Copies only current tech #{value0} player edits to Players 1–8. Map costs and defaults are excluded.",
+  "@editorCopiesOnlyCurrentTechPlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsePlayerSettings": "Use player settings",
+  "editorInheritMapSettings": "Inherit map settings",
+  "editorAvailable": "Available",
+  "editorNotResearched": "Not researched",
+  "editorAlreadyResearched": "Already researched",
+  "editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer": "Map settings affect inheriting players. Inheritance preserves stored player flags. Availability and research status are independent.",
+  "editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe": "{value0} pending changes across techs and players. Apply updates the document; Save As writes the map.",
+  "@editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitAvailability": "Unit Availability",
+  "editorMapWideUnitProductionSettingsSeparateFromPlacedUnit": "Map-wide unit production settings, separate from placed-unit Inspector properties.",
+  "editorUnit": "Unit",
+  "editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf": "Map defaults and Player {value0} only. Inheritance changes only if edited.",
+  "@editorMapDefaultsAndPlayerOnlyInheritanceChangesOnlyIf": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMapDefaultAffectsAllInheritingPlayers": "Map default — affects all inheriting players",
+  "editorDefaultProhibited": "Default: prohibited",
+  "editorDefaultAllowed": "Default: allowed",
+  "editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1": "Copies only current Unit #{value0} player edits to Players 1–8. Map defaults are excluded.",
+  "@editorCopiesOnlyCurrentUnitPlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerSettingSource": "Player setting source",
+  "editorUsePlayerOverride": "Use player override",
+  "editorInheritMapDefault": "Inherit map default",
+  "editorStoredPlayerOverride": "Stored player override",
+  "editorPlayerProhibited": "Player: prohibited",
+  "editorPlayerAllowed": "Player: allowed",
+  "editorEffectiveAvailability": "Effective availability: {value0}",
+  "@editorEffectiveAvailability": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnknownStoredFlagsPreserved": "unknown (stored flags preserved)",
+  "editorInheritancePreservesTheStoredOverrideAvailabilityDoesNotBypass": "Inheritance preserves the stored override. Availability does not bypass game prerequisites or create placed units.",
+  "editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers": "{value0} pending changes. Apply updates all edited units and players; Save As writes the map.",
+  "@editorPendingChangesApplyUpdatesAllEditedUnitsAndPlayers": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorLocalWeaponReferencesUnavailableConfigureStarCraftAssetsAndRetry": "Local weapon references unavailable. Configure StarCraft assets and retry.",
+  "editorUnit88a3c859": "{value0}\nUnit #{value1}",
+  "@editorUnit88a3c859": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitPreviewRequiresLocalStarCraftGraphics": "Unit preview requires local StarCraft graphics.",
+  "editorConfigureStarCraftAssetsToLoadUnitLinks": "Configure StarCraft assets to load unit links.",
+  "editorGround": "Ground",
+  "editorAir": "Air",
+  "editorNone": "{value0}: None",
+  "@editorNone": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSubunit": "Subunit: {value0} (#{value1})",
+  "@editorSubunit": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSubunitWeaponsKeepsTheSelectedUnit": "Subunit weapons — keeps the selected unit",
+  "editorNoLinkedWeaponSelectAWeaponManually": "No linked weapon. Select a weapon manually.",
+  "editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing": "Auto-selected: {value0} (#{value1}) from {value2}. Weapon changes affect all units sharing it.",
+  "@editorAutoSelectedFromWeaponChangesAffectAllUnitsSharing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRetryUnitLinks": "Retry unit links",
+  "editorUnit24496eb9": "Unit #{value0}: {value1}",
+  "@editorUnit24496eb9": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorWeaponDamageMustBeAnIntegerFrom0To": "Weapon #{value0}: damage must be an integer from 0 to 65535.",
+  "@editorWeaponDamageMustBeAnIntegerFrom0To": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitSettings": "Unit Settings",
+  "editorMapWideUnitTypesSeparateFromPlacedUnitProperties": "Map-wide unit types, separate from placed-unit properties.",
+  "editorEditing4dc9e6e6": "Editing {value0}{value1}.",
+  "@editorEditing4dc9e6e6": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAlternateSectionPreservedWithoutSynchronization": "; alternate section preserved without synchronization",
+  "editorUnit38894196": "{value0} (Unit #{value1})",
+  "@editorUnit38894196": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitValuesNamesAndDefaultFlagsOnlySharedWeapon": "Unit values, names and default flags only. Shared weapon damage uses its own selection below.",
+  "editorUseCustomValues": "Use custom values",
+  "editorStoredDefaultFlagPreserved": "Stored default flag {value0} (preserved)",
+  "@editorStoredDefaultFlagPreserved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorFieldsShowStoredCustomValuesGameDefaultNumbersAre": "Fields show stored custom values. Game default numbers are not loaded.",
+  "editorRestoreSelectedUnitDefaults": "Restore selected unit defaults",
+  "editorUnitNameEmptyGameName": "Unit name (empty = game name)",
+  "editorSharedWeaponDamage": "Shared weapon damage",
+  "editorAWeaponChangeAffectsEveryUnitUsingThatWeapon": "A weapon change affects every unit using that weapon. Restoring a unit does not reset shared weapon damage.",
+  "editorWeapon": "Weapon",
+  "editorSharedWeaponDamageOnlyAllUnitsReferencingTargetWeapons": "Shared weapon damage only. All units referencing target weapons may be affected.",
+  "editorDamagePerUpgrade": "Damage per upgrade",
+  "editorBaseDamage": "Base damage",
+  "editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave": "Apply updates all edited unit types and weapons. Save As writes the map.",
+  "editorUpgrade": "Upgrade #{value0}, {value1}: {value2}",
+  "@editorUpgrade": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEffectiveLevelsUnknownStoredFlagPreserved": "Effective levels: unknown (stored flag preserved)",
+  "editorEffectiveLevelsStartMaximum": "Effective levels: {value0} / {value1} (start / maximum)",
+  "@editorEffectiveLevelsStartMaximum": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUpgradeSettings": "Upgrade Settings",
+  "editorUpgraded423b17": "Upgrade",
+  "editorMapDefaultLevels": "Map default levels",
+  "editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1": "Copies only current upgrade #{value0} player edits to Players 1–8. Map costs and defaults are excluded.",
+  "@editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsePlayerLevels": "Use player levels",
+  "editorInheritMapLevels": "Inherit map levels",
+  "editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer": "Map levels affect inheriting players. Inheritance preserves stored player levels. Starting level must not exceed maximum.",
+  "editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe": "{value0} pending changes across upgrades and players. Apply updates the document; Save As writes the map.",
+  "@editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorLoadingLocalWeaponReferences": "Loading local weapon references…",
+  "editorWeaponReferenceListUnavailable": "Weapon reference list unavailable: {value0}",
+  "@editorWeaponReferenceListUnavailable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSourceChanged": "source changed",
+  "editorReloadWeaponReferences": "Reload weapon references",
+  "editorNoneInThisDATSnapshot": "None in this DAT snapshot",
+  "editorWeaponDirectGroundAirReferences": "Weapon #{value0} — direct ground/air references: {value1}",
+  "@editorWeaponDirectGroundAirReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitsReferencingThoseSubunits": "Units referencing those subunits: {value0}",
+  "@editorUnitsReferencingThoseSubunits": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSource854c792f": "Source: {value0}",
+  "@editorSource854c792f": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD": "DAT references only. Spells, spawned projectiles/units and EUD runtime changes may have additional effects.",
+  "editorOpenAMapToManageResources": "Open a map to manage resources.",
+  "editorResources": "Resources",
+  "editorUndo71fd4acf": "Undo",
+  "editorRedo7412e5e9": "Redo",
+  "editorAddString": "Add string",
+  "editorImportPCMWAV": "Import PCM WAV",
+  "editorStopPreview": "Stop preview",
+  "editorStringsBytesOffsetLimitSaveAsWritesPendingResource": "{value0} strings • {value1} bytes • offset limit {value2} • Save As writes pending resource changes.",
+  "@editorStringsBytesOffsetLimitSaveAsWritesPendingResource": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReferenceCoverageIncompleteDeletionRestricted": "Reference coverage incomplete — deletion restricted",
+  "editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions": "Archive listing incomplete. Unlisted sounds may exist; imports/deletions are restricted.",
+  "editorSearchTextStringIDOrSoundPath": "Search text, string ID or sound path",
+  "editorWorking": "Working…",
+  "editorStrings": "Strings",
+  "editorSounds": "Sounds",
+  "editorInvalidUTF8RawBytesPreserved": "Invalid UTF-8 — raw bytes preserved",
+  "editorBytesKnownUseS": "{value0} bytes • {value1} known use(s){value2}",
+  "@editorBytesKnownUseS": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorExplicitReplacementRequired": " • explicit replacement required",
+  "editorClearUnreferencedString": "Clear unreferenced string",
+  "editorBytesPendingImport": "{value0} bytes • pending import",
+  "@editorBytesPendingImport": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorReferencedPathNotListedInThisMap": "Referenced path; not listed in this map",
+  "editorBytesLocale": "{value0} bytes • locale {value1}",
+  "@editorBytesLocale": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPreviewSound": "Preview sound",
+  "editorExportSound": "Export sound",
+  "editorDeleteSound": "Delete sound",
+  "editorDeleteSoundf1d564e6": "Delete sound?",
+  "editorRemovalAppliesOnSaveAsUndoRestoresThisEdit": "{value0}\nRemoval applies on Save As. Undo restores this edit.",
+  "@editorRemovalAppliesOnSaveAsUndoRestoresThisEdit": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDelete": "Delete",
+  "editorMapChanged": "Map changed.",
+  "editorResourcesAreReadOnly": "Resources are read-only: {value0}",
+  "@editorResourcesAreReadOnly": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInvalidUTF8EnterExplicitReplacementTextOriginalBytes": "Invalid UTF-8. Enter explicit replacement text; original bytes remain until Apply.",
+  "editorString": "String #{value0}",
+  "@editorString": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEditSharedIDAffectsAllReferences": "Edit shared ID — affects all references",
+  "editorSeparate": "Separate: {value0}",
+  "@editorSeparate": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs": "Additional unknown uses may exist. No automatic cleanup is performed.",
+  "editorUTF8Text": "UTF-8 text",
+  "editorKnownReferences": "{value0} known references",
+  "@editorKnownReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorWriteEpScriptHere": "// Write epScript here",
+  "editorModified": "Modified",
+  "editorClean": "Clean",
+  "editorInMemoryDraft": "In-memory draft",
+  "editorLnCol": "Ln {value0}, Col {value1}",
+  "@editorLnCol": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorActionSReferenceThisSlotApplyingChangesAffectsAll": "{value0} action(s) reference this slot. Applying changes affects all of them.",
+  "@editorActionSReferenceThisSlotApplyingChangesAffectsAll": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorNewStringIDUseThisIDInATrigger": "New string ID: {value0}. Use this ID in a trigger action.",
+  "@editorNewStringIDUseThisIDInATrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAddTriggerText": "Add trigger text",
+  "editorSwitchNames": "Switch names",
+  "editorUnitPropertySlots": "Unit property slots",
+  "editorID": "{value0} ID {value1}",
+  "@editorID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorProperty": "Property",
+  "editorSwitch": "Switch",
+  "editorText": "Text",
+  "editorUncheckedValuesInheritTheGameDefaultSpecialStatesCan": "Unchecked values inherit the game default. Special states can inherit, enable or disable.",
+  "editorInherit": "Inherit",
+  "editorEnabled": "Enabled",
+  "editorDisabled": "Disabled",
+  "editorPrepareChanges": "Prepare changes",
+  "editorApplyToMap": "Apply to map",
+  "editorYes": "yes",
+  "editorNo": "no",
+  "editorUnknown": "unknown",
+  "editorAllowed": "allowed",
+  "editorProhibited": "prohibited",
+  "editorMapdfa2efb1": "map",
+  "editorTheCHKSectionHeaderIsTruncatedAtByteOffset": "The CHK section header is truncated at byte offset {value0}.",
+  "@editorTheCHKSectionHeaderIsTruncatedAtByteOffset": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUseAnIntactScenarioChkOrOpenTheMap": "Use an intact scenario.chk or open the map as read-only.",
+  "editorSectionDeclaresBytesButOnlyBytesRemain": "Section \"{value0}\" declares {value1} bytes, but only {value2} bytes remain.",
+  "@editorSectionDeclaresBytesButOnlyBytesRemain": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSectionMustContainExactlyPayloadBytesButContains": "Section \"{value0}\" must contain exactly {value1} payload bytes, but contains {value2}.",
+  "@editorSectionMustContainExactlyPayloadBytesButContains": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisSectionUnchangedAndTreatTheMapAs": "Keep this section unchanged and treat the map as read-only.",
+  "editorIsOutsideTheMapPixelBounds": "{value0} {value1} is outside the map pixel bounds.",
+  "@editorIsOutsideTheMapPixelBounds": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMoveTheObjectInside0By0OrKeep": "Move the object inside 0..{value0} by 0..{value1}, or keep the raw record unchanged if the value is intentional EUD data.",
+  "@editorMoveTheObjectInside0By0OrKeep": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRefersToPlayerValueOutsideTheSupported011": "{value0} {value1} refers to player value {value2}, outside the supported 0..11 range.",
+  "@editorRefersToPlayerValueOutsideTheSupported011": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorChoosePlayer1ThroughPlayer12OrKeepThe": "Choose Player 1 through Player 12, or keep the raw value unchanged if it is intentional EUD data.",
+  "editorLocationDoesNotFormAValidRectangleInsideThe": "Location {value0} does not form a valid rectangle inside the map.",
+  "@editorLocationDoesNotFormAValidRectangleInsideThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUseLeftRightAndTopBottomInside0By": "Use left < right and top < bottom inside 0..{value0} by 0..{value1}, or preserve the raw value if intentional.",
+  "@editorUseLeftRightAndTopBottomInside0By": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUsesStringIDButMultipleSTRSTRxTablesMake": "{value0} uses string ID {value1}, but multiple STR/STRx tables make the reference ambiguous.",
+  "@editorUsesStringIDButMultipleSTRSTRxTablesMake": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheRawStringSectionsTheEditorWillNot": "Inspect the raw string sections; the editor will not guess an active table.",
+  "editorUsesStringIDButNoReadableSTRSTRxTable": "{value0} uses string ID {value1}, but no readable STR/STRx table is available.",
+  "@editorUsesStringIDButNoReadableSTRSTRxTable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheRawStringTableBeforeChangingThisReference": "Inspect the raw string table before changing this reference.",
+  "editorUsesStringIDButTheTableContainsOnlyEntries": "{value0} uses string ID {value1}, but the table contains only {value2} entries.",
+  "@editorUsesStringIDButTheTableContainsOnlyEntries": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorChooseAnExistingStringIDOrClearTheReference": "Choose an existing string ID or clear the reference to ID 0.",
+  "editorUsesStringIDWhoseRawEntryCannotBeResolved": "{value0} uses string ID {value1}, whose raw entry cannot be resolved safely.",
+  "@editorUsesStringIDWhoseRawEntryCannotBeResolved": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInspectTheStringTableStructuralDiagnosticsAndPreserveThe": "Inspect the string table structural diagnostics and preserve the raw reference until the source is understood.",
+  "editorSectionEndsWithAnIncompleteByteRecord": "Section \"{value0}\" ends with an incomplete {value1}-byte {value2} record.",
+  "@editorSectionEndsWithAnIncompleteByteRecord": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisObjectSectionUnchangedAndReadOnly": "Keep this object section unchanged and read-only.",
+  "editorSectionMustContainEither64Or255CompleteLocation": "Section \"{value0}\" must contain either 64 or 255 complete location records.",
+  "@editorSectionMustContainEither64Or255CompleteLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisLocationSectionUnchangedAndReadOnly": "Keep this location section unchanged and read-only.",
+  "editorSectionDoesNotContainItsCompleteByteStringCount": "Section \"{value0}\" does not contain its complete {value1}-byte string count.",
+  "@editorSectionDoesNotContainItsCompleteByteStringCount": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisStringTableUnchangedAndReadOnly": "Keep this string table unchanged and read-only.",
+  "editorSectionDeclaresStringsButItsOffsetTableExceedsThe": "Section \"{value0}\" declares {value1} strings, but its offset table exceeds the payload.",
+  "@editorSectionDeclaresStringsButItsOffsetTableExceedsThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionPointsOutsideThePayload": "String {value0} in section \"{value1}\" points outside the payload.",
+  "@editorStringInSectionPointsOutsideThePayload": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionPointsIntoTheCountOrOffset": "String {value0} in section \"{value1}\" points into the count or offset table.",
+  "@editorStringInSectionPointsIntoTheCountOrOffset": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStringInSectionHasNoNullTerminatorBeforeThe": "String {value0} in section \"{value1}\" has no null terminator before the payload ends.",
+  "@editorStringInSectionHasNoNullTerminatorBeforeThe": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorSectionEndsWithAnIncomplete2ByteTileRecord": "Section \"{value0}\" ends with an incomplete 2-byte tile record.",
+  "@editorSectionEndsWithAnIncomplete2ByteTileRecord": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorKeepThisTerrainSectionUnchangedAndReadOnly": "Keep this terrain section unchanged and read-only.",
+  "editorSectionContainsTilesButXMapDimensionsRequire": "Section \"{value0}\" contains {value1} tiles, but {value2}x{value3} map dimensions require {value4}.",
+  "@editorSectionContainsTilesButXMapDimensionsRequire": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      },
+      "value4": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRecoveryOpened": "Recovery opened",
+  "editorOnlyScmAndScxMapFilesCanBeOpened": "Only .scm and .scx map files can be opened.",
+  "editorChooseAStarCraftMapWithAScmOrScx": "Choose a StarCraft map with a .scm or .scx extension.",
+  "editorAnotherEditorOperationIsAlreadyRunning": "Another editor operation is already running.",
+  "editorWaitForTheCurrentOperationToFinishAndTry": "Wait for the current operation to finish and try again.",
+  "editorReadingMapArchive": "Reading map archive",
+  "editorFingerprintingSourceMap": "Fingerprinting source map",
+  "editorParsingScenarioChk": "Parsing scenario.chk",
+  "editorValidatingMapMetadata": "Validating map metadata",
+  "editorTheSourceMapChangedWhileItWasBeingOpened": "The source map changed while it was being opened.",
+  "editorCloseTheOtherProgramThatIsEditingTheMap": "Close the other program that is editing the map and open it again.",
+  "editorTheMapOpenedButTheRecentMapsListWas": "The map opened, but the recent maps list was not updated.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndReopen": "Check access to the application settings folder and reopen the map.",
+  "editorMapOpenedInRestrictedReadOnlyMode": "Map opened in restricted read-only mode",
+  "editorMapOpened": "Map opened",
+  "editorTheMapCouldNotBeOpenedBecauseOfAn": "The map could not be opened because of an unexpected error.",
+  "editorRetryTheOperationIfItFailsAgainInspectThe": "Retry the operation. If it fails again, inspect the application log.",
+  "editorTheMapWasSavedButTheRecentMapsList": "The map was saved, but the recent maps list was not updated.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndReopen915aeaa0": "Check access to the application settings folder and reopen the saved map.",
+  "editorTheMapFileDialogCouldNotBeOpened": "The map file dialog could not be opened.",
+  "editorRetryTheOperationOrRestartTheApplication": "Retry the operation or restart the application.",
+  "editorTheSourceMapFingerprintCouldNotBeVerified": "The source map fingerprint could not be verified.",
+  "editorCheckThatTheMapStillExistsIsReadableAnd": "Check that the map still exists, is readable, and is not being changed by another program.",
+  "editorOpenAMapBeforeUsingSaveAs": "Open a map before using Save As.",
+  "editorOpenAScmOrScxMapAndTryAgain": "Open a .scm or .scx map and try again.",
+  "editorEditedContainInvalidFieldValuesOrReferences": "Edited {value0} contain invalid field values or references.",
+  "@editorEditedContainInvalidFieldValuesOrReferences": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorOpenValidateReferencesAndCorrectTheReportedSlots": "Open {value0} → Validate references and correct the reported slots.",
+  "@editorOpenValidateReferencesAndCorrectTheReportedSlots": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorBriefing": "Briefing",
+  "editorTriggers": "Triggers",
+  "editorTheSaveAsDestinationMustBeAnAbsoluteWindows": "The Save As destination must be an absolute Windows path.",
+  "editorChooseTheDestinationUsingTheSaveAsDialog": "Choose the destination using the Save As dialog.",
+  "editorNewBroodWarMapsMustBeSavedAsScx": "New Brood War maps must be saved as .scx.",
+  "editorSaveAsSupportsOnlyScmAndScxMapFiles": "Save As supports only .scm and .scx map files.",
+  "editorChooseADestinationEndingInScx": "Choose a destination ending in .scx.",
+  "editorChooseADestinationEndingInScmOrScx": "Choose a destination ending in .scm or .scx.",
+  "editorSaveAsCannotOverwriteTheCurrentlyOpenSourceMap": "Save As cannot overwrite the currently open source map.",
+  "editorChooseADifferentOutputFileName": "Choose a different output file name.",
+  "editorTheSaveAsDestinationAlreadyExists": "The Save As destination already exists.",
+  "editorChooseANewFileNameOrExplicitlyConfirmReplacement": "Choose a new file name or explicitly confirm replacement in the Save As dialog.",
+  "editorPreparingNewMap": "Preparing new map",
+  "editorCheckingSourceMap": "Checking source map",
+  "editorValidatingNewMap": "Validating new map",
+  "editorCheckingSourceMapFingerprint": "Checking source map fingerprint",
+  "editorTheSourceMapChangedAfterItWasOpenedSo": "The source map changed after it was opened, so Save As was stopped.",
+  "editorReopenTheSourceMapToReviewTheExternalChanges": "Reopen the source map to review the external changes before saving.",
+  "editorCheckingExistingDestinationFingerprint": "Checking existing destination fingerprint",
+  "editorATemporarySaveAsWorkspaceCouldNotBeCreated": "A temporary Save As workspace could not be created.",
+  "editorCheckDestinationFolderPermissionsAndFreeDiskSpace": "Check destination folder permissions and free disk space.",
+  "editorWritingTemporaryMapArchive": "Writing temporary map archive",
+  "editorReopeningAndVerifyingTemporaryMap": "Reopening and verifying temporary map",
+  "editorTheReopenedTemporaryMapDoesNotContainTheExpected": "The reopened temporary map does not contain the expected scenario.chk bytes.",
+  "editorKeepTheSourceMapUnchangedAndReportTheArchive": "Keep the source map unchanged and report the archive writer failure.",
+  "editorTheReopenedTemporaryMapFailedCHKValidation": "The reopened temporary map failed CHK validation.",
+  "editorKeepTheSourceMapUnchangedAndInspectParserDiagnostics": "Keep the source map unchanged and inspect parser diagnostics.",
+  "editorFingerprintingVerifiedOutput": "Fingerprinting verified output",
+  "editorTheVerifiedTemporaryMapFingerprintCouldNotBeCalculated": "The verified temporary map fingerprint could not be calculated.",
+  "editorRecheckingSourceMapFingerprint": "Rechecking source map fingerprint",
+  "editorTheSourceMapChangedDuringSaveAsSoThe": "The source map changed during Save As, so the verified output was not promoted.",
+  "editorReopenTheSourceMapToReviewTheExternalChangesf53fd806": "Reopen the source map to review the external changes and retry with a new output name.",
+  "editorRecheckingSaveAsDestination": "Rechecking Save As destination",
+  "editorPromotingVerifiedMapToFinalDestination": "Promoting verified map to final destination",
+  "editorTheExistingDestinationIsSafeInABackupBut": "The existing destination is safe in a backup, but automatic restoration failed.",
+  "editorRestoreTheBackupToBeforeRetryingSaveAs": "Restore the backup to {value0} before retrying Save As.",
+  "@editorRestoreTheBackupToBeforeRetryingSaveAs": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheVerifiedMapCouldNotBePromotedToIts": "The verified map could not be promoted to its destination.",
+  "editorCheckDestinationFolderPermissionsAndChooseANewName": "Check destination folder permissions and choose a new name.",
+  "editorThePreviousDestinationWasPreservedAsARecoveryBackup": "The previous destination was preserved as a recovery backup.",
+  "editorKeepTheBackupUntilTheReplacementMapHasBeen": "Keep the backup until the replacement map has been verified.",
+  "editorMapSavedAndVerified": "Map saved and verified",
+  "editorMapSavedVerifiedAndBackedUp": "Map saved, verified, and backed up",
+  "editorSaveAsFailedBecauseOfAnUnexpectedError": "Save As failed because of an unexpected error.",
+  "editorRetryWithANewOutputNameTheSourceMap": "Retry with a new output name. The source map was not modified.",
+  "editorTheSaveAsDialogCouldNotBeOpened": "The Save As dialog could not be opened.",
+  "editorCheckThatTheSourceMapStillExistsIsReadable": "Check that the source map still exists, is readable, and is not being changed by another program.",
+  "editorTheExistingSaveAsDestinationCouldNotBeVerified": "The existing Save As destination could not be verified.",
+  "editorCheckThatTheDestinationIsAReadableRegularFile": "Check that the destination is a readable regular file and retry.",
+  "editorTheSaveAsDestinationChangedWhileTheMapWas": "The Save As destination changed while the map was being prepared.",
+  "editorReviewTheDestinationInAnotherProgramThenRetryAnd": "Review the destination in another program, then retry and confirm replacement again.",
+  "editorWaitingForEuddraftToStart": "Waiting for euddraft to start",
+  "editorTheEuddraftEventStreamFailedUnexpectedly": "The euddraft event stream failed unexpectedly.",
+  "editorTheEuddraftBuildCouldNotBeStarted": "The euddraft build could not be started.",
+  "editorStoppingEuddraft": "Stopping euddraft",
+  "editorTheEUDBuildCancellationRequestFailed": "The EUD build cancellation request failed.",
+  "editorEuddraftIsStillRunning": "euddraft is still running",
+  "editorEuddraftReturnedAnEventForADifferentBuild": "euddraft returned an event for a different build.",
+  "editorEuddraftIsRunning": "euddraft {value0} is running",
+  "@editorEuddraftIsRunning": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorValidatingAndPromotingTheGeneratedEUDMap": "Validating and promoting the generated EUD map",
+  "editorEUDBuildWasCancelled": "EUD build was cancelled",
+  "editorEUDBuildFailed": "EUD build failed",
+  "editorEUDMapBuiltVerifiedAndPromoted": "EUD map built, verified, and promoted",
+  "editorTheEuddraftEventStreamEndedWithoutAResult": "The euddraft event stream ended without a result.",
+  "editorInspectTheBuildLogAndRetry": "Inspect the build log and retry.",
+  "editorABuildWithThisIDIsAlreadyActive": "A build with this ID is already active.",
+  "editorWaitForTheActiveBuildToFinishAndRetry": "Wait for the active build to finish and retry.",
+  "editorTheEUDBuildInputsAreNotSafeRegularFiles": "The EUD build inputs are not safe regular files.",
+  "editorCheckTheBaseMapSourceRootEntrySourceAnd": "Check the base map, source root, entry source, and output folder.",
+  "editorTheEUDOutputResolvesToTheBaseMap": "The EUD output resolves to the base map.",
+  "editorChooseASeparateOutputFile": "Choose a separate output file.",
+  "editorTheEUDBaseMapFingerprintCouldNotBeCalculated": "The EUD base map fingerprint could not be calculated.",
+  "editorTheBaseMapDoesNotMatchTheEUDProject": "The base map does not match the EUD project binding.",
+  "editorOpenAndVerifyTheBoundMapThenPrepareAgain": "Open and verify the bound map, then prepare again.",
+  "editorTheEpScriptEntrySourceFingerprintCouldNotBeCalculated": "The epScript entry source fingerprint could not be calculated.",
+  "editorTheEUDOutputAlreadyExists": "The EUD output already exists.",
+  "editorChooseANewOutputOrExplicitlyConfirmReplacement": "Choose a new output or explicitly confirm replacement.",
+  "editorTheExistingEUDOutputFingerprintCouldNotBeCalculated": "The existing EUD output fingerprint could not be calculated.",
+  "editorTheTemporaryEUDBuildWorkspaceCouldNotBeCreated": "The temporary EUD build workspace could not be created.",
+  "editorCheckOutputFolderPermissionsAndAvailableDiskSpace": "Check output folder permissions and available disk space.",
+  "editorEuddraftExitedSuccessfullyButDidNotCreateAReadable": "euddraft exited successfully but did not create a readable temporary map.",
+  "editorEuddraftExitedSuccessfullyButCreatedAnEmptyTemporaryMap": "euddraft exited successfully but created an empty temporary map.",
+  "editorInspectTheEuddraftOutputAndEpScriptSource": "Inspect the euddraft output and epScript source.",
+  "editorTheTemporaryEUDOutputIsNotAReadableMap": "The temporary EUD output is not a readable map archive.",
+  "editorInspectTheEuddraftLogAndKeepTheBaseMap": "Inspect the euddraft log and keep the base map unchanged.",
+  "editorTheTemporaryEUDOutputContainsAnInvalidCHK": "The temporary EUD output contains an invalid CHK.",
+  "editorTheTemporaryEUDOutputFailedCHKMetadataValidation": "The temporary EUD output failed CHK metadata validation.",
+  "editorInspectTheMapValidationDiagnosticsAndEuddraftLog": "Inspect the map validation diagnostics and euddraft log.",
+  "editorTheTemporaryEUDOutputIsMissingRequiredVERDIM": "The temporary EUD output is missing required VER, DIM, or ERA map metadata.",
+  "editorUseAnIntactStarCraftMapAsTheEUDBase": "Use an intact StarCraft map as the EUD base map.",
+  "editorTheEUDBaseMapFingerprintCouldNotBeRechecked": "The EUD base map fingerprint could not be rechecked.",
+  "editorTheBaseMapChangedDuringTheEUDBuildSo": "The base map changed during the EUD build, so the output was not promoted.",
+  "editorReviewTheBaseMapChangesAndRebuild": "Review the base map changes and rebuild.",
+  "editorTheEpScriptEntryFingerprintCouldNotBeRechecked": "The epScript entry fingerprint could not be rechecked.",
+  "editorTheEpScriptEntryChangedDuringTheEUDBuildSo": "The epScript entry changed during the EUD build, so the output was not promoted.",
+  "editorSaveTheSourceChangesAndRebuild": "Save the source changes and rebuild.",
+  "editorThePreviousEUDOutputIsSafeInABackup": "The previous EUD output is safe in a backup, but automatic restoration failed.",
+  "editorRestoreTheBackupToBeforeBuildingAgain": "Restore the backup to {value0} before building again.",
+  "@editorRestoreTheBackupToBeforeBuildingAgain": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheVerifiedEUDMapCouldNotBePromotedTo": "The verified EUD map could not be promoted to its output.",
+  "editorCheckOutputFolderPermissionsAndChooseANewName": "Check output folder permissions and choose a new name.",
+  "editorThePreviousEUDOutputWasPreservedAsARecovery": "The previous EUD output was preserved as a recovery backup.",
+  "editorKeepTheBackupUntilTheGeneratedMapHasBeen": "Keep the backup until the generated map has been tested.",
+  "editorTheSafeEUDBuildPipelineFailedUnexpectedly": "The safe EUD build pipeline failed unexpectedly.",
+  "editorTheTemporaryEUDBuildWorkspaceWasNotRemoved": "The temporary EUD build workspace was not removed.",
+  "editorCloseProcessesUsingTheFolderThenRemoveItManually": "Close processes using the folder, then remove it manually.",
+  "editorMapSourceOrEUDProjectChangedPrepareTheBuild": "Map, source or EUD project changed. Prepare the build again.",
+  "editorSaveAndVerifyTheCurrentInputsThenPrepareAgain": "Save and verify the current inputs, then prepare again.",
+  "editorTheSelectedEuddraftInstallationCouldNotBeRechecked": "The selected euddraft installation could not be rechecked.",
+  "editorInspectTheToolAndPrepareANewBuild": "Inspect the tool and prepare a new build.",
+  "editorTheSelectedEuddraftInstallationChangedOrIsNotReady": "The selected euddraft installation changed or is not ready.",
+  "editorCheckThatTheFileIsReadableAndIsNot": "Check that the file is readable and is not changing.",
+  "editorTheExistingEUDOutputCouldNotBeRechecked": "The existing EUD output could not be rechecked.",
+  "editorTheEUDOutputChangedWhileTheMapWasBeing": "The EUD output changed while the map was being built, so the temporary output was not promoted.",
+  "editorReviewTheOtherProgramUsingTheOutputAndRebuild": "Review the other program using the output and rebuild.",
+  "editorTheObjectCatalogRequestFailedUnexpectedly": "The object catalog request failed unexpectedly.",
+  "editorRetryOrRepairTheApplicationInstallation": "Retry or repair the application installation.",
+  "editorTheObjectThumbnailRequestFailedUnexpectedly": "The object thumbnail request failed unexpectedly.",
+  "editorTheObjectCatalogRequestIsNoLongerCurrent": "The object catalog request is no longer current.",
+  "editorLoadTheCurrentlySelectedCatalog": "Load the currently selected catalog.",
+  "editorTheObjectCatalogAndThumbnailResultsDidNotMatch": "The object catalog and thumbnail results did not match.",
+  "editorRepairTheApplicationOrReportTheHelperError": "Repair the application or report the helper error.",
+  "editorTheStarCraftObjectAtlasRequestFailedUnexpectedly": "The StarCraft object atlas request failed unexpectedly.",
+  "editorTheStarCraftObjectAtlasResultDidNotMatchIts": "The StarCraft object atlas result did not match its batch.",
+  "editorOpenAMapBeforeBrowsingThePlacementCatalog": "Open a map before browsing the placement catalog.",
+  "editorSetTheStarCraftRemasteredDataFolderInSettingsFirst": "Set the StarCraft: Remastered data folder in settings first.",
+  "editorTheMapNeedsExactlyOneERASectionWithA": "The map needs exactly one ERA section with a known tileset.",
+  "editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe": "The catalog changed or returned overlapping pages. Select the catalog kind again to reload.",
+  "editorThePlacementCatalogIsUnavailableInThisBuild": "The placement catalog is unavailable in this build.",
+  "editorStarCraftDataAssetSettingsCouldNotBeLoaded": "StarCraft data asset settings could not be loaded.",
+  "editorCheckAccessToTheApplicationSettingsFolderAndRetry": "Check access to the application settings folder and retry.",
+  "editorTheStarCraftInstallationFolderPickerCouldNotBeOpened": "The StarCraft installation folder picker could not be opened.",
+  "editorRetryOrCheckWindowsDialogPermissions": "Retry or check Windows dialog permissions.",
+  "editorTheStarCraftInstallationPathCouldNotBeSaved": "The StarCraft installation path could not be saved.",
+  "editorTheStarCraftInstallationPathCouldNotBeCleared": "The StarCraft installation path could not be cleared.",
+  "editorTheStarCraftCASCStorageCouldNotBeInspected": "The StarCraft CASC storage could not be inspected.",
+  "editorCheckDirectoryAccessAndRetry": "Check directory access and retry.",
+  "editorTheStarCraftInstallationIsNotConfigured": "The StarCraft installation is not configured.",
+  "editorOpenSettingsAndChooseTheStarCraftInstallationDirectory": "Open Settings and choose the StarCraft installation directory.",
+  "editorTheStarCraftTileAtlasRequestFailedUnexpectedly": "The StarCraft tile atlas request failed unexpectedly.",
+  "editorTheStarCraftTileAtlasResultDidNotMatchIts": "The StarCraft tile atlas result did not match its batch.",
+  "editorTheTileCatalogRequestFailedUnexpectedly": "The Tile catalog request failed unexpectedly.",
+  "editorTheTileThumbnailRequestFailedUnexpectedly": "The Tile thumbnail request failed unexpectedly.",
+  "editorTheTileCatalogRequestIsNoLongerCurrent": "The Tile catalog request is no longer current.",
+  "editorTheTileCatalogAndThumbnailResultsDidNotMatch": "The Tile catalog and thumbnail results did not match.",
+  "editorTheMapPathMustBeAnAbsoluteWindowsPath": "The map path must be an absolute Windows path.",
+  "editorChooseTheMapAgainUsingTheOpenMapDialog": "Choose the map again using the Open Map dialog.",
+  "editorAnArchiveOperationWithTheSameIDIsAlready": "An archive operation with the same ID is already active.",
+  "editorWaitForTheActiveOperationOrCancelItFirst": "Wait for the active operation or cancel it first.",
+  "editorTheBundledMapArchiveHelperIsMissing": "The bundled map archive helper is missing.",
+  "editorRepairOrReinstallTheApplication": "Repair or reinstall the application.",
+  "editorATemporaryArchiveWorkspaceCouldNotBeCreated": "A temporary archive workspace could not be created.",
+  "editorCheckFreeDiskSpaceAndTemporaryFolderPermissions": "Check free disk space and temporary folder permissions.",
+  "editorTheMapArchiveHelperTimedOut": "The map archive helper timed out.",
+  "editorRetryTheOperationOrInspectTheMapForCorruption": "Retry the operation or inspect the map for corruption.",
+  "editorTheMapArchiveOperationWasCancelled": "The map archive operation was cancelled.",
+  "editorOpenTheMapAgainWhenReady": "Open the map again when ready.",
+  "editorTheMapArchiveHelperProducedTooMuchOutput": "The map archive helper produced too much output.",
+  "editorRepairTheApplicationOrReportTheHelperFailure": "Repair the application or report the helper failure.",
+  "editorScenarioChkExceedsTheConfiguredExtractionSizeLimit": "scenario.chk exceeds the configured extraction size limit.",
+  "editorRaiseTheReviewedSizeLimitOnlyForATrusted": "Raise the reviewed size limit only for a trusted map.",
+  "editorTheExtractedScenarioChkCouldNotBeRead": "The extracted scenario.chk could not be read.",
+  "editorRetryTheOperationAndCheckTemporaryDiskAccess": "Retry the operation and check temporary disk access.",
+  "editorTheExtractedScenarioChkDoesNotMatchHelperMetadata": "The extracted scenario.chk does not match helper metadata.",
+  "editorTheMapArchiveHelperCouldNotBeStarted": "The map archive helper could not be started.",
+  "editorTheMapArchiveHelperReturnedAnInvalidResponse": "The map archive helper returned an invalid response.",
+  "editorTheSourceMapPathMustBeAnAbsoluteWindows": "The source map path must be an absolute Windows path.",
+  "editorOpenTheSourceMapAgainUsingTheOpenMap": "Open the source map again using the Open Map dialog.",
+  "editorTheTemporaryOutputPathMustBeAnAbsoluteWindows": "The temporary output path must be an absolute Windows path.",
+  "editorCreateTheSaveAsWorkspaceAgain": "Create the Save As workspace again.",
+  "editorTheSourceMapCannotBeUsedAsTemporaryOutput": "The source map cannot be used as temporary output.",
+  "editorChooseADifferentSaveAsDestination": "Choose a different Save As destination.",
+  "editorTheTemporaryArchiveOutputAlreadyExists": "The temporary archive output already exists.",
+  "editorCreateAFreshSaveAsWorkspaceAndRetry": "Create a fresh Save As workspace and retry.",
+  "editorTheTemporarySaveAsWorkspaceDoesNotExist": "The temporary Save As workspace does not exist.",
+  "editorTheTemporarySaveAsWorkspaceCouldNotBeInspected": "The temporary Save As workspace could not be inspected.",
+  "editorCheckDestinationFolderPermissionsAndRetry": "Check destination folder permissions and retry.",
+  "editorTheTemporaryScenarioInputPathAlreadyExists": "The temporary scenario input path already exists.",
+  "editorTheTemporaryArchiveWriterTimedOut": "The temporary archive writer timed out.",
+  "editorTheMapArchiveWriteWasCancelled": "The map archive write was cancelled.",
+  "editorRunSaveAsAgainWhenReady": "Run Save As again when ready.",
+  "editorTheHelperReportedAnUnexpectedScenarioChkSize": "The helper reported an unexpected scenario.chk size.",
+  "editorTheHelperDidNotCreateTheTemporaryMapArchive": "The helper did not create the temporary map archive.",
+  "editorRetrySaveAsOrRepairTheApplication": "Retry Save As or repair the application.",
+  "editorTheTemporaryMapArchiveCouldNotBeInspected": "The temporary map archive could not be inspected.",
+  "editorTheTemporaryMapSizeDoesNotMatchHelperMetadata": "The temporary map size does not match helper metadata.",
+  "editorTheTemporaryScenarioInputCouldNotBeWritten": "The temporary scenario input could not be written.",
+  "editorTheArchiveEntryListingIsIncomplete": "The archive entry listing is incomplete.",
+  "editorEditingCanContinueButVerifyProtectedOrUnnamedEntries": "Editing can continue, but verify protected or unnamed entries before saving.",
+  "editorSomeArchiveEntryNamesWereRecoveredSynthetically": "Some archive entry names were recovered synthetically.",
+  "editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths": "Treat synthetic names as diagnostic labels, not original paths.",
+  "editorTheArchiveContainsDuplicateEntryPaths": "The archive contains duplicate entry paths.",
+  "editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving": "Review locale variants and duplicate entries before saving.",
+  "editorTheMapUsesAnUnexpectedMPQFormatVersion": "The map uses an unexpected MPQ format version.",
+  "editorUseSaveAsAndReOpenTheOutputBefore": "Use Save As and re-open the output before replacing any map.",
+  "editorTheArchiveContainsEncryptedEntries": "The archive contains encrypted entries.",
+  "editorEncryptedEntriesAreReportedWithoutAttemptingRecovery": "Encrypted entries are reported without attempting recovery.",
+  "editorTheStarCraftInstallationPathMustBeAnAbsoluteWindows": "The StarCraft installation path must be an absolute Windows drive or UNC directory.",
+  "editorChooseTheStarCraftInstallationUsingTheSettingsDialog": "Choose the StarCraft installation using the Settings dialog.",
+  "editorTheBundledStarCraftCASCHelperIsMissing": "The bundled StarCraft CASC helper is missing.",
+  "editorTheStarCraftCASCInspectionTimedOut": "The StarCraft CASC inspection timed out.",
+  "editorRetryAfterRepairingTheStarCraftInstallationInBattleNet": "Retry after repairing the StarCraft installation in Battle.net.",
+  "editorTheStarCraftCASCHelperProducedTooMuchOutput": "The StarCraft CASC helper produced too much output.",
+  "editorTheStarCraftCASCHelperCouldNotBeStarted": "The StarCraft CASC helper could not be started.",
+  "editorTheStarCraftInstallationCouldNotBeInspected": "The StarCraft installation could not be inspected.",
+  "editorCheckDirectoryPermissionsAndRetry": "Check directory permissions and retry.",
+  "editorRequiredStarCraftCASCTilesetMissing": "{value0} required StarCraft CASC tileset {value1} missing.",
+  "@editorRequiredStarCraftCASCTilesetMissing": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorAssetIs": "asset is",
+  "editorAssetsAre": "assets are",
+  "editorRepairTheStarCraftInstallationInBattleNetAndRetry": "Repair the StarCraft installation in Battle.net and retry.",
+  "editorRequiredStarCraftCASCTilesetUnreadable": "{value0} required StarCraft CASC tileset {value1} unreadable.",
+  "@editorRequiredStarCraftCASCTilesetUnreadable": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheStarCraftCASCHelperReturnedAnInvalidResponse": "The StarCraft CASC helper returned an invalid response.",
+  "editorTheStarCraftInstallationPathIsInvalid": "The StarCraft installation path is invalid.",
+  "editorChooseTheStarCraftInstallationFolderAgain": "Choose the StarCraft installation folder again.",
+  "editorAnObjectRenderingOperationWithThisIDIsActive": "An object rendering operation with this ID is active.",
+  "editorWaitForTheCurrentMapRenderingOperationToFinish": "Wait for the current map rendering operation to finish.",
+  "editorTheStarCraftObjectRenderingHelperTimedOut": "The StarCraft object rendering helper timed out.",
+  "editorRepairTheStarCraftInstallationAndRetry": "Repair the StarCraft installation and retry.",
+  "editorTheStarCraftObjectHelperProducedTooMuchOutput": "The StarCraft object helper produced too much output.",
+  "editorTheStarCraftObjectHelperCouldNotBeStarted": "The StarCraft object helper could not be started.",
+  "editorTheStarCraftObjectAtlasCouldNotBeReadSafely": "The StarCraft object atlas could not be read safely.",
+  "editorTheStarCraftObjectHelperReturnedAnInvalidResponse": "The StarCraft object helper returned an invalid response.",
+  "editorTheStarCraftObjectRenderingOperationWasCancelled": "The StarCraft object rendering operation was cancelled.",
+  "editorRetryAfterTheVisibleMapStateBecomesStable": "Retry after the visible map state becomes stable.",
+  "editorThisHelperVersionDoesNotSupportThatCatalogKind": "This helper version does not support that catalog kind.",
+  "editorChooseTheTileDoodadUnitOrPureSpriteCatalog": "Choose the Tile, Doodad, Unit, or pure Sprite catalog.",
+  "editorACatalogOperationWithThisIDIsAlreadyActive": "A catalog operation with this ID is already active.",
+  "editorWaitForTheActiveCatalogOperationToFinish": "Wait for the active catalog operation to finish.",
+  "editorTheStarCraftCatalogHelperTimedOut": "The StarCraft catalog helper timed out.",
+  "editorTheStarCraftCatalogHelperProducedTooMuchOutput": "The StarCraft catalog helper produced too much output.",
+  "editorTheStarCraftCatalogHelperCouldNotBeStarted": "The StarCraft catalog helper could not be started.",
+  "editorTheStarCraftCatalogCouldNotBeListedSafely": "The StarCraft catalog could not be listed safely.",
+  "editorTheLocalDoodadRecipeIsInvalid": "The local Doodad recipe is invalid.",
+  "editorTheLocalObjectPreviewIsUnavailable": "The local object preview is unavailable.",
+  "editorVerifiedUnitCapabilityDataIsUnavailable": "Verified unit capability data is unavailable.",
+  "editorThisUnitNeedsAnAddonOrNydusRelation": "This unit needs an addon or Nydus relation.",
+  "editorTheStarCraftCatalogHelperReturnedAnInvalidResponse": "The StarCraft catalog helper returned an invalid response.",
+  "editorRepairTheApplicationOrReportTheCatalogHelperError": "Repair the application or report the catalog helper error.",
+  "editorTheStarCraftCatalogOperationWasCancelled": "The StarCraft catalog operation was cancelled.",
+  "editorRetryTheCatalogOperationWhenReady": "Retry the catalog operation when ready.",
+  "editorTheStarCraftTileRenderingHelperTimedOut": "The StarCraft tile rendering helper timed out.",
+  "editorTheStarCraftTileHelperProducedTooMuchOutput": "The StarCraft tile helper produced too much output.",
+  "editorTheStarCraftTileHelperCouldNotBeStarted": "The StarCraft tile helper could not be started.",
+  "editorTheStarCraftTileAtlasCouldNotBeReadSafely": "The StarCraft tile atlas could not be read safely.",
+  "editorTheStarCraftTileHelperReturnedAnInvalidResponse": "The StarCraft tile helper returned an invalid response.",
+  "editorOpenTheReportedEpScriptModuleAndFixThisLine": "Open the reported epScript module and fix this line.",
+  "editorEuddraftInspectionIsSupportedOnlyOnWindows": "euddraft inspection is supported only on Windows.",
+  "editorRunTheEditorOnWindows10OrWindows11": "Run the editor on Windows 10 or Windows 11.",
+  "editorAnEuddraftInstallationPathHasNotBeenConfigured": "An euddraft installation path has not been configured.",
+  "editorSelectTheExtractedEuddraftDirectoryOrEuddraftExe": "Select the extracted euddraft directory or euddraft.exe.",
+  "editorTheEuddraftInstallationCouldNotBeInspected": "The euddraft installation could not be inspected.",
+  "editorCheckPathPermissionsAndRetry": "Check path permissions and retry.",
+  "editorTheEuddraftPathMustBeAnAbsoluteWindowsPath": "The euddraft path must be an absolute Windows path.",
+  "editorSelectThePathUsingTheEditorSettings": "Select the path using the editor settings.",
+  "editorTheConfiguredFileIsNotEuddraftExe": "The configured file is not euddraft.exe.",
+  "editorSelectTheOfficialEuddraftExeOrItsInstallationFolder": "Select the official euddraft.exe or its installation folder.",
+  "editorTheConfiguredEuddraftPathDoesNotExist": "The configured euddraft path does not exist.",
+  "editorExtractTheOfficialEuddraftReleaseAndRetry": "Extract the official euddraft release and retry.",
+  "editorTheConfiguredEuddraftPathIsNotARegularFile": "The configured euddraft path is not a regular file or folder.",
+  "editorSelectALocalExtractedEuddraftInstallation": "Select a local extracted euddraft installation.",
+  "editorTheInstallationDoesNotContainAUsableEuddraftExe": "The installation does not contain a usable euddraft.exe.",
+  "editorReExtractTheOfficialEuddraftRelease": "Re-extract the official euddraft release.",
+  "editorTheEuddraftVERSIONFileIsMissing": "The euddraft VERSION file is missing.",
+  "editorUseACompleteOfficialEuddraftReleaseArchive": "Use a complete official euddraft release archive.",
+  "editorTheEuddraftVERSIONFileHasAnInvalidSize": "The euddraft VERSION file has an invalid size.",
+  "editorTheEuddraftVERSIONValueIsNotRecognized": "The euddraft VERSION value is not recognized.",
+  "editorUseAnOfficialFourComponentEuddraftRelease": "Use an official four-component euddraft release.",
+  "editorEuddraftIsNotSupportedByThisEditor": "euddraft {value0} is not supported by this editor.",
+  "@editorEuddraftIsNotSupportedByThisEditor": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInstallASupportedRelease": "Install a supported release: {value0}.",
+  "@editorInstallASupportedRelease": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheEuddraftInstallationIsIncomplete": "The euddraft installation is incomplete.",
+  "editorReExtractTheCompleteOfficialEuddraftRelease": "Re-extract the complete official euddraft release.",
+  "editorTheAppHasNoTrustedInventoryForThisBundled": "The app has no trusted inventory for this bundled tool.",
+  "editorUseAVerifiedAppPackageOrExplicitlySelectAn": "Use a verified app package or explicitly select an external installation.",
+  "editorBundledToolIntegrityVerificationFailed": "Bundled tool integrity verification failed.",
+  "editorRepairTheBundledInstallationOrExplicitlySelectAnExternal": "Repair the bundled installation or explicitly select an external tool.",
+  "editorAnEUDBuildWithTheSameIDIsAlready": "An EUD build with the same ID is already active.",
+  "editorWaitForTheActiveBuildOrCancelItFirst": "Wait for the active build or cancel it first.",
+  "editorEuddraftCouldNotBeStarted": "euddraft could not be started.",
+  "editorReinspectTheEuddraftInstallationAndRetry": "Reinspect the euddraft installation and retry.",
+  "editorTheEuddraftBuildTimedOut": "The euddraft build timed out.",
+  "editorInspectTheBuildLogThenRetryOrCancel": "Inspect the build log, then retry or cancel.",
+  "editorEuddraftProducedMoreOutputThanTheSafetyLimit": "euddraft produced more output than the safety limit.",
+  "editorInspectTheSourceForRunawayLoggingBeforeRetrying": "Inspect the source for runaway logging before retrying.",
+  "editorEuddraftExitedWithAFailureCode": "euddraft exited with a failure code.",
+  "editorReviewStdoutAndStderrForTheCompilerError": "Review stdout and stderr for the compiler error.",
+  "editorTheEUDBuildCouldNotAccessARequiredFile": "The EUD build could not access a required file.",
+  "editorCheckFilePermissionsAndRetry": "Check file permissions and retry.",
+  "editorTheEUDBuildFailedUnexpectedly": "The EUD build failed unexpectedly.",
+  "editorRetryTheBuildOrReportTheFailure": "Retry the build or report the failure.",
+  "editorEuddraftBuildsAreSupportedOnlyOnWindows": "euddraft builds are supported only on Windows.",
+  "editorTheEuddraftExecutablePathMustBeAbsolute": "The euddraft executable path must be absolute.",
+  "editorInspectAndSelectTheEuddraftInstallationAgain": "Inspect and select the euddraft installation again.",
+  "editorTheInspectedEuddraftExecutableIsNoLongerAvailable": "The inspected euddraft executable is no longer available.",
+  "editorInspectTheEuddraftInstallationAgain": "Inspect the euddraft installation again.",
+  "editorTheEuddraftSettingsPathMustBeAnAbsoluteEds": "The euddraft settings path must be an absolute .eds path.",
+  "editorChooseAGeneratedOneShotEdsSettingsFile": "Choose a generated one-shot .eds settings file.",
+  "editorTheEuddraftSettingsFileIsMissingOrEmpty": "The euddraft settings file is missing or empty.",
+  "editorGenerateTheBuildSettingsAgainAndRetry": "Generate the build settings again and retry.",
+  "editorTheEUDBuildWasCancelled": "The EUD build was cancelled.",
+  "editorStartTheBuildAgainWhenReady": "Start the build again when ready.",
+  "editorInactive": "Inactive",
+  "editorRescuePassive": "Rescue passive",
+  "editorComputer": "Computer",
+  "editorHuman": "Human",
+  "editorNeutral": "Neutral",
+  "editorZerg": "Zerg",
+  "editorTerran": "Terran",
+  "editorProtoss": "Protoss",
+  "editorIndependent": "Independent",
+  "editorUserSelectable": "User selectable",
+  "editorRandom": "Random",
+  "editorRed": "Red",
+  "editorBlue": "Blue",
+  "editorTeal": "Teal",
+  "editorPurple": "Purple",
+  "editorOrange": "Orange",
+  "editorBrown": "Brown",
+  "editorWhite": "White",
+  "editorYellow": "Yellow",
+  "editorGreen": "Green",
+  "editorPaleYellow": "Pale yellow",
+  "editorTan": "Tan",
+  "editorAzure": "Azure",
+  "editorExpectedOneSectionFound": "{value0}: expected one section; found {value1}.",
+  "@editorExpectedOneSectionFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorExpectedBytesFound": "{value0}: expected {value1} bytes; found {value2}.",
+  "@editorExpectedBytesFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorASingleKnownVERSectionIsRequired": "A single known VER section is required.",
+  "editorCRGBColorSettingsArePresentCOLREditingIsUnavailable": "CRGB color settings are present. COLR editing is unavailable until their interaction is supported.",
+  "editorAPlayerFieldMayBeUpdatedOnlyOnce": "A player field may be updated only once.",
+  "editorUnsupportedID": "Unsupported {value0} ID: {value1}.",
+  "@editorUnsupportedID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorStartLocationsCannotBeCheckedAUNITSectionIs": "Start locations cannot be checked: a UNIT section is malformed.",
+  "editorStartLocationHasNonPlayableOwnerID": "Start location has non-playable owner ID {value0}.",
+  "@editorStartLocationHasNonPlayableOwnerID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerHasStartLocations": "Player {value0} has {value1} start locations.",
+  "@editorPlayerHasStartLocations": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPlayerHasNoStartLocationCheckTheIntendedUMS": "Player {value0} has no start location; check the intended UMS setup.",
+  "@editorPlayerHasNoStartLocationCheckTheIntendedUMS": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInactivePlayerOwnsAStartLocation": "Inactive player {value0} owns a start location.",
+  "@editorInactivePlayerOwnsAStartLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForceNamesRequireOneSafeSTROrSTRxTable": "Force names require one safe STR or STRx table.",
+  "editorForceSettingsRequireOneKnownVERAndOne20": "Force settings require one known VER and one 20-byte FORC section.",
+  "editorInvalidForceNameStringID": "Invalid force name string ID {value0}.",
+  "@editorInvalidForceNameStringID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorForceNamesCannotContainNUL": "Force names cannot contain NUL.",
+  "editorFORCStringIDsCannotExceed65535": "FORC string IDs cannot exceed 65535.",
+  "editorUseDefaults": "Use defaults",
+  "editorHitPoints": "Hit points",
+  "editorShields": "Shields",
+  "editorArmor": "Armor",
+  "editorBuildTime160S": "Build time (1/60 s)",
+  "editorMineralCost": "Mineral cost",
+  "editorGasCost": "Gas cost",
+  "editorHitPointsRequireANonnegativeDecimalInStepsOf": "Hit points require a nonnegative decimal in steps of 1/256.",
+  "editorHitPointsMustBeAMultipleOf1256": "Hit points must be a multiple of 1/256.",
+  "editorRequiresANonnegativeInteger": "{value0} requires a nonnegative integer.",
+  "@editorRequiresANonnegativeInteger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorInvalidUnitNameStringID": "Invalid unit name string ID {value0}.",
+  "@editorInvalidUnitNameStringID": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitSettingsRequireOneKnownVERSection": "Unit settings require one known VER section.",
+  "editorUnitNamesRequireOneSafeSTROrSTRxTable": "Unit names require one safe STR or STRx table.",
+  "editorUnitNamesCannotContainNUL": "Unit names cannot contain NUL.",
+  "editorUnitNameIDsCannotExceed65535": "Unit name IDs cannot exceed 65535.",
+  "editorGlobalAvailabilityHasNoPlayer": "Global availability has no player.",
+  "editorAPlayerIsRequired": "A player is required.",
+  "editorUnitAvailabilityRequiresOneKnownVERSection": "Unit availability requires one known VER section.",
+  "editorPUNIExpectedOneSectionFound": "PUNI: expected one section; found {value0}.",
+  "@editorPUNIExpectedOneSectionFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorPUNIExpected5700BytesFound": "PUNI: expected 5700 bytes; found {value0}.",
+  "@editorPUNIExpected5700BytesFound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorResearchTime160S": "Research time (1/60 s)",
+  "editorEnergyCost": "Energy cost",
+  "editorCostsHaveNoPlayer": "Costs have no player.",
+  "editorInheritanceRequiresAPlayer": "Inheritance requires a player.",
+  "editorTechSettingsRequireOneKnownVERSection": "Tech settings require one known VER section.",
+  "editorBaseMineralCost": "Base mineral cost",
+  "editorMineralCostPerLevel": "Mineral cost per level",
+  "editorBaseGasCost": "Base gas cost",
+  "editorGasCostPerLevel": "Gas cost per level",
+  "editorBaseResearchTime160S": "Base research time (1/60 s)",
+  "editorResearchTimePerLevel160S": "Research time per level (1/60 s)",
+  "editorMaximumLevel": "Maximum level",
+  "editorStartingLevel": "Starting level",
+  "editorUpgradeSettingsRequireOneKnownVERSection": "Upgrade settings require one known VER section.",
+  "editorUpgradeStartingLevelMustNotExceedMaximumLevel": "Upgrade #{value0} {value1}: starting level must not exceed maximum level.",
+  "@editorUpgradeStartingLevelMustNotExceedMaximumLevel": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEnterIDsSuchAs025": "Enter IDs such as 0, 2-5.",
+  "editorUseCommaSeparatedIDsOrAscendingRanges": "Use comma-separated IDs or ascending ranges.",
+  "editorIDsMustBeBetweenAndInAscendingRanges": "IDs must be between {value0} and {value1}, in ascending ranges.",
+  "@editorIDsMustBeBetweenAndInAscendingRanges": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorOneStructurallySafeSTRSTRxTableIsRequiredFor": "One structurally safe STR/STRx table is required for editing.",
+  "editorTruncated": "Truncated {value0}",
+  "@editorTruncated": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedSPRP": "Malformed SPRP",
+  "editorMalformedFORC": "Malformed FORC",
+  "editorForcef1368d9": "force {value0}",
+  "@editorForcef1368d9": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedMRGN": "Malformed MRGN",
+  "editorLocation": "location {value0}",
+  "@editorLocation": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedSWNM": "Malformed SWNM",
+  "editorSwitchffe3c882": "switch {value0}",
+  "@editorSwitchffe3c882": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformedWAV": "Malformed WAV",
+  "editorSoundSlot": "sound slot {value0}",
+  "@editorSoundSlot": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorMalformed": "Malformed {value0}",
+  "@editorMalformed": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUnitc6ee345c": "unit {value0}",
+  "@editorUnitc6ee345c": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawConditionInTrigger": "Raw condition in trigger {value0}",
+  "@editorRawConditionInTrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawActionInTrigger": "Raw action in trigger {value0}",
+  "@editorRawActionInTrigger": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTriggerAction": "trigger {value0} action {value1} {value2}",
+  "@editorTriggerAction": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRawBriefingAction": "Raw briefing action",
+  "editorBriefingActionText": "briefing {value0} action {value1} text",
+  "@editorBriefingActionText": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorBriefingActionSound": "briefing {value0} action {value1} sound",
+  "@editorBriefingActionSound": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      }
+    }
+  },
+  "editorUninterpretedSection": "Uninterpreted {value0} section",
+  "@editorUninterpretedSection": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDuplicateCHKSections": "Duplicate CHK sections",
+  "editorInvalidStringID": "Invalid string ID.",
+  "editorSoundPathReferencesAreManagedThroughSoundImportDelete": "Sound path references are managed through sound import/delete. Separate a text reference to edit its text.",
+  "editorReferencedOrIncompletelyTracedStringsCannotBeCleared": "Referenced or incompletely traced strings cannot be cleared.",
+  "editorNULIsNotAllowed": "NUL is not allowed.",
+  "editorTheSelectedReferenceChanged": "The selected reference changed.",
+  "editorThisReferenceRequiresA16BitStringID": "This reference requires a 16-bit string ID.",
+  "editorOneValidWAVTableIsRequired": "One valid WAV table is required.",
+  "editorAll512SoundSlotsAreOccupied": "All 512 sound slots are occupied.",
+  "editorSoundIsReferencedOrReferenceCoverageIsIncomplete": "Sound is referenced, or reference coverage is incomplete.",
+  "editorAmbiguousOrMalformedSection": "Ambiguous or malformed {value0} section.",
+  "@editorAmbiguousOrMalformedSection": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTextCannotContainNUL": "Text cannot contain NUL.",
+  "editorOneSafeStringTableIsRequired": "One safe string table is required.",
+  "editorSwitch8e2b60a2": "Switch {value0}",
+  "@editorSwitch8e2b60a2": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorHitpoints": "Hitpoints %",
+  "editorShields83e6a3a": "Shields %",
+  "editorEnergy": "Energy %",
+  "editorResourceAmount": "Resource amount",
+  "editorHangarCount": "Hangar count",
+  "editorCloaked": "Cloaked",
+  "editorBurrowed": "Burrowed",
+  "editorLifted": "Lifted",
+  "editorHallucinated": "Hallucinated",
+  "editorInvincible": "Invincible",
+  "editorInvalid8650455": "Invalid {value0}",
+  "@editorInvalid8650455": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorFiveSpecialPropertyStatesRequired": "Five special property states required.",
+  "editorOpenAMapFirst": "Open a map first.",
+  "editorMapChangedDuringImport": "Map changed during import.",
+  "editorThisPathAlreadyHasASoundReferenceChooseA": "This path already has a sound reference. Choose a different file name.",
+  "editorASoundAlreadyUsesThisPathChooseADifferent": "A sound already uses this path. Choose a different file name.",
+  "editorIncompleteArchiveListingNameCollisionsCannotBeRuledOut": "Incomplete archive listing: name collisions cannot be ruled out.",
+  "editorAmbiguousArchiveEntryDeletionIsBlocked": "Ambiguous archive entry: deletion is blocked.",
+  "editorSoundIsDeleted": "Sound is deleted.",
+  "editorTheSoundIsNotStoredInThisNewMap": "The sound is not stored in this new map.",
+  "editorSoundGatewayUnavailable": "Sound gateway unavailable.",
+  "editorSourceMapChangedOnDisk": "Source map changed on disk.",
+  "editorMapChangedDuringSoundRead": "Map changed during sound read.",
+  "editorTheSoundIsNotStoredInThisMap": "The sound is not stored in this map.",
+  "editorOpenAnEditableMap": "Open an editable map.",
+  "editorMapChangedReopenTriggerResources": "Map changed. Reopen trigger resources.",
+  "editorPendingSoundEditsExceed64EntriesOr64MiB": "Pending sound edits exceed 64 entries or 64 MiB. Save first.",
+  "editorResourceEditsCannotRemoveSections": "Resource edits cannot remove sections.",
+  "editorUnsupportedAppendedResource": "Unsupported appended resource.",
+  "editorUnsupportedResourceChange": "Unsupported resource change.",
+  "editorEditTriggerResources": "Edit trigger resources",
+  "editorMapChangedReopenTheTriggerEditor": "Map changed. Reopen the trigger editor.",
+  "editorTRIGAndMBRFRecordsCannotBeMixed": "TRIG and MBRF records cannot be mixed.",
+  "editorCreateBriefing": "Create briefing",
+  "editorEditBriefing": "Edit briefing",
+  "editorEditTriggers": "Edit triggers",
+  "editorOpenAnEditableMapBeforeChangingTechs": "Open an editable map before changing techs.",
+  "editorTheMapChangedReopenTechSettingsBeforeApplying": "The map changed. Reopen Tech Settings before applying.",
+  "editorEditTechSettings": "Edit tech settings",
+  "editorOpenAnEditableMapBeforeChangingUpgrades": "Open an editable map before changing upgrades.",
+  "editorTheMapChangedReopenUpgradeSettingsBeforeApplying": "The map changed. Reopen Upgrade Settings before applying.",
+  "editorEditUpgradeSettings": "Edit upgrade settings",
+  "editorOpenAnEditableMapBeforeChangingAvailability": "Open an editable map before changing availability.",
+  "editorTheMapChangedReopenUnitAvailabilityBeforeApplying": "The map changed. Reopen Unit Availability before applying.",
+  "editorEditUnitAvailability": "Edit unit availability",
+  "editorOpenAnEditableMapBeforeChangingUnitSettings": "Open an editable map before changing unit settings.",
+  "editorTheMapChangedReopenUnitSettingsBeforeApplying": "The map changed. Reopen Unit Settings before applying.",
+  "editorEditUnitSettings": "Edit unit settings",
+  "editorOpenAnEditableMapBeforeChangingForceSettings": "Open an editable map before changing force settings.",
+  "editorTheMapChangedReopenForceSettingsBeforeApplying": "The map changed. Reopen Force Settings before applying.",
+  "editorEditForceSettings": "Edit force settings",
+  "editorOpenAnEditableMapBeforeChangingPlayerSettings": "Open an editable map before changing player settings.",
+  "editorTheMapChangedReopenPlayerSettingsBeforeApplying": "The map changed. Reopen Player Settings before applying.",
+  "editorEditPlayerSettings": "Edit player settings",
+  "editorOpenAnEditableMapBeforeChangingMapInformation": "Open an editable map before changing map information.",
+  "editorTheMapChangedReopenMapInformationBeforeApplying": "The map changed. Reopen Map Information before applying.",
+  "editorEditMapInformation": "Edit map information",
+  "editorABuildOrPreparationIsAlreadyRunning": "A build or preparation is already running.",
+  "editorConfirmThatYouTrustTheEpScriptSourceAndIts": "Confirm that you trust the epScript source and its imports.",
+  "editorEnableTheUnverifiedSettingsTestBuildToCompileProject": "Enable the unverified settings test build to compile project settings.",
+  "editorVerifyTheSavedMapAndEUDProjectBindingBefore": "Verify the saved map and EUD project binding before building.",
+  "editorTheBuildBaseMustBeTheMapBoundTo": "The build base must be the map bound to this EUD project.",
+  "editorFinishOrRetryEUDToolsSettingsFirst": "Finish or retry EUD Tools settings first.",
+  "editorChooseAnOutputSeparateFromTheBaseMap": "Choose an output separate from the base map.",
+  "editorOutputAlreadyExistsChooseANewScxPath": "Output already exists. Choose a new .scx path.",
+  "editorPreparationCancelled": "Preparation cancelled.",
+  "editorToolSelectionChangedPrepareAgain": "Tool selection changed. Prepare again.",
+  "editorProjectOrMapChangedPrepareAgain": "Project or map changed. Prepare again.",
+  "editorBuildPreparationFailed": "Build preparation failed: {value0}",
+  "@editorBuildPreparationFailed": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorTheToolDirectoryCouldNotBeSelected": "The tool directory could not be selected: {value0}",
+  "@editorTheToolDirectoryCouldNotBeSelected": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorEnterAnAbsoluteEuddraftInstallationPath": "Enter an absolute euddraft installation path.",
+  "editorToolSettingsCouldNotBeUpdated": "Tool settings could not be updated: {value0}",
+  "@editorToolSettingsCouldNotBeUpdated": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRangeErrorInvalidValueNotInInclusiveRange": "RangeError ({value0}): Invalid value: Not in inclusive range {value1}..{value2}: {value3}",
+  "@editorRangeErrorInvalidValueNotInInclusiveRange": {
+    "placeholders": {
+      "value0": {
+        "type": "String"
+      },
+      "value1": {
+        "type": "String"
+      },
+      "value2": {
+        "type": "String"
+      },
+      "value3": {
+        "type": "String"
+      }
+    }
+  },
+  "editorRecovery": "Recovery",
+  "editorSaveAs": "Save As",
+  "editorOpenMap": "Open Map",
+  "editorEUDBuild": "EUD Build",
+  "editorTheMapCouldNotBeSaved": "The map could not be saved.",
+  "editorRepairTheApplicationOrReportTheObjectRenderingError": "Repair the application or report the object rendering error.",
+  "editorRepairTheApplicationOrReportTheStarCraftTileHelper": "Repair the application or report the StarCraft tile helper error.",
+  "editorTheEUDOutputMustBeAbsentOrARegular": "The EUD output must be absent or a regular file.",
+  "editorTheCanonicalEUDEntrySourceIsOutsideTheSource": "The canonical EUD entry source is outside the source root.",
+  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "The canonical EUD output directory is inside the source root."
 }

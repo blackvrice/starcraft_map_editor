@@ -40,6 +40,21 @@
   표(`TriggerLabels`, `EudFieldLabels`, `EudRuleLabels`)에서 번역하고, 표에 없는
   값은 도메인 이름을 그대로 보여준다.
 
+### 2026-10-03 후속 결정
+
+- 설정·리소스·브리핑 세부·epScript 화면을 기존 ARB에 통합한다. 유닛/테크 등의
+  기본 게임 이름과 사용자 문자열, 소스 코드, 경로, 원시 로그는 번역하지 않는다.
+- `EditorDiagnostic`에 선택적 `messageId`/`messageArguments`와
+  `remediationId`/`remediationArguments`를 둔다. 도메인은 Flutter나 로캘에 의존하지
+  않으며 영어 원문·코드·위치·rawDetails를 보존한다. 내장 진단은 표시 계층에서
+  ID를 해석하고, 알 수 없는 ID나 인자 불일치는 원문으로 대체한다.
+- `tool/generate_editor_messages.dart`가 ARB에서 ID 해석기와 기존 편집기 소유
+  라벨/검증 문구의 호환 어댑터를 생성한다. 호환 어댑터는 전체 문자열에 일치하는
+  알려진 문구만 처리하며 사용자 데이터나 원시 로그에 사용하지 않는다.
+- 컴파일러의 소스 오류 메시지는 원문을 유지한다. EUD 준비 화면은 구조화된 진단과
+  원시 로그를 별도로 표시한다. 설정 작업의 구분은 번역된 라벨이 아닌 안정 Key로 한다.
+- 회귀 테스트와 Windows 실제 글꼴 렌더링 검증은 [번역 계약](../LOCALIZATION.md)을 따른다.
+
 ## Alternatives
 
 - `intl` 메시지를 직접 작성하거나 자체 문자열 맵을 두는 방식은 생성기 검증과

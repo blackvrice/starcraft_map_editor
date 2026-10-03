@@ -425,6 +425,12 @@ bool _hasCompleteRecords({
       message:
           'Section "${section.name}" ends with an incomplete '
           '$recordLength-byte $recordLabel record.',
+      messageId: 'editorSectionEndsWithAnIncompleteByteRecord',
+      messageArguments: [
+        (section.name).toString(),
+        (recordLength).toString(),
+        (recordLabel).toString(),
+      ],
       severity: DiagnosticSeverity.error,
       stage: DiagnosticStage.validate,
       sectionName: section.name,
@@ -433,6 +439,7 @@ bool _hasCompleteRecords({
           RawChkParser.headerLength +
           completeRecordBytes,
       remediation: 'Keep this object section unchanged and read-only.',
+      remediationId: 'editorKeepThisObjectSectionUnchangedAndReadOnly',
       rawDetails:
           'sectionIndex=$sectionIndex; '
           'recordBytes=$recordLength; '
@@ -464,11 +471,14 @@ bool _hasSupportedLocationSize({
       message:
           'Section "${section.name}" must contain either 64 or 255 complete '
           'location records.',
+      messageId: 'editorSectionMustContainEither64Or255CompleteLocation',
+      messageArguments: [(section.name).toString()],
       severity: DiagnosticSeverity.error,
       stage: DiagnosticStage.validate,
       sectionName: section.name,
       byteOffset: section.sourceOffset + RawChkParser.headerLength,
       remediation: 'Keep this location section unchanged and read-only.',
+      remediationId: 'editorKeepThisLocationSectionUnchangedAndReadOnly',
       rawDetails:
           'sectionIndex=$sectionIndex; '
           'recordBytes=${ChkLocation.recordLength}; '

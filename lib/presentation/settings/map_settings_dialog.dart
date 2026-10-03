@@ -1,3 +1,4 @@
+import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../application/placement/placement_catalog_controller.dart';
@@ -44,18 +45,18 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
       final discard = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Discard unapplied settings?'),
-          content: const Text(
-            'One or more tabs have unapplied drafts. Applied changes remain in the map and can be undone.',
+          title: Text(context.l10n.editorDiscardUnappliedSettings),
+          content: Text(
+            context.l10n.editorOneOrMoreTabsHaveUnappliedDraftsAppliedChanges,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Keep editing'),
+              child: Text(context.l10n.editorKeepEditing),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Discard and close'),
+              child: Text(context.l10n.editorDiscardAndClose),
             ),
           ],
         ),
@@ -121,13 +122,18 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Map Settings', style: TextStyle(fontSize: 22)),
                     Text(
-                      'Map-wide settings. The canvas Inspector edits individual placed objects. Apply affects the current tab; Save As writes the map.',
+                      context.l10n.editorMapSettings,
+                      style: TextStyle(fontSize: 22),
+                    ),
+                    Text(
+                      context
+                          .l10n
+                          .editorMapWideSettingsTheCanvasInspectorEditsIndividualPlaced,
                     ),
                   ],
                 ),
@@ -136,12 +142,12 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
                 TextButton.icon(
                   onPressed: widget.onExecutionRules,
                   icon: const Icon(Icons.bolt),
-                  label: const Text('EUD execution rules'),
+                  label: Text(context.l10n.editorEUDExecutionRules),
                 ),
               TextButton(
                 key: const Key('map-settings-close'),
                 onPressed: _close,
-                child: const Text('Close'),
+                child: Text(context.l10n.editorClose),
               ),
             ],
           ),
@@ -157,13 +163,13 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
             }),
             tabs: [
               for (final item in [
-                ('Map', Icons.map_outlined),
-                ('Players', Icons.people_outline),
-                ('Forces', Icons.flag_outlined),
-                ('Units', Icons.person_outline),
-                ('Availability', Icons.checklist),
-                ('Upgrades', Icons.upgrade),
-                ('Tech', Icons.science_outlined),
+                (context.l10n.editorMap, Icons.map_outlined),
+                (context.l10n.editorPlayers, Icons.people_outline),
+                (context.l10n.editorForces, Icons.flag_outlined),
+                (context.l10n.editorUnits, Icons.person_outline),
+                (context.l10n.editorAvailability, Icons.checklist),
+                (context.l10n.editorUpgrades, Icons.upgrade),
+                (context.l10n.editorTech, Icons.science_outlined),
               ])
                 Tab(
                   child: Row(

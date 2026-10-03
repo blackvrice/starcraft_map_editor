@@ -156,6 +156,8 @@ class ChkPlayerSettingsEditor {
     void warn(
       String code,
       String message, {
+      required String messageId,
+      List<String> messageArguments = const [],
       int? offset,
       String section = 'OWNR',
     }) {
@@ -163,6 +165,8 @@ class ChkPlayerSettingsEditor {
         EditorDiagnostic(
           code: '$diagnosticPrefix$code',
           message: message,
+          messageId: messageId,
+          messageArguments: messageArguments,
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.validate,
           sectionName: section,
@@ -178,6 +182,7 @@ class ChkPlayerSettingsEditor {
       warn(
         'START_UNAVAILABLE',
         'Start locations cannot be checked: a UNIT section is malformed.',
+        messageId: 'editorStartLocationsCannotBeCheckedAUNITSectionIs',
         section: 'UNIT',
       );
       return result;
@@ -191,6 +196,8 @@ class ChkPlayerSettingsEditor {
           warn(
             'START_OWNER',
             'Start location has non-playable owner ID ${unit.owner}.',
+            messageId: 'editorStartLocationHasNonPlayableOwnerID',
+            messageArguments: ['${unit.owner}'],
             section: 'UNIT',
           );
         } else {
@@ -207,12 +214,16 @@ class ChkPlayerSettingsEditor {
         warn(
           'START_DUPLICATE',
           'Player ${player + 1} has ${counts[player]} start locations.',
+          messageId: 'editorPlayerHasStartLocations',
+          messageArguments: ['${player + 1}', '${counts[player]}'],
           offset: offset,
         );
       } else if (active && counts[player] == 0) {
         warn(
           'START_MISSING',
           'Player ${player + 1} has no start location; check the intended UMS setup.',
+          messageId: 'editorPlayerHasNoStartLocationCheckTheIntendedUMS',
+          messageArguments: ['${player + 1}'],
           offset: offset,
         );
       }
@@ -220,6 +231,8 @@ class ChkPlayerSettingsEditor {
         warn(
           'START_INACTIVE',
           'Inactive player ${player + 1} owns a start location.',
+          messageId: 'editorInactivePlayerOwnsAStartLocation',
+          messageArguments: ['${player + 1}'],
           offset: offset,
         );
       }

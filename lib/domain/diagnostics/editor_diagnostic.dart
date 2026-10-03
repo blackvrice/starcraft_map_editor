@@ -17,6 +17,10 @@ class EditorDiagnostic {
     required this.message,
     required this.severity,
     required this.stage,
+    this.messageId,
+    this.messageArguments = const [],
+    this.remediationId,
+    this.remediationArguments = const [],
     this.filePath,
     this.sectionName,
     this.byteOffset,
@@ -28,6 +32,12 @@ class EditorDiagnostic {
 
   final String code;
   final String message;
+
+  /// Presentation message keys. Original English text and raw details remain intact.
+  final String? messageId;
+  final List<String> messageArguments;
+  final String? remediationId;
+  final List<String> remediationArguments;
   final DiagnosticSeverity severity;
   final DiagnosticStage stage;
   final String? filePath;

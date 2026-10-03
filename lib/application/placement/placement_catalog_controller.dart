@@ -1005,6 +1005,17 @@ class PlacementCatalogController {
 
   EditorDiagnostic _diagnostic(String code) => EditorDiagnostic(
     code: code,
+    messageId: switch (code) {
+      PlacementCatalogDiagnosticCodes.noOpenMap =>
+        'editorOpenAMapBeforeBrowsingThePlacementCatalog',
+      PlacementCatalogDiagnosticCodes.installationMissing =>
+        'editorSetTheStarCraftRemasteredDataFolderInSettingsFirst',
+      PlacementCatalogDiagnosticCodes.mapTilesetUnavailable =>
+        'editorTheMapNeedsExactlyOneERASectionWithA',
+      PlacementCatalogDiagnosticCodes.inconsistentPage =>
+        'editorTheCatalogChangedOrReturnedOverlappingPagesSelectThe',
+      _ => 'editorThePlacementCatalogIsUnavailableInThisBuild',
+    },
     message: switch (code) {
       PlacementCatalogDiagnosticCodes.noOpenMap =>
         'Open a map before browsing the placement catalog.',

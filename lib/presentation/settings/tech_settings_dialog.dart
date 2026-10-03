@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
@@ -80,7 +82,9 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
         if (stored > 1)
           DropdownMenuItem(
             value: stored,
-            child: Text('Stored flag $stored (preserved)'),
+            child: Text(
+              context.l10n.editorStoredFlagPreserved((stored).toString()),
+            ),
           ),
       ],
       onChanged: enabled ? (v) => _change(key, '$v') : null,
@@ -96,7 +100,7 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
         initialValue: _text(key),
         enabled: enabled,
         decoration: InputDecoration(
-          labelText: field.label,
+          labelText: context.localizeEditorText(field.label),
           helperText: '0–${field.limit}',
         ),
         onChanged: (text) => _change(key, text),
@@ -128,16 +132,21 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
     int? player = _player == -1 ? null : _player;
     if (player != null) {
       final flag = int.parse(_text((_tech, player, ChkTechField.inherit)));
-      if (flag > 1) return 'Effective state: unknown (stored flag preserved)';
+      if (flag > 1) {
+        return context.l10n.editorEffectiveStateUnknownStoredFlagPreserved;
+      }
       if (flag == 1) player = null;
     }
     String state(ChkTechField field) =>
         switch (int.parse(_text((_tech, player, field)))) {
-          0 => 'no',
-          1 => 'yes',
-          _ => 'unknown',
+          0 => context.l10n.editorNo,
+          1 => context.l10n.editorYes,
+          _ => context.l10n.editorUnknown,
         };
-    return 'Effective state: available ${state(ChkTechField.available)}, researched ${state(ChkTechField.researched)}';
+    return context.l10n.editorEffectiveStateAvailableResearched(
+      (state(ChkTechField.available)).toString(),
+      (state(ChkTechField.researched)).toString(),
+    );
   }
 
   @override
@@ -152,7 +161,7 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
       snapshot: _snapshot,
       hasDraft: _draft.isNotEmpty,
       onReload: () => setState(_reload),
-      title: const Text('Tech Settings'),
+      title: Text(context.l10n.editorTechSettings),
       content: SizedBox(
         width: 640,
         height: 560,
@@ -162,7 +171,14 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
             children: [
               if (settings != null) ...[
                 Text(
-                  'Editing ${settings.costName} / ${settings.stateName}${settings.hasAlternate ? "; alternate sections preserved" : ""}.',
+                  context.l10n.editorEditing(
+                    (settings.costName).toString(),
+                    (settings.stateName).toString(),
+                    (settings.hasAlternate
+                            ? context.l10n.editorAlternateSectionsPreserved
+                            : "")
+                        .toString(),
+                  ),
                 ),
                 SettingsSelection(
                   revision: _snapshot,
@@ -170,10 +186,21 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                   selectorKey: const Key('tech-selection'),
                   count: settings.count,
                   selected: _tech,
-                  label: (id) => settingsName('Tech', id, defaultTechNames),
+                  label: (id) => settingsName(
+                    context.l10n.editorTech,
+                    id,
+                    defaultTechNames,
+                  ),
                   onSelected: (id) => setState(() => _tech = id),
-                  scope:
-                      'Map costs and ${_player == -1 ? "map defaults" : "Player ${_player + 1}"} only. Inheritance flags change only if edited.',
+                  scope: context.l10n
+                      .editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf(
+                        (_player == -1
+                                ? context.l10n.editorMapDefaults
+                                : context.l10n.editorPlayer(
+                                    (_player + 1).toString(),
+                                  ))
+                            .toString(),
+                      ),
                   onCopy: (ids) {
                     final copies = copySettingsDraft(
                       _draft,
@@ -194,19 +221,22 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                     return copies.length;
                   },
                 ),
-                for (final issue in settings.issues.values) Text(issue),
+                for (final issue in settings.issues.values)
+                  Text(context.localizeEditorText(issue)),
                 if (costEnabled) ...[
                   _flag(
                     ChkTechField.useDefault,
-                    'Use custom costs',
-                    'Use game defaults',
+                    context.l10n.editorUseCustomCosts,
+                    context.l10n.editorUseGameDefaults,
                   ),
                   for (final field in ChkTechField.values.where(
                     (f) => f.isCost && !f.isFlag,
                   ))
                     _number(field, _text(_key(ChkTechField.useDefault)) == '0'),
-                  const Text(
-                    'Game defaults preserve stored custom costs. Default game values are not loaded here.',
+                  Text(
+                    context
+                        .l10n
+                        .editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues,
                   ),
                 ],
                 if (stateEnabled) ...[
@@ -220,11 +250,17 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                     selected: _player,
                     revision: _snapshot,
                     label: (id) => id == -1
-                        ? 'Map default settings'
-                        : 'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+                        ? context.l10n.editorMapDefaultSettings
+                        : context.l10n.editorPlayer203c6551(
+                            (id + 1).toString(),
+                            (id >= 8 ? context.l10n.editorReadOnly : "")
+                                .toString(),
+                          ),
                     onSelected: (id) => setState(() => _player = id),
-                    scope:
-                        'Copies only current tech #$_tech player edits to Players 1–8. Map costs and defaults are excluded.',
+                    scope: context.l10n
+                        .editorCopiesOnlyCurrentTechPlayerEditsToPlayers1(
+                          (_tech).toString(),
+                        ),
                     onCopy: _player < 0 || _player >= 8
                         ? null
                         : (ids) {
@@ -247,14 +283,14 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                   if (_player >= 0)
                     _flag(
                       ChkTechField.inherit,
-                      'Use player settings',
-                      'Inherit map settings',
+                      context.l10n.editorUsePlayerSettings,
+                      context.l10n.editorInheritMapSettings,
                       enabled: _player < 8,
                     ),
                   _flag(
                     ChkTechField.available,
-                    'Unavailable',
-                    'Available',
+                    context.l10n.editorUnavailable,
+                    context.l10n.editorAvailable,
                     enabled:
                         _player == -1 ||
                         (_player < 8 &&
@@ -262,25 +298,30 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
                   ),
                   _flag(
                     ChkTechField.researched,
-                    'Not researched',
-                    'Already researched',
+                    context.l10n.editorNotResearched,
+                    context.l10n.editorAlreadyResearched,
                     enabled:
                         _player == -1 ||
                         (_player < 8 &&
                             _text(_key(ChkTechField.inherit)) == '0'),
                   ),
                   Text(_effective()),
-                  const Text(
-                    'Map settings affect inheriting players. Inheritance preserves stored player flags. Availability and research status are independent.',
+                  Text(
+                    context
+                        .l10n
+                        .editorMapSettingsAffectInheritingPlayersInheritancePreservesStoredPlayer,
                   ),
                 ],
               ],
               Text(
-                '${_draft.length} pending changes across techs and players. Apply updates the document; Save As writes the map.',
+                context.l10n
+                    .editorPendingChangesAcrossTechsAndPlayersApplyUpdatesThe(
+                      (_draft.length).toString(),
+                    ),
               ),
               if (_error != null)
                 Text(
-                  _error!,
+                  context.localizeEditorText(_error!),
                   key: const Key('tech-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -290,27 +331,38 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('settings-undo'),
           onPressed: widget.controller.canUndo
               ? () => _run(widget.controller.undo)
               : null,
-          child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorUndo(
+              context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-redo'),
           onPressed: widget.controller.canRedo
               ? () => _run(widget.controller.redo)
               : null,
-          child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorRedo(
+              context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('tech-apply'),
           onPressed: _snapshot != null && _draft.isNotEmpty
               ? () => _run(_apply)
               : null,
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

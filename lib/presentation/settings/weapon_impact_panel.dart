@@ -1,3 +1,4 @@
+import '../localization/l10n.dart';
 import 'default_unit_names.dart';
 import 'default_settings_names.dart';
 import 'dart:async';
@@ -48,7 +49,7 @@ class _WeaponImpactPanelState extends State<WeaponImpactPanel> {
     future: _future,
     builder: (context, snapshot) {
       if (snapshot.connectionState != ConnectionState.done) {
-        return const Text('Loading local weapon references…');
+        return Text(context.l10n.editorLoadingLocalWeaponReferences);
       }
       final result = snapshot.data;
       if (snapshot.hasError ||
@@ -58,34 +59,49 @@ class _WeaponImpactPanelState extends State<WeaponImpactPanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Weapon reference list unavailable: ${snapshot.error ?? "source changed"}',
+              context.l10n.editorWeaponReferenceListUnavailable(
+                (snapshot.error ?? context.l10n.editorSourceChanged).toString(),
+              ),
             ),
             TextButton(
               onPressed: () => setState(_load),
-              child: const Text('Reload weapon references'),
+              child: Text(context.l10n.editorReloadWeaponReferences),
             ),
           ],
         );
       }
       String names(List<int> ids) => ids.isEmpty
-          ? 'None in this DAT snapshot'
+          ? context.l10n.editorNoneInThisDATSnapshot
           : ids
-                .map((id) => settingsName('Unit', id, defaultUnitNames))
+                .map(
+                  (id) => settingsName(
+                    context.l10n.editorUnit,
+                    id,
+                    defaultUnitNames,
+                  ),
+                )
                 .join(', ');
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Weapon #${widget.weapon} — direct ground/air references: ${names(result.index.directUsers(widget.weapon))}',
+            context.l10n.editorWeaponDirectGroundAirReferences(
+              (widget.weapon).toString(),
+              (names(result.index.directUsers(widget.weapon))).toString(),
+            ),
             key: const Key('weapon-direct-users'),
           ),
           Text(
-            'Units referencing those subunits: ${names(result.index.subunitUsers(widget.weapon))}',
+            context.l10n.editorUnitsReferencingThoseSubunits(
+              (names(result.index.subunitUsers(widget.weapon))).toString(),
+            ),
             key: const Key('weapon-subunit-users'),
           ),
-          Text('Source: ${result.source}'),
-          const Text(
-            'DAT references only. Spells, spawned projectiles/units and EUD runtime changes may have additional effects.',
+          Text(context.l10n.editorSource854c792f((result.source).toString())),
+          Text(
+            context
+                .l10n
+                .editorDATReferencesOnlySpellsSpawnedProjectilesUnitsAndEUD,
           ),
         ],
       );

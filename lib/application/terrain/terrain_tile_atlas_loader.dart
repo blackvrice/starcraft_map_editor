@@ -173,8 +173,10 @@ final class TerrainTileAtlasLoader {
           _diagnostic(
             code: TerrainTileAtlasDiagnosticCodes.gatewayFailed,
             message: 'The StarCraft tile atlas request failed unexpectedly.',
+            messageId: 'editorTheStarCraftTileAtlasRequestFailedUnexpectedly',
             filePath: context.identity.installationPath,
             remediation: 'Retry or repair the application installation.',
+            remediationId: 'editorRetryOrRepairTheApplicationInstallation',
             rawDetails: error.toString(),
           ),
         ],
@@ -191,8 +193,10 @@ final class TerrainTileAtlasLoader {
           _diagnostic(
             code: TerrainTileAtlasDiagnosticCodes.resultMismatch,
             message: 'The StarCraft tile atlas result did not match its batch.',
+            messageId: 'editorTheStarCraftTileAtlasResultDidNotMatchIts',
             filePath: context.identity.installationPath,
             remediation: 'Repair the application or report the helper error.',
+            remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           ),
         ],
       );
@@ -260,14 +264,22 @@ EditorDiagnostic _diagnostic({
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.warning,
     stage: DiagnosticStage.validate,
     filePath: filePath,
     remediation: remediation,
+    remediationId: remediationId,
+    remediationArguments: remediationArguments,
     rawDetails: rawDetails,
   );
 }

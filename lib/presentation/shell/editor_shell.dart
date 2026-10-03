@@ -53,6 +53,7 @@ import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../eud_editor/eud_build_steps.dart';
 import '../eud_editor/eud_source_editor.dart';
 import '../localization/l10n.dart';
+import '../localization/editor_message_localization.dart';
 import '../map_canvas/map_canvas.dart';
 import '../map_canvas/object_sprite_texture_controller.dart';
 import '../map_canvas/terrain_tile_texture_controller.dart';
@@ -5445,7 +5446,7 @@ List<_EudBuildLogItem> _buildLogItems(
         color: _diagnosticColor(diagnostic.severity),
         text:
             '[${diagnostic.code}] '
-            '${_diagnosticLocationPrefix(diagnostic)}${diagnostic.message}',
+            '${_diagnosticLocationPrefix(diagnostic)}${localizedDiagnosticMessage(l10n, diagnostic)}',
       ),
   ];
   return items;
@@ -5497,7 +5498,10 @@ class _DiagnosticList extends StatelessWidget {
         final diagnostic = diagnostics[index];
         final color = _diagnosticColor(diagnostic.severity);
         return Tooltip(
-          message: diagnostic.message,
+          message: [
+            context.diagnosticMessage(diagnostic),
+            ?context.diagnosticRemediation(diagnostic),
+          ].join('\n'),
           waitDuration: const Duration(milliseconds: 600),
           child: Row(
             key: ValueKey('diagnostic-${diagnostic.code}-$index'),
@@ -5521,7 +5525,7 @@ class _DiagnosticList extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  diagnostic.message,
+                  context.diagnosticMessage(diagnostic),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13),
@@ -5610,13 +5614,15 @@ class _OperationSummary extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Text(
-            progress.label,
+            context.localizeEditorText(progress.label),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              progress.message ?? _phaseLabel(context.l10n, progress.phase),
+              progress.message == null
+                  ? _phaseLabel(context.l10n, progress.phase)
+                  : context.localizeEditorText(progress.message!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Color(0xFF8994A8)),

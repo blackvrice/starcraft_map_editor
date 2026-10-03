@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' show AppExitResponse;
@@ -80,7 +82,9 @@ class _ResourcesPaneState extends State<ResourcesPane> {
         _stop();
       }
       if (session == null) {
-        return const Center(child: Text('Open a map to manage resources.'));
+        return Center(
+          child: Text(context.l10n.editorOpenAMapToManageResources),
+        );
       }
       final doc = session.rawDocument, refs = ChkResourceEditor.references(doc);
       try {
@@ -124,69 +128,82 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                 spacing: 8,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  const Text('Resources', style: TextStyle(fontSize: 22)),
+                  Text(
+                    context.l10n.editorResources,
+                    style: TextStyle(fontSize: 22),
+                  ),
                   TextButton(
                     onPressed: _busy || !widget.controller.canUndo
                         ? null
                         : () => _run(widget.controller.undo),
-                    child: const Text('Undo'),
+                    child: Text(context.l10n.editorUndo71fd4acf),
                   ),
                   TextButton(
                     onPressed: _busy || !widget.controller.canRedo
                         ? null
                         : () => _run(widget.controller.redo),
-                    child: const Text('Redo'),
+                    child: Text(context.l10n.editorRedo7412e5e9),
                   ),
                   TextButton(
                     onPressed: _busy
                         ? null
                         : () => _run(() => _edit(doc, null)),
-                    child: const Text('Add string'),
+                    child: Text(context.l10n.editorAddString),
                   ),
                   TextButton(
                     onPressed:
                         _busy || widget.controller.resourceGateway == null
                         ? null
                         : () => _run(widget.controller.importSound),
-                    child: const Text('Import PCM WAV'),
+                    child: Text(context.l10n.editorImportPCMWAV),
                   ),
                   TextButton(
                     onPressed: _busy ? null : _stop,
-                    child: const Text('Stop preview'),
+                    child: Text(context.l10n.editorStopPreview),
                   ),
                 ],
               ),
               Text(
-                '${table.declaredStringCount} strings • ${table.rawSection.payload.length} bytes • offset limit ${table.kind.maximumOffset} • Save As writes pending resource changes.',
+                context.l10n
+                    .editorStringsBytesOffsetLimitSaveAsWritesPendingResource(
+                      (table.declaredStringCount).toString(),
+                      (table.rawSection.payload.length).toString(),
+                      (table.kind.maximumOffset).toString(),
+                    ),
               ),
               if (refs.uncertainties.isNotEmpty)
                 ExpansionTile(
-                  title: const Text(
-                    'Reference coverage incomplete — deletion restricted',
+                  title: Text(
+                    context
+                        .l10n
+                        .editorReferenceCoverageIncompleteDeletionRestricted,
                   ),
                   children: [
-                    for (final reason in refs.uncertainties) Text(reason),
+                    for (final reason in refs.uncertainties)
+                      Text(context.localizeEditorText(reason)),
                   ],
                 ),
               if (!session.archiveMetadata.listingComplete)
-                const Text(
-                  'Archive listing incomplete. Unlisted sounds may exist; imports/deletions are restricted.',
+                Text(
+                  context
+                      .l10n
+                      .editorArchiveListingIncompleteUnlistedSoundsMayExistImportsDeletions,
                 ),
               TextField(
                 key: const Key('resource-search'),
-                decoration: const InputDecoration(
-                  labelText: 'Search text, string ID or sound path',
+                decoration: InputDecoration(
+                  labelText: context.l10n.editorSearchTextStringIDOrSoundPath,
                 ),
                 onChanged: (s) => setState(() => _query = s),
               ),
-              if (_error != null) Text(_error!),
-              if (_busy) const Text('Working…'),
+              if (_error != null) Text(context.localizeEditorText(_error!)),
+              if (_busy) Text(context.l10n.editorWorking),
               for (final diagnostic in table.diagnostics)
-                Text(diagnostic.message),
-              const TabBar(
+                Text(context.diagnosticMessage(diagnostic)),
+              TabBar(
                 tabs: [
-                  Tab(text: 'Strings'),
-                  Tab(text: 'Sounds'),
+                  Tab(text: context.l10n.editorStrings),
+                  Tab(text: context.l10n.editorSounds),
                 ],
               ),
               Expanded(
@@ -208,7 +225,8 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                           );
                         } catch (_) {
                           decoded = false;
-                          text = 'Invalid UTF-8 — raw bytes preserved';
+                          text =
+                              context.l10n.editorInvalidUTF8RawBytesPreserved;
                         }
                         final uses = refs.uses
                             .where((u) => u.id == row.stringId)
@@ -221,13 +239,22 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
-                            '${row.rawBytes?.length ?? 0} bytes • ${uses.length} known use(s)${decoded ? '' : ' • explicit replacement required'}',
+                            context.l10n.editorBytesKnownUseS(
+                              (row.rawBytes?.length ?? 0).toString(),
+                              (uses.length).toString(),
+                              (decoded
+                                      ? ''
+                                      : context
+                                            .l10n
+                                            .editorExplicitReplacementRequired)
+                                  .toString(),
+                            ),
                           ),
                           onTap: _busy
                               ? null
                               : () => _run(() => _edit(doc, row.stringId)),
                           trailing: IconButton(
-                            tooltip: 'Clear unreferenced string',
+                            tooltip: context.l10n.editorClearUnreferencedString,
                             onPressed:
                                 _busy ||
                                     uses.isNotEmpty ||
@@ -262,15 +289,24 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                           title: Text(path),
                           subtitle: Text(
                             session.resourceEdits[path] != null
-                                ? '${session.resourceEdits[path]!.length} bytes • pending import'
+                                ? context.l10n.editorBytesPendingImport(
+                                    (session.resourceEdits[path]!.length)
+                                        .toString(),
+                                  )
                                 : entries.isEmpty
-                                ? 'Referenced path; not listed in this map'
-                                : '${entries.first.uncompressedSizeBytes} bytes • locale ${entries.first.locale}',
+                                ? context
+                                      .l10n
+                                      .editorReferencedPathNotListedInThisMap
+                                : context.l10n.editorBytesLocale(
+                                    (entries.first.uncompressedSizeBytes)
+                                        .toString(),
+                                    (entries.first.locale).toString(),
+                                  ),
                           ),
                           trailing: Wrap(
                             children: [
                               IconButton(
-                                tooltip: 'Preview sound',
+                                tooltip: context.l10n.editorPreviewSound,
                                 icon: const Icon(Icons.play_arrow),
                                 onPressed:
                                     _busy ||
@@ -287,7 +323,7 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                                       }),
                               ),
                               IconButton(
-                                tooltip: 'Export sound',
+                                tooltip: context.l10n.editorExportSound,
                                 icon: const Icon(Icons.save_alt),
                                 onPressed:
                                     _busy ||
@@ -304,7 +340,7 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                                       }),
                               ),
                               IconButton(
-                                tooltip: 'Delete sound',
+                                tooltip: context.l10n.editorDeleteSound,
                                 icon: const Icon(Icons.delete_outline),
                                 onPressed: _busy
                                     ? null
@@ -312,24 +348,38 @@ class _ResourcesPaneState extends State<ResourcesPane> {
                                         final accepted = await showDialog<bool>(
                                           context: context,
                                           builder: (context) => AlertDialog(
-                                            title: const Text('Delete sound?'),
+                                            title: Text(
+                                              context
+                                                  .l10n
+                                                  .editorDeleteSoundf1d564e6,
+                                            ),
                                             content: Text(
-                                              '$path\nRemoval applies on Save As. Undo restores this edit.',
+                                              context.l10n
+                                                  .editorRemovalAppliesOnSaveAsUndoRestoresThisEdit(
+                                                    (path).toString(),
+                                                  ),
                                             ),
                                             actions: [
                                               TextButton(
+                                                key: const Key(
+                                                  'settings-cancel',
+                                                ),
                                                 onPressed: () => Navigator.pop(
                                                   context,
                                                   false,
                                                 ),
-                                                child: const Text('Cancel'),
+                                                child: Text(
+                                                  context.l10n.editorCancel,
+                                                ),
                                               ),
                                               TextButton(
                                                 onPressed: () => Navigator.pop(
                                                   context,
                                                   true,
                                                 ),
-                                                child: const Text('Delete'),
+                                                child: Text(
+                                                  context.l10n.editorDelete,
+                                                ),
                                               ),
                                             ],
                                           ),
@@ -361,7 +411,13 @@ class _ResourcesPaneState extends State<ResourcesPane> {
           ),
         );
       } catch (e) {
-        return Center(child: SelectableText('Resources are read-only: $e'));
+        return Center(
+          child: SelectableText(
+            context.l10n.editorResourcesAreReadOnly(
+              context.localizeEditorText(e.toString()),
+            ),
+          ),
+        );
       }
     },
   );
@@ -415,7 +471,11 @@ class _StringDialogState extends State<_StringDialog> {
     final refs = ChkResourceEditor.references(widget.document);
     final uses = refs.uses.where((u) => u.id == widget.id).toList();
     return AlertDialog(
-      title: Text(widget.id == null ? 'Add string' : 'String #${widget.id}'),
+      title: Text(
+        widget.id == null
+            ? context.l10n.editorAddString
+            : context.l10n.editorString((widget.id).toString()),
+      ),
       content: SizedBox(
         width: 680,
         child: SingleChildScrollView(
@@ -427,15 +487,19 @@ class _StringDialogState extends State<_StringDialog> {
                   isExpanded: true,
                   value: _target,
                   items: [
-                    const DropdownMenuItem(
+                    DropdownMenuItem(
                       value: -1,
-                      child: Text('Edit shared ID — affects all references'),
+                      child: Text(
+                        context.l10n.editorEditSharedIDAffectsAllReferences,
+                      ),
                     ),
                     for (var i = 0; i < uses.length; i++)
                       DropdownMenuItem(
                         value: i,
                         child: Text(
-                          'Separate: ${uses[i].label}',
+                          context.l10n.editorSeparate(
+                            context.localizeEditorText(uses[i].label),
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -443,30 +507,42 @@ class _StringDialogState extends State<_StringDialog> {
                   onChanged: (v) => setState(() => _target = v!),
                 ),
               if (refs.uncertainties.isNotEmpty)
-                const Text(
-                  'Additional unknown uses may exist. No automatic cleanup is performed.',
+                Text(
+                  context
+                      .l10n
+                      .editorAdditionalUnknownUsesMayExistNoAutomaticCleanupIs,
                 ),
               TextField(
                 key: const Key('resource-string-text'),
                 controller: _text,
                 minLines: 4,
                 maxLines: 10,
-                decoration: const InputDecoration(labelText: 'UTF-8 text'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.editorUTF8Text,
+                ),
               ),
               if (uses.isNotEmpty)
                 ExpansionTile(
-                  title: Text('${uses.length} known references'),
-                  children: [for (final use in uses) Text(use.label)],
+                  title: Text(
+                    context.l10n.editorKnownReferences(
+                      (uses.length).toString(),
+                    ),
+                  ),
+                  children: [
+                    for (final use in uses)
+                      Text(context.localizeEditorText(use.label)),
+                  ],
                 ),
-              if (_error != null) Text(_error!),
+              if (_error != null) Text(context.localizeEditorText(_error!)),
             ],
           ),
         ),
       ),
       actions: [
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('resource-string-apply'),
@@ -485,7 +561,7 @@ class _StringDialogState extends State<_StringDialog> {
               setState(() => _error = e.toString());
             }
           },
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

@@ -79,8 +79,11 @@ final class StarCraftDataAssetSettingsController {
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.settingsReadFailed,
               message: 'StarCraft data asset settings could not be loaded.',
+              messageId: 'editorStarCraftDataAssetSettingsCouldNotBeLoaded',
               remediation:
                   'Check access to the application settings folder and retry.',
+              remediationId:
+                  'editorCheckAccessToTheApplicationSettingsFolderAndRetry',
               rawDetails: error.toString(),
             ),
           ],
@@ -109,7 +112,10 @@ final class StarCraftDataAssetSettingsController {
             code: StarCraftDataAssetDiagnosticCodes.directoryPickerFailed,
             message:
                 'The StarCraft installation folder picker could not be opened.',
+            messageId:
+                'editorTheStarCraftInstallationFolderPickerCouldNotBeOpened',
             remediation: 'Retry or check Windows dialog permissions.',
+            remediationId: 'editorRetryOrCheckWindowsDialogPermissions',
             rawDetails: error.toString(),
           ),
         ],
@@ -145,9 +151,12 @@ final class StarCraftDataAssetSettingsController {
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.settingsWriteFailed,
               message: 'The StarCraft installation path could not be saved.',
+              messageId: 'editorTheStarCraftInstallationPathCouldNotBeSaved',
               filePath: path,
               remediation:
                   'Check access to the application settings folder and retry.',
+              remediationId:
+                  'editorCheckAccessToTheApplicationSettingsFolderAndRetry',
               rawDetails: error.toString(),
             ),
           ],
@@ -192,8 +201,11 @@ final class StarCraftDataAssetSettingsController {
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.settingsWriteFailed,
               message: 'The StarCraft installation path could not be cleared.',
+              messageId: 'editorTheStarCraftInstallationPathCouldNotBeCleared',
               remediation:
                   'Check access to the application settings folder and retry.',
+              remediationId:
+                  'editorCheckAccessToTheApplicationSettingsFolderAndRetry',
               rawDetails: error.toString(),
             ),
           ],
@@ -228,8 +240,10 @@ final class StarCraftDataAssetSettingsController {
             _diagnostic(
               code: StarCraftDataAssetDiagnosticCodes.inspectionFailed,
               message: 'The StarCraft CASC storage could not be inspected.',
+              messageId: 'editorTheStarCraftCASCStorageCouldNotBeInspected',
               filePath: path,
               remediation: 'Check directory access and retry.',
+              remediationId: 'editorCheckDirectoryAccessAndRetry',
               rawDetails: error.toString(),
             ),
           ],
@@ -277,8 +291,11 @@ StarCraftDataAssetSettingsState _unconfiguredState() {
       _diagnostic(
         code: StarCraftDataAssetDiagnosticCodes.installationNotConfigured,
         message: 'The StarCraft installation is not configured.',
+        messageId: 'editorTheStarCraftInstallationIsNotConfigured',
         remediation:
             'Open Settings and choose the StarCraft installation directory.',
+        remediationId:
+            'editorOpenSettingsAndChooseTheStarCraftInstallationDirectory',
       ),
     ],
   );
@@ -290,14 +307,22 @@ EditorDiagnostic _diagnostic({
   String? filePath,
   String? remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.warning,
     stage: DiagnosticStage.validate,
     filePath: filePath,
     remediation: remediation,
+    remediationId: remediationId,
+    remediationArguments: remediationArguments,
     rawDetails: rawDetails,
   );
 }

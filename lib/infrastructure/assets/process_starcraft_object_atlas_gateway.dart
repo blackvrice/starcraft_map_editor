@@ -82,8 +82,10 @@ final class ProcessStarCraftObjectAtlasGateway
         request,
         code: StarCraftObjectAtlasDiagnosticCodes.installationPathInvalid,
         message: 'The StarCraft installation path is invalid.',
+        messageId: 'editorTheStarCraftInstallationPathIsInvalid',
         filePath: request.installationPath,
         remediation: 'Choose the StarCraft installation folder again.',
+        remediationId: 'editorChooseTheStarCraftInstallationFolderAgain',
       );
     }
     if (_reservedOperations.contains(request.operationId)) {
@@ -91,8 +93,10 @@ final class ProcessStarCraftObjectAtlasGateway
         request,
         code: StarCraftObjectAtlasDiagnosticCodes.renderFailed,
         message: 'An object rendering operation with this ID is active.',
+        messageId: 'editorAnObjectRenderingOperationWithThisIDIsActive',
         filePath: request.installationPath,
         remediation: 'Wait for the current map rendering operation to finish.',
+        remediationId: 'editorWaitForTheCurrentMapRenderingOperationToFinish',
       );
     }
     _reservedOperations.add(request.operationId);
@@ -105,8 +109,10 @@ final class ProcessStarCraftObjectAtlasGateway
           request,
           code: StarCraftObjectAtlasDiagnosticCodes.helperNotFound,
           message: 'The bundled StarCraft CASC helper is missing.',
+          messageId: 'editorTheBundledStarCraftCASCHelperIsMissing',
           filePath: helperExecutablePath,
           remediation: 'Repair or reinstall the application.',
+          remediationId: 'editorRepairOrReinstallTheApplication',
         );
       }
       if (_cancelledOperations.contains(request.operationId)) {
@@ -167,8 +173,10 @@ final class ProcessStarCraftObjectAtlasGateway
           request,
           code: StarCraftObjectAtlasDiagnosticCodes.helperTimedOut,
           message: 'The StarCraft object rendering helper timed out.',
+          messageId: 'editorTheStarCraftObjectRenderingHelperTimedOut',
           filePath: request.installationPath,
           remediation: 'Repair the StarCraft installation and retry.',
+          remediationId: 'editorRepairTheStarCraftInstallationAndRetry',
           rawDetails: _rawProcessDetails(stderr: stderr),
         );
       }
@@ -186,8 +194,10 @@ final class ProcessStarCraftObjectAtlasGateway
           request,
           code: StarCraftObjectAtlasDiagnosticCodes.helperOutputLimitExceeded,
           message: 'The StarCraft object helper produced too much output.',
+          messageId: 'editorTheStarCraftObjectHelperProducedTooMuchOutput',
           filePath: request.installationPath,
           remediation: 'Repair the application or report the helper error.',
+          remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
           rawDetails: _rawProcessDetails(exitCode: exitCode, stderr: stderr),
         );
       }
@@ -206,8 +216,10 @@ final class ProcessStarCraftObjectAtlasGateway
         request,
         code: StarCraftObjectAtlasDiagnosticCodes.helperStartFailed,
         message: 'The StarCraft object helper could not be started.',
+        messageId: 'editorTheStarCraftObjectHelperCouldNotBeStarted',
         filePath: helperExecutablePath,
         remediation: 'Repair or reinstall the application.',
+        remediationId: 'editorRepairOrReinstallTheApplication',
         rawDetails: error.errorCode.toString(),
       );
     } on FileSystemException catch (error) {
@@ -218,8 +230,10 @@ final class ProcessStarCraftObjectAtlasGateway
         request,
         code: StarCraftObjectAtlasDiagnosticCodes.renderFailed,
         message: 'The StarCraft object atlas could not be read safely.',
+        messageId: 'editorTheStarCraftObjectAtlasCouldNotBeReadSafely',
         filePath: error.path ?? request.installationPath,
         remediation: 'Check directory permissions and retry.',
+        remediationId: 'editorCheckDirectoryPermissionsAndRetry',
         rawDetails: error.toString(),
       );
     } finally {
@@ -369,8 +383,10 @@ final class ProcessStarCraftObjectAtlasGateway
         request,
         code: StarCraftObjectAtlasDiagnosticCodes.helperInvalidResponse,
         message: 'The StarCraft object helper returned an invalid response.',
+        messageId: 'editorTheStarCraftObjectHelperReturnedAnInvalidResponse',
         filePath: request.installationPath,
         remediation: 'Repair the application or report the helper error.',
+        remediationId: 'editorRepairTheApplicationOrReportTheHelperError',
         rawDetails: _rawProcessDetails(
           exitCode: exitCode,
           stderr: stderr,
@@ -653,8 +669,10 @@ StarCraftObjectAtlasResult _cancelledFailure(
     request,
     code: StarCraftObjectAtlasDiagnosticCodes.helperCancelled,
     message: 'The StarCraft object rendering operation was cancelled.',
+    messageId: 'editorTheStarCraftObjectRenderingOperationWasCancelled',
     filePath: request.installationPath,
     remediation: 'Retry after the visible map state becomes stable.',
+    remediationId: 'editorRetryAfterTheVisibleMapStateBecomesStable',
     rawDetails: rawDetails,
   );
 }
@@ -666,16 +684,24 @@ StarCraftObjectAtlasResult _failure(
   required String filePath,
   required String remediation,
   String? rawDetails,
+  String? messageId,
+  List<String> messageArguments = const [],
+  String? remediationId,
+  List<String> remediationArguments = const [],
 }) {
   return StarCraftObjectAtlasResult.failed(
     request: request,
     diagnostic: EditorDiagnostic(
       code: code,
       message: message,
+      messageId: messageId,
+      messageArguments: messageArguments,
       severity: DiagnosticSeverity.warning,
       stage: DiagnosticStage.validate,
       filePath: filePath,
       remediation: remediation,
+      remediationId: remediationId,
+      remediationArguments: remediationArguments,
       rawDetails: rawDetails,
     ),
   );

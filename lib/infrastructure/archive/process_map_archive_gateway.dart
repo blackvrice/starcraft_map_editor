@@ -1064,12 +1064,15 @@ class ProcessMapArchiveGateway
         EditorDiagnostic(
           code: MapArchiveDiagnosticCodes.listingIncomplete,
           message: 'The archive entry listing is incomplete.',
+          messageId: 'editorTheArchiveEntryListingIsIncomplete',
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.archive,
           filePath: sourcePath,
           remediation:
               'Editing can continue, but verify protected or unnamed entries '
               'before saving.',
+          remediationId:
+              'editorEditingCanContinueButVerifyProtectedOrUnnamedEntries',
           rawDetails:
               'listedEntries=${success.entries.length}; '
               'totalEntries=${success.totalEntryCount}; '
@@ -1086,11 +1089,14 @@ class ProcessMapArchiveGateway
         EditorDiagnostic(
           code: MapArchiveDiagnosticCodes.syntheticEntryNames,
           message: 'Some archive entry names were recovered synthetically.',
+          messageId: 'editorSomeArchiveEntryNamesWereRecoveredSynthetically',
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.archive,
           filePath: sourcePath,
           remediation:
               'Treat synthetic names as diagnostic labels, not original paths.',
+          remediationId:
+              'editorTreatSyntheticNamesAsDiagnosticLabelsNotOriginalPaths',
           rawDetails: 'syntheticEntries=$syntheticNameCount',
         ),
       );
@@ -1109,11 +1115,14 @@ class ProcessMapArchiveGateway
         EditorDiagnostic(
           code: MapArchiveDiagnosticCodes.duplicateEntryPaths,
           message: 'The archive contains duplicate entry paths.',
+          messageId: 'editorTheArchiveContainsDuplicateEntryPaths',
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.archive,
           filePath: sourcePath,
           remediation:
               'Review locale variants and duplicate entries before saving.',
+          remediationId:
+              'editorReviewLocaleVariantsAndDuplicateEntriesBeforeSaving',
           rawDetails: 'duplicateEntries=$duplicatePathCount',
         ),
       );
@@ -1124,11 +1133,13 @@ class ProcessMapArchiveGateway
         EditorDiagnostic(
           code: MapArchiveDiagnosticCodes.unexpectedFormatVersion,
           message: 'The map uses an unexpected MPQ format version.',
+          messageId: 'editorTheMapUsesAnUnexpectedMPQFormatVersion',
           severity: DiagnosticSeverity.warning,
           stage: DiagnosticStage.archive,
           filePath: sourcePath,
           remediation:
               'Use Save As and re-open the output before replacing any map.',
+          remediationId: 'editorUseSaveAsAndReOpenTheOutputBefore',
           rawDetails: 'formatVersion=${success.formatVersion}',
         ),
       );
@@ -1142,11 +1153,14 @@ class ProcessMapArchiveGateway
         EditorDiagnostic(
           code: MapArchiveDiagnosticCodes.encryptedEntries,
           message: 'The archive contains encrypted entries.',
+          messageId: 'editorTheArchiveContainsEncryptedEntries',
           severity: DiagnosticSeverity.info,
           stage: DiagnosticStage.archive,
           filePath: sourcePath,
           remediation:
               'Encrypted entries are reported without attempting recovery.',
+          remediationId:
+              'editorEncryptedEntriesAreReportedWithoutAttemptingRecovery',
           rawDetails: 'encryptedEntries=$encryptedEntryCount',
         ),
       );

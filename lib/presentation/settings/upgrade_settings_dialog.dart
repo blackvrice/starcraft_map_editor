@@ -1,3 +1,5 @@
+import '../localization/editor_message_localization.dart';
+import '../localization/l10n.dart';
 import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
@@ -81,7 +83,9 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
         if (stored > 1)
           DropdownMenuItem(
             value: stored,
-            child: Text('Stored flag $stored (preserved)'),
+            child: Text(
+              context.l10n.editorStoredFlagPreserved((stored).toString()),
+            ),
           ),
       ],
       onChanged: enabled ? (v) => _change(key, '$v') : null,
@@ -97,7 +101,7 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
         initialValue: _text(key),
         enabled: enabled,
         decoration: InputDecoration(
-          labelText: field.label,
+          labelText: context.localizeEditorText(field.label),
           helperText: '0–${field.limit}',
         ),
         onChanged: (text) => _change(key, text),
@@ -131,10 +135,15 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
       final flag = int.parse(
         _text((_upgrade, player, ChkUpgradeField.inherit)),
       );
-      if (flag > 1) return 'Effective levels: unknown (stored flag preserved)';
+      if (flag > 1) {
+        return context.l10n.editorEffectiveLevelsUnknownStoredFlagPreserved;
+      }
       if (flag == 1) player = null;
     }
-    return 'Effective levels: ${_text((_upgrade, player, ChkUpgradeField.start))} / ${_text((_upgrade, player, ChkUpgradeField.maximum))} (start / maximum)';
+    return context.l10n.editorEffectiveLevelsStartMaximum(
+      (_text((_upgrade, player, ChkUpgradeField.start))).toString(),
+      (_text((_upgrade, player, ChkUpgradeField.maximum))).toString(),
+    );
   }
 
   @override
@@ -149,7 +158,7 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
       snapshot: _snapshot,
       hasDraft: _draft.isNotEmpty,
       onReload: () => setState(_reload),
-      title: const Text('Upgrade Settings'),
+      title: Text(context.l10n.editorUpgradeSettings),
       content: SizedBox(
         width: 640,
         height: 560,
@@ -159,7 +168,14 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
             children: [
               if (settings != null) ...[
                 Text(
-                  'Editing ${settings.costName} / ${settings.levelName}${settings.hasAlternate ? "; alternate sections preserved" : ""}.',
+                  context.l10n.editorEditing(
+                    (settings.costName).toString(),
+                    (settings.levelName).toString(),
+                    (settings.hasAlternate
+                            ? context.l10n.editorAlternateSectionsPreserved
+                            : "")
+                        .toString(),
+                  ),
                 ),
                 SettingsSelection(
                   revision: _snapshot,
@@ -167,11 +183,21 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                   selectorKey: const Key('upgrade-selection'),
                   count: settings.count,
                   selected: _upgrade,
-                  label: (id) =>
-                      settingsName('Upgrade', id, defaultUpgradeNames),
+                  label: (id) => settingsName(
+                    context.l10n.editorUpgraded423b17,
+                    id,
+                    defaultUpgradeNames,
+                  ),
                   onSelected: (id) => setState(() => _upgrade = id),
-                  scope:
-                      'Map costs and ${_player == -1 ? "map defaults" : "Player ${_player + 1}"} only. Inheritance flags change only if edited.',
+                  scope: context.l10n
+                      .editorMapCostsAndOnlyInheritanceFlagsChangeOnlyIf(
+                        (_player == -1
+                                ? context.l10n.editorMapDefaults
+                                : context.l10n.editorPlayer(
+                                    (_player + 1).toString(),
+                                  ))
+                            .toString(),
+                      ),
                   onCopy: (ids) {
                     final copies = copySettingsDraft(
                       _draft,
@@ -192,12 +218,13 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                     return copies.length;
                   },
                 ),
-                for (final issue in settings.issues.values) Text(issue),
+                for (final issue in settings.issues.values)
+                  Text(context.localizeEditorText(issue)),
                 if (costEnabled) ...[
                   _flag(
                     ChkUpgradeField.useDefault,
-                    'Use custom costs',
-                    'Use game defaults',
+                    context.l10n.editorUseCustomCosts,
+                    context.l10n.editorUseGameDefaults,
                   ),
                   for (final field in ChkUpgradeField.values.where(
                     (f) => f.isCost && !f.isFlag,
@@ -206,8 +233,10 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                       field,
                       _text(_key(ChkUpgradeField.useDefault)) == '0',
                     ),
-                  const Text(
-                    'Game defaults preserve stored custom costs. Default game values are not loaded here.',
+                  Text(
+                    context
+                        .l10n
+                        .editorGameDefaultsPreserveStoredCustomCostsDefaultGameValues,
                   ),
                 ],
                 if (levelEnabled) ...[
@@ -221,11 +250,17 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                     selected: _player,
                     revision: _snapshot,
                     label: (id) => id == -1
-                        ? 'Map default levels'
-                        : 'Player ${id + 1}${id >= 8 ? " (read-only)" : ""}',
+                        ? context.l10n.editorMapDefaultLevels
+                        : context.l10n.editorPlayer203c6551(
+                            (id + 1).toString(),
+                            (id >= 8 ? context.l10n.editorReadOnly : "")
+                                .toString(),
+                          ),
                     onSelected: (id) => setState(() => _player = id),
-                    scope:
-                        'Copies only current upgrade #$_upgrade player edits to Players 1–8. Map costs and defaults are excluded.',
+                    scope: context.l10n
+                        .editorCopiesOnlyCurrentUpgradePlayerEditsToPlayers1(
+                          (_upgrade).toString(),
+                        ),
                     onCopy: _player < 0 || _player >= 8
                         ? null
                         : (ids) {
@@ -248,8 +283,8 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                   if (_player >= 0)
                     _flag(
                       ChkUpgradeField.inherit,
-                      'Use player levels',
-                      'Inherit map levels',
+                      context.l10n.editorUsePlayerLevels,
+                      context.l10n.editorInheritMapLevels,
                       enabled: _player < 8,
                     ),
                   for (final field in [
@@ -263,17 +298,22 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                               _text(_key(ChkUpgradeField.inherit)) == '0'),
                     ),
                   Text(_effective()),
-                  const Text(
-                    'Map levels affect inheriting players. Inheritance preserves stored player levels. Starting level must not exceed maximum.',
+                  Text(
+                    context
+                        .l10n
+                        .editorMapLevelsAffectInheritingPlayersInheritancePreservesStoredPlayer,
                   ),
                 ],
               ],
               Text(
-                '${_draft.length} pending changes across upgrades and players. Apply updates the document; Save As writes the map.',
+                context.l10n
+                    .editorPendingChangesAcrossUpgradesAndPlayersApplyUpdatesThe(
+                      (_draft.length).toString(),
+                    ),
               ),
               if (_error != null)
                 Text(
-                  _error!,
+                  context.localizeEditorText(_error!),
                   key: const Key('upgrade-error'),
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
@@ -283,27 +323,38 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
       ),
       actions: [
         TextButton(
+          key: const Key('settings-undo'),
           onPressed: widget.controller.canUndo
               ? () => _run(widget.controller.undo)
               : null,
-          child: Text('Undo: ${widget.controller.undoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorUndo(
+              context.localizeEditorText(widget.controller.undoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-redo'),
           onPressed: widget.controller.canRedo
               ? () => _run(widget.controller.redo)
               : null,
-          child: Text('Redo: ${widget.controller.redoLabel ?? "—"}'),
+          child: Text(
+            context.l10n.editorRedo(
+              context.localizeEditorText(widget.controller.redoLabel ?? "—"),
+            ),
+          ),
         ),
         TextButton(
+          key: const Key('settings-cancel'),
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.editorCancel),
         ),
         FilledButton(
           key: const Key('upgrade-apply'),
           onPressed: _snapshot != null && _draft.isNotEmpty
               ? () => _run(_apply)
               : null,
-          child: const Text('Apply'),
+          child: Text(context.l10n.editorApply),
         ),
       ],
     );

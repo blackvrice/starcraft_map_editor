@@ -372,11 +372,17 @@ class ChkStringViewDecoder {
           message:
               'Section "${section.name}" does not contain its complete '
               '${kind.countFieldWidth}-byte string count.',
+          messageId: 'editorSectionDoesNotContainItsCompleteByteStringCount',
+          messageArguments: [
+            (section.name).toString(),
+            (kind.countFieldWidth).toString(),
+          ],
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.validate,
           sectionName: section.name,
           byteOffset: section.sourceOffset + RawChkParser.headerLength,
           remediation: 'Keep this string table unchanged and read-only.',
+          remediationId: 'editorKeepThisStringTableUnchangedAndReadOnly',
           rawDetails:
               'sectionIndex=$sectionIndex; '
               'requiredCountBytes=${kind.countFieldWidth}; '
@@ -400,11 +406,17 @@ class ChkStringViewDecoder {
           message:
               'Section "${section.name}" declares $declaredCount strings, '
               'but its offset table exceeds the payload.',
+          messageId: 'editorSectionDeclaresStringsButItsOffsetTableExceedsThe',
+          messageArguments: [
+            (section.name).toString(),
+            (declaredCount).toString(),
+          ],
           severity: DiagnosticSeverity.error,
           stage: DiagnosticStage.validate,
           sectionName: section.name,
           byteOffset: section.sourceOffset + RawChkParser.headerLength,
           remediation: 'Keep this string table unchanged and read-only.',
+          remediationId: 'editorKeepThisStringTableUnchangedAndReadOnly',
           rawDetails:
               'sectionIndex=$sectionIndex; '
               'declaredStringCount=$declaredCount; '
@@ -444,6 +456,11 @@ class ChkStringViewDecoder {
             message:
                 'String $stringId in section "${section.name}" points '
                 'outside the payload.',
+            messageId: 'editorStringInSectionPointsOutsideThePayload',
+            messageArguments: [
+              (stringId).toString(),
+              (section.name).toString(),
+            ],
             section: section,
             sectionIndex: sectionIndex,
             stringId: stringId,
@@ -461,6 +478,11 @@ class ChkStringViewDecoder {
               message:
                   'String $stringId in section "${section.name}" points '
                   'into the count or offset table.',
+              messageId: 'editorStringInSectionPointsIntoTheCountOrOffset',
+              messageArguments: [
+                (stringId).toString(),
+                (section.name).toString(),
+              ],
               section: section,
               sectionIndex: sectionIndex,
               stringId: stringId,
@@ -478,12 +500,18 @@ class ChkStringViewDecoder {
               message:
                   'String $stringId in section "${section.name}" has no '
                   'null terminator before the payload ends.',
+              messageId: 'editorStringInSectionHasNoNullTerminatorBeforeThe',
+              messageArguments: [
+                (stringId).toString(),
+                (section.name).toString(),
+              ],
               severity: DiagnosticSeverity.error,
               stage: DiagnosticStage.validate,
               sectionName: section.name,
               byteOffset:
                   section.sourceOffset + RawChkParser.headerLength + rawOffset,
               remediation: 'Keep this string table unchanged and read-only.',
+              remediationId: 'editorKeepThisStringTableUnchangedAndReadOnly',
               rawDetails:
                   'sectionIndex=$sectionIndex; '
                   'stringId=$stringId; '
@@ -537,11 +565,18 @@ EditorDiagnostic _fixedSizeDiagnostic({
         'Section "${section.name}" must contain exactly '
         '$expectedLength payload bytes, but contains '
         '${section.declaredLength}.',
+    messageId: 'editorSectionMustContainExactlyPayloadBytesButContains',
+    messageArguments: [
+      (section.name).toString(),
+      (expectedLength).toString(),
+      (section.declaredLength).toString(),
+    ],
     severity: DiagnosticSeverity.error,
     stage: DiagnosticStage.validate,
     sectionName: section.name,
     byteOffset: section.sourceOffset + RawChkParser.headerLength,
     remediation: 'Keep this section unchanged and treat the map as read-only.',
+    remediationId: 'editorKeepThisSectionUnchangedAndTreatTheMapAs',
     rawDetails:
         'sectionIndex=$sectionIndex; '
         'sectionOffset=${section.sourceOffset}; '
@@ -560,16 +595,21 @@ EditorDiagnostic _stringEntryDiagnostic({
   required int rawOffset,
   required int stringDataOffset,
   required int payloadLength,
+  String? messageId,
+  List<String> messageArguments = const [],
 }) {
   return EditorDiagnostic(
     code: code,
     message: message,
+    messageId: messageId,
+    messageArguments: messageArguments,
     severity: DiagnosticSeverity.error,
     stage: DiagnosticStage.validate,
     sectionName: section.name,
     byteOffset:
         section.sourceOffset + RawChkParser.headerLength + offsetFieldPosition,
     remediation: 'Keep this string table unchanged and read-only.',
+    remediationId: 'editorKeepThisStringTableUnchangedAndReadOnly',
     rawDetails:
         'sectionIndex=$sectionIndex; '
         'stringId=$stringId; '
