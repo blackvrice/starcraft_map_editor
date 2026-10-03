@@ -3640,5 +3640,7 @@
   "editorRepairTheApplicationOrReportTheStarCraftTileHelper": "Repair the application or report the StarCraft tile helper error.",
   "editorTheEUDOutputMustBeAbsentOrARegular": "The EUD output must be absent or a regular file.",
   "editorTheCanonicalEUDEntrySourceIsOutsideTheSource": "The canonical EUD entry source is outside the source root.",
-  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "The canonical EUD output directory is inside the source root."
+  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "The canonical EUD output directory is inside the source root.",
+  "editorSavedSnapshotNewerEditsRemain": "The saved snapshot was verified. Newer edits remain open and unsaved.",
+  "editorSaveCurrentDocumentAgain": "Finish editing and use Save As again to save the current document."
 }

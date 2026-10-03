@@ -45,7 +45,11 @@ class RawChkParser {
         );
       }
 
-      final nameBytes = source.sublist(offset, offset + sectionNameLength);
+      final nameBytes = Uint8List.sublistView(
+        source,
+        offset,
+        offset + sectionNameLength,
+      );
       final sectionName = RawChkSection(
         nameBytes: nameBytes,
         declaredLength: 0,
@@ -108,7 +112,8 @@ class RawChkParser {
         RawChkSection(
           nameBytes: nameBytes,
           declaredLength: declaredLength,
-          payload: source.sublist(payloadOffset, nextOffset),
+          // The section constructor owns a copy; a view avoids a second copy.
+          payload: Uint8List.sublistView(source, payloadOffset, nextOffset),
           sourceOffset: offset,
         ),
       );

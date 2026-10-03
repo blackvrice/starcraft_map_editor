@@ -11,6 +11,18 @@ void main() {
   const encoder = RawChkEncoder();
 
   group('RawChkParser', () {
+    test('parses a nonzero-offset typed view and still owns its bytes', () {
+      final fixture = _loadFixture('duplicate_unknown.chk.hex');
+      final padded = Uint8List(fixture.length + 9)
+        ..setRange(5, 5 + fixture.length, fixture);
+      final view = Uint8List.sublistView(padded, 5, 5 + fixture.length);
+      final parsed = parser.parse(view);
+      expect(parsed.isSuccess, isTrue);
+      expect(encoder.encode(parsed.document!), fixture);
+      padded.fillRange(0, padded.length, 0);
+      expect(encoder.encode(parsed.document!), fixture);
+    });
+
     test('parses section headers, payloads, and source offsets', () {
       final source = _loadFixture('minimal.chk.hex');
 

@@ -426,7 +426,11 @@ class OpenMapController {
     }
   }
 
-  Future<OpenMapState> adoptSavedSession(OpenedMapSession session) async {
+  Future<OpenMapState> adoptSavedSession(
+    OpenedMapSession session, {
+    OpenedMapSession? expectedSession,
+  }) async {
+    final previousSession = expectedSession ?? _state.session;
     final diagnostics = [...session.diagnostics];
     try {
       await recentProjectsService.recordOpened(
@@ -453,6 +457,13 @@ class OpenMapController {
       );
     }
 
+    // Recent-file persistence also yields. Save As passes its expected snapshot
+    // and must retain newer edits/strokes. Explicit document adoption without
+    // that snapshot can still reset an old document's history and active stroke.
+    if (!identical(_state.session, previousSession) ||
+        (expectedSession != null && editHistory.isTransactionActive)) {
+      return _state;
+    }
     final adoptedSession = OpenedMapSession(
       extractedMap: session.extractedMap,
       rawDocument: session.rawDocument,

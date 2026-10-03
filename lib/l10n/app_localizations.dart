@@ -10130,6 +10130,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The canonical EUD output directory is inside the source root.'**
   String get editorTheCanonicalEUDOutputDirectoryIsInsideTheSource;
+
+  /// No description provided for @editorSavedSnapshotNewerEditsRemain.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved snapshot was verified. Newer edits remain open and unsaved.'**
+  String get editorSavedSnapshotNewerEditsRemain;
+
+  /// No description provided for @editorSaveCurrentDocumentAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish editing and use Save As again to save the current document.'**
+  String get editorSaveCurrentDocumentAgain;
 }
 
 class _AppLocalizationsDelegate

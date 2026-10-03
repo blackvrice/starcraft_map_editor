@@ -2889,5 +2889,7 @@
   "editorRepairTheApplicationOrReportTheStarCraftTileHelper": "앱을 복구하거나 StarCraft 타일 도우미 오류를 보고하세요.",
   "editorTheEUDOutputMustBeAbsentOrARegular": "EUD 출력은 존재하지 않거나 일반 파일이어야 합니다.",
   "editorTheCanonicalEUDEntrySourceIsOutsideTheSource": "실제 EUD 진입 소스 경로가 소스 루트 밖에 있습니다.",
-  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "실제 EUD 출력 폴더 경로가 소스 루트 안에 있습니다."
+  "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "실제 EUD 출력 폴더 경로가 소스 루트 안에 있습니다.",
+  "editorSavedSnapshotNewerEditsRemain": "저장한 스냅샷을 검증했습니다. 이후 편집은 열린 문서에 유지되며 아직 저장되지 않았습니다.",
+  "editorSaveCurrentDocumentAgain": "편집을 마친 뒤 다른 이름으로 저장을 다시 실행해 현재 문서를 저장하세요."
 }

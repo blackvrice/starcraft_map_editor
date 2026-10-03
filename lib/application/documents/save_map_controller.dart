@@ -40,6 +40,7 @@ abstract final class SaveMapDiagnosticCodes {
       'SAVE_MAP_PROMOTION_RECOVERY_REQUIRED';
   static const backupCreated = 'SAVE_MAP_BACKUP_CREATED';
   static const unexpectedFailure = 'SAVE_MAP_UNEXPECTED_FAILURE';
+  static const newerEditsPreserved = 'SAVE_MAP_NEWER_EDITS_PRESERVED';
 }
 
 enum SaveMapStatus { idle, saved, failed }
@@ -158,6 +159,18 @@ class SaveMapController {
       );
     }
     final sourcePath = sourceSession.sourcePath;
+    if (openMapController.editHistory.isTransactionActive) {
+      return _emitFailure(
+        _diagnostic(
+          code: SaveMapDiagnosticCodes.operationBusy,
+          message: 'Another editor operation is already running.',
+          messageId: 'editorAnotherEditorOperationIsAlreadyRunning',
+          remediation:
+              'Wait for the current operation to finish and try again.',
+          remediationId: 'editorWaitForTheCurrentOperationToFinishAndTry',
+        ),
+      );
+    }
     _isSaving = true;
 
     MapSaveWorkspace? workspace;
@@ -710,8 +723,25 @@ class SaveMapController {
           sourceFingerprint: verifiedOutputFingerprint,
           diagnostics: verifiedDiagnostics,
         ),
+        expectedSession: sourceSession,
       );
       final saveDiagnostics = [...adoptedState.diagnostics];
+      if (!identical(adoptedState.session?.extractedMap, finalMap)) {
+        saveDiagnostics.add(
+          EditorDiagnostic(
+            code: SaveMapDiagnosticCodes.newerEditsPreserved,
+            message:
+                'The saved snapshot was verified. Newer edits remain open and unsaved.',
+            messageId: 'editorSavedSnapshotNewerEditsRemain',
+            severity: DiagnosticSeverity.warning,
+            stage: DiagnosticStage.save,
+            filePath: normalizedPath,
+            remediation:
+                'Finish editing and use Save As again to save the current document.',
+            remediationId: 'editorSaveCurrentDocumentAgain',
+          ),
+        );
+      }
       final backupPath = promotionResult.backupPath;
       if (backupPath != null) {
         saveDiagnostics.add(

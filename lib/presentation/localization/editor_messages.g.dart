@@ -1620,6 +1620,10 @@ String? resolveEditorMessage(
     l10n.editorTheCanonicalEUDEntrySourceIsOutsideTheSource,
   'editorTheCanonicalEUDOutputDirectoryIsInsideTheSource' when values.isEmpty =>
     l10n.editorTheCanonicalEUDOutputDirectoryIsInsideTheSource,
+  'editorSavedSnapshotNewerEditsRemain' when values.isEmpty =>
+    l10n.editorSavedSnapshotNewerEditsRemain,
+  'editorSaveCurrentDocumentAgain' when values.isEmpty =>
+    l10n.editorSaveCurrentDocumentAgain,
   _ => null,
 };
 
@@ -2711,6 +2715,10 @@ const _exactMessages = <String, String>{
       'editorTheCanonicalEUDEntrySourceIsOutsideTheSource',
   'The canonical EUD output directory is inside the source root.':
       'editorTheCanonicalEUDOutputDirectoryIsInsideTheSource',
+  'The saved snapshot was verified. Newer edits remain open and unsaved.':
+      'editorSavedSnapshotNewerEditsRemain',
+  'Finish editing and use Save As again to save the current document.':
+      'editorSaveCurrentDocumentAgain',
 };
 
 final _legacyTemplates = <({RegExp pattern, String id})>[

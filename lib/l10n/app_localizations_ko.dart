@@ -5981,4 +5981,12 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get editorTheCanonicalEUDOutputDirectoryIsInsideTheSource =>
       '실제 EUD 출력 폴더 경로가 소스 루트 안에 있습니다.';
+
+  @override
+  String get editorSavedSnapshotNewerEditsRemain =>
+      '저장한 스냅샷을 검증했습니다. 이후 편집은 열린 문서에 유지되며 아직 저장되지 않았습니다.';
+
+  @override
+  String get editorSaveCurrentDocumentAgain =>
+      '편집을 마친 뒤 다른 이름으로 저장을 다시 실행해 현재 문서를 저장하세요.';
 }

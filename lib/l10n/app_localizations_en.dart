@@ -6110,4 +6110,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get editorTheCanonicalEUDOutputDirectoryIsInsideTheSource =>
       'The canonical EUD output directory is inside the source root.';
+
+  @override
+  String get editorSavedSnapshotNewerEditsRemain =>
+      'The saved snapshot was verified. Newer edits remain open and unsaved.';
+
+  @override
+  String get editorSaveCurrentDocumentAgain =>
+      'Finish editing and use Save As again to save the current document.';
 }

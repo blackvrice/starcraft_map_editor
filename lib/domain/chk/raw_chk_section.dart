@@ -135,6 +135,8 @@ class RawChkSection {
 }
 
 void _validateBytes(List<int> bytes, String argumentName) {
+  // Typed bytes already guarantee 0..255. Keep validation for general lists.
+  if (bytes is Uint8List) return;
   for (var index = 0; index < bytes.length; index++) {
     final byte = bytes[index];
     if (byte < 0 || byte > 0xff) {

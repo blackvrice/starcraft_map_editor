@@ -28,6 +28,7 @@ void main() {
     late _FakeMapSaveFileGateway saveFileGateway;
     late OperationProgressController progressController;
     late RecentProjectsService recentProjectsService;
+    late _CallbackSettingsStore recentSettings;
     late OpenMapController openMapController;
     late SaveMapController saveMapController;
     late ExtractedMap sourceMap;
@@ -50,7 +51,8 @@ void main() {
         },
       );
       progressController = OperationProgressController();
-      recentProjectsService = RecentProjectsService(InMemorySettingsStore());
+      recentSettings = _CallbackSettingsStore();
+      recentProjectsService = RecentProjectsService(recentSettings);
       openMapController = OpenMapController(
         archiveGateway: archiveGateway,
         filePicker: filePicker,
@@ -364,6 +366,69 @@ void main() {
       );
     });
 
+    for (final phase in ['write', 'promote', 'recent']) {
+      test('preserves edits made during Save As $phase', () async {
+        final terrain = TerrainEditingController(
+          openMapController: openMapController,
+        );
+        addTearDown(terrain.dispose);
+        terrain.synchronizeSession(openMapController.state.session);
+        terrain.selectTileAt(const TerrainTileCoordinate(x: 1, y: 0));
+        late OpenedMapSession edited;
+        void edit() {
+          expect(
+            terrain.paintTiles(const [TerrainTileCoordinate(x: 2, y: 0)]),
+            isTrue,
+          );
+          edited = openMapController.state.session!;
+        }
+
+        if (phase == 'write') archiveGateway.onWrite = edit;
+        if (phase == 'promote') saveFileGateway.onPromote = edit;
+        if (phase == 'recent') recentSettings.onWrite = edit;
+
+        final saved = await saveMapController.saveAs();
+
+        if (phase == 'write') {
+          expect(saved.status, SaveMapStatus.failed);
+          expect(saveFileGateway.promotedDestination, isNull);
+        } else {
+          expect(saved.status, SaveMapStatus.saved);
+          expect(saveFileGateway.promotedDestination, saved.outputPath);
+          expect(
+            saved.diagnostics.any(
+              (d) => d.code == SaveMapDiagnosticCodes.newerEditsPreserved,
+            ),
+            isTrue,
+          );
+        }
+        expect(openMapController.state.session, same(edited));
+        expect(edited.isDirty, isTrue);
+        expect(terrain.canUndo, isTrue);
+        expect(
+          archiveGateway.writeRequests.single.scenarioChkBytes,
+          sourceMap.scenarioChkBytes,
+        );
+        expect(terrain.undo(), isTrue);
+        expect(openMapController.state.session!.isDirty, isFalse);
+      });
+    }
+
+    test('refuses Save As during an active brush transaction', () async {
+      final owner = Object();
+      openMapController.editHistory.beginTransaction(owner);
+      final result = await saveMapController.saveAs();
+      expect(result.status, SaveMapStatus.failed);
+      expect(
+        result.diagnostics.single.code,
+        SaveMapDiagnosticCodes.operationBusy,
+      );
+      expect(archiveGateway.writeRequests, isEmpty);
+      expect(saveFileGateway.promotedDestination, isNull);
+      expect(openMapController.editHistory.isTransactionActive, isTrue);
+      openMapController.editHistory.endTransaction(owner);
+    });
+
     test('refuses an existing destination without changing it', () async {
       saveFileGateway.destinationAlreadyExists = true;
 
@@ -660,6 +725,7 @@ class _FakeMapArchiveGateway
   final List<MapArchiveWriteRequest> writeRequests = [];
   Uint8List? verifiedChkBytes;
   EditorDiagnostic? writeFailure;
+  void Function()? onWrite;
 
   @override
   Future<MapArchiveOpenResult> open(MapArchiveOpenRequest request) async {
@@ -683,6 +749,7 @@ class _FakeMapArchiveGateway
     MapArchiveWriteRequest request,
   ) async {
     writeRequests.add(request);
+    onWrite?.call();
     final failure = writeFailure;
     if (failure != null) {
       return MapArchiveWriteResult.failure(diagnostics: [failure]);
@@ -694,6 +761,16 @@ class _FakeMapArchiveGateway
 
   @override
   Future<bool> cancel(String operationId) async => false;
+}
+
+class _CallbackSettingsStore extends InMemorySettingsStore {
+  void Function()? onWrite;
+
+  @override
+  Future<void> writeString(String key, String value) async {
+    await super.writeString(key, value);
+    onWrite?.call();
+  }
 }
 
 class _FakeMapFilePicker implements MapFilePicker {
@@ -753,6 +830,7 @@ class _FakeMapSaveFileGateway implements MapSaveFileGateway {
   bool destinationAlreadyExists = false;
   final List<bool> destinationExistenceResponses = [];
   Object? promotionError;
+  void Function()? onPromote;
   MapSavePromotionResult promotionResult = MapSavePromotionResult();
   int createWorkspaceCount = 0;
   int cleanupCount = 0;
@@ -790,6 +868,7 @@ class _FakeMapSaveFileGateway implements MapSaveFileGateway {
     }
     promotedDestination = destinationPath;
     promotedReplaceExisting = replaceExisting;
+    onPromote?.call();
     return promotionResult;
   }
 
