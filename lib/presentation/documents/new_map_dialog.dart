@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../application/documents/new_map_controller.dart';
 import '../../application/terrain/tile_placement_catalog_loader.dart';
+import '../../application/terrain/solid_isom_catalog_builder.dart';
+import 'dart:math';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/chk/new_map_factory.dart';
 import '../../domain/chk/typed/chk_metadata_views.dart';
@@ -29,6 +31,10 @@ class _NewMapDialogState extends State<NewMapDialog> {
   final _description = TextEditingController();
   int _width = 128, _height = 128, _players = 1, _offset = 0, _revision = 0;
   int? _tile;
+  int? _terrainType;
+  SolidIsomCatalog? _terrain;
+  late bool _terrainMode;
+  final int _terrainSeed = Random().nextInt(0x7fffffff);
   bool _customSize = false;
   var _step = _NewMapStep.basics;
   var _tileset = StarCraftTilesetAssetSet.badlands;
@@ -39,6 +45,7 @@ class _NewMapDialogState extends State<NewMapDialog> {
   @override
   void initState() {
     super.initState();
+    _terrainMode = widget.controller.terrainGateway != null;
     _load();
   }
 
@@ -61,14 +68,32 @@ class _NewMapDialogState extends State<NewMapDialog> {
       _loading = true;
       _tile = null;
       _batch = null;
+      _terrain = null;
+      _terrainType = null;
       _error = null;
     });
     try {
-      final batch = await widget.controller.loadTiles(
-        _tileset,
-        offset: _offset,
-      );
-      if (mounted && revision == _revision) setState(() => _batch = batch);
+      if (_terrainMode) {
+        final terrain = await widget.controller.loadTerrain(_tileset);
+        if (mounted && revision == _revision) {
+          setState(() {
+            _terrain = terrain;
+            _terrainType = terrain.shapes.keys.firstWhere(
+              (type) => terrain.catalog.pairs.any(
+                (p) => p.terrainType == type && p.members.length > 1,
+              ),
+              orElse: () => terrain.shapes.keys.first,
+            );
+            _tile = 0;
+          });
+        }
+      } else {
+        final batch = await widget.controller.loadTiles(
+          _tileset,
+          offset: _offset,
+        );
+        if (mounted && revision == _revision) setState(() => _batch = batch);
+      }
     } catch (e) {
       if (mounted && revision == _revision) setState(() => _error = '$e');
     } finally {
@@ -83,7 +108,7 @@ class _NewMapDialogState extends State<NewMapDialog> {
       _error = null;
     });
     try {
-      final options = NewMapOptions(
+      var options = NewMapOptions(
         width: _width,
         height: _height,
         humanPlayers: _players,
@@ -94,6 +119,13 @@ class _NewMapDialogState extends State<NewMapDialog> {
         title: _title!.text,
         description: _description.text,
       );
+      if (_terrainMode) {
+        options = widget.controller.terrainOptions(
+          options,
+          _terrainType!,
+          _terrainSeed,
+        );
+      }
       if (widget.controller.expectedSession?.isDirty ?? false) {
         final discard = await showDialog<bool>(
           context: context,
@@ -151,103 +183,151 @@ class _NewMapDialogState extends State<NewMapDialog> {
       insetPadding: const EdgeInsets.all(24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 700),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _StepList(
-              current: _step,
-              onSelected: _creating ? null : (s) => setState(() => _step = s),
-            ),
-            const VerticalDivider(width: 1),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(28, 24, 28, 16),
-                      child: switch (_step) {
-                        _NewMapStep.basics => _basics(context),
-                        _NewMapStep.players => _playersStep(context),
-                        _NewMapStep.review => _review(context),
-                      },
-                    ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 800;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!compact)
+                  _StepList(
+                    current: _step,
+                    onSelected: _creating
+                        ? null
+                        : (s) => setState(() => _step = s),
                   ),
-                  if (_error != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
-                      child: Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                if (!compact) const VerticalDivider(width: 1),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (compact)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Text(
+                            l10n.newMapTitle,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      if (compact)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: SegmentedButton<_NewMapStep>(
+                            key: const Key('new-map-compact-steps'),
+                            segments: [
+                              ButtonSegment(
+                                value: _NewMapStep.basics,
+                                label: Text(l10n.newMapStepBasics),
+                              ),
+                              ButtonSegment(
+                                value: _NewMapStep.players,
+                                label: Text(l10n.newMapStepPlayers),
+                              ),
+                              ButtonSegment(
+                                value: _NewMapStep.review,
+                                label: Text(l10n.newMapStepReview),
+                              ),
+                            ],
+                            selected: {_step},
+                            showSelectedIcon: false,
+                            onSelectionChanged: _creating
+                                ? null
+                                : (steps) =>
+                                      setState(() => _step = steps.single),
+                          ),
+                        ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(28, 24, 28, 16),
+                          child: switch (_step) {
+                            _NewMapStep.basics => _basics(context),
+                            _NewMapStep.players => _playersStep(context),
+                            _NewMapStep.review => _review(context),
+                          },
                         ),
                       ),
-                    ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 8),
                           child: Text(
-                            _summary(l10n),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFFA7AFB8)),
+                            _error!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         ),
-                        TextButton(
-                          onPressed: _creating
-                              ? null
-                              : () => Navigator.pop(context, false),
-                          child: Text(l10n.newMapCancel),
+                      const Divider(height: 1),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 14,
                         ),
-                        if (_step != _NewMapStep.basics) ...[
-                          const SizedBox(width: 6),
-                          OutlinedButton(
-                            key: const Key('new-map-back'),
-                            onPressed: _creating
-                                ? null
-                                : () => setState(
-                                    () => _step =
-                                        _NewMapStep.values[_step.index - 1],
-                                  ),
-                            child: Text(l10n.newMapBack),
-                          ),
-                        ],
-                        if (_step != _NewMapStep.review) ...[
-                          const SizedBox(width: 6),
-                          OutlinedButton(
-                            key: const Key('new-map-next'),
-                            onPressed: _creating
-                                ? null
-                                : () => setState(
-                                    () => _step =
-                                        _NewMapStep.values[_step.index + 1],
-                                  ),
-                            child: Text(l10n.newMapContinue),
-                          ),
-                        ],
-                        const SizedBox(width: 8),
-                        Tooltip(
-                          message: canCreate ? '' : l10n.newMapTileRequired,
-                          child: FilledButton.icon(
-                            key: const Key('create-new-map'),
-                            onPressed: canCreate ? _create : null,
-                            icon: const Icon(Icons.check_rounded, size: 18),
-                            label: Text(l10n.newMapCreate),
-                          ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _summary(l10n),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFFA7AFB8),
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _creating
+                                  ? null
+                                  : () => Navigator.pop(context, false),
+                              child: Text(l10n.newMapCancel),
+                            ),
+                            if (_step != _NewMapStep.basics) ...[
+                              const SizedBox(width: 6),
+                              OutlinedButton(
+                                key: const Key('new-map-back'),
+                                onPressed: _creating
+                                    ? null
+                                    : () => setState(
+                                        () => _step =
+                                            _NewMapStep.values[_step.index - 1],
+                                      ),
+                                child: Text(l10n.newMapBack),
+                              ),
+                            ],
+                            if (_step != _NewMapStep.review) ...[
+                              const SizedBox(width: 6),
+                              OutlinedButton(
+                                key: const Key('new-map-next'),
+                                onPressed: _creating
+                                    ? null
+                                    : () => setState(
+                                        () => _step =
+                                            _NewMapStep.values[_step.index + 1],
+                                      ),
+                                child: Text(l10n.newMapContinue),
+                              ),
+                            ],
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: canCreate ? '' : l10n.newMapTileRequired,
+                              child: FilledButton.icon(
+                                key: const Key('create-new-map'),
+                                onPressed: canCreate ? _create : null,
+                                icon: const Icon(Icons.check_rounded, size: 18),
+                                label: Text(l10n.newMapCreate),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -257,7 +337,11 @@ class _NewMapDialogState extends State<NewMapDialog> {
     l10n.newMapSizeValue(_width, _height),
     _tilesetName(l10n, _tileset),
     l10n.newMapPlayersValue(_players),
-    _tile == null ? l10n.newMapReviewNoTile : l10n.newMapReviewTile('$_tile'),
+    _terrainMode && _terrainType != null
+        ? l10n.isomTerrainId(_terrainType!)
+        : _tile == null
+        ? l10n.newMapReviewNoTile
+        : l10n.newMapReviewTile('$_tile'),
   ].join(' · ');
 
   Widget _basics(BuildContext context) {
@@ -288,13 +372,15 @@ class _NewMapDialogState extends State<NewMapDialog> {
         const SizedBox(height: 20),
         _SectionTitle(l10n.newMapSize),
         const SizedBox(height: 8),
-        GridView.count(
-          crossAxisCount: 6,
+        GridView(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 180,
+            mainAxisExtent: 90,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 1.35,
           children: [
             for (final (size, label, note) in presets)
               _ChoiceCard(
@@ -328,13 +414,15 @@ class _NewMapDialogState extends State<NewMapDialog> {
         const SizedBox(height: 20),
         _SectionTitle(l10n.newMapTileset, hint: l10n.newMapTilesetHint),
         const SizedBox(height: 8),
-        GridView.count(
-          crossAxisCount: 4,
+        GridView(
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 220,
+            mainAxisExtent: 64,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 2.6,
           children: [
             for (final tileset in StarCraftTilesetAssetSet.values)
               _TilesetCard(
@@ -347,7 +435,33 @@ class _NewMapDialogState extends State<NewMapDialog> {
           ],
         ),
         const SizedBox(height: 20),
-        _SectionTitle(l10n.newMapInitialTile, hint: l10n.newMapInitialTileHint),
+        if (widget.controller.terrainGateway != null)
+          SegmentedButton<bool>(
+            key: const Key('new-map-terrain-mode'),
+            segments: [
+              ButtonSegment(
+                value: true,
+                icon: const Icon(Icons.landscape_outlined),
+                label: Text(l10n.terrainModeNatural),
+              ),
+              ButtonSegment(
+                value: false,
+                icon: const Icon(Icons.grid_on),
+                label: Text(l10n.terrainModeTile),
+              ),
+            ],
+            selected: {_terrainMode},
+            onSelectionChanged: _creating
+                ? null
+                : (v) {
+                    setState(() => _terrainMode = v.single);
+                    _load();
+                  },
+          ),
+        const SizedBox(height: 8),
+        _SectionTitle(
+          _terrainMode ? l10n.isomTerrainType : l10n.newMapInitialTile,
+        ),
         const SizedBox(height: 8),
         if (_loading)
           Row(
@@ -358,8 +472,57 @@ class _NewMapDialogState extends State<NewMapDialog> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 10),
-              Text(l10n.newMapTilesLoading),
+              Expanded(child: Text(l10n.newMapTilesLoading)),
             ],
+          ),
+        if (_terrain case final terrain?)
+          SizedBox(
+            height: 220,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 140,
+                mainAxisExtent: 92,
+                mainAxisSpacing: 4,
+                crossAxisSpacing: 4,
+              ),
+              itemCount: terrain.shapes.length,
+              itemBuilder: (context, index) {
+                final type = terrain.shapes.keys.elementAt(index);
+                return InkWell(
+                  key: Key('new-map-terrain-$type'),
+                  onTap: _creating
+                      ? null
+                      : () => setState(() => _terrainType = type),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _terrainType == type
+                            ? Theme.of(context).colorScheme.primary
+                            : const Color(0xFF454A50),
+                        width: _terrainType == type ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.controller.terrainPreviews[type]
+                            case final pixels?)
+                          CatalogThumbnail(
+                            rgbaBytes: pixels,
+                            width: 32,
+                            height: 32,
+                          ),
+                        Text(
+                          l10n.isomTerrainId(type),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         if (batch != null)
           SizedBox(
@@ -516,7 +679,9 @@ class _NewMapDialogState extends State<NewMapDialog> {
       (l10n.newMapTileset, _tilesetName(l10n, _tileset)),
       (
         l10n.newMapInitialTile,
-        _tile == null
+        _terrainMode && _terrainType != null
+            ? l10n.isomTerrainId(_terrainType!)
+            : _tile == null
             ? l10n.newMapReviewNoTile
             : l10n.newMapReviewTile('$_tile'),
       ),

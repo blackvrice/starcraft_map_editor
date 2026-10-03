@@ -10142,6 +10142,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finish editing and use Save As again to save the current document.'**
   String get editorSaveCurrentDocumentAgain;
+
+  /// No description provided for @terrainModeNatural.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain'**
+  String get terrainModeNatural;
+
+  /// No description provided for @terrainModeTile.
+  ///
+  /// In en, this message translates to:
+  /// **'Single Tile'**
+  String get terrainModeTile;
+
+  /// No description provided for @terrainVariationSeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Variation Seed'**
+  String get terrainVariationSeed;
+
+  /// No description provided for @catalogShowComponents.
+  ///
+  /// In en, this message translates to:
+  /// **'Show turret components'**
+  String get catalogShowComponents;
+
+  /// No description provided for @catalogIssueSubunit.
+  ///
+  /// In en, this message translates to:
+  /// **'This turret is generated with its parent unit.'**
+  String get catalogIssueSubunit;
+
+  /// No description provided for @terrainSeedInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an integer from 0 to 4294967295.'**
+  String get terrainSeedInvalid;
+
+  /// No description provided for @visualSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Graphic selection'**
+  String get visualSelection;
+
+  /// No description provided for @epScriptHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'epScript / EUD'**
+  String get epScriptHelpTitle;
+
+  /// No description provided for @epScriptHelpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'epScript (.eps) defines custom game logic such as conditions, actions and repeating rules. It is separate from ordinary map object placement and becomes EUD triggers only when compiled with euddraft.\n\nSave the map and script, prepare the EUD build, then build a separate output map. Editing a script does not execute it or change the original map. Only build trusted code.'**
+  String get epScriptHelpBody;
+
+  /// No description provided for @epScriptInsertExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert starter script'**
+  String get epScriptInsertExample;
+
+  /// No description provided for @epScriptComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete symbol'**
+  String get epScriptComplete;
+
+  /// No description provided for @epScriptExample.
+  ///
+  /// In en, this message translates to:
+  /// **'Starter script'**
+  String get epScriptExample;
 }
 
 class _AppLocalizationsDelegate

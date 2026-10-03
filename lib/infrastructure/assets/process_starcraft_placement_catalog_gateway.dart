@@ -515,6 +515,11 @@ final class ProcessStarCraftPlacementCatalogGateway
                     code: 'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
                     message: 'Verified unit capability data is unavailable.',
                   )
+                : unitCapability.isSubunit
+                ? StarCraftPlacementCatalogIssue(
+                    code: 'SC_CATALOG_ITEM_UNIT_SUBUNIT',
+                    message: 'This turret is generated with its parent unit.',
+                  )
                 : unitCapability.requiresRelationLink
                 ? StarCraftPlacementCatalogIssue(
                     code: 'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED',
@@ -594,6 +599,7 @@ final class ProcessStarCraftPlacementCatalogGateway
     }
     return UnitPlacementCapability(
       unitId: unitId,
+      isSubunit: raw.containsKey('isSubunit') ? flag('isSubunit') : false,
       weaponReferences: raw['weaponReferences'] == null
           ? null
           : UnitWeaponReferences(

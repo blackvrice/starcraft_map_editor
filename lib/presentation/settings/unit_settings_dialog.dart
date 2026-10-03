@@ -168,6 +168,8 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   ),
                 ),
               SettingsSelection(
+                visual: true,
+                visualCatalog: widget.catalogController,
                 revision: _snapshot,
                 searchText: (id) {
                   if (_names.containsKey(id)) return _names[id]!;
@@ -241,39 +243,58 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                   }
                 },
               ),
-              DropdownButton<int>(
-                key: const Key('unit-settings-defaults'),
-                value: mode,
-                isExpanded: true,
-                items: [
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text(context.l10n.editorUseCustomValues),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(context.l10n.editorUseGameDefaults),
-                  ),
-                  if (storedMode != null && storedMode > 1)
+              if (mode == null || mode == 0 || mode == 1)
+                CheckboxListTile(
+                  key: const Key('unit-settings-defaults'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(context.l10n.editorUseGameDefaults),
+                  value: mode == 1,
+                  onChanged: settings == null
+                      ? null
+                      : (checked) => setState(() {
+                          final value = checked == true ? 1 : 0;
+                          if (value == storedMode) {
+                            _defaults.remove(_unit);
+                          } else {
+                            _defaults[_unit] = value;
+                          }
+                        }),
+                )
+              else
+                DropdownButton<int>(
+                  key: const Key('unit-settings-defaults'),
+                  value: mode,
+                  isExpanded: true,
+                  items: [
                     DropdownMenuItem(
-                      value: storedMode,
-                      child: Text(
-                        context.l10n.editorStoredDefaultFlagPreserved(
-                          (storedMode).toString(),
+                      value: 0,
+                      child: Text(context.l10n.editorUseCustomValues),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(context.l10n.editorUseGameDefaults),
+                    ),
+                    if (storedMode != null && storedMode > 1)
+                      DropdownMenuItem(
+                        value: storedMode,
+                        child: Text(
+                          context.l10n.editorStoredDefaultFlagPreserved(
+                            (storedMode).toString(),
+                          ),
                         ),
                       ),
-                    ),
-                ],
-                onChanged: settings == null
-                    ? null
-                    : (v) => setState(() {
-                        if (v == storedMode) {
-                          _defaults.remove(_unit);
-                        } else {
-                          _defaults[_unit] = v!;
-                        }
-                      }),
-              ),
+                  ],
+                  onChanged: settings == null
+                      ? null
+                      : (v) => setState(() {
+                          if (v == storedMode) {
+                            _defaults.remove(_unit);
+                          } else {
+                            _defaults[_unit] = v!;
+                          }
+                        }),
+                ),
               Text(
                 context
                     .l10n
@@ -351,6 +372,9 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
               ),
               if (settings != null)
                 SettingsSelection(
+                  visual: true,
+                  weapons: true,
+                  visualCatalog: widget.catalogController,
                   revision: _snapshot,
                   prefix: 'weapon-settings',
                   selectorKey: const Key('unit-settings-weapon'),

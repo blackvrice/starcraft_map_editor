@@ -8,6 +8,7 @@ import '../../domain/eud/eud_project.dart';
 import '../settings/default_settings_names.dart';
 import '../settings/default_unit_names.dart';
 import '../localization/l10n.dart';
+import '../settings/visual_settings_picker.dart';
 import 'eud_field_labels.dart';
 
 String eudTargetName(EudTable table, int id) {
@@ -237,6 +238,19 @@ class _FieldEditorState extends State<_FieldEditor> {
                 l10n.eudFieldsTarget,
                 style: const TextStyle(fontSize: 12, color: Color(0xFFA7AFB8)),
               ),
+              if (_table == EudTable.unit || _table == EudTable.weapon)
+                VisualSettingsPicker(
+                  ids: targets.where((id) => id >= 0).toList(),
+                  selected: _target,
+                  prefix: 'eud-extension-target',
+                  catalog: widget.catalog,
+                  weapons: _table == EudTable.weapon,
+                  label: (id) => eudTargetName(_table, id),
+                  onSelected: (id) => setState(() {
+                    _target = id;
+                    _load();
+                  }),
+                ),
               DropdownButton<int>(
                 key: const Key('eud-extension-target'),
                 isExpanded: true,
@@ -284,7 +298,16 @@ class _FieldEditorState extends State<_FieldEditor> {
                   decoration: InputDecoration(labelText: l10n.eudFieldsValue),
                   keyboardType: TextInputType.number,
                 ),
-              ] else
+              ] else if (_field.type == EudValueType.boolean)
+                CheckboxListTile(
+                  key: const Key('eud-extension-choice'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.eudFieldsValue),
+                  value: _value is bool ? _value as bool : null,
+                  tristate: _value is! bool,
+                  onChanged: (value) => setState(() => _value = value),
+                )
+              else
                 DropdownButton<Object>(
                   key: const Key('eud-extension-choice'),
                   isExpanded: true,

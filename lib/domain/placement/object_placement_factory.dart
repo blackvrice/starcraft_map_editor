@@ -7,6 +7,7 @@ import 'unit_placement_capability.dart';
 /// Stable reasons a validated default record cannot be synthesized.
 abstract final class ObjectPlacementFactoryCodes {
   static const unitRelationRequired = 'CHK_PLACEMENT_UNIT_RELATION_REQUIRED';
+  static const unitSubunit = 'CHK_PLACEMENT_UNIT_SUBUNIT';
   static const unitCapabilityMismatch =
       'CHK_PLACEMENT_UNIT_CAPABILITY_MISMATCH';
   static const spriteUnitUnsupported = 'CHK_PLACEMENT_SPRITE_UNIT_UNSUPPORTED';
@@ -78,6 +79,11 @@ class UnitPlacementFactory {
     if (capability.unitId != unitId) {
       return ObjectPlacementRecord.rejected(
         ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+      );
+    }
+    if (capability.isSubunit) {
+      return ObjectPlacementRecord.rejected(
+        ObjectPlacementFactoryCodes.unitSubunit,
       );
     }
     if (capability.requiresRelationLink) {

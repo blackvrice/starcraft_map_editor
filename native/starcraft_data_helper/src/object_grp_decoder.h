@@ -40,4 +40,8 @@ ObjectGrpDecodeResult DecodeObjectGrpFirstFrame(
     const ObjectRgbPalette &base_palette,
     const ObjectPlayerRgbPalette *player_palette = nullptr);
 
+// Align the origin anchors and place opaque GRP overlay pixels above the base.
+ObjectGrpDecodeResult CompositeObjectFrames(
+    const ObjectGrpDecodeResult& base, const ObjectGrpDecodeResult& overlay);
+
 } // namespace starcraft_map_editor::starcraft_data

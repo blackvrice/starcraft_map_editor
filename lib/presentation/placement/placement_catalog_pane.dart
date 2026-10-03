@@ -66,6 +66,7 @@ String _tilesetLabel(AppLocalizations l10n, StarCraftTilesetAssetSet t) =>
 String _issueText(AppLocalizations l10n, PlacementCatalogItem item) {
   final code = item.issueCode ?? '';
   if (code.endsWith('UNIT_RELATION_REQUIRED')) return l10n.catalogIssueRelation;
+  if (code.endsWith('UNIT_SUBUNIT')) return l10n.catalogIssueSubunit;
   if (code.endsWith('UNIT_CAPABILITY_UNAVAILABLE')) {
     return l10n.catalogIssueCapability;
   }
@@ -107,6 +108,7 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
   final TextEditingController _search = TextEditingController();
   String? _category;
   bool _placeableOnly = false;
+  bool _showComponents = false;
 
   @override
   void initState() {
@@ -181,7 +183,8 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
               (category == null ||
                   (item.entry.categoryPath.isNotEmpty &&
                       item.entry.categoryPath.first == category)) &&
-              (!_placeableOnly || item.isPlaceable),
+              (!_placeableOnly || item.isPlaceable) &&
+              (_showComponents || item.entry.unitCapability?.isSubunit != true),
         )
         .toList(growable: false);
   }
@@ -340,6 +343,17 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
                 selected: _placeableOnly,
                 onSelected: (value) => setState(() => _placeableOnly = value),
               ),
+              if (state.kind == StarCraftPlacementKind.unit)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Checkbox(
+                      value: _showComponents,
+                      onChanged: (v) => setState(() => _showComponents = v!),
+                    ),
+                    Text(l10n.catalogShowComponents),
+                  ],
+                ),
               if (state.diagnostics.isEmpty && state.items.isNotEmpty)
                 Text(
                   l10n.catalogShownCount(items.length),

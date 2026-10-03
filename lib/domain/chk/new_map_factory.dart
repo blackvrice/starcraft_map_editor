@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'default_validation_code.dart';
+import '../terrain/isom_terrain_conversion.dart';
+import '../terrain/isom_terrain_fill.dart';
 import 'raw_chk_document.dart';
 import 'raw_chk_section.dart';
 import 'typed/chk_metadata_views.dart';
 
-/// Initial raw-tile UMS policy. The application must validate the selected
-/// tile against local tileset data before presenting it as usable terrain.
+/// UMS creation policy. Terrain uses a verified local catalog; explicit raw
+/// tile mode remains available without inventing ISOM metadata.
 final class NewMapOptions {
   NewMapOptions({
     this.width = 128,
@@ -17,6 +19,9 @@ final class NewMapOptions {
     this.humanPlayers = 1,
     this.title = 'Untitled Scenario',
     this.description = '',
+    this.terrainCatalog,
+    this.solidTerrainValue,
+    this.terrainSeed = 0,
   }) {
     for (final dimension in [width, height]) {
       if (dimension < 32 || dimension > 256 || dimension % 32 != 0) {
@@ -27,6 +32,14 @@ final class NewMapOptions {
     }
     RangeError.checkValueInInterval(rawTileValue, 0, 65535, 'rawTileValue');
     RangeError.checkValueInInterval(humanPlayers, 1, 8, 'humanPlayers');
+    RangeError.checkValueInInterval(terrainSeed, 0, 0xffffffff, 'terrainSeed');
+    if ((terrainCatalog == null) != (solidTerrainValue == null) ||
+        (terrainCatalog != null &&
+            terrainCatalog!.tileset != tileset.rawValue)) {
+      throw ArgumentError(
+        'Terrain needs a verified matching catalog and solid shape.',
+      );
+    }
     if (title.trim().isEmpty ||
         title.contains('\u0000') ||
         description.contains('\u0000')) {
@@ -37,6 +50,9 @@ final class NewMapOptions {
   final int width, height, rawTileValue, humanPlayers;
   final ChkTileset tileset;
   final String title, description;
+  final IsomTerrainCatalog? terrainCatalog;
+  final int? solidTerrainValue;
+  final int terrainSeed;
 }
 
 /// Deterministic, template-free CHK construction. Does not touch an existing
@@ -135,7 +151,19 @@ class NewMapFactory {
     add('UNIx', Uint8List(4168)..fillRange(0, 228, 1));
     add('UPGx', Uint8List(794)..fillRange(0, 61, 1));
     add('TECx', Uint8List(396)..fillRange(0, 44, 1));
-    return RawChkDocument(sections: sections, sourceLength: offset);
+    final document = RawChkDocument(sections: sections, sourceLength: offset);
+    // Generate the complete terrain before publishing the new session: a
+    // failed conversion must never leave a partially created map open.
+    return options.terrainCatalog == null
+        ? document
+        : const IsomTerrainFill()
+              .preview(
+                document,
+                options.terrainCatalog!,
+                solidValue: options.solidTerrainValue!,
+                seed: options.terrainSeed,
+              )
+              .result;
   }
 
   // Standard expansion upgrade level defaults, cross-checked against the

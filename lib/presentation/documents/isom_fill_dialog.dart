@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../application/documents/isom_fill_controller.dart';
 import '../../application/terrain/solid_isom_catalog_builder.dart';
@@ -11,8 +12,13 @@ import '../map_canvas/terrain_tile_texture_controller.dart';
 import '../localization/l10n.dart';
 
 class IsomFillDialog extends StatefulWidget {
-  const IsomFillDialog({required this.controller, super.key});
+  const IsomFillDialog({
+    required this.controller,
+    this.initialMode = 0,
+    super.key,
+  });
   final IsomFillController controller;
+  final int initialMode;
   @override
   State<IsomFillDialog> createState() => _IsomFillDialogState();
 }
@@ -27,6 +33,7 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
   bool get _convert => _mode == 1;
   bool get _interactive => _mode >= 2;
   int _size = 1;
+  int _seed = 0;
   TerrainEditingTool _tool = TerrainEditingTool.brush;
   final Set<IsomDiamond> _stroke = {};
   DoodadPlacementRecipe? _ramp;
@@ -36,6 +43,7 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
   @override
   void initState() {
     super.initState();
+    _mode = widget.initialMode;
     _mapSubscription = widget.controller.maps.changes.listen((state) {
       final source = widget.controller.source;
       if (mounted && source != null && !identical(source, state.session)) {
@@ -88,8 +96,8 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
     }
     try {
       _preview = _convert
-          ? widget.controller.previewConversion()
-          : widget.controller.preview(terrainType: _type!);
+          ? widget.controller.previewConversion(seed: _seed)
+          : widget.controller.preview(terrainType: _type!, seed: _seed);
     } on Object catch (e) {
       _error = e;
     }
@@ -138,6 +146,7 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
           terrainType: _type!,
           diamonds: {..._stroke},
           basePreview: _preview,
+          seed: _seed,
         );
         _error = null;
       } on Object catch (e) {
@@ -228,6 +237,47 @@ class _IsomFillDialogState extends State<IsomFillDialog> {
               ),
               const SizedBox(height: 16),
               if (_loading) const LinearProgressIndicator(),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      key: ValueKey('isom-variation-seed-$_seed'),
+                      initialValue: '$_seed',
+                      decoration: InputDecoration(
+                        labelText: l.terrainVariationSeed,
+                      ),
+                      keyboardType: TextInputType.number,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      validator: (text) {
+                        final seed = int.tryParse(text ?? '');
+                        return seed == null || seed < 0 || seed > 0xffffffff
+                            ? l.terrainSeedInvalid
+                            : null;
+                      },
+                      onFieldSubmitted: (text) {
+                        final seed = int.tryParse(text);
+                        if (seed != null && seed >= 0 && seed <= 0xffffffff) {
+                          setState(() {
+                            _seed = seed;
+                            _refresh();
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('isom-randomize'),
+                    tooltip: l.terrainVariationSeed,
+                    onPressed: _loading
+                        ? null
+                        : () => setState(() {
+                            _seed = Random().nextInt(0x7fffffff);
+                            _refresh();
+                          }),
+                    icon: const Icon(Icons.shuffle),
+                  ),
+                ],
+              ),
               if (!_convert && _mode != 3 && _catalog != null)
                 DropdownButtonFormField<int>(
                   key: const Key('isom-terrain-type'),

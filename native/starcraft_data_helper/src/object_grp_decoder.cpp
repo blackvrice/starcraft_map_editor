@@ -1,5 +1,6 @@
 #include "object_grp_decoder.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <utility>
@@ -216,6 +217,52 @@ DecodeObjectGrpFirstFrame(const std::vector<std::byte> &grp_bytes,
     }
   }
 
+  result.success = true;
+  return result;
+}
+
+ObjectGrpDecodeResult CompositeObjectFrames(
+    const ObjectGrpDecodeResult& base, const ObjectGrpDecodeResult& overlay) {
+  auto valid = [](const ObjectGrpDecodeResult& frame) {
+    if (!frame.success || frame.width == 0 || frame.height == 0 ||
+        frame.width > kMaximumObjectGrpDimension || frame.height > kMaximumObjectGrpDimension ||
+        frame.rgba_bytes.size() != static_cast<std::size_t>(frame.width) * frame.height * 4u) {
+      return false;
+    }
+    for (std::size_t i = 3; i < frame.rgba_bytes.size(); i += 4) {
+      if (frame.rgba_bytes[i] != std::byte{0} && frame.rgba_bytes[i] != std::byte{255}) return false;
+    }
+    return true;
+  };
+  if (!valid(base) || !valid(overlay)) {
+    return Failure("SC_CASC_OBJECT_COMPOSITE_INVALID", "Invalid GRP composite input.", "compose-grp");
+  }
+  const int left = std::min(-base.anchor_x, -overlay.anchor_x);
+  const int top = std::min(-base.anchor_y, -overlay.anchor_y);
+  const int right = std::max(base.width - base.anchor_x, overlay.width - overlay.anchor_x);
+  const int bottom = std::max(base.height - base.anchor_y, overlay.height - overlay.anchor_y);
+  if (right - left > kMaximumObjectGrpDimension || bottom - top > kMaximumObjectGrpDimension ||
+      -left < std::numeric_limits<std::int16_t>::min() || -left > std::numeric_limits<std::int16_t>::max() ||
+      -top < std::numeric_limits<std::int16_t>::min() || -top > std::numeric_limits<std::int16_t>::max()) {
+    return Failure("SC_CASC_OBJECT_COMPOSITE_INVALID", "GRP composite exceeds bounds.", "compose-grp");
+  }
+  ObjectGrpDecodeResult result;
+  result.width = static_cast<std::uint16_t>(right - left);
+  result.height = static_cast<std::uint16_t>(bottom - top);
+  result.anchor_x = static_cast<std::int16_t>(-left);
+  result.anchor_y = static_cast<std::int16_t>(-top);
+  result.rgba_bytes.resize(static_cast<std::size_t>(result.width) * result.height * 4u);
+  for (const auto* frame : {&base, &overlay}) {
+    for (int y = 0; y < frame->height; ++y) {
+      for (int x = 0; x < frame->width; ++x) {
+        const auto source = (static_cast<std::size_t>(y) * frame->width + x) * 4u;
+        if (frame->rgba_bytes[source + 3] == std::byte{0}) continue;
+        const auto destination = (static_cast<std::size_t>(y - frame->anchor_y - top) *
+                                  result.width + x - frame->anchor_x - left) * 4u;
+        std::copy_n(frame->rgba_bytes.begin() + source, 4, result.rgba_bytes.begin() + destination);
+      }
+    }
+  }
   result.success = true;
   return result;
 }

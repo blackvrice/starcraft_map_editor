@@ -5989,4 +5989,41 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get editorSaveCurrentDocumentAgain =>
       '편집을 마친 뒤 다른 이름으로 저장을 다시 실행해 현재 문서를 저장하세요.';
+
+  @override
+  String get terrainModeNatural => '지형';
+
+  @override
+  String get terrainModeTile => '단일 타일';
+
+  @override
+  String get terrainVariationSeed => '타일 변형 시드';
+
+  @override
+  String get catalogShowComponents => '터렛 구성요소 표시';
+
+  @override
+  String get catalogIssueSubunit => '이 터렛은 본체 유닛과 함께 생성됩니다.';
+
+  @override
+  String get terrainSeedInvalid => '0부터 4294967295까지의 정수를 입력하세요.';
+
+  @override
+  String get visualSelection => '그래픽으로 선택';
+
+  @override
+  String get epScriptHelpTitle => 'epScript / EUD';
+
+  @override
+  String get epScriptHelpBody =>
+      'epScript(.eps)는 조건·액션·반복 규칙 같은 사용자 게임 로직을 작성하는 코드입니다. 일반 맵 객체 배치와는 별개이며 euddraft로 컴파일할 때 EUD 트리거로 변환됩니다.\n\n맵과 스크립트를 저장하고 EUD 빌드를 준비한 뒤 별도 출력 맵을 빌드합니다. 코드 편집만으로 실행되거나 원본 맵이 바뀌지 않습니다. 신뢰할 수 있는 코드만 빌드하세요.';
+
+  @override
+  String get epScriptInsertExample => '시작 예제 삽입';
+
+  @override
+  String get epScriptComplete => '기호 자동 완성';
+
+  @override
+  String get epScriptExample => '시작 예제';
 }

@@ -1,5 +1,8 @@
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:typed_data';
+import 'package:starcraft_map_editor/application/terrain/solid_isom_catalog_builder.dart';
+import '../../fixtures/solid_isom_fixture.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_force_settings_editor.dart';
@@ -15,6 +18,85 @@ void main() {
   const factory = NewMapFactory();
   List<int> section(RawChkDocument d, String name) =>
       d.sections.singleWhere((s) => s.name == name).payload;
+
+  for (final tileset in ChkTileset.values) {
+    test('creates varied verified terrain for ${tileset.name}', () {
+      final terrain = const SolidIsomCatalogBuilder().build(
+        solidSnapshot(tileset: tileset.rawValue),
+      );
+      NewMapOptions options(int seed) => NewMapOptions(
+        width: 32,
+        height: 32,
+        tileset: tileset,
+        rawTileValue: 0,
+        terrainCatalog: terrain.catalog,
+        solidTerrainValue: terrain.shapes[2]! << 4,
+        terrainSeed: seed,
+      );
+      final first = factory.create(options(12));
+      final again = factory.create(options(12));
+      final second = factory.create(options(13));
+      expect(section(first, 'ISOM'), isNotEmpty);
+      expect(section(first, 'TILE'), section(first, 'MTXM'));
+      expect(section(first, 'TILE'), section(again, 'TILE'));
+      expect(section(first, 'TILE'), isNot(section(second, 'TILE')));
+      final bytes = ByteData.sublistView(
+        Uint8List.fromList(section(first, 'TILE')),
+      );
+      final tiles = [
+        for (var i = 0; i < bytes.lengthInBytes; i += 2)
+          bytes.getUint16(i, Endian.little),
+      ];
+      expect(tiles.toSet().length, greaterThan(2));
+      for (var i = 0; i < tiles.length; i += 2) {
+        expect(tiles[i] >> 4, 2);
+        expect(tiles[i + 1] >> 4, 3);
+        expect(tiles[i] & 15, tiles[i + 1] & 15);
+        expect(tiles[i] & 15, anyOf(0, 1));
+      }
+      final raw = factory.create(
+        NewMapOptions(width: 32, height: 32, tileset: tileset, rawTileValue: 0),
+      );
+      for (final s in raw.sections.where(
+        (s) => !['TILE', 'MTXM'].contains(s.name),
+      )) {
+        expect(
+          section(first, s.name),
+          s.payload,
+          reason: 'Unrelated ${s.name}',
+        );
+      }
+    });
+  }
+
+  test('rejects incomplete or mismatched terrain options and invalid seed', () {
+    final terrain = const SolidIsomCatalogBuilder().build(solidSnapshot());
+    expect(
+      () => NewMapOptions(rawTileValue: 0, terrainCatalog: terrain.catalog),
+      throwsArgumentError,
+    );
+    expect(
+      () => NewMapOptions(rawTileValue: 0, solidTerrainValue: 16),
+      throwsArgumentError,
+    );
+    expect(
+      () => NewMapOptions(rawTileValue: 0, terrainSeed: -1),
+      throwsRangeError,
+    );
+    expect(
+      () => NewMapOptions(rawTileValue: 0, terrainSeed: 0x100000000),
+      throwsRangeError,
+    );
+    expect(
+      () => NewMapOptions(
+        rawTileValue: 0,
+        tileset: ChkTileset.jungle,
+        terrainCatalog: terrain.catalog,
+        solidTerrainValue: 16,
+      ),
+      throwsArgumentError,
+    );
+  });
 
   test(
     'creates deterministic dirty UMS documents with valid editable defaults',

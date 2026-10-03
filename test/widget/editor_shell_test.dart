@@ -10,6 +10,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/app/app.dart';
+import 'package:starcraft_map_editor/presentation/shell/editor_shell.dart';
 import 'package:starcraft_map_editor/application/commands/editor_command_dispatcher.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
@@ -49,6 +50,21 @@ import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_textu
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
+
+Future<void> _chooseCheckbox(
+  WidgetTester tester,
+  Finder target,
+  String label,
+) async {
+  await tester.ensureVisible(target);
+  final checkbox = tester.widget<CheckboxListTile>(target);
+  final checked = (checkbox.title! as Text).data == label;
+  if (checkbox.value != checked) {
+    await tester.tap(target);
+  }
+  await tester.pumpAndSettle();
+  expect(tester.widget<CheckboxListTile>(target).value, checked);
+}
 
 void main() {
   testWidgets(
@@ -320,6 +336,10 @@ void main() {
       await tester.pumpAndSettle();
       Future<void> choose(String key, String label) async {
         final target = find.byKey(Key(key));
+        if (tester.widget(target) is CheckboxListTile) {
+          await _chooseCheckbox(tester, target, label);
+          return;
+        }
         await tester.ensureVisible(target);
         await tester.tap(target);
         await tester.pumpAndSettle();
@@ -439,14 +459,22 @@ void main() {
       }
 
       Future<void> select(String key, int value) async {
-        tester.widget<DropdownButton<int>>(find.byKey(Key(key))).onChanged!(
-          value,
-        );
+        final widget = tester.widget(find.byKey(Key(key)));
+        if (widget is CheckboxListTile) {
+          widget.onChanged!(value == 1);
+        } else {
+          (widget as DropdownButton<int>).onChanged!(value);
+        }
         await tester.pumpAndSettle();
       }
 
-      int? selected(String key) =>
-          tester.widget<DropdownButton<int>>(find.byKey(Key(key))).value;
+      int? selected(String key) {
+        final widget = tester.widget(find.byKey(Key(key)));
+        return widget is CheckboxListTile
+            ? (widget.value == true ? 1 : 0)
+            : (widget as DropdownButton<int>).value;
+      }
+
       final hp = find.byWidgetPredicate(
         (w) => w is TextField && w.decoration?.labelText == 'Hit points',
       );
@@ -655,6 +683,10 @@ void main() {
       await tester.pumpAndSettle();
       Future<void> choose(String key, String label) async {
         final target = find.byKey(Key('tech-$key'));
+        if (tester.widget(target) is CheckboxListTile) {
+          await _chooseCheckbox(tester, target, label);
+          return;
+        }
         await tester.ensureVisible(target);
         await tester.tap(target);
         await tester.pumpAndSettle();
@@ -810,10 +842,7 @@ void main() {
       Future<void> editSource() async {
         if (prefix == 'availability') {
           final target = find.byKey(const Key('availability-global'));
-          await tester.ensureVisible(target);
-          await tester.tap(target);
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Default: allowed').last);
+          await _chooseCheckbox(tester, target, 'Default: allowed');
         } else {
           final target = find.byWidgetPredicate(
             (w) => w is TextField && w.decoration?.labelText == label,
@@ -928,6 +957,10 @@ void main() {
 
     Future<void> choose(String key, String label) async {
       final target = find.byKey(Key('tech-$key'));
+      if (tester.widget(target) is CheckboxListTile) {
+        await _chooseCheckbox(tester, target, label);
+        return;
+      }
       await tester.ensureVisible(target);
       await tester.tap(target);
       await tester.pumpAndSettle();
@@ -972,7 +1005,7 @@ void main() {
     );
     expect(
       tester
-          .widget<DropdownButton<int>>(find.byKey(const Key('tech-researched')))
+          .widget<CheckboxListTile>(find.byKey(const Key('tech-researched')))
           .onChanged,
       isNull,
     );
@@ -1000,7 +1033,7 @@ void main() {
     await choose('player', 'Player 9 (read-only)');
     expect(
       tester
-          .widget<DropdownButton<int>>(find.byKey(const Key('tech-inherit')))
+          .widget<CheckboxListTile>(find.byKey(const Key('tech-inherit')))
           .onChanged,
       isNull,
     );
@@ -1048,6 +1081,10 @@ void main() {
 
       Future<void> choose(String key, String label) async {
         final target = find.byKey(Key('upgrade-$key'));
+        if (tester.widget(target) is CheckboxListTile) {
+          await _chooseCheckbox(tester, target, label);
+          return;
+        }
         await tester.ensureVisible(target);
         await tester.tap(target);
         await tester.pumpAndSettle();
@@ -1115,9 +1152,7 @@ void main() {
       await choose('player', 'Player 9 (read-only)');
       expect(
         tester
-            .widget<DropdownButton<int>>(
-              find.byKey(const Key('upgrade-inherit')),
-            )
+            .widget<CheckboxListTile>(find.byKey(const Key('upgrade-inherit')))
             .onChanged,
         isNull,
       );
@@ -1165,6 +1200,11 @@ void main() {
       }
 
       Future<void> choose(String key, String label) async {
+        final target = find.byKey(Key('availability-$key'));
+        if (tester.widget(target) is CheckboxListTile) {
+          await _chooseCheckbox(tester, target, label);
+          return;
+        }
         await tester.tap(find.byKey(Key('availability-$key')));
         await tester.pumpAndSettle();
         await tester.tap(find.text(label).last);
@@ -1182,7 +1222,7 @@ void main() {
       expect(find.text('Effective availability: allowed'), findsOneWidget);
       expect(
         tester
-            .widget<DropdownButton<int>>(
+            .widget<CheckboxListTile>(
               find.byKey(const Key('availability-player')),
             )
             .onChanged,
@@ -1202,7 +1242,7 @@ void main() {
       await choose('player-selection', 'Player 9 (read-only)');
       expect(
         tester
-            .widget<DropdownButton<int>>(
+            .widget<CheckboxListTile>(
               find.byKey(const Key('availability-inherit')),
             )
             .onChanged,
@@ -1270,7 +1310,7 @@ void main() {
     await enter('Unit name (empty = game name)', 'Custom marine');
     final selector = find.byKey(const Key('unit-settings-unit'));
     expect(tester.widget<DropdownButton<int>>(selector).items, hasLength(228));
-    expect(find.text('Custom marine (Unit #0)'), findsOneWidget);
+    expect(find.text('Custom marine (Unit #0)'), findsNWidgets(2));
     await tester.ensureVisible(find.byKey(const Key('unit-settings-search')));
     await tester.enterText(
       find.byKey(const Key('unit-settings-search')),
@@ -2525,12 +2565,20 @@ void main() {
     expect(find.text('Unit type 1'), findsOneWidget);
     expect(find.text('Doodad type 1'), findsNothing);
 
+    tester
+        .widget<EditorShell>(find.byType(EditorShell))
+        .terrainEditingController
+        .setTool(TerrainEditingTool.brush);
     await tester.tap(
       find.byKey(const Key('object-palette-units-1')),
       warnIfMissed: false,
     );
     await tester.pump();
     expect(objectPaletteController.state.isPlacementActive, isTrue);
+    expect(
+      tester.widget<MapCanvas>(find.byType(MapCanvas)).editingTool,
+      TerrainEditingTool.select,
+    );
     expect(find.byKey(const Key('object-placement-active')), findsOneWidget);
     expect(
       tester.widget<MapCanvas>(find.byType(MapCanvas)).isObjectPlacementActive,

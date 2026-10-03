@@ -72,6 +72,17 @@ class _TechSettingsDialogState extends State<TechSettingsDialog> {
   }) {
     final key = _key(field);
     final stored = _settings!.value(key);
+    final value = int.parse(_text(key));
+    if (value == 0 || value == 1) {
+      return CheckboxListTile(
+        key: Key('tech-${field.name}'),
+        contentPadding: EdgeInsets.zero,
+        controlAffinity: ListTileControlAffinity.leading,
+        title: Text(one),
+        value: value == 1,
+        onChanged: enabled ? (v) => _change(key, v == true ? '1' : '0') : null,
+      );
+    }
     return DropdownButton<int>(
       key: Key('tech-${field.name}'),
       value: int.parse(_text(key)),

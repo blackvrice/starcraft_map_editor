@@ -3642,5 +3642,17 @@
   "editorTheCanonicalEUDEntrySourceIsOutsideTheSource": "The canonical EUD entry source is outside the source root.",
   "editorTheCanonicalEUDOutputDirectoryIsInsideTheSource": "The canonical EUD output directory is inside the source root.",
   "editorSavedSnapshotNewerEditsRemain": "The saved snapshot was verified. Newer edits remain open and unsaved.",
-  "editorSaveCurrentDocumentAgain": "Finish editing and use Save As again to save the current document."
+  "editorSaveCurrentDocumentAgain": "Finish editing and use Save As again to save the current document.",
+  "terrainModeNatural": "Terrain",
+  "terrainModeTile": "Single Tile",
+  "terrainVariationSeed": "Variation Seed",
+  "catalogShowComponents": "Show turret components",
+  "catalogIssueSubunit": "This turret is generated with its parent unit.",
+  "terrainSeedInvalid": "Enter an integer from 0 to 4294967295.",
+  "visualSelection": "Graphic selection",
+  "epScriptHelpTitle": "epScript / EUD",
+  "epScriptHelpBody": "epScript (.eps) defines custom game logic such as conditions, actions and repeating rules. It is separate from ordinary map object placement and becomes EUD triggers only when compiled with euddraft.\n\nSave the map and script, prepare the EUD build, then build a separate output map. Editing a script does not execute it or change the original map. Only build trusted code.",
+  "epScriptInsertExample": "Insert starter script",
+  "epScriptComplete": "Complete symbol",
+  "epScriptExample": "Starter script"
 }

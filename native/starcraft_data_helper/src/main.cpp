@@ -31,7 +31,7 @@ constexpr char kInspectOperation[] = "inspectInstallation";
 constexpr char kRenderOperation[] = "renderTileAtlas";
 constexpr char kRenderObjectOperation[] = "renderObjectAtlas";
 constexpr char kListCatalogOperation[] = "listPlacementCatalog";
-constexpr char kHelperVersion[] = "0.12.0";
+constexpr char kHelperVersion[] = "0.13.0";
 constexpr char kTerrainConnectionsOperation[] = "readTerrainConnections";
 constexpr char kCascLibRevision[] =
     "4971d363e665551ac4142f541e5f2d71f1cda653";
@@ -391,6 +391,7 @@ void AddUnitCapability(
       {"isCloakable", capability->is_cloakable},
       {"isInvincible", capability->is_invincible},
       {"isBuilding", capability->is_building},
+      {"isSubunit", capability->is_subunit},
       {"requiresRelationLink", capability->requires_relation_link},
   };
 }

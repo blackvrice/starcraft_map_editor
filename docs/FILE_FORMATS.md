@@ -1,5 +1,12 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-03: 새 맵의 기본 지형 생성은 기존 검증된 ISOM 엔진을 재사용한다.
+지형 seed는 좌우 CV5 pair와 검증된 member에만 적용한다. 같은 seed/입력은 동일하며
+단일 타일 모드는 raw 전용 정책이다. 탱크·골리앗 본체 배치는 UNIT 36바이트 한 건만
+추가한다. helper 0.13.0의 DAT Subunit flag와 subunit1 관계는 그래픽 합성/독립 터렛
+배치 거부에 사용하며 기존 터렛 레코드나 알 수 없는 섹션을 제거하지 않는다.
+[검증 결과](EDITOR_WORKFLOW_REPAIR.md) 참조.
+
 2026-10-01 평지 전체 채우기는 검증된 로컬 형태 값으로 `(width/2+1)*(height+1)`개의
 8바이트 ISOM rectangle을 만들고 각 면을 little-endian `shapeIndex << 4`로 채운다.
 TILE/MTXM 좌우 그룹·member는 같은 catalog에서 결정한다. 기존 ISOM의 크기/알 수 없는

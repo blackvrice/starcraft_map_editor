@@ -6118,4 +6118,42 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get editorSaveCurrentDocumentAgain =>
       'Finish editing and use Save As again to save the current document.';
+
+  @override
+  String get terrainModeNatural => 'Terrain';
+
+  @override
+  String get terrainModeTile => 'Single Tile';
+
+  @override
+  String get terrainVariationSeed => 'Variation Seed';
+
+  @override
+  String get catalogShowComponents => 'Show turret components';
+
+  @override
+  String get catalogIssueSubunit =>
+      'This turret is generated with its parent unit.';
+
+  @override
+  String get terrainSeedInvalid => 'Enter an integer from 0 to 4294967295.';
+
+  @override
+  String get visualSelection => 'Graphic selection';
+
+  @override
+  String get epScriptHelpTitle => 'epScript / EUD';
+
+  @override
+  String get epScriptHelpBody =>
+      'epScript (.eps) defines custom game logic such as conditions, actions and repeating rules. It is separate from ordinary map object placement and becomes EUD triggers only when compiled with euddraft.\n\nSave the map and script, prepare the EUD build, then build a separate output map. Editing a script does not execute it or change the original map. Only build trusted code.';
+
+  @override
+  String get epScriptInsertExample => 'Insert starter script';
+
+  @override
+  String get epScriptComplete => 'Complete symbol';
+
+  @override
+  String get epScriptExample => 'Starter script';
 }

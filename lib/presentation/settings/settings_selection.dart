@@ -2,6 +2,8 @@ import '../localization/editor_message_localization.dart';
 import '../localization/l10n.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/settings_id_selection.dart';
+import '../../application/placement/placement_catalog_controller.dart';
+import 'visual_settings_picker.dart';
 
 class SettingsSelection extends StatefulWidget {
   const SettingsSelection({
@@ -18,6 +20,9 @@ class SettingsSelection extends StatefulWidget {
     this.copyCount,
     this.includeMapDefault = false,
     required this.scope,
+    this.visualCatalog,
+    this.visual = false,
+    this.weapons = false,
     super.key,
   });
   final String prefix;
@@ -33,6 +38,8 @@ class SettingsSelection extends StatefulWidget {
   final int idBase;
   final int? copyCount;
   final bool includeMapDefault;
+  final PlacementCatalogController? visualCatalog;
+  final bool visual, weapons;
   @override
   State<SettingsSelection> createState() => _SettingsSelectionState();
 }
@@ -104,6 +111,16 @@ class _SettingsSelectionState extends State<SettingsSelection> {
           ),
           onChanged: (v) => setState(() => _query = v),
         ),
+        if (widget.visual)
+          VisualSettingsPicker(
+            ids: filtered.where((id) => id >= 0).toList(),
+            selected: widget.selected,
+            label: widget.label,
+            onSelected: widget.onSelected,
+            prefix: widget.prefix,
+            catalog: widget.visualCatalog,
+            weapons: widget.weapons,
+          ),
         DropdownButton<int>(
           key: widget.selectorKey,
           isExpanded: true,

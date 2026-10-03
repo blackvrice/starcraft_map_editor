@@ -665,7 +665,9 @@ class _MapCanvasState extends State<MapCanvas> {
               HardwareKeyboard.instance.isShiftPressed;
           _selectionCycle = HardwareKeyboard.instance.isAltPressed;
           _selectionMovesObjects =
-              !_selectionCycle && _isSelectedObjectAt(coordinate);
+              !widget.isObjectPlacementActive &&
+              !_selectionCycle &&
+              _isSelectedObjectAt(coordinate);
           _selectionDragged = false;
         });
       case TerrainEditingTool.brush:

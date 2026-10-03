@@ -108,31 +108,50 @@ class _UnitAvailabilityDialogState extends State<UnitAvailabilityDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label),
-        DropdownButton<int>(
-          key: Key('availability-${field.name}'),
-          isExpanded: true,
-          value: value,
-          items: [
-            DropdownMenuItem(value: 0, child: Text(zero)),
-            DropdownMenuItem(value: 1, child: Text(one)),
-            if (stored != null && stored > 1)
-              DropdownMenuItem(
-                value: stored,
-                child: Text(
-                  context.l10n.editorStoredIDPreserved((stored).toString()),
+        if (value == null || value == 0 || value == 1)
+          CheckboxListTile(
+            key: Key('availability-${field.name}'),
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            title: Text(one),
+            value: value == 1,
+            onChanged: editable
+                ? (checked) => setState(() {
+                    final changed = checked == true ? 1 : 0;
+                    if (changed == stored) {
+                      _draft.remove(key);
+                    } else {
+                      _draft[key] = changed;
+                    }
+                  })
+                : null,
+          )
+        else
+          DropdownButton<int>(
+            key: Key('availability-${field.name}'),
+            isExpanded: true,
+            value: value,
+            items: [
+              DropdownMenuItem(value: 0, child: Text(zero)),
+              DropdownMenuItem(value: 1, child: Text(one)),
+              if (stored != null && stored > 1)
+                DropdownMenuItem(
+                  value: stored,
+                  child: Text(
+                    context.l10n.editorStoredIDPreserved((stored).toString()),
+                  ),
                 ),
-              ),
-          ],
-          onChanged: editable
-              ? (v) => setState(() {
-                  if (v == stored) {
-                    _draft.remove(key);
-                  } else if (v != null) {
-                    _draft[key] = v;
-                  }
-                })
-              : null,
-        ),
+            ],
+            onChanged: editable
+                ? (v) => setState(() {
+                    if (v == stored) {
+                      _draft.remove(key);
+                    } else if (v != null) {
+                      _draft[key] = v;
+                    }
+                  })
+                : null,
+          ),
       ],
     );
   }

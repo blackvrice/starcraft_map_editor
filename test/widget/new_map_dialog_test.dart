@@ -4,8 +4,47 @@ import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/presentation/documents/new_map_dialog.dart';
 import '../fixtures/new_map_harness.dart';
+import '../fixtures/new_map_terrain_fixture.dart';
 
 void main() {
+  testWidgets(
+    'terrain is default and graphically selected before atomic creation',
+    (tester) async {
+      tester.view.physicalSize = const Size(600, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final h = NewMapHarness();
+      addTearDown(h.dispose);
+      final c = h.controller(terrainGateway: NewMapTerrainGateway());
+      addTearDown(c.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: NewMapDialog(controller: c)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<SegmentedButton<bool>>(
+              find.byKey(const Key('new-map-terrain-mode')),
+            )
+            .selected,
+        {true},
+      );
+      final cell = find.byKey(const Key('new-map-terrain-3'));
+      await tester.ensureVisible(cell);
+      await tester.tap(cell);
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('create-new-map')));
+      await tester.pumpAndSettle();
+      expect(
+        h.maps.state.session!.rawDocument.sections.any((s) => s.name == 'ISOM'),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
   for (final discard in [false, true]) {
     testWidgets(
       'new map requires a tile and confirms dirty replacement ($discard)',
@@ -41,6 +80,9 @@ void main() {
               .widget<FilledButton>(find.byKey(const Key('create-new-map')))
               .onPressed,
           isNull,
+        );
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('new-map-tile-1')),
         );
         await tester.tap(find.byKey(const ValueKey('new-map-tile-1')));
         await tester.pump();
@@ -89,6 +131,7 @@ void main() {
     expect(find.text('크기와 지형'), findsWidgets);
     await tester.tap(find.byKey(const Key('new-map-size-64')));
     await tester.pump();
+    await tester.ensureVisible(find.byKey(const ValueKey('new-map-tile-1')));
     await tester.tap(find.byKey(const ValueKey('new-map-tile-1')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('new-map-next')));

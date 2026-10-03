@@ -27,6 +27,9 @@ Future<EudWorkspaceFixture> setup(WidgetTester tester) async {
 
 Future<void> select(WidgetTester tester, String key) async {
   final field = EudFieldManifest.find(key)!;
+  await tester.ensureVisible(
+    find.byKey(Key('eud-category-${field.table.name}')),
+  );
   await tester.tap(find.byKey(Key('eud-category-${field.table.name}')));
   await tester.pumpAndSettle();
   tester
@@ -38,7 +41,9 @@ Future<void> select(WidgetTester tester, String key) async {
 }
 
 Future<void> stageNumber(WidgetTester tester, String value) async {
+  await tester.ensureVisible(find.byKey(const Key('eud-extension-number')));
   await tester.enterText(find.byKey(const Key('eud-extension-number')), value);
+  await tester.ensureVisible(find.byKey(const Key('eud-extension-stage')));
   await tester.tap(find.byKey(const Key('eud-extension-stage')));
   await tester.pumpAndSettle();
 }
@@ -63,12 +68,15 @@ void main() {
         await select(tester, key);
         await stageNumber(tester, '42');
         expect(find.text('explicitChkOverrideRequired'), findsOneWidget);
+        await tester.ensureVisible(
+          find.byKey(const Key('eud-extension-override-chk')),
+        );
         await tester.tap(find.byKey(const Key('eud-extension-override-chk')));
         await stageNumber(tester, '42');
       }
       await select(tester, 'image.isClickable');
       tester
-          .widget<DropdownButton<Object>>(
+          .widget<CheckboxListTile>(
             find.byKey(const Key('eud-extension-choice')),
           )
           .onChanged!(true);

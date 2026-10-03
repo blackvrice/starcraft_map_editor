@@ -263,6 +263,7 @@ bool ReadUnitCapability(
   capability->is_cloakable = (flags & kUnitFlagCloakable) != 0;
   capability->is_invincible = (flags & kUnitFlagInvincible) != 0;
   capability->is_building = (flags & kUnitFlagBuilding) != 0;
+  capability->is_subunit = (flags & 0x00000010U) != 0;  // DAT Subunit = BIT_4.
   capability->requires_relation_link =
       (flags & kUnitFlagAddon) != 0 || unit_id == kZergNydusCanalId;
   return true;
@@ -527,6 +528,49 @@ ObjectAssetRenderResult RenderObjectAssets(
     if (!decoded.success) {
       result.unsupported_objects.push_back({request, decoded.error_code});
       continue;
+    }
+
+    // Only a flagged DAT subunit is composited. The CHK still contains one
+    // parent UNIT, and unverified/cyclic references never create extra records.
+    if (request.kind == ObjectGraphicKind::kUnit) {
+      UnitCapability parent;
+      if (ReadUnitCapability(reference_assets.units_dat, request.object_id, &parent) &&
+          parent.weapon_references_valid && !parent.is_subunit &&
+          parent.subunit1 < kClassicUnitCount && parent.subunit1 != request.object_id) {
+        UnitCapability subunit;
+        if (ReadUnitCapability(reference_assets.units_dat, parent.subunit1, &subunit) &&
+            subunit.is_subunit) {
+          const auto turret = ResolveObjectSpriteReference(
+              reference_assets, ObjectGraphicKind::kUnit, parent.subunit1);
+          if (!turret.success) {
+            result.unsupported_objects.push_back({request, turret.error_code});
+            continue;
+          }
+          auto [turret_iterator, turret_inserted] = grp_cache.try_emplace(
+              turret.grp_asset_path, CachedGrpAsset{});
+          auto& turret_asset = turret_iterator->second;
+          if (turret_inserted) {
+            turret_asset.native_error = ReadAsset(storage.get(), turret.grp_asset_path,
+                                                  &turret_asset.bytes);
+            turret_asset.success = turret_asset.native_error == ERROR_SUCCESS;
+            if (turret_asset.success && !AddAssetSize(&result, turret_asset.bytes)) {
+              return Failure(installation_path, "SC_CASC_OBJECT_ASSETS_TOO_LARGE",
+                             "The StarCraft object assets exceed the request byte limit.",
+                             "read-object-assets", ERROR_FILE_TOO_LARGE);
+            }
+          }
+          if (!turret_asset.success) {
+            result.unsupported_objects.push_back({request, "SC_CASC_OBJECT_GRP_MISSING"});
+            continue;
+          }
+          decoded = CompositeObjectFrames(decoded, DecodeObjectGrpFirstFrame(
+              turret_asset.bytes, palettes.base_palette, player_palette));
+          if (!decoded.success) {
+            result.unsupported_objects.push_back({request, decoded.error_code});
+            continue;
+          }
+        }
+      }
     }
 
     ObjectAtlasEntry entry;

@@ -890,7 +890,14 @@ void main() {
     final unit = fixture.controller.state.items.single;
     expect(unit.isPlaceable, isTrue);
     expect(unit.displayName, 'Terran Marine');
+    fixture.terrainEditingController.setTool(TerrainEditingTool.brush);
+    fixture.objectEditingController.startLocationCreation();
     expect(fixture.controller.confirm(unit.key), isTrue);
+    expect(
+      fixture.terrainEditingController.state.tool,
+      TerrainEditingTool.select,
+    );
+    expect(fixture.objectEditingController.state.isCreatingLocation, isFalse);
 
     final result = fixture.controller.placeAt(
       pixelX: 96,

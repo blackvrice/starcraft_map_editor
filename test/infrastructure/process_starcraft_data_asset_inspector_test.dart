@@ -62,7 +62,7 @@ void main() {
       expect(result.invalidRelativePaths, isEmpty);
       expect(result.storageProduct, 's1');
       expect(result.storageBuildNumber, 13515);
-      expect(result.helperVersion, '0.12.0');
+      expect(result.helperVersion, '0.13.0');
       expect(
         result.cascLibRevision,
         ProcessStarCraftDataAssetInspector.cascLibRevision,

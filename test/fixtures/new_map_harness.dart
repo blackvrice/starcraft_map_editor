@@ -7,6 +7,7 @@ import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/ports/map_file_fingerprint_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_tile_atlas_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/terrain_connection_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/application/settings/starcraft_data_asset_settings_controller.dart';
 import 'package:starcraft_map_editor/application/terrain/tile_placement_catalog_loader.dart';
@@ -27,12 +28,16 @@ class NewMapHarness {
     recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
     operationProgressController: progress,
   );
-  NewMapController controller() => NewMapController(
+  NewMapController controller({
+    TerrainConnectionSnapshotGateway? terrainGateway,
+    StarCraftTileAtlasGateway? tileAtlasGateway,
+  }) => NewMapController(
     maps: maps,
     assets: () => assets,
+    terrainGateway: terrainGateway,
     loader: TilePlacementCatalogLoader(
       catalogGateway: catalog,
-      tileAtlasGateway: _Atlas(),
+      tileAtlasGateway: tileAtlasGateway ?? _Atlas(),
     ),
   );
   Future<void> dispose() async {
@@ -95,7 +100,7 @@ class NewMapCatalog implements StarCraftPlacementCatalogGateway {
       ],
       storageProduct: 's1',
       storageBuildNumber: 13515,
-      helperVersion: '0.12.0',
+      helperVersion: '0.13.0',
       cascLibRevision: 'test',
     );
   }
@@ -115,7 +120,7 @@ class _Atlas implements StarCraftTileAtlasGateway {
     unsupportedRawValues: const [],
     storageProduct: 's1',
     storageBuildNumber: 13515,
-    helperVersion: '0.12.0',
+    helperVersion: '0.13.0',
     cascLibRevision: 'test',
   );
 }

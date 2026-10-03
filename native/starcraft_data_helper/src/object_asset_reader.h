@@ -36,6 +36,7 @@ struct UnitCapability {
   bool is_cloakable = false;
   bool is_invincible = false;
   bool is_building = false;
+  bool is_subunit = false;
   bool requires_relation_link = false;
 };
 

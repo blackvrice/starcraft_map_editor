@@ -420,9 +420,52 @@ int main() {
   std::filesystem::remove_all(test_root, filesystem_error);
 
   constexpr std::size_t kUnitsDatBytes = 19876;
+  ObjectGrpDecodeResult base;
+  base.success = true;
+  base.width = 2;
+  base.height = 2;
+  base.anchor_x = 1;
+  base.anchor_y = 1;
+  base.rgba_bytes.resize(16);
+  base.rgba_bytes[0] = std::byte{11};
+  base.rgba_bytes[3] = std::byte{255};
+  base.rgba_bytes[8] = std::byte{33};
+  base.rgba_bytes[11] = std::byte{255};
+  auto overlay = base;
+  overlay.anchor_x = 2;
+  overlay.rgba_bytes.assign(16, std::byte{0});
+  overlay.rgba_bytes[4] = std::byte{22};
+  overlay.rgba_bytes[7] = std::byte{255};
+  const auto composed = CompositeObjectFrames(base, overlay);
+  if (!composed.success || composed.width != 3 || composed.height != 2 ||
+      composed.anchor_x != 2 || composed.anchor_y != 1 ||
+      composed.rgba_bytes[4] != std::byte{22} ||
+      composed.rgba_bytes[16] != std::byte{33} ||
+      composed.rgba_bytes[3] != std::byte{0}) {
+    return Fail("A turret overlay lost anchor alignment or base transparency.");
+  }
+  overlay.rgba_bytes[7] = std::byte{128};
+  if (CompositeObjectFrames(base, overlay).success) {
+    return Fail("A non-GRP alpha was accepted for composition.");
+  }
+  overlay = base;
+  overlay.anchor_x = -32768;
+  if (CompositeObjectFrames(base, overlay).success) {
+    return Fail("An oversized composite was allocated.");
+  }
+  overlay = base;
+  overlay.rgba_bytes.pop_back();
+  if (CompositeObjectFrames(base, overlay).success) {
+    return Fail("Truncated composite pixels were accepted.");
+  }
   constexpr std::size_t kShieldEnableOffset = 2472;
   constexpr std::size_t kFlagsOffset = 7032;
   std::vector<std::byte> units_dat(kUnitsDatBytes);
+  PutUint32(&units_dat, kFlagsOffset + 4 * 4, 0x00000010U);
+  UnitCapability turret;
+  if (!ReadUnitCapability(units_dat, 4, &turret) || !turret.is_subunit) {
+    return Fail("DAT Subunit flag was not decoded.");
+  }
   units_dat[kShieldEnableOffset + 7] = static_cast<std::byte>(1);
   PutUint32(&units_dat, kFlagsOffset + 7 * 4, 0x00000001U);
   PutUint32(&units_dat, kFlagsOffset + 188 * 4, 0x00002000U);

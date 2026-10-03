@@ -17,7 +17,7 @@ Map<String, List<int>> syntheticDatColumns() => {
 EudDatSource syntheticDatSource([Map<String, List<int>>? columns]) =>
     EudDatSource(
       snapshot: EudDatSnapshot(columns ?? syntheticDatColumns()),
-      helperVersion: '0.12.0',
+      helperVersion: '0.13.0',
       product: 'synthetic',
       build: 1,
       hashes: {for (final key in EudDatLayout.assets.keys) key: 'a' * 64},
@@ -29,7 +29,7 @@ Map<String, dynamic> syntheticDatResponse() => {
   'status': 'success',
   'snapshotVersion': 1,
   'revision': EudDatLayout.revision,
-  'helperVersion': '0.12.0',
+  'helperVersion': '0.13.0',
   'cascLibRevision': '4971d363e665551ac4142f541e5f2d71f1cda653',
   'installation': {
     'path': r'C:\fixture',

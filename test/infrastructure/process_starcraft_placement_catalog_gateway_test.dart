@@ -112,7 +112,7 @@ void main() {
       expect(page.nextOffset, 3);
       expect(page.storageProduct, 's1');
       expect(page.storageBuildNumber, 13515);
-      expect(page.helperVersion, '0.12.0');
+      expect(page.helperVersion, '0.13.0');
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 

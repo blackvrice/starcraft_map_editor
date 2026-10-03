@@ -2,6 +2,8 @@ import '../localization/l10n.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'ep_script_text_controller.dart';
 
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_source_document.dart';
@@ -21,21 +23,23 @@ class EudSourceEditor extends StatefulWidget {
 }
 
 class _EudSourceEditorState extends State<EudSourceEditor> {
-  late final TextEditingController _textController;
+  late final EpScriptTextController _textController;
   late final ScrollController _editorScrollController;
   late final ScrollController _gutterScrollController;
   late final FocusNode _focusNode;
   bool _synchronizing = false;
+  bool _hideCompletions = false;
+  int _completionIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: widget.document.text)
+    _textController = EpScriptTextController(text: widget.document.text)
       ..addListener(_handleTextChanged);
     _editorScrollController = ScrollController()
       ..addListener(_synchronizeGutter);
     _gutterScrollController = ScrollController();
-    _focusNode = FocusNode();
+    _focusNode = FocusNode(onKeyEvent: _handleKey);
   }
 
   @override
@@ -66,6 +70,8 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
   }
 
   void _handleTextChanged() {
+    _hideCompletions = false;
+    _completionIndex = 0;
     if (!_synchronizing) {
       widget.sourceController.updateText(_textController.text);
     }
@@ -73,6 +79,72 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
       setState(() {});
     }
   }
+
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final suggestions = _textController.completions;
+    if (event.logicalKey == LogicalKeyboardKey.space &&
+        HardwareKeyboard.instance.isControlPressed) {
+      setState(() => _hideCompletions = false);
+      return KeyEventResult.handled;
+    }
+    if (!_hideCompletions && suggestions.isNotEmpty) {
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        setState(() => _hideCompletions = true);
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+          event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        setState(
+          () => _completionIndex =
+              (_completionIndex +
+                  (event.logicalKey == LogicalKeyboardKey.arrowDown ? 1 : -1)) %
+              suggestions.length,
+        );
+        return KeyEventResult.handled;
+      }
+      if (event.logicalKey == LogicalKeyboardKey.tab ||
+          event.logicalKey == LogicalKeyboardKey.enter) {
+        _textController.complete(
+          suggestions[_completionIndex % suggestions.length],
+        );
+        return KeyEventResult.handled;
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  void _insertStarter() {
+    final selection = _textController.selection;
+    final start = selection.isValid
+        ? selection.end
+        : _textController.text.length;
+    final inserted = '${start > 0 ? '\n' : ''}$epScriptStarter';
+    _textController.value = TextEditingValue(
+      text: _textController.text.replaceRange(start, start, inserted),
+      selection: TextSelection.collapsed(offset: start + inserted.length),
+    );
+    _focusNode.requestFocus();
+  }
+
+  void _showHelp() => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(context.l10n.epScriptHelpTitle),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Text(context.l10n.epScriptHelpBody),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(context.l10n.eudCancel),
+        ),
+      ],
+    ),
+  );
 
   void _synchronizeGutter() {
     if (!_gutterScrollController.hasClients) {
@@ -93,13 +165,17 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
       _textController.selection.baseOffset,
     );
 
-    return ColoredBox(
+    return Material(
       key: const Key('eud-source-workspace'),
       color: const Color(0xFF0D1117),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _EditorHeader(document: document),
+          _EditorHeader(
+            document: document,
+            onExample: _insertStarter,
+            onHelp: _showHelp,
+          ),
           const Divider(height: 1),
           Expanded(
             child: Row(
@@ -142,6 +218,36 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
               ],
             ),
           ),
+          if (!_hideCompletions && _textController.completions.isNotEmpty)
+            SizedBox(
+              key: const Key('ep-script-completions'),
+              height: 112,
+              child: ListView.builder(
+                itemCount: _textController.completions.length,
+                itemExtent: 32,
+                itemBuilder: (context, index) {
+                  final symbol = _textController.completions[index];
+                  return ListTile(
+                    key: Key('ep-script-complete-$symbol'),
+                    dense: true,
+                    visualDensity: const VisualDensity(vertical: -4),
+                    selected: index == _completionIndex,
+                    leading: const Icon(Icons.code, size: 16),
+                    title: Text(
+                      symbol,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                      ),
+                    ),
+                    onTap: () {
+                      _textController.complete(symbol);
+                      _focusNode.requestFocus();
+                    },
+                  );
+                },
+              ),
+            ),
           const Divider(height: 1),
           _EditorFooter(document: document, cursor: cursor),
         ],
@@ -151,9 +257,14 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
 }
 
 class _EditorHeader extends StatelessWidget {
-  const _EditorHeader({required this.document});
+  const _EditorHeader({
+    required this.document,
+    required this.onExample,
+    required this.onHelp,
+  });
 
   final EudSourceDocument document;
+  final VoidCallback onExample, onHelp;
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +284,18 @@ class _EditorHeader extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
+            ),
+            IconButton(
+              key: const Key('ep-script-example'),
+              tooltip: context.l10n.epScriptInsertExample,
+              onPressed: onExample,
+              icon: const Icon(Icons.post_add),
+            ),
+            IconButton(
+              key: const Key('ep-script-help'),
+              tooltip: context.l10n.epScriptHelpTitle,
+              onPressed: onHelp,
+              icon: const Icon(Icons.help_outline),
             ),
             _DirtyBadge(isDirty: document.isDirty),
           ],

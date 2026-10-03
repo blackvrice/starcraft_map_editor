@@ -21,6 +21,7 @@ import '../settings/eud_tool_settings_dialog.dart';
 import '../settings/eud_build_preparation_dialog.dart';
 import 'dart:async';
 import '../placement/doodad_delete_dialog.dart';
+import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -223,12 +224,13 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _fillIsom() async {
+  Future<void> _fillIsom({int initialMode = 0}) async {
     final controller = widget.isomFillController;
     if (controller == null) return;
     await showDialog<bool>(
       context: context,
-      builder: (_) => IsomFillDialog(controller: controller),
+      builder: (_) =>
+          IsomFillDialog(controller: controller, initialMode: initialMode),
     );
   }
 
@@ -252,6 +254,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
     final catalog = widget.placementCatalogController;
     final controller = NewMapController(
       maps: widget.openMapController,
+      terrainGateway: widget.isomFillController?.gateway,
       assets: () => widget.starCraftDataAssetSettingsController.state,
       loader: catalog.catalogGateway == null || catalog.tileAtlasGateway == null
           ? null
@@ -326,7 +329,20 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
       widget.objectPaletteController,
     );
     _placementCatalogSubscription = widget.placementCatalogController.changes
-        .listen((_) {
+        .listen((state) {
+          if (state.selection != null) {
+            widget.objectPaletteController.cancelPlacement();
+            widget.objectEditingController.cancelLocationCreation();
+            widget.mapLayerController.setActiveLayer(
+              switch (state.selection!.kind) {
+                StarCraftPlacementKind.tile => MapLayerType.terrain,
+                StarCraftPlacementKind.doodad => MapLayerType.doodads,
+                StarCraftPlacementKind.unit => MapLayerType.units,
+                StarCraftPlacementKind.pureSprite ||
+                StarCraftPlacementKind.spriteUnit => MapLayerType.sprites,
+              },
+            );
+          }
           if (mounted) {
             setState(() {});
           }
@@ -640,7 +656,13 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   StreamSubscription<ObjectPaletteState> _listenForObjectPalette(
     ObjectPaletteController controller,
   ) {
-    return controller.changes.listen((_) {
+    return controller.changes.listen((state) {
+      if (state.isPlacementActive) {
+        widget.placementCatalogController.cancelSelection();
+        widget.objectEditingController.cancelLocationCreation();
+        widget.terrainEditingController.cancelBrushStroke();
+        widget.terrainEditingController.setTool(TerrainEditingTool.select);
+      }
       if (mounted) {
         setState(() {});
       }
@@ -1180,6 +1202,9 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
                         future: _recentProjects,
                         builder: (context, recentProjectsSnapshot) {
                           return _EditorWorkspace(
+                            onEditTerrain: widget.isomFillController == null
+                                ? null
+                                : () => _fillIsom(initialMode: 2),
                             eudBuildSteps: eudBuildSteps,
                             openMap: openMap,
                             openMapState:
@@ -1854,6 +1879,7 @@ class _EnvironmentBadge extends StatelessWidget {
 
 class _EditorWorkspace extends StatelessWidget {
   const _EditorWorkspace({
+    this.onEditTerrain,
     this.eudBuildSteps,
     required this.openMap,
     required this.openMapState,
@@ -1886,6 +1912,7 @@ class _EditorWorkspace extends StatelessWidget {
     required this.onShowBriefing,
   });
 
+  final VoidCallback? onEditTerrain;
   final Widget? eudBuildSteps;
   final VoidCallback? openMap;
   final OpenMapState openMapState;
@@ -2007,6 +2034,7 @@ class _EditorWorkspace extends StatelessWidget {
                       : 0,
                   children: [
                     _MapWorkspace(
+                      onEditTerrain: onEditTerrain,
                       eudBuildSteps: eudBuildSteps,
                       selectionNavigation: selectionNavigation,
                       navigationTarget: navigationTarget,
@@ -2526,6 +2554,7 @@ class _EmptyPaneMessage extends StatelessWidget {
 
 class _MapWorkspace extends StatelessWidget {
   const _MapWorkspace({
+    this.onEditTerrain,
     this.eudBuildSteps,
     required this.openMap,
     required this.openMapState,
@@ -2549,6 +2578,7 @@ class _MapWorkspace extends StatelessWidget {
     required this.onShowMap,
   });
 
+  final VoidCallback? onEditTerrain;
   final Widget? eudBuildSteps;
   final VoidCallback? openMap;
   final OpenMapState openMapState;
@@ -2601,6 +2631,7 @@ class _MapWorkspace extends StatelessWidget {
     }
     if (session != null) {
       return _OpenedMapWorkspace(
+        onEditTerrain: onEditTerrain,
         session: session,
         selectionNavigation: selectionNavigation,
         navigationTarget: navigationTarget,
@@ -2715,6 +2746,7 @@ class _MapWorkspace extends StatelessWidget {
 
 class _OpenedMapWorkspace extends StatelessWidget {
   const _OpenedMapWorkspace({
+    this.onEditTerrain,
     required this.session,
     required this.diagnostics,
     required this.terrainEditingController,
@@ -2729,6 +2761,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.objectSpriteTextureState,
   });
 
+  final VoidCallback? onEditTerrain;
   final OpenedMapSession session;
   final List<EditorDiagnostic> diagnostics;
   final TerrainEditingController terrainEditingController;
@@ -2914,6 +2947,48 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 9),
+                      if (layerState.activeLayer == MapLayerType.terrain &&
+                          onEditTerrain != null)
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              key: const Key('terrain-natural-editor'),
+                              onPressed: onEditTerrain,
+                              icon: const Icon(Icons.landscape_outlined),
+                              label: Text(l10n.terrainModeNatural),
+                            ),
+                            OutlinedButton.icon(
+                              key: const Key('terrain-tile-editor'),
+                              onPressed: () async {
+                                await placementCatalogController.load(
+                                  StarCraftPlacementKind.tile,
+                                );
+                                if (context.mounted) {
+                                  await showDialog<void>(
+                                    context: context,
+                                    builder: (dialogContext) => Dialog(
+                                      child: SizedBox(
+                                        width: 1000,
+                                        height: 680,
+                                        child: PlacementCatalogPane(
+                                          controller:
+                                              placementCatalogController,
+                                          onPlacementConfirmed: () =>
+                                              Navigator.pop(dialogContext),
+                                          onClose: () =>
+                                              Navigator.pop(dialogContext),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.grid_on),
+                              label: Text(l10n.terrainModeTile),
+                            ),
+                          ],
+                        ),
                       if (layerState.activeLayer == MapLayerType.terrain)
                         _TerrainEditingToolbar(
                           state: editingState,
@@ -2967,6 +3042,11 @@ class _OpenedMapWorkspace extends StatelessWidget {
                               objectEditingController.cancelLocationCreation();
                             } else {
                               objectPaletteController.cancelPlacement();
+                              placementCatalogController.cancelSelection();
+                              terrainEditingController.cancelBrushStroke();
+                              terrainEditingController.setTool(
+                                TerrainEditingTool.select,
+                              );
                               objectEditingController.startLocationCreation();
                             }
                           },

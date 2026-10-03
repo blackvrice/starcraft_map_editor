@@ -4,12 +4,14 @@ import 'package:starcraft_map_editor/application/ports/terrain_connection_snapsh
 TerrainConnectionSnapshot solidSnapshot({
   int tileset = 0,
   List<TerrainSnapshotGroup>? groups,
+  String storageProduct = 'fixture',
+  int storageBuildNumber = 1,
 }) => TerrainConnectionSnapshot(
   tileset: tileset,
   revision: 'synthetic-solid',
-  helperVersion: '0.12.0',
-  storageProduct: 'fixture',
-  storageBuildNumber: 1,
+  helperVersion: '0.13.0',
+  storageProduct: storageProduct,
+  storageBuildNumber: storageBuildNumber,
   assets: [],
   groups:
       groups ??

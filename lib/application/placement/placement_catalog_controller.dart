@@ -197,6 +197,7 @@ class PlacementCatalogController {
   final Set<StarCraftPlacementCatalogKey> _thumbnailQueue = {};
   final Set<StarCraftPlacementCatalogKey> _thumbnailFailures = {};
   int _thumbnailClock = 0;
+  final _unitGridPages = <int, Future<List<PlacementCatalogItem>>>{};
   int _thumbnailEpoch = 0;
   bool _hydratingThumbnails = false;
   (String?, int?, String?, String?)? _tileAtlasIdentity;
@@ -588,7 +589,48 @@ class PlacementCatalogController {
     );
   }
 
+  /// Grid previews share a bounded 32-unit request instead of starting one
+  /// native process per visible cell. They never change placement selection.
+  Future<PlacementCatalogItem?> loadUnitGridPreview(int unit) async {
+    RangeError.checkValueInInterval(unit, 0, 227, 'unit');
+    final offset = unit ~/ 32 * 32;
+    final epoch = weaponReferenceEpoch;
+    final page = await _unitGridPages.putIfAbsent(offset, () async {
+      final path = _installationPath;
+      if (_disposed ||
+          path == null ||
+          catalogGateway == null ||
+          objectAtlasGateway == null) {
+        return const [];
+      }
+      final batch =
+          await ObjectPlacementCatalogLoader(
+            catalogGateway: catalogGateway!,
+            objectAtlasGateway: objectAtlasGateway!,
+          ).load(
+            StarCraftPlacementCatalogRequest(
+              operationId: 'unit-grid-${++_weaponRequest}',
+              installationPath: path,
+              kind: StarCraftPlacementKind.unit,
+              tileset: mapTileset ?? StarCraftTilesetAssetSet.badlands,
+              offset: offset,
+              limit: (228 - offset).clamp(1, 32),
+            ),
+          );
+      if (_disposed || epoch != weaponReferenceEpoch || !batch.isSuccess) {
+        return const [];
+      }
+      return [
+        for (final entry in batch.page.entries)
+          _objectCatalogItem(entry, batch.thumbnails[entry.key]),
+      ];
+    });
+    if (_disposed || epoch != weaponReferenceEpoch) return null;
+    return page.where((item) => item.key.id == unit).firstOrNull;
+  }
+
   void _invalidateCatalog() {
+    _unitGridPages.clear();
     _invalidateEudData();
     _resetThumbnails();
     weaponReferenceEpoch++;
@@ -700,6 +742,11 @@ class PlacementCatalogController {
         );
         return false;
       }
+    } else {
+      // A previous terrain brush must not consume the next object click.
+      terrainEditingController.cancelBrushStroke();
+      terrainEditingController.setTool(TerrainEditingTool.select);
+      objectEditingController.cancelLocationCreation();
     }
     _rememberRecent(item.key);
     _emit(
@@ -826,6 +873,7 @@ class PlacementCatalogController {
     if (_disposed) return _changes.close();
     _resetThumbnails();
     _disposed = true;
+    _unitGridPages.clear();
     weaponReferenceEpoch++;
     final weaponOperation = _weaponOperation;
     if (weaponOperation != null) {

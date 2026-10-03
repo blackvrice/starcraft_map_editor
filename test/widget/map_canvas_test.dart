@@ -966,6 +966,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'creation drag over selected object creates a region instead of moving it',
+    (tester) async {
+      MapCanvasSelectionRegionRequest? region;
+      MapCanvasMoveRequest? move;
+      const object = MapLayerObjectRef(
+        layer: MapLayerType.units,
+        sectionIndex: 1,
+        recordIndex: 0,
+      );
+      final scene = MapLayerScene(
+        points: const [
+          MapLayerPointObject(object: object, pixelX: 64, pixelY: 64),
+        ],
+        regions: const [],
+        objectCounts: const {MapLayerType.units: 1},
+        selections: const [
+          MapLayerSelection(object: object, pixelX: 64, pixelY: 64),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            width: 320,
+            height: 240,
+            child: MapCanvas(
+              mapWidth: 4,
+              mapHeight: 4,
+              layerScene: scene,
+              isObjectPlacementActive: true,
+              onSelectionRegionRequested: (r) => region = r,
+              onSelectedObjectsMoved: (r) => move = r,
+            ),
+          ),
+        ),
+      );
+      final gesture = await tester.startGesture(
+        _mapPixel(tester, pixelX: 64, pixelY: 64),
+      );
+      await gesture.moveTo(_mapPixel(tester, pixelX: 95, pixelY: 96));
+      await gesture.up();
+      await tester.pump();
+      expect(move, isNull);
+      expect(region?.region.left, 64);
+      expect(region?.region.right, 95);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('brush fills every crossed tile without gaps', (tester) async {
     final painted = <TerrainTileCoordinate>[];
     var started = 0;

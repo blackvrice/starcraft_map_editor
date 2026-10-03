@@ -13,6 +13,18 @@ void main() {
   const decoder = ChkObjectViewDecoder();
 
   group('UnitPlacementFactory', () {
+    test('does not synthesize standalone turret records', () {
+      final result = unitFactory.create(
+        capability: _capability(unitId: 4, isSubunit: true),
+        unitId: 4,
+        owner: 0,
+        x: 64,
+        y: 64,
+        classId: 1,
+      );
+      expect(result.issueCode, ObjectPlacementFactoryCodes.unitSubunit);
+      expect(() => result.bytes, throwsStateError);
+    });
     test('synthesizes every byte of a plain ground unit record', () {
       final record = unitFactory
           .create(
@@ -499,6 +511,7 @@ DoodadPlacementRecipe _recipe({
 
 UnitPlacementCapability _capability({
   required int unitId,
+  bool isSubunit = false,
   bool isSpellcaster = false,
   bool hasShields = false,
   bool isResourceContainer = false,
@@ -512,6 +525,7 @@ UnitPlacementCapability _capability({
   bool requiresRelationLink = false,
 }) => UnitPlacementCapability(
   unitId: unitId,
+  isSubunit: isSubunit,
   isSpellcaster: isSpellcaster,
   hasShields: hasShields,
   isResourceContainer: isResourceContainer,
