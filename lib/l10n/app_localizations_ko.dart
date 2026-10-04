@@ -6026,4 +6026,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get epScriptExample => '시작 예제';
+
+  @override
+  String get placementTerrainMismatch =>
+      '이 두다드에 필요한 바닥 지형과 맞지 않습니다. 같은 종류의 지형 위에 배치하세요. 맵은 변경되지 않았습니다.';
+
+  @override
+  String get placementLayerLocked =>
+      '배치에 필요한 레이어가 숨겨져 있거나 잠겨 있습니다. 레이어를 표시하고 잠금을 해제하세요.';
+
+  @override
+  String get placementOutsideMap =>
+      '오브젝트 전체가 맵 안에 들어오도록 위치를 선택하세요. 맵은 변경되지 않았습니다.';
 }

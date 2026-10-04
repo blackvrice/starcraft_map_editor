@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../application/placement/placement_catalog_controller.dart';
+import '../../application/editing/object_placement.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../localization/l10n.dart';
@@ -76,6 +77,16 @@ String _issueText(AppLocalizations l10n, PlacementCatalogItem item) {
   if (code.endsWith('DOODAD_RECIPE_INVALID')) return l10n.catalogIssueRecipe;
   return item.issueMessage ?? l10n.catalogCannotPlace;
 }
+
+/// Keep refusal reasons readable without hiding their stable diagnostic codes.
+String placementFailureText(AppLocalizations l10n, String code) =>
+    switch (code) {
+      ObjectPlacementDiagnosticCodes.doodadTerrainMismatch =>
+        l10n.placementTerrainMismatch,
+      ObjectPlacementDiagnosticCodes.layerLocked => l10n.placementLayerLocked,
+      ObjectPlacementDiagnosticCodes.outOfBounds => l10n.placementOutsideMap,
+      _ => l10n.catalogCannotPlace,
+    };
 
 /// The placement catalog as a workspace tab.
 ///

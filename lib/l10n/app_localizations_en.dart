@@ -6156,4 +6156,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get epScriptExample => 'Starter script';
+
+  @override
+  String get placementTerrainMismatch =>
+      'The ground does not match this doodad\'s required terrain. Place it on matching terrain. The map was not changed.';
+
+  @override
+  String get placementLayerLocked =>
+      'A required layer is hidden or locked. Show the layer and unlock it before placing.';
+
+  @override
+  String get placementOutsideMap =>
+      'Choose a position where the entire object fits inside the map. The map was not changed.';
 }

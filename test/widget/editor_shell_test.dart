@@ -16,6 +16,9 @@ import 'package:starcraft_map_editor/application/documents/open_map_controller.d
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_palette_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_placement.dart';
+import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
+import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/application/placement/placement_catalog_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
@@ -2333,6 +2336,96 @@ void main() {
     expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
 
+  testWidgets(
+    'catalog refusals stay visible on the map without changing bytes',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final progress = OperationProgressController();
+      final settings = InMemorySettingsStore();
+      final extracted = _createExtractedMap();
+      final maps = OpenMapController(
+        archiveGateway: _FakeMapArchiveGateway(
+          MapArchiveOpenResult.success(map: extracted),
+        ),
+        filePicker: _FakeMapFilePicker(extracted.sourcePath),
+        fingerprintGateway: _FakeMapFileFingerprintGateway(),
+        recentProjectsService: RecentProjectsService(settings),
+        operationProgressController: progress,
+      );
+      final layers = MapLayerController();
+      final objects = ObjectEditingController(
+        openMapController: maps,
+        mapLayerController: layers,
+      );
+      final terrain = TerrainEditingController(openMapController: maps);
+      final catalog = PlacementCatalogController(
+        openMapController: maps,
+        objectEditingController: objects,
+        terrainEditingController: terrain,
+        catalogGateway: const _RefusalDoodadCatalog(),
+      );
+      addTearDown(maps.dispose);
+      addTearDown(layers.dispose);
+      addTearDown(objects.dispose);
+      addTearDown(terrain.dispose);
+      addTearDown(catalog.dispose);
+      addTearDown(progress.dispose);
+      addTearDown(() => tester.pumpWidget(const SizedBox()));
+      await maps.open();
+      await tester.pumpWidget(
+        _createTestApp(
+          openMapController: maps,
+          mapLayerController: layers,
+          objectEditingController: objects,
+          terrainEditingController: terrain,
+          placementCatalogController: catalog,
+          settingsStore: settings,
+          operationProgressController: progress,
+        ),
+      );
+      await tester.pumpAndSettle();
+      catalog.setInstallationPath(r'C:\StarCraft');
+      expect(await catalog.load(StarCraftPlacementKind.doodad), isTrue);
+      expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('catalog-placement-active')), findsOneWidget);
+      final before = const RawChkEncoder().encode(
+        maps.state.session!.rawDocument,
+      );
+      await tester.tapAt(tester.getCenter(find.byKey(const Key('map-canvas'))));
+      await tester.pumpAndSettle();
+      expect(
+        catalog.state.lastPlacementIssueCode,
+        ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+      );
+      expect(find.byKey(const Key('catalog-placement-error')), findsOneWidget);
+      expect(find.textContaining('required terrain'), findsOneWidget);
+      expect(
+        find.textContaining(
+          ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        const RawChkEncoder().encode(maps.state.session!.rawDocument),
+        before,
+      );
+      expect(maps.state.session!.isDirty, isFalse);
+      expect(catalog.state.isPlacementActive, isTrue);
+      catalog.placeAt(pixelX: 0, pixelY: 0, tileX: -1, tileY: -1);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('entire object fits'), findsOneWidget);
+      catalog.cancelSelection();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('catalog-placement-error')), findsNothing);
+      expect(find.byKey(const Key('catalog-placement-active')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('opens the placement catalog as a workspace tab', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1440, 900);
@@ -2882,6 +2975,47 @@ Offset _mapPixelOffset(
         (pixelX + 0.5) / 32 * painter.layout.tileExtent,
         (pixelY + 0.5) / 32 * painter.layout.tileExtent,
       );
+}
+
+final class _RefusalDoodadCatalog implements StarCraftPlacementCatalogGateway {
+  const _RefusalDoodadCatalog();
+  @override
+  Future<void> cancel(String operationId) async {}
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async => StarCraftPlacementCatalogPage(
+    request: request,
+    totalEntries: 1,
+    entries: [
+      StarCraftPlacementCatalogEntry(
+        key: StarCraftPlacementCatalogKey.doodad(
+          tileset: request.tileset,
+          doodadId: 0,
+          startTileGroup: 200,
+        ),
+        source: StarCraftPlacementCatalogSource.localData,
+        availability: StarCraftPlacementAvailability.placeable,
+        doodadRecipe: DoodadPlacementRecipe(
+          tileset: request.tileset,
+          startTileGroup: 200,
+          doodadType: 0,
+          width: 1,
+          height: 1,
+          centerOffsetX: 16,
+          centerOffsetY: 16,
+          footprint: [
+            DoodadFootprintCell(
+              x: 0,
+              y: 0,
+              rawTileValue: 3200,
+              requiredTileGroup: 200,
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
 }
 
 Widget _createTestApp({

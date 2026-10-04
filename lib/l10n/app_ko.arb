@@ -2903,5 +2903,8 @@
   "epScriptHelpBody": "epScript(.eps)는 조건·액션·반복 규칙 같은 사용자 게임 로직을 작성하는 코드입니다. 일반 맵 객체 배치와는 별개이며 euddraft로 컴파일할 때 EUD 트리거로 변환됩니다.\n\n맵과 스크립트를 저장하고 EUD 빌드를 준비한 뒤 별도 출력 맵을 빌드합니다. 코드 편집만으로 실행되거나 원본 맵이 바뀌지 않습니다. 신뢰할 수 있는 코드만 빌드하세요.",
   "epScriptInsertExample": "시작 예제 삽입",
   "epScriptComplete": "기호 자동 완성",
-  "epScriptExample": "시작 예제"
+  "epScriptExample": "시작 예제",
+  "placementTerrainMismatch": "이 두다드에 필요한 바닥 지형과 맞지 않습니다. 같은 종류의 지형 위에 배치하세요. 맵은 변경되지 않았습니다.",
+  "placementLayerLocked": "배치에 필요한 레이어가 숨겨져 있거나 잠겨 있습니다. 레이어를 표시하고 잠금을 해제하세요.",
+  "placementOutsideMap": "오브젝트 전체가 맵 안에 들어오도록 위치를 선택하세요. 맵은 변경되지 않았습니다."
 }

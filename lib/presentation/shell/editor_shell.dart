@@ -2929,6 +2929,15 @@ class _OpenedMapWorkspace extends StatelessWidget {
                               value: l10n.mapPlacing(entry.label),
                               highlighted: true,
                             ),
+                          if (placementCatalogController.state.selection
+                              case final selection?
+                              when selection.usesCanvasClick)
+                            _MapCanvasMetadata(
+                              key: const Key('catalog-placement-active'),
+                              icon: Icons.add_location_alt_outlined,
+                              value: l10n.mapPlacing(selection.displayName),
+                              highlighted: true,
+                            ),
                           if (objectEditingController.state.isCreatingLocation)
                             _MapCanvasMetadata(
                               key: const Key('location-creation-active'),
@@ -2947,6 +2956,21 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 9),
+                      if (placementCatalogController
+                              .state
+                              .lastPlacementIssueCode
+                          case final code?)
+                        Semantics(
+                          liveRegion: true,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 9),
+                            child: Text(
+                              '${placementFailureText(l10n, code)}\n$code',
+                              key: const Key('catalog-placement-error'),
+                              style: const TextStyle(color: Color(0xFFFFB4AB)),
+                            ),
+                          ),
+                        ),
                       if (layerState.activeLayer == MapLayerType.terrain &&
                           onEditTerrain != null)
                         Wrap(

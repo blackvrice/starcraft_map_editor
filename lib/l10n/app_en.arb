@@ -3654,5 +3654,8 @@
   "epScriptHelpBody": "epScript (.eps) defines custom game logic such as conditions, actions and repeating rules. It is separate from ordinary map object placement and becomes EUD triggers only when compiled with euddraft.\n\nSave the map and script, prepare the EUD build, then build a separate output map. Editing a script does not execute it or change the original map. Only build trusted code.",
   "epScriptInsertExample": "Insert starter script",
   "epScriptComplete": "Complete symbol",
-  "epScriptExample": "Starter script"
+  "epScriptExample": "Starter script",
+  "placementTerrainMismatch": "The ground does not match this doodad's required terrain. Place it on matching terrain. The map was not changed.",
+  "placementLayerLocked": "A required layer is hidden or locked. Show the layer and unlock it before placing.",
+  "placementOutsideMap": "Choose a position where the entire object fits inside the map. The map was not changed."
 }

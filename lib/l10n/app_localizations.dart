@@ -10214,6 +10214,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Starter script'**
   String get epScriptExample;
+
+  /// No description provided for @placementTerrainMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The ground does not match this doodad\'s required terrain. Place it on matching terrain. The map was not changed.'**
+  String get placementTerrainMismatch;
+
+  /// No description provided for @placementLayerLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'A required layer is hidden or locked. Show the layer and unlock it before placing.'**
+  String get placementLayerLocked;
+
+  /// No description provided for @placementOutsideMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a position where the entire object fits inside the map. The map was not changed.'**
+  String get placementOutsideMap;
 }
 
 class _AppLocalizationsDelegate
