@@ -1,5 +1,9 @@
 # 플레이어 설정
 
+2026-10-04 후속 목표 FR-224: CRGB 모드/RGB와 COLR 우선순위·캔버스 미리보기는
+미구현이며 아래 기존 차단/보존 정책을 유지한다. [보완 설계](EDITOR_PARITY_DESIGN.md)의
+EP2와 PAR-05에서 포맷·외부 왕복·게임 색상을 검증한 뒤 활성화한다.
+
 주 진입점은 **Map Settings → Players** 탭이며 기존 File 메뉴도 사용할 수 있다.
 [통합 설정 UI](MAP_SETTINGS_UI.md)의 이름/ID·선택 연동 규칙을 함께 따른다.
 문서 공통 Undo/Redo와 Map Save As를 사용하며 EUD 프로젝트 저장과 구분한다.

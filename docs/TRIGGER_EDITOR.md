@@ -1,5 +1,10 @@
 # 일반 트리거 편집기
 
+2026-10-04 후속 계획: FR-405의 검색/조건·액션·참조 탐색과 검색 결과 기반
+일괄 수정, FR-406의 일반 TRIG 스크립트 왕복은 미구현이다. 기존 소유자/활성
+일괄 변경과 구분한다. [보완 설계](EDITOR_PARITY_DESIGN.md),
+[언어 계획 L0~L6](EUD_TOOLCHAIN_LANGUAGE_PLAN.md), PAR-07/13을 따른다.
+
 2026-09-27 일반 조건 22종과 액션 57종의 구조 편집을 구현했다.
 [문자열·사운드 관리](RESOURCE_MANAGEMENT.md)와 2026-09-28의
 [미션 브리핑 편집기](BRIEFING_EDITOR.md)도 연결되었다. M7.1의 [EUD 실행 규칙](EUD_EXECUTION_RULES.md)은 Triggers → EUD extensions에서

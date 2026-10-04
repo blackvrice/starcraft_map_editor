@@ -1,5 +1,42 @@
 # 테스트와 품질
 
+## 기존 에디터 보완 인수 시나리오 (2026-10-04, 계획)
+
+[보완 설계](EDITOR_PARITY_DESIGN.md)의 기능별 검증이다. 아래는 **실행할 테스트**이며
+이번 문서 작업에서 통과한 결과가 아니다. 결과는 구현 커밋·입력 hash·SDK/앱/
+게임/외부 에디터 버전·실행 순서·예상/실제·로그/화면·실패 분석으로 남긴다.
+실패 수정 후 같은 시나리오와 관련 회귀를 재실행한다. 코드/자동/앱/게임/배포
+열을 각각 판정하고 환경이 없는 확인은 '미실행'으로 유지한다.
+
+| ID / 요구사항 | 실행 순서와 입력 | 예상 결과 / 실패 경계 | 증거 |
+| --- | --- | --- | --- |
+| PAR-01 FR-217, NFR-008 | 새 맵에서 unit/pure sprite/unit-sprite/두다드 그림 선택 -> 배치 -> Undo/Redo. 로컬 자산 없음도 반복 | 지원 유형만 정확한 UNIT/THG2/DD2 생성. 탱크/골리앗은 본체 한 건. 미지원은 선택 전 안내. 그림/이름·레이어 일치 | domain/widget, Windows 클릭과 바이트 diff |
+| PAR-02 FR-217 | 두다드 일치/불일치 지형, 맵 모서리, locked/restricted layer에서 hover -> 클릭 -> 위치 수정 | preview와 Apply 거절 이유 일치, 실패는 문서/Undo 무변경, 정상 재시도 가능 | 거절 코드·revision·실제 앱 화면 |
+| PAR-03 FR-218 | 8/16/32/64/128px 스냅과 건물 타일 정렬, 격자 숨김, 자유 배치·잘못된 참조 | 표시와 스냅 독립, preview/기록 좌표 일치, 자유 배치에서도 안전 검증 유지 | 좌표/footprint fixture·Undo/Redo |
+| PAR-04 FR-223 | 기본값 상속/override 유닛·무기·업그레이드·테크 조회, 자산 실패 | 단위·출처·기본/현재/예상값 구분, 조회는 CHK 불변, 실패 시 0 대입 없음 | helper 계약·UI·CHK hash |
+| PAR-05 FR-224 | COLR와 검증된 CRGB 모드/RGB 편집 -> 미리보기 -> Apply -> Save As/재열기; 중복/unknown 모드 반복 | 사양에 맞는 바이트와 캔버스 색상, 미지원 보존/거절, Undo 정확 복원 | 바이트/외부 에디터 왕복/SC:R 관찰 |
+| PAR-06 FR-225 | 공유 문자열에 색상 token 추가/삭제, 알 수 없는 바이트·NUL·한영 긴 문자열 | 알려진 token만 해석, unknown 가역 보존, 참조 영향 표시, 취소 무변경 | bytes roundtrip·UI/게임 표시 |
+| PAR-07 FR-405 | 10,000건 합성 트리거에 소유자/액션/참조 검색 -> 지원 선택 일괄 수정 -> Undo; 미지원/EUD 포함 | 정확한 필터 결과, 조회 무변경, 미지원 byte-exact, 변경은 한 명령 | query tests·profile·record hash |
+| PAR-08 FR-221 | 지형+복수 두다드+유닛+sprite 혼합 복사 -> 붙여넣기 -> Undo; 잘린 footprint/overlay 반복 | DD2/THG2/MTXM/TILE/ISOM 일관성, 부분 적용 없음, 원본 byte-exact 복원 | solver/domain·MPQ 재열기·게임/외부 확인 |
+| PAR-09 FR-005, NFR-009 | dirty A/B 탭 전환 중 A의 로딩/저장/복구/빌드 완료 -> B 닫기/앱 종료 | 결과는 A에만 적용, 초안/Undo/선택 분리, 문서별 저장 확인, cache 예산 유지 | controller race tests·실제 앱·메모리 계측 |
+| PAR-10 FR-222 | 두 맵의 같은 string/location/class ID에 다른 의미·리소스 경로 충돌 -> 복사 preview/Apply; 용량/타일셋 불일치 | 명시적 재매핑·원본 불변·target 한 명령, 해결 불가/외부 revision 변경은 전체 거절 | mapping table·untouched bytes·MPQ 왕복 |
+| PAR-11 FR-220 | raw/ISOM 브러시 저장/로드 -> 좌우/상하 대칭 -> ramp 포함 preview/Apply; 버전/자료 불일치 | 같은 seed/입력 결정성, 검증된 경계만 적용, 대응 자료 없는 항목 거절 | metadata schema·solver·외부 왕복 |
+| PAR-12 FR-219, NFR-001/009 | 256x256/4,096객체에서 overlay별 toggle/pan/zoom/설정 변경·asset 실패 | 문서 불변, revision cache 갱신, 미확인 상태 표시, profile 목표 충족 | p95 frame time·cache/RSS·게임 비교 |
+| PAR-13 FR-406/319/320 | GUI -> EPS/Python/Lua 제한 스크립트 -> 모델 -> GUI/TRIG; native/import/오류 위치·동시 초안 변경 | 일반 모드 process 실행 0, 지원 의미/원시 보존, 번역 거절/원본 위치 진단. native는 명시적 EUD 빌드만 | 기존 ML-01~12와 parser/compiler/widget tests |
+| PAR-14 FR-107/226/227 | 허용/미지원 codec·게임 사운드, 영역 이미지 출력, 결과 맵 테스트; 경로/크기 실패 | 지원표 준수·원본 불변·부분 출력 미노출. 게임 인자 불가 시 수동 선택. 프로세스 시작을 플레이 성공으로 오인하지 않음 | gateway/파일/codec·Windows·게임 관찰 |
+| PAR-15 NFR-005/008, M8 | 처음 제작자 과제, DPI/키보드/고대비, 중단·재실행 복구, 깨끗한 Windows 설치/제거 | 기본 흐름 수행 가능, clipping/focus 문제 없음, 로그 개인정보 제거·라이선스·원본 보존 | 과제 시간/실패/화면·설치 로그·회귀 기록 |
+
+공통 인수: 취소/거절/실패 무변경, 대상 밖 섹션·미지원 raw·원시 문자열 보존,
+한 명령 Undo/Redo, Save As 재열기. 실제 사용자/게임 자산은 fixture로 추가하지
+않고 합성/자체 작성 또는 재배포 허용 입력만 사용한다. 수동 게임/외부 도구
+검증은 해당 버전에서만 인정하며 전체 조합으로 확대하지 않는다.
+
+PAR-12 profile 목표는 기존 §5의 60 FPS/최소30 FPS와 동기100ms 상한을 따른다.
+PAR-15는 1280x720/1920x1080/4K, 125/150/200% DPI와 한영 긴 이름을 포함한다.
+초보 제작자 최소3명은 초기 계획이며 실제 수행 인원/결과를 기록한다.
+누수 판정은 반복 열기/닫기 20회 이후 GC·cache 안정 구간을 비교하고 단일 RSS
+증가만으로 누수라고 단정하지 않는다. 최종 수치/예산은 baseline ADR에서 확정한다.
+
 ## 1. 품질 목표
 
 이 프로젝트에서 가장 심각한 결함은 조용한 데이터 손실이다. UI 모양보다 파싱, 저장, 원본 보호, 빌드 결과 검증을 먼저 자동화한다.

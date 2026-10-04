@@ -154,7 +154,9 @@ RawChkSection
 유효한 `DIM `이 있을 때만 폭·높이를 결합해 2차원 좌표 접근을 제공하며,
 중복 `MTXM`은 원래 순서와 섹션 인덱스를 유지한다. 편집 메서드는 배열 길이를
 바꾸지 않고 대상 raw 섹션만 dirty 복제본으로 반환한다. `TILE`과 `ISOM`은
-우선순위와 재생성 규칙을 검증하기 전까지 raw-only다.
+raw 편집 경로에서는 보존한다. 별도의 검증된 ISOM 편집 경로는
+[지형 계약](ISOMETRIC_TERRAIN.md)·[브러시](ISOM_BRUSHES.md)에 따라
+ISOM/TILE/MTXM을 원자적으로 갱신한다. raw 경로와 혼동하지 않는다.
 
 ### ChkObjectViews
 
@@ -398,7 +400,7 @@ texture/fallback/unsupported 타일 수, 그린 object image·marker와 viewport
 view를 다시 검증한다. 새 편집은 redo stack을 비우며 세션별 undo stack은 최근
 100개로 제한한다. 원래 clean 섹션까지 Undo하면 dirty 상태도 해제된다.
 
-현재 편집 명령은 `MTXM`만 변경하며 `TILE`과 `ISOM`은 raw byte 그대로
+현재 raw 편집 명령은 `MTXM`만 변경하며 `TILE`과 `ISOM`은 raw byte 그대로
 유지한다. 이 두 표현은 외부 에디터용 지형 상태와 연관되므로, 검증되지 않은
 동기화나 재생성을 시도하지 않고 UI에 `MTXM only` 경계를 표시한다. 타일
 선택과 사각형 미리보기는 세션 dirty 상태에 포함하지 않는다. 진행 중인
@@ -1014,4 +1016,21 @@ EudDatGateway 뒤에서 ProcessEudDatGateway가 고정 경로 7개와 한정 프
 
 ## ISOM 전환·수직 적층 재계산 (2026-10-01)
 
-File → 등각 지형 채우기의 기존 ISOM 재계산 모드는 전환 연결표·수직 적층의 공통 member 경로로 TILE/MTXM을 함께 변경하고 ISOM/플래그·객체/리소스를 보존한다. 한영 UI·읽기 전용 미리보기·공통 Undo/Redo와 무변경 거부 범위는 [계약](ISOM_TRANSITIONS.md)을 따른다. 새 경계/높이/경사로 브러시와 게임 인수는 남는다.
+File → 등각 지형 채우기의 기존 ISOM 재계산 모드는 전환 연결표·수직 적층의 공통 member 경로로 TILE/MTXM을 함께 변경하고 ISOM/플래그·객체/리소스를 보존한다. 한영 UI·읽기 전용 미리보기·공통 Undo/Redo와 무변경 거부 범위는 [계약](ISOM_TRANSITIONS.md)을 따른다. 새 경계/높이/경사로 브러시는 [구현 계약](ISOM_BRUSHES.md)을 따르며 게임 인수는 남는다.
+
+## 기존 에디터 대비 구조 확장 (2026-10-04, 계획)
+
+[보완 설계](EDITOR_PARITY_DESIGN.md)는 현행 단일 세션을 유지하면서 다음
+개발 단위의 경계를 정한다. WorkspaceController/PlacementPolicy/ClipboardPayload/
+GameLaunchGateway는 제안 이름이며 구현된 클래스/인터페이스가 아니다.
+
+- EP1: 현재 배치 컨트롤러/factory에 동일한 preview/apply 정책과 유형 지원표 추가.
+- EP2: DAT/CRGB/token의 순수 투영·편집과 트리거 검색 use case 추가.
+- EP3: 세션별 컨트롤러/Undo/초안을 소유하는 workspace, versioned 참조 재매핑 clipboard.
+- EP4: 기존 ISOM solver 재사용, 읽기 전용 overlay와 revision별 파생 cache.
+- EP5: 제한 AST -> 공통 모델 -> 일반 TRIG 또는 EUD 생성 경로. native 소스는 별도 보존.
+- EP6: 파일/codec/게임 프로세스는 포트 뒤에서 검증. 다이어그램의 App -> Game은
+  목표 연결이며 현행 직접 게임 시작 기능이 있다는 뜻이 아니다.
+
+UI의 파일/프로세스 직접 호출이나 domain의 Flutter/FFI 의존성을 추가하지 않는다.
+새 schema·경로/문서 정책은 설계의 미결정 ADR를 확정한 뒤 구현한다.
