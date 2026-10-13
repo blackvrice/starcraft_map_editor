@@ -296,6 +296,12 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 THG2로 분리한다. capability는 Unit/unit-sprite 모두에서 자신의 ID와 일치해야 한다.
 현재 지원/검증과 계층 계약은 [unit-sprite 배치](UNIT_SPRITE_PLACEMENT.md)를 따른다.
 
+2026-10-13 `DoodadPlacementCatalogLoader`는 검증된 recipe의 footprint raw 타일과
+종류별 overlay를 기존 atlas 포트로 조회하고 동일 설치/build/revision일 때만
+`DoodadThumbnailComposer`로 최대64px 그림을 합성한다. 그림 실패는 배치 상태와
+분리하고 원본 atlas 버퍼를 보관하지 않는다. 상한·취소·누락·premultiplied/anchor
+계약과 검증은 [두다드 썸네일](DOODAD_CATALOG_THUMBNAILS.md)을 따른다.
+
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
 `ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의

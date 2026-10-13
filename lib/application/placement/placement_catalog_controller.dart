@@ -1,6 +1,7 @@
 import '../../domain/placement/unit_weapon_references.dart';
 import '../ports/eud_dat_gateway.dart';
 import 'catalog_thumbnail_pixels.dart';
+import 'doodad_placement_catalog_loader.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -38,6 +39,7 @@ final class PlacementCatalogItem {
     this.thumbnailWidth = 0,
     this.thumbnailHeight = 0,
     this.thumbnailEvicted = false,
+    this.thumbnailIssueCode,
   });
 
   final StarCraftPlacementCatalogEntry entry;
@@ -45,6 +47,7 @@ final class PlacementCatalogItem {
   final int thumbnailWidth;
   final int thumbnailHeight;
   final bool thumbnailEvicted;
+  final String? thumbnailIssueCode;
 
   StarCraftPlacementCatalogKey get key => entry.key;
 
@@ -110,9 +113,11 @@ final class PlacementCatalogState {
     this.isContinuous = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
+    Iterable<EditorDiagnostic> previewDiagnostics = const [],
     Iterable<StarCraftPlacementCatalogKey> recentKeys = const [],
   }) : items = List.unmodifiable(items),
        diagnostics = List.unmodifiable(diagnostics),
+       previewDiagnostics = List.unmodifiable(previewDiagnostics),
        recentKeys = List.unmodifiable(recentKeys);
 
   final StarCraftPlacementKind kind;
@@ -127,6 +132,9 @@ final class PlacementCatalogState {
   final bool isContinuous;
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
+
+  /// Nonblocking graphic failures; metadata and placement remain independent.
+  final List<EditorDiagnostic> previewDiagnostics;
   final List<StarCraftPlacementCatalogKey> recentKeys;
 
   List<PlacementCatalogItem> get visibleItems => _visibleItems;
@@ -656,6 +664,7 @@ class PlacementCatalogController {
           totalEntries: 0,
           isLoading: false,
           diagnostics: [_diagnostic(blocked)],
+          previewDiagnostics: const [],
           clearPreview: true,
         ),
       );
@@ -668,6 +677,7 @@ class PlacementCatalogController {
         totalEntries: 0,
         isLoading: true,
         diagnostics: const [],
+        previewDiagnostics: const [],
         clearPreview: true,
         tileset: mapTileset,
       ),
@@ -941,6 +951,7 @@ class PlacementCatalogController {
 
     final List<PlacementCatalogItem> loaded;
     final List<EditorDiagnostic> diagnostics;
+    var previewDiagnostics = <EditorDiagnostic>[];
     final int totalEntries;
     if (kind == StarCraftPlacementKind.tile) {
       final batch =
@@ -972,14 +983,29 @@ class PlacementCatalogController {
           ),
       ];
     } else if (kind == StarCraftPlacementKind.doodad) {
-      // A Doodad has no object graphic of its own: its preview is the
-      // footprint recipe, so the catalog gateway alone is enough.
-      final page = await catalogGateway!.list(request);
-      diagnostics = page.diagnostics;
-      totalEntries = page.totalEntries;
+      final batch =
+          await DoodadPlacementCatalogLoader(
+            catalogGateway: catalogGateway!,
+            tileAtlasGateway: tileAtlasGateway,
+            objectAtlasGateway: objectAtlasGateway,
+          ).load(
+            request,
+            isCancelled: () => _disposed || sequence != _requestSequence,
+          );
+      if (_disposed || sequence != _requestSequence) return false;
+      diagnostics = batch.diagnostics;
+      totalEntries = batch.page.totalEntries;
       loaded = [
-        for (final entry in page.entries) PlacementCatalogItem(entry: entry),
+        for (final entry in batch.page.entries)
+          PlacementCatalogItem(
+            entry: entry,
+            thumbnailRgba: batch.thumbnails[entry.key]?.rgba,
+            thumbnailWidth: batch.thumbnails[entry.key]?.width ?? 0,
+            thumbnailHeight: batch.thumbnails[entry.key]?.height ?? 0,
+            thumbnailIssueCode: batch.previewIssues[entry.key],
+          ),
       ];
+      previewDiagnostics = batch.previewDiagnostics;
     } else {
       final batch =
           await ObjectPlacementCatalogLoader(
@@ -1028,6 +1054,7 @@ class PlacementCatalogController {
         isLoading: false,
         diagnostics: diagnostics,
         tileset: tileset,
+        previewDiagnostics: previewDiagnostics,
       ),
     );
     return diagnostics.isEmpty;
@@ -1105,6 +1132,7 @@ class PlacementCatalogController {
     bool? isContinuous,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
+    List<EditorDiagnostic>? previewDiagnostics,
     List<StarCraftPlacementCatalogKey>? recentKeys,
     bool clearPreview = false,
     bool clearSelection = false,
@@ -1121,6 +1149,7 @@ class PlacementCatalogController {
     isContinuous: isContinuous ?? _state.isContinuous,
     lastPlacementIssueCode: lastPlacementIssueCode,
     diagnostics: diagnostics ?? _state.diagnostics,
+    previewDiagnostics: previewDiagnostics ?? _state.previewDiagnostics,
     recentKeys: recentKeys ?? _state.recentKeys,
   );
 

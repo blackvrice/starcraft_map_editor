@@ -622,6 +622,18 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
                           ),
                         ),
                       ],
+                      if (item.thumbnailIssueCode case final code?) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.editorTheLocalObjectPreviewIsUnavailable,
+                          key: const Key('placement-catalog-preview-issue'),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          l10n.catalogIssueCode(code),
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
                       if (!item.isPlaceable) ...[
                         const SizedBox(height: 12),
                         Container(

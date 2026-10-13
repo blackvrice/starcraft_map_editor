@@ -35,6 +35,91 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  testWidgets(
+    'Doodad graphic helper failure is nonblocking and is cleared on tab change',
+    (tester) async {
+      final fixture = await _openFixture(
+        tileAtlasGateway: _FailingTileAtlasGateway(),
+      );
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      final before = fixture.openMapController.state.session!;
+      expect(
+        await fixture.controller.load(StarCraftPlacementKind.doodad),
+        isTrue,
+      );
+      expect(fixture.controller.state.diagnostics, isEmpty);
+      expect(
+        fixture.controller.state.previewDiagnostics.single.rawDetails,
+        contains('preview unavailable'),
+      );
+      final item = fixture.controller.state.items.first;
+      expect(item.hasThumbnail, isFalse);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PlacementCatalogPane(controller: fixture.controller),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('placement-catalog-grid')), findsOneWidget);
+      expect(find.byKey(const Key('placement-catalog-blocked')), findsNothing);
+      await tester.tap(
+        find.byKey(Key('placement-catalog-item-${item.key.stableId}')),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('placement-catalog-preview-issue')),
+        findsOneWidget,
+      );
+      expect(fixture.controller.confirm(item.key), isTrue);
+      expect(fixture.openMapController.state.session, same(before));
+      expect(fixture.objectEditingController.state.undoDepth, 0);
+      expect(
+        await fixture.controller.load(StarCraftPlacementKind.unit),
+        isTrue,
+      );
+      expect(fixture.controller.state.previewDiagnostics, isEmpty);
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets('Doodad grid renders composed tiles without changing the map', (
+    tester,
+  ) async {
+    final fixture = await _openFixture();
+    addTearDown(fixture.dispose);
+    fixture.controller.setInstallationPath(_installationPath);
+    final before = fixture.openMapController.state.session!;
+    await fixture.controller.load(StarCraftPlacementKind.doodad);
+    final item = fixture.controller.state.items.first;
+    expect(item.hasThumbnail, isTrue);
+    expect([item.thumbnailWidth, item.thumbnailHeight], [64, 32]);
+    expect(item.thumbnailIssueCode, isNull);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PlacementCatalogPane(controller: fixture.controller),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(Key('placement-catalog-item-${item.key.stableId}')),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(find.byType(RawImage), findsNWidgets(2));
+    expect(
+      find.byKey(const Key('placement-catalog-preview-issue')),
+      findsNothing,
+    );
+    expect(fixture.openMapController.state.session, same(before));
+    expect(fixture.objectEditingController.state.undoDepth, 0);
+    expect(fixture.controller.confirm(item.key), isTrue);
+    expect(tester.takeException(), isNull);
+  });
   test(
     'unit-sprite with missing capability stays read-only before canvas placement',
     () async {
@@ -251,6 +336,12 @@ void main() {
       }
       final fixture = await _openFixture(
         catalogGateway: gateway,
+        tileAtlasGateway: ProcessStarCraftTileAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
         chkBytesOverride: _chkBytes(mapSize: size, terrainBytes: terrainBytes),
         pageSize: StarCraftPlacementCatalogRequest.maximumLimit,
       );
@@ -265,6 +356,13 @@ void main() {
         isTrue,
       );
       expect(fixture.controller.confirm(entry.key), isTrue);
+      final preview = fixture.controller.state.items.firstWhere(
+        (item) => item.key == entry.key,
+      );
+      expect(
+        preview.hasThumbnail || preview.thumbnailIssueCode != null,
+        isTrue,
+      );
       expect(bytes(), before);
       final refused = fixture.controller.placeAt(
         pixelX: 0,
@@ -1575,6 +1673,13 @@ final class _ReloadTileAtlas implements StarCraftTileAtlasGateway {
     }
     return const _FakeTileAtlasGateway().render(request);
   }
+}
+
+final class _FailingTileAtlasGateway implements StarCraftTileAtlasGateway {
+  @override
+  Future<StarCraftTileAtlasResult> render(
+    StarCraftTileAtlasRequest request,
+  ) async => throw StateError('preview unavailable');
 }
 
 final class _CountingAtlasGateway implements StarCraftObjectAtlasGateway {

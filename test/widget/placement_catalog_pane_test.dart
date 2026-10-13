@@ -23,6 +23,33 @@ import 'package:starcraft_map_editor/application/editing/object_placement.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 
 void main() {
+  testWidgets(
+    'missing Doodad pixels explain preview failure without disabling placement',
+    (tester) async {
+      final fixture = await _fixture();
+      addTearDown(fixture.dispose);
+      await _pumpPane(tester, fixture.controller);
+      await tester.tap(find.byKey(const Key('placement-catalog-tab-doodad')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Jungle Tree'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('placement-catalog-preview-issue')),
+        findsOneWidget,
+      );
+      expect(
+        find.text('The local object preview is unavailable.'),
+        findsOneWidget,
+      );
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('placement-catalog-place')),
+      );
+      expect(button.onPressed, isNotNull);
+      expect(fixture.controller.state.previewItem!.isPlaceable, isTrue);
+      expect(tester.takeException(), isNull);
+    },
+  );
   test(
     'every placement refusal has a localized reason in both languages',
     () async {

@@ -416,6 +416,18 @@ class _PlacementCatalogDialogState extends State<PlacementCatalogDialog> {
             style: const TextStyle(fontSize: 10, color: Color(0xFF7F8BA0)),
           ),
         ],
+        if (item.thumbnailIssueCode case final code?) ...[
+          const SizedBox(height: 8),
+          Text(
+            context.l10n.editorTheLocalObjectPreviewIsUnavailable,
+            key: const Key('placement-catalog-preview-issue'),
+            style: const TextStyle(fontSize: 11),
+          ),
+          Text(
+            context.l10n.catalogIssueCode(code),
+            style: const TextStyle(fontSize: 10),
+          ),
+        ],
         if (!item.isPlaceable) ...[
           const SizedBox(height: 10),
           Container(
