@@ -16,6 +16,162 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  for (final size in [const Size(320, 240), const Size(800, 600)]) {
+    testWidgets(
+      'placement hover validates and clears without consuming input at $size',
+      (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        var blocked = true;
+        var active = true;
+        var clicks = 0;
+        final origins = <(int, int)>[];
+        late StateSetter update;
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) {
+                  update = setState;
+                  return MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: TextScaler.linear(2)),
+                    child: MapCanvas(
+                      mapWidth: 32,
+                      mapHeight: 32,
+                      isObjectPlacementActive: active,
+                      onSelectionRequested: (_) => clicks++,
+                      placementGhost: active
+                          ? MapCanvasPlacementGhost(
+                              tileWidth: 2,
+                              tileHeight: 2,
+                              issueCodeAt: (x, y) {
+                                origins.add((x, y));
+                                return blocked ? 'TERRAIN_MISMATCH' : null;
+                              },
+                              issueText: (_) =>
+                                  '이 두다드에 필요한 지형과 맞지 않습니다. 일치하는 지형을 선택하세요.',
+                            )
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        MapCanvasPainter painter() =>
+            tester
+                    .widget<CustomPaint>(
+                      find.byKey(const Key('map-canvas-paint')),
+                    )
+                    .painter!
+                as MapCanvasPainter;
+        final canvasOrigin = tester.getTopLeft(
+          find.byKey(const Key('map-canvas')),
+        );
+        final target =
+            canvasOrigin +
+            painter().layout.mapRect.topLeft +
+            Offset(
+              painter().layout.tileExtent * 3.5,
+              painter().layout.tileExtent * 3.5,
+            );
+        final pointer = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await pointer.addPointer(location: canvasOrigin);
+        await pointer.moveTo(target);
+        await tester.pump();
+        expect(origins.last, (2, 2));
+        expect(clicks, 0);
+        expect(painter().placementIsBlocked, isTrue);
+        final notice = find.byKey(const Key('map-canvas-placement-issue'));
+        expect(notice, findsOneWidget);
+        final noticeRect = tester.getRect(notice);
+        expect(
+          noticeRect.bottom,
+          lessThan(
+            tester.getRect(find.byKey(const Key('map-canvas-coordinate'))).top,
+          ),
+        );
+        if (size.width >= 480) {
+          expect(
+            noticeRect.overlaps(
+              tester.getRect(find.byKey(const Key('map-minimap'))),
+            ),
+            isFalse,
+          );
+        }
+        await tester.tapAt(tester.getCenter(notice));
+        await tester.pump();
+        expect(clicks, 1);
+        update(() => blocked = false);
+        await tester.pump();
+        expect(notice, findsNothing);
+        expect(painter().placementIsBlocked, isFalse);
+        update(() {
+          blocked = true;
+          active = false;
+        });
+        await tester.pump();
+        expect(notice, findsNothing);
+        update(() => active = true);
+        await tester.pump();
+        await pointer.moveTo(canvasOrigin + const Offset(1, 1));
+        await tester.pump();
+        expect(notice, findsNothing);
+        await pointer.removePointer();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'placement painter draws rejected footprints red and accepted footprints green',
+    (tester) async {
+      Future<ByteData> render(bool blocked) async {
+        final recorder = ui.PictureRecorder();
+        final painter = MapCanvasPainter(
+          layout: MapCanvasLayout.fit(
+            viewportSize: const Size(128, 128),
+            mapWidth: 4,
+            mapHeight: 4,
+            contentPadding: 0,
+          ),
+          rawTileValues: List.filled(16, 0),
+          placementGhost: const MapCanvasPlacementGhost(
+            tileWidth: 2,
+            tileHeight: 2,
+          ),
+          placementGhostTile: const TerrainTileCoordinate(x: 2, y: 2),
+          placementIsBlocked: blocked,
+        );
+        painter.paint(Canvas(recorder), const Size(128, 128));
+        final picture = recorder.endRecording();
+        final image = await tester.runAsync(() => picture.toImage(128, 128));
+        picture.dispose();
+        final pixels = await tester.runAsync(
+          () => image!.toByteData(format: ui.ImageByteFormat.rawRgba),
+        );
+        image!.dispose();
+        return pixels!;
+      }
+
+      final rejected = await render(true);
+      final allowed = await render(false);
+      final index = (48 * 128 + 32) * 4;
+      expect(
+        rejected.getUint8(index),
+        greaterThan(rejected.getUint8(index + 1)),
+      );
+      expect(allowed.getUint8(index + 1), greaterThan(allowed.getUint8(index)));
+    },
+  );
+
   testWidgets(
     'navigation fits a 256 map, centers a pixel target and does not reapply on rebuild',
     (tester) async {

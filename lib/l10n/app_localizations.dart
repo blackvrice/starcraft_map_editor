@@ -10232,6 +10232,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a position where the entire object fits inside the map. The map was not changed.'**
   String get placementOutsideMap;
+
+  /// No description provided for @placementSessionReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This map cannot be edited. Open an editable map before placing.'**
+  String get placementSessionReadOnly;
+
+  /// No description provided for @placementDimensionsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The map dimensions are missing or ambiguous. Placement is unavailable.'**
+  String get placementDimensionsUnavailable;
+
+  /// No description provided for @placementSectionAmbiguous.
+  ///
+  /// In en, this message translates to:
+  /// **'A required object section is duplicated or invalid. Placement is unavailable; existing data is preserved.'**
+  String get placementSectionAmbiguous;
+
+  /// No description provided for @placementClassIdsExhausted.
+  ///
+  /// In en, this message translates to:
+  /// **'No unused unit instance ID is available. Placement was refused.'**
+  String get placementClassIdsExhausted;
+
+  /// No description provided for @placementTerrainUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The map terrain is missing or ambiguous. Doodad placement is unavailable.'**
+  String get placementTerrainUnavailable;
+
+  /// No description provided for @placementTilesetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The map tileset cannot be identified. Doodad placement is unavailable.'**
+  String get placementTilesetUnavailable;
+
+  /// No description provided for @placementTilesetMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'This doodad belongs to a different tileset. Choose one from this map\'s tileset.'**
+  String get placementTilesetMismatch;
 }
 
 class _AppLocalizationsDelegate

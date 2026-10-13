@@ -85,6 +85,20 @@ String placementFailureText(AppLocalizations l10n, String code) =>
         l10n.placementTerrainMismatch,
       ObjectPlacementDiagnosticCodes.layerLocked => l10n.placementLayerLocked,
       ObjectPlacementDiagnosticCodes.outOfBounds => l10n.placementOutsideMap,
+      ObjectPlacementDiagnosticCodes.sessionNotEditable =>
+        l10n.placementSessionReadOnly,
+      ObjectPlacementDiagnosticCodes.dimensionsUnavailable =>
+        l10n.placementDimensionsUnavailable,
+      ObjectPlacementDiagnosticCodes.sectionAmbiguous =>
+        l10n.placementSectionAmbiguous,
+      ObjectPlacementDiagnosticCodes.classIdExhausted =>
+        l10n.placementClassIdsExhausted,
+      ObjectPlacementDiagnosticCodes.terrainUnavailable =>
+        l10n.placementTerrainUnavailable,
+      ObjectPlacementDiagnosticCodes.tilesetUnavailable =>
+        l10n.placementTilesetUnavailable,
+      ObjectPlacementDiagnosticCodes.doodadTilesetMismatch =>
+        l10n.placementTilesetMismatch,
       _ => l10n.catalogCannotPlace,
     };
 

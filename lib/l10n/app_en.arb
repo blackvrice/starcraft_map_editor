@@ -3657,5 +3657,12 @@
   "epScriptExample": "Starter script",
   "placementTerrainMismatch": "The ground does not match this doodad's required terrain. Place it on matching terrain. The map was not changed.",
   "placementLayerLocked": "A required layer is hidden or locked. Show the layer and unlock it before placing.",
-  "placementOutsideMap": "Choose a position where the entire object fits inside the map. The map was not changed."
+  "placementOutsideMap": "Choose a position where the entire object fits inside the map. The map was not changed.",
+  "placementSessionReadOnly": "This map cannot be edited. Open an editable map before placing.",
+  "placementDimensionsUnavailable": "The map dimensions are missing or ambiguous. Placement is unavailable.",
+  "placementSectionAmbiguous": "A required object section is duplicated or invalid. Placement is unavailable; existing data is preserved.",
+  "placementClassIdsExhausted": "No unused unit instance ID is available. Placement was refused.",
+  "placementTerrainUnavailable": "The map terrain is missing or ambiguous. Doodad placement is unavailable.",
+  "placementTilesetUnavailable": "The map tileset cannot be identified. Doodad placement is unavailable.",
+  "placementTilesetMismatch": "This doodad belongs to a different tileset. Choose one from this map's tileset."
 }

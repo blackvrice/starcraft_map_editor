@@ -1086,97 +1086,24 @@ class ObjectEditingController {
     required int originTileX,
     required int originTileY,
   }) {
-    final session = openMapController.state.session;
-    if (session == null || !_isEditableSession(session)) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.sessionNotEditable,
-      );
-    }
-    if (!mapLayerController.state.statusOf(MapLayerType.doodads).isSelectable) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.layerLocked,
-      );
-    }
-    if (!mapLayerController.state.statusOf(MapLayerType.terrain).isSelectable) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.layerLocked,
-      );
-    }
-    final dimensions = _singleDimensions(session);
-    if (dimensions == null) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.dimensionsUnavailable,
-      );
-    }
-    final tilesetIssue = _checkDoodadTileset(session, recipe);
-    if (tilesetIssue != null) {
-      return ObjectPlacementResult.refused(tilesetIssue);
-    }
-    final terrain = _singleTerrainView(session);
-    if (terrain == null) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.terrainUnavailable,
-      );
-    }
-
-    final planned = doodadPlacementFactory.create(
+    final check = _prepareCatalogDoodad(
       recipe: recipe,
       owner: owner,
       originTileX: originTileX,
       originTileY: originTileY,
     );
-    if (!planned.isPlanned) {
-      return ObjectPlacementResult.refused(planned.issueCode!);
+    if (check.issueCode case final code?) {
+      return ObjectPlacementResult.refused(code);
     }
-    final plan = planned.plan;
-    if (plan.centerPixelX >= dimensions.width * _tilePixels ||
-        plan.centerPixelY >= dimensions.height * _tilePixels) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.outOfBounds,
-      );
-    }
-
+    final session = check.session!;
+    final terrain = check.terrain!;
+    final plan = check.plan!;
+    final doodadTarget = check.doodadTarget!;
+    final overlayTarget = check.overlayTarget;
     final tileValues = terrain.rawTileValues.toList();
     for (final write in plan.tileWrites) {
-      if (write.tileX >= terrain.width! || write.tileY >= terrain.height!) {
-        return ObjectPlacementResult.refused(
-          ObjectPlacementDiagnosticCodes.outOfBounds,
-        );
-      }
-      final index = write.tileY * terrain.width! + write.tileX;
-      if (!write.acceptsAnyTerrain &&
-          DoodadTileWrite.groupOf(tileValues[index]) !=
-              write.requiredTileGroup) {
-        return ObjectPlacementResult.refused(
-          ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
-        );
-      }
-      tileValues[index] = write.rawTileValue;
-    }
-
-    final doodadTarget = _resolveSectionTarget(
-      session: session,
-      nameBytes: ChkSectionNames.doodadPlacements,
-      decodedIndices: [
-        for (final section in session.objectViews.doodadSections)
-          section.sectionIndex,
-      ],
-    );
-    if (doodadTarget.issueCode != null) {
-      return ObjectPlacementResult.refused(doodadTarget.issueCode!);
-    }
-    final overlayTarget = plan.hasOverlay
-        ? _resolveSectionTarget(
-            session: session,
-            nameBytes: ChkSectionNames.spritePlacements,
-            decodedIndices: [
-              for (final section in session.objectViews.spriteSections)
-                section.sectionIndex,
-            ],
-          )
-        : null;
-    if (overlayTarget?.issueCode != null) {
-      return ObjectPlacementResult.refused(overlayTarget!.issueCode!);
+      tileValues[write.tileY * terrain.width! + write.tileX] =
+          write.rawTileValue;
     }
 
     final document = session.rawDocument;
@@ -1241,6 +1168,129 @@ class ObjectEditingController {
       layer: MapLayerType.doodads,
       sectionIndex: doodadSectionIndex,
       recordIndex: placedRecordIndex,
+    );
+  }
+
+  /// Checks the same target as Apply without editing the map or its history.
+  String? previewCatalogDoodad({
+    required DoodadPlacementRecipe recipe,
+    required int owner,
+    required int originTileX,
+    required int originTileY,
+  }) => _prepareCatalogDoodad(
+    recipe: recipe,
+    owner: owner,
+    originTileX: originTileX,
+    originTileY: originTileY,
+  ).issueCode;
+
+  _DoodadPlacementCheck _prepareCatalogDoodad({
+    required DoodadPlacementRecipe recipe,
+    required int owner,
+    required int originTileX,
+    required int originTileY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    if (!mapLayerController.state.statusOf(MapLayerType.doodads).isSelectable) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+    }
+    if (!mapLayerController.state.statusOf(MapLayerType.terrain).isSelectable) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+    }
+    final dimensions = _singleDimensions(session);
+    if (dimensions == null) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.dimensionsUnavailable,
+      );
+    }
+    final tilesetIssue = _checkDoodadTileset(session, recipe);
+    if (tilesetIssue != null) {
+      return _DoodadPlacementCheck.refused(tilesetIssue);
+    }
+    final terrain = _singleTerrainView(session);
+    if (terrain == null) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.terrainUnavailable,
+      );
+    }
+
+    // Check the full footprint, including sparse cells that do not write tiles.
+    if (originTileX < 0 ||
+        originTileY < 0 ||
+        originTileX + recipe.width > terrain.width! ||
+        originTileY + recipe.height > terrain.height!) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.outOfBounds,
+      );
+    }
+
+    final planned = doodadPlacementFactory.create(
+      recipe: recipe,
+      owner: owner,
+      originTileX: originTileX,
+      originTileY: originTileY,
+    );
+    if (!planned.isPlanned) {
+      return _DoodadPlacementCheck.refused(planned.issueCode!);
+    }
+    final plan = planned.plan;
+    if (plan.centerPixelX >= dimensions.width * _tilePixels ||
+        plan.centerPixelY >= dimensions.height * _tilePixels) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.outOfBounds,
+      );
+    }
+
+    for (final write in plan.tileWrites) {
+      final index = write.tileY * terrain.width! + write.tileX;
+      if (!write.acceptsAnyTerrain &&
+          DoodadTileWrite.groupOf(terrain.rawTileValues[index]) !=
+              write.requiredTileGroup) {
+        return const _DoodadPlacementCheck.refused(
+          ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+        );
+      }
+    }
+
+    final doodadTarget = _resolveSectionTarget(
+      session: session,
+      nameBytes: ChkSectionNames.doodadPlacements,
+      decodedIndices: [
+        for (final section in session.objectViews.doodadSections)
+          section.sectionIndex,
+      ],
+    );
+    if (doodadTarget.issueCode != null) {
+      return _DoodadPlacementCheck.refused(doodadTarget.issueCode!);
+    }
+    final overlayTarget = plan.hasOverlay
+        ? _resolveSectionTarget(
+            session: session,
+            nameBytes: ChkSectionNames.spritePlacements,
+            decodedIndices: [
+              for (final section in session.objectViews.spriteSections)
+                section.sectionIndex,
+            ],
+          )
+        : null;
+    if (overlayTarget?.issueCode != null) {
+      return _DoodadPlacementCheck.refused(overlayTarget!.issueCode!);
+    }
+    return _DoodadPlacementCheck.allowed(
+      session: session,
+      terrain: terrain,
+      plan: plan,
+      doodadTarget: doodadTarget,
+      overlayTarget: overlayTarget,
     );
   }
 
@@ -2410,8 +2460,32 @@ final class _ObjectEditCommand {
   final List<RawChkSection> appendedSections;
 }
 
-/// Where a placement record must go: an existing section, a section the
-/// command has to create, or a refusal when the document is ambiguous.
+/// Read-only preparation shared by hover and the synchronous placement command.
+final class _DoodadPlacementCheck {
+  const _DoodadPlacementCheck.allowed({
+    required this.session,
+    required this.terrain,
+    required this.plan,
+    required this.doodadTarget,
+    required this.overlayTarget,
+  }) : issueCode = null;
+
+  const _DoodadPlacementCheck.refused(this.issueCode)
+    : session = null,
+      terrain = null,
+      plan = null,
+      doodadTarget = null,
+      overlayTarget = null;
+
+  final String? issueCode;
+  final OpenedMapSession? session;
+  final ChkTerrainTileMapView? terrain;
+  final DoodadPlacementPlan? plan;
+  final _SectionTarget? doodadTarget;
+  final _SectionTarget? overlayTarget;
+}
+
+/// An existing section, a new section, or an ambiguous target to refuse.
 final class _SectionTarget {
   const _SectionTarget.existing(int index)
     : sectionIndex = index,

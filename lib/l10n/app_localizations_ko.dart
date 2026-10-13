@@ -6038,4 +6038,28 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get placementOutsideMap =>
       '오브젝트 전체가 맵 안에 들어오도록 위치를 선택하세요. 맵은 변경되지 않았습니다.';
+
+  @override
+  String get placementSessionReadOnly => '이 맵은 편집할 수 없습니다. 편집 가능한 맵을 열고 배치하세요.';
+
+  @override
+  String get placementDimensionsUnavailable => '맵 크기 정보가 없거나 모호하여 배치할 수 없습니다.';
+
+  @override
+  String get placementSectionAmbiguous =>
+      '필요한 오브젝트 섹션이 중복되거나 잘못되어 배치할 수 없습니다. 기존 데이터는 보존됩니다.';
+
+  @override
+  String get placementClassIdsExhausted => '사용할 수 있는 유닛 개체 ID가 없어 배치를 거절했습니다.';
+
+  @override
+  String get placementTerrainUnavailable =>
+      '맵 지형 정보가 없거나 모호하여 두다드를 배치할 수 없습니다.';
+
+  @override
+  String get placementTilesetUnavailable => '맵의 타일셋을 확인할 수 없어 두다드를 배치할 수 없습니다.';
+
+  @override
+  String get placementTilesetMismatch =>
+      '이 두다드는 다른 타일셋에 속합니다. 현재 맵의 타일셋에서 선택하세요.';
 }

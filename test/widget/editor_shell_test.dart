@@ -2395,6 +2395,21 @@ void main() {
       final before = const RawChkEncoder().encode(
         maps.state.session!.rawDocument,
       );
+      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      final target = tester.getCenter(find.byKey(const Key('map-canvas')));
+      await pointer.addPointer(location: target);
+      await pointer.moveTo(target + const Offset(1, 1));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('map-canvas-placement-issue')),
+        findsOneWidget,
+      );
+      expect(catalog.state.lastPlacementIssueCode, isNull);
+      expect(objects.state.undoDepth, 0);
+      expect(
+        const RawChkEncoder().encode(maps.state.session!.rawDocument),
+        before,
+      );
       await tester.tapAt(tester.getCenter(find.byKey(const Key('map-canvas'))));
       await tester.pumpAndSettle();
       expect(
@@ -2402,7 +2417,7 @@ void main() {
         ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
       );
       expect(find.byKey(const Key('catalog-placement-error')), findsOneWidget);
-      expect(find.textContaining('required terrain'), findsOneWidget);
+      expect(find.textContaining('required terrain'), findsNWidgets(2));
       expect(
         find.textContaining(
           ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
@@ -2422,6 +2437,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('catalog-placement-error')), findsNothing);
       expect(find.byKey(const Key('catalog-placement-active')), findsNothing);
+      expect(find.byKey(const Key('map-canvas-placement-issue')), findsNothing);
+      await pointer.removePointer();
       expect(tester.takeException(), isNull);
     },
   );

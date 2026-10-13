@@ -508,6 +508,292 @@ void main() {
   });
 
   group('catalog Doodad placement', () {
+    test(
+      'Doodad preview preserves the session, selection and redo history',
+      () async {
+        final fixture = await _openFixture();
+        addTearDown(fixture.dispose);
+        fixture.controller.placeCatalogPureSprite(
+          spriteId: 1,
+          owner: 0,
+          pixelX: 32,
+          pixelY: 32,
+        );
+        expect(fixture.controller.undo(), isTrue);
+        final before = fixture.openMapController.state.session!;
+        final bytes = const RawChkEncoder().encode(before.rawDocument);
+        final selections = fixture.mapLayerController.state.selections;
+        final history = fixture.controller.state;
+        for (var x = 0; x < 7; x++) {
+          expect(
+            fixture.controller.previewCatalogDoodad(
+              recipe: _recipe(overlay: true),
+              owner: 3,
+              originTileX: x,
+              originTileY: 1,
+            ),
+            isNull,
+          );
+        }
+        expect(fixture.openMapController.state.session, same(before));
+        expect(const RawChkEncoder().encode(before.rawDocument), bytes);
+        expect(fixture.mapLayerController.state.selections, same(selections));
+        expect(fixture.controller.state, same(history));
+        expect(history.undoDepth, 0);
+        expect(history.redoDepth, 1);
+        expect(fixture.controller.redo(), isTrue);
+      },
+    );
+
+    for (final scenario in [
+      (
+        name: 'terrain mismatch',
+        x: 1,
+        y: 1,
+        group: 5,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+      ),
+      (
+        name: 'tileset mismatch',
+        x: 1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.badlands,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.doodadTilesetMismatch,
+      ),
+      (
+        name: 'negative x',
+        x: -1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.outOfBounds,
+      ),
+      (
+        name: 'negative y',
+        x: 1,
+        y: -1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.outOfBounds,
+      ),
+      (
+        name: 'right boundary',
+        x: 7,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.outOfBounds,
+      ),
+      (
+        name: 'bottom boundary',
+        x: 1,
+        y: 8,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.outOfBounds,
+      ),
+      (
+        name: 'duplicate DD2',
+        x: 1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: 'DD2 ',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+      ),
+      (
+        name: 'duplicate overlay THG2',
+        x: 1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: 'THG2',
+        locked: null,
+        code: ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+      ),
+      (
+        name: 'locked doodads',
+        x: 1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: MapLayerType.doodads,
+        code: ObjectPlacementDiagnosticCodes.layerLocked,
+      ),
+      (
+        name: 'locked terrain',
+        x: 1,
+        y: 1,
+        group: 0,
+        tileset: StarCraftTilesetAssetSet.jungle,
+        extra: '',
+        locked: MapLayerType.terrain,
+        code: ObjectPlacementDiagnosticCodes.layerLocked,
+      ),
+    ]) {
+      test('preview and Apply agree on ${scenario.name}', () async {
+        final base = _chkBytes(
+          includeUnits: true,
+          includeSprites: true,
+          includeDoodads: true,
+          duplicateUnits: false,
+        );
+        final fixture = await _openFixture(
+          mapBytes: Uint8List.fromList([
+            ...base,
+            if (scenario.extra.isNotEmpty) ..._section(scenario.extra, []),
+          ]),
+        );
+        addTearDown(fixture.dispose);
+        if (scenario.locked case final layer?) {
+          fixture.mapLayerController.setLocked(layer, true);
+        }
+        final before = fixture.openMapController.state.session!;
+        final recipe = _recipe(
+          overlay: true,
+          requiredTileGroup: scenario.group,
+          tileset: scenario.tileset,
+        );
+        final preview = fixture.controller.previewCatalogDoodad(
+          recipe: recipe,
+          owner: 0,
+          originTileX: scenario.x,
+          originTileY: scenario.y,
+        );
+        expect(preview, scenario.code);
+        expect(
+          fixture.controller
+              .placeCatalogDoodad(
+                recipe: recipe,
+                owner: 0,
+                originTileX: scenario.x,
+                originTileY: scenario.y,
+              )
+              .issueCode,
+          preview,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        expect(fixture.controller.state.undoDepth, 0);
+        expect(before.isDirty, isFalse);
+      });
+    }
+
+    test(
+      'refuses an off-map sparse footprint even when written cells and center fit',
+      () async {
+        final fixture = await _openFixture();
+        addTearDown(fixture.dispose);
+        final before = fixture.openMapController.state.session!;
+        final recipe = DoodadPlacementRecipe(
+          tileset: StarCraftTilesetAssetSet.jungle,
+          startTileGroup: 200,
+          doodadType: 7,
+          width: 3,
+          height: 1,
+          centerOffsetX: 48,
+          centerOffsetY: 16,
+          footprint: [
+            for (var x = 0; x < 3; x++)
+              DoodadFootprintCell(
+                x: x,
+                y: 0,
+                rawTileValue: x == 0 ? 200 * 16 : null,
+                requiredTileGroup: 0,
+              ),
+          ],
+        );
+        expect(
+          fixture.controller.previewCatalogDoodad(
+            recipe: recipe,
+            owner: 0,
+            originTileX: 6,
+            originTileY: 1,
+          ),
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+        expect(
+          fixture.controller
+              .placeCatalogDoodad(
+                recipe: recipe,
+                owner: 0,
+                originTileX: 6,
+                originTileY: 1,
+              )
+              .issueCode,
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        expect(fixture.controller.state.undoDepth, 0);
+      },
+    );
+
+    test(
+      'preview rechecks locks and terrain after an earlier allowed hover',
+      () async {
+        final fixture = await _openFixture();
+        addTearDown(fixture.dispose);
+        final recipe = _recipe(overlay: true, requiredTileGroup: 0);
+        expect(
+          fixture.controller.previewCatalogDoodad(
+            recipe: recipe,
+            owner: 0,
+            originTileX: 1,
+            originTileY: 1,
+          ),
+          isNull,
+        );
+        fixture.mapLayerController.setLocked(MapLayerType.terrain, true);
+        expect(
+          fixture.controller
+              .placeCatalogDoodad(
+                recipe: recipe,
+                owner: 0,
+                originTileX: 1,
+                originTileY: 1,
+              )
+              .issueCode,
+          ObjectPlacementDiagnosticCodes.layerLocked,
+        );
+        fixture.mapLayerController.setLocked(MapLayerType.terrain, false);
+        expect(
+          fixture.controller
+              .placeCatalogDoodad(
+                recipe: recipe,
+                owner: 0,
+                originTileX: 1,
+                originTileY: 1,
+              )
+              .isPlaced,
+          isTrue,
+        );
+        expect(
+          fixture.controller.previewCatalogDoodad(
+            recipe: _recipe(overlay: false, requiredTileGroup: 5),
+            owner: 0,
+            originTileX: 1,
+            originTileY: 1,
+          ),
+          ObjectPlacementDiagnosticCodes.doodadTerrainMismatch,
+        );
+      },
+    );
+
     test('applies DD2, MTXM and THG2 as one undo entry', () async {
       final fixture = await _openFixture();
       addTearDown(fixture.dispose);

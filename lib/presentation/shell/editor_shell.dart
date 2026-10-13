@@ -3176,6 +3176,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                           objectEditingController.state.isCreatingLocation,
                       placementGhost: _placementGhostFor(
                         placementCatalogController.state.selection,
+                        objectEditingController,
+                        placementCatalogController.state.owner,
+                        l10n,
                       ),
                       onSelectionRequested:
                           editingState.tool == TerrainEditingTool.select
@@ -3291,7 +3294,12 @@ class _OpenedMapWorkspace extends StatelessWidget {
 /// The footprint the canvas draws under the cursor for the active catalog
 /// selection. A Doodad uses its recipe footprint; a Unit or Sprite is a single
 /// tile because its record is one point.
-MapCanvasPlacementGhost? _placementGhostFor(PlacementSelection? selection) {
+MapCanvasPlacementGhost? _placementGhostFor(
+  PlacementSelection? selection,
+  ObjectEditingController objectEditingController,
+  int owner,
+  AppLocalizations l10n,
+) {
   if (selection == null || !selection.usesCanvasClick) {
     return null;
   }
@@ -3302,6 +3310,13 @@ MapCanvasPlacementGhost? _placementGhostFor(PlacementSelection? selection) {
   return MapCanvasPlacementGhost(
     tileWidth: recipe.width,
     tileHeight: recipe.height,
+    issueCodeAt: (x, y) => objectEditingController.previewCatalogDoodad(
+      recipe: recipe,
+      owner: owner,
+      originTileX: x,
+      originTileY: y,
+    ),
+    issueText: (code) => placementFailureText(l10n, code),
   );
 }
 

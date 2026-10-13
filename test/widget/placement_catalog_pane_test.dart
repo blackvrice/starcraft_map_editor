@@ -19,8 +19,31 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import 'package:starcraft_map_editor/presentation/placement/placement_catalog_pane.dart';
+import 'package:starcraft_map_editor/application/editing/object_placement.dart';
+import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 
 void main() {
+  test(
+    'every placement refusal has a localized reason in both languages',
+    () async {
+      for (final locale in [const Locale('en'), const Locale('ko')]) {
+        final l10n = await AppLocalizations.delegate.load(locale);
+        for (final code in ObjectPlacementDiagnosticCodes.all) {
+          final message = placementFailureText(l10n, code);
+          expect(message, isNotEmpty);
+          expect(
+            message,
+            isNot(l10n.catalogCannotPlace),
+            reason: '$locale $code',
+          );
+        }
+        expect(
+          placementFailureText(l10n, 'UNKNOWN_CODE'),
+          l10n.catalogCannotPlace,
+        );
+      }
+    },
+  );
   testWidgets('lists catalog entries and keeps unplaceable ones visible', (
     tester,
   ) async {

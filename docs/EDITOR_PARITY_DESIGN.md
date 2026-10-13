@@ -22,6 +22,10 @@ EP0는 먼저 기본 작업의 회귀 기준선을 만들고 EP6는 누적 인�
 
 ## 2. 배치와 팔레트
 
+2026-10-13: 두다드의 공통 preview/Apply 검증과 사유/색상 표시를 부분 구현했다.
+[실행 기록](PLACEMENT_PREVIEW.md)의 확인 범위만 인정한다. 나머지 단락은 계속
+계획이며 PlacementPolicy·unit-sprite·썸네일·전체 배치 인수는 미완료다.
+
 현재 `PlacementCatalogController`, 객체 factory와 문서 공통 기록을 확장한다.
 spriteUnit은 THG2 unit-sprite 표현의 flags/ID/소유자/활성 계약을 먼저 검증한다.
 pure sprite와 UNIT를 이름만 바꾸어 생성하지 않는다. 미지원 항목은 선택 전에

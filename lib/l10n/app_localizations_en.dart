@@ -6168,4 +6168,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get placementOutsideMap =>
       'Choose a position where the entire object fits inside the map. The map was not changed.';
+
+  @override
+  String get placementSessionReadOnly =>
+      'This map cannot be edited. Open an editable map before placing.';
+
+  @override
+  String get placementDimensionsUnavailable =>
+      'The map dimensions are missing or ambiguous. Placement is unavailable.';
+
+  @override
+  String get placementSectionAmbiguous =>
+      'A required object section is duplicated or invalid. Placement is unavailable; existing data is preserved.';
+
+  @override
+  String get placementClassIdsExhausted =>
+      'No unused unit instance ID is available. Placement was refused.';
+
+  @override
+  String get placementTerrainUnavailable =>
+      'The map terrain is missing or ambiguous. Doodad placement is unavailable.';
+
+  @override
+  String get placementTilesetUnavailable =>
+      'The map tileset cannot be identified. Doodad placement is unavailable.';
+
+  @override
+  String get placementTilesetMismatch =>
+      'This doodad belongs to a different tileset. Choose one from this map\'s tileset.';
 }

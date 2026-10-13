@@ -2,6 +2,10 @@
 
 ## 후속 포맷 설계 경계 (2026-10-04, 미구현)
 
+2026-10-13 두다드 사전 검증은 포맷을 바꾸지 않는다. 실제 적용은 기존
+MTXM/DD2/optional THG2 원자 명령이며 preview는 바이트 불변이다. sparse recipe의
+쓰지 않는 셀까지 전체 footprint가 경계 안에 있어야 한다([실행 기록](PLACEMENT_PREVIEW.md)).
+
 [보완 설계](EDITOR_PARITY_DESIGN.md)의 다중 문서 clipboard/브러시/색상/
 일반 스크립트는 새 지원 프로필과 schema를 확정한 후 구현한다.
 

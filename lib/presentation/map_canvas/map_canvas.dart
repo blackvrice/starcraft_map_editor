@@ -232,6 +232,13 @@ class _MapCanvasState extends State<MapCanvas> {
           final coordinate = _pointerPosition == null
               ? null
               : layout.coordinateAt(_pointerPosition!);
+          final ghost = widget.placementGhost;
+          final placementIssue = ghost == null || coordinate == null
+              ? null
+              : ghost.issueCodeAt?.call(
+                  ghost.originX(coordinate.tileX),
+                  ghost.originY(coordinate.tileY),
+                );
           final rectanglePreview =
               _rectangleStart == null || _rectangleEnd == null
               ? null
@@ -313,6 +320,7 @@ class _MapCanvasState extends State<MapCanvas> {
                               selectedTile: widget.selectedTile,
                               rectanglePreview: rectanglePreview,
                               placementGhost: widget.placementGhost,
+                              placementIsBlocked: placementIssue != null,
                               placementGhostTile: coordinate == null
                                   ? null
                                   : TerrainTileCoordinate(
@@ -329,24 +337,32 @@ class _MapCanvasState extends State<MapCanvas> {
                       Positioned(
                         left: 12,
                         top: 12,
-                        child: _CanvasBadge(
-                          key: const Key('map-canvas-visible-region'),
-                          icon: Icons.crop_free_rounded,
-                          label:
-                              'Visible '
-                              '${layout.visibleTiles.left},'
-                              '${layout.visibleTiles.top}–'
-                              '${layout.visibleTiles.rightExclusive},'
-                              '${layout.visibleTiles.bottomExclusive}',
+                        right: viewportSize.width / 2 + 4,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: _CanvasBadge(
+                            key: const Key('map-canvas-visible-region'),
+                            icon: Icons.crop_free_rounded,
+                            label:
+                                'Visible '
+                                '${layout.visibleTiles.left},'
+                                '${layout.visibleTiles.top}–'
+                                '${layout.visibleTiles.rightExclusive},'
+                                '${layout.visibleTiles.bottomExclusive}',
+                          ),
                         ),
                       ),
                       Positioned(
                         right: 12,
                         top: 12,
-                        child: _CanvasBadge(
-                          key: const Key('map-canvas-grid-scale'),
-                          icon: Icons.grid_4x4_rounded,
-                          label: 'Grid ${layout.gridStep} tile',
+                        left: viewportSize.width / 2 + 4,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _CanvasBadge(
+                            key: const Key('map-canvas-grid-scale'),
+                            icon: Icons.grid_4x4_rounded,
+                            label: 'Grid ${layout.gridStep} tile',
+                          ),
                         ),
                       ),
                       if (viewportSize.width >= 480 &&
@@ -376,19 +392,77 @@ class _MapCanvasState extends State<MapCanvas> {
                             ),
                           ),
                         ),
+                      if (placementIssue != null)
+                        Positioned(
+                          left: 12,
+                          top: 48,
+                          right:
+                              viewportSize.width >= 480 &&
+                                  viewportSize.height >= 240
+                              ? 168
+                              : 12,
+                          child: IgnorePointer(
+                            child: Semantics(
+                              liveRegion: true,
+                              label: placementIssue,
+                              child: Container(
+                                key: const Key('map-canvas-placement-issue'),
+                                padding: const EdgeInsets.all(8),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.errorContainer,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.block, size: 16),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        ghost?.issueText?.call(
+                                              placementIssue,
+                                            ) ??
+                                            placementIssue,
+                                        maxLines: viewportSize.height < 320
+                                            ? 2
+                                            : 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onErrorContainer,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       Positioned(
                         left: 12,
                         bottom: 12,
-                        child: _CanvasBadge(
-                          key: const Key('map-canvas-render-mode'),
-                          icon: renderMode.icon,
-                          label: renderMode.label,
+                        right: viewportSize.width < 720
+                            ? 132
+                            : viewportSize.width * 0.72,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: _CanvasBadge(
+                            key: const Key('map-canvas-render-mode'),
+                            icon: renderMode.icon,
+                            label: renderMode.label,
+                          ),
                         ),
                       ),
                       Positioned(
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
+                        bottom: viewportSize.width < 720 ? 48 : 12,
+                        left: viewportSize.width < 720
+                            ? 12
+                            : viewportSize.width * 0.28 + 12,
+                        right: viewportSize.width < 720 ? 12 : 132,
                         child: Align(
                           child: _CanvasBadge(
                             key: const Key('map-canvas-coordinate'),
@@ -1259,12 +1333,20 @@ class MapCanvasVisibleTiles {
 /// The footprint the active catalog placement will cover, drawn under the
 /// cursor so the user sees where a click lands before committing.
 final class MapCanvasPlacementGhost {
-  const MapCanvasPlacementGhost({this.tileWidth = 1, this.tileHeight = 1})
-    : assert(tileWidth > 0),
-      assert(tileHeight > 0);
+  const MapCanvasPlacementGhost({
+    this.tileWidth = 1,
+    this.tileHeight = 1,
+    this.issueCodeAt,
+    this.issueText,
+  }) : assert(tileWidth > 0),
+       assert(tileHeight > 0);
 
   final int tileWidth;
   final int tileHeight;
+
+  /// Read-only application validation at the footprint origin, never in paint.
+  final String? Function(int originTileX, int originTileY)? issueCodeAt;
+  final String Function(String code)? issueText;
 
   /// The footprint origin for a ghost centred on [tileX], [tileY].
   int originX(int tileX) => tileX - tileWidth ~/ 2;
@@ -1390,6 +1472,7 @@ class MapCanvasPainter extends CustomPainter {
     this.rectanglePreview,
     this.placementGhost,
     this.placementGhostTile,
+    this.placementIsBlocked = false,
     this.layerScene,
     this.selectionRegionPreview,
     this.selectionMovePreview,
@@ -1437,6 +1520,7 @@ class MapCanvasPainter extends CustomPainter {
   final TerrainTileRegion? rectanglePreview;
   final MapCanvasPlacementGhost? placementGhost;
   final TerrainTileCoordinate? placementGhostTile;
+  final bool placementIsBlocked;
   final MapLayerScene? layerScene;
   final MapLayerPixelRegion? selectionRegionPreview;
   final MapCanvasMoveRequest? selectionMovePreview;
@@ -1887,16 +1971,19 @@ class MapCanvasPainter extends CustomPainter {
         originY >= 0 &&
         originX + ghost.tileWidth <= layout.mapWidth &&
         originY + ghost.tileHeight <= layout.mapHeight;
+    final canPlace = fitsMap && !placementIsBlocked;
     canvas
       ..drawRect(
         rect,
         Paint()
-          ..color = fitsMap ? const Color(0x3358E08A) : const Color(0x33F26D6D),
+          ..color = canPlace
+              ? const Color(0x3358E08A)
+              : const Color(0x33F26D6D),
       )
       ..drawRect(
         rect,
         Paint()
-          ..color = fitsMap ? const Color(0xFF7BE3A6) : const Color(0xFFF48A8A)
+          ..color = canPlace ? const Color(0xFF7BE3A6) : const Color(0xFFF48A8A)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
@@ -1928,6 +2015,7 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.placementGhost?.tileWidth != placementGhost?.tileWidth ||
         oldDelegate.placementGhost?.tileHeight != placementGhost?.tileHeight ||
         oldDelegate.placementGhostTile != placementGhostTile ||
+        oldDelegate.placementIsBlocked != placementIsBlocked ||
         oldDelegate.rectanglePreview?.left != rectanglePreview?.left ||
         oldDelegate.rectanglePreview?.top != rectanglePreview?.top ||
         oldDelegate.rectanglePreview?.right != rectanglePreview?.right ||
@@ -1969,12 +2057,16 @@ class _CanvasBadge extends StatelessWidget {
             children: [
               Icon(icon, size: 13, color: const Color(0xFF9EBEFF)),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFFD2D9E6),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFFD2D9E6),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
