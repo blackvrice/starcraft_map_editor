@@ -317,6 +317,14 @@ Canvas는 같은 `resolvePoint` 결과로 중심 커서를 그리며 클릭 원�
 컨트롤러에 전달한다. 격자 painter는 그리기만 하며 배치 좌표에 영향을 주지 않는다.
 건물 footprint 자료/정렬·게임 규칙은 포함하지 않는다([계약](PLACEMENT_GRID_SNAP.md)).
 
+이어서 `BuildingPlacementBox`와 optional `capability.placementBox` version1을 추가했다.
+기존 protocol3/helper0.13.0에 additive 필드로 제공하며 old/null은 크기 미확인이다.
+classic19876-byte units.dat의 StarEdit 크기만 읽고 전체 박스 경계와 홀짝 타일 중심을
+검사한다. 건물 정렬 설정은 기본 꺼짐이며 UNIT Building에만 적용하고 중심 스냅보다
+우선한다. 실제 CHK 준비/Apply는 `ObjectEditingController`가 현재 문서에서 검사한다.
+Canvas는 동일한 순수 정책과 크기로 표시하며 충돌/지형/전력/크립 판정을 하지 않는다.
+[자료 출처·실행 기록](BUILDING_TILE_ALIGNMENT.md)을 따른다.
+
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
 `ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의

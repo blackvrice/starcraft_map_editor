@@ -106,6 +106,8 @@ String placementFailureText(
   ObjectPlacementDiagnosticCodes.invalidId => l10n.placementInvalidId,
   ObjectPlacementDiagnosticCodes.invalidOwner => l10n.placementInvalidOwner,
   ObjectPlacementDiagnosticCodes.historyBlocked => l10n.placementHistoryBlocked,
+  ObjectPlacementDiagnosticCodes.buildingBoxUnavailable =>
+    l10n.placementBuildingBoxUnavailable,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
     l10n.placementCapabilityMismatch,
   ObjectPlacementFactoryCodes.unitRelationRequired ||

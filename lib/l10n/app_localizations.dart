@@ -10346,6 +10346,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter an integer from 1 to 128.'**
   String get placementSnapRange;
+
+  /// No description provided for @placementBuildingTileAlignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Align buildings to tiles'**
+  String get placementBuildingTileAlignment;
+
+  /// No description provided for @placementBuildingBoxUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment.'**
+  String get placementBuildingBoxUnavailable;
 }
 
 class _AppLocalizationsDelegate

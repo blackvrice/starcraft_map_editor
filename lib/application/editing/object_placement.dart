@@ -22,6 +22,8 @@ abstract final class ObjectPlacementDiagnosticCodes {
   static const invalidId = 'OBJECT_PLACEMENT_INVALID_ID';
   static const invalidOwner = 'OBJECT_PLACEMENT_INVALID_OWNER';
   static const historyBlocked = 'OBJECT_PLACEMENT_HISTORY_BLOCKED';
+  static const buildingBoxUnavailable =
+      'OBJECT_PLACEMENT_BUILDING_BOX_UNAVAILABLE';
 
   static const all = <String>{
     sessionNotEditable,
@@ -37,6 +39,7 @@ abstract final class ObjectPlacementDiagnosticCodes {
     invalidId,
     invalidOwner,
     historyBlocked,
+    buildingBoxUnavailable,
   };
 }
 

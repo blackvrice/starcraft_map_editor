@@ -115,6 +115,7 @@ final class PlacementCatalogState {
     this.pointSnap = PointPlacementSnap.disabled,
     this.gridVisible = true,
     this.gridSpacingPixels,
+    this.alignBuildingsToTiles = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
     Iterable<EditorDiagnostic> previewDiagnostics = const [],
@@ -137,6 +138,7 @@ final class PlacementCatalogState {
   final PointPlacementSnap pointSnap;
   final bool gridVisible;
   final int? gridSpacingPixels;
+  final bool alignBuildingsToTiles;
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
 
@@ -660,6 +662,7 @@ class PlacementCatalogController {
         pointSnap: _state.pointSnap,
         gridVisible: _state.gridVisible,
         gridSpacingPixels: _state.gridSpacingPixels,
+        alignBuildingsToTiles: _state.alignBuildingsToTiles,
       ),
     );
   }
@@ -807,6 +810,16 @@ class PlacementCatalogController {
     _emit(_copy(pointSnap: snap));
   }
 
+  void setBuildingTileAlignment(bool enabled) {
+    if (enabled == _state.alignBuildingsToTiles) return;
+    _emit(_copy(alignBuildingsToTiles: enabled));
+  }
+
+  bool get isBuildingTileAlignmentActive =>
+      _state.alignBuildingsToTiles &&
+      _state.selection?.kind == StarCraftPlacementKind.unit &&
+      _state.selection?.unitCapability?.isBuilding == true;
+
   void setGridVisible(bool visible) {
     if (visible == _state.gridVisible) return;
     _emit(_copy(gridVisible: visible));
@@ -822,12 +835,18 @@ class PlacementCatalogController {
 
   bool get isPointSnapActive =>
       _state.pointSnap.enabled &&
+      !isBuildingTileAlignmentActive &&
       (_state.selection?.kind == StarCraftPlacementKind.unit ||
           _state.selection?.kind == StarCraftPlacementKind.pureSprite ||
           _state.selection?.kind == StarCraftPlacementKind.spriteUnit);
 
-  ({int x, int y}) resolvePoint(int x, int y) =>
-      isPointSnapActive ? _state.pointSnap.resolve(x, y) : (x: x, y: y);
+  ({int x, int y}) resolvePoint(int x, int y) {
+    if (isBuildingTileAlignmentActive) {
+      return _state.selection!.unitCapability!.placementBox?.align(x, y) ??
+          (x: x, y: y);
+    }
+    return isPointSnapActive ? _state.pointSnap.resolve(x, y) : (x: x, y: y);
+  }
 
   /// Validates both the input and aligned output; never clamps at map edges.
   String? previewAt({
@@ -885,6 +904,7 @@ class PlacementCatalogController {
                 owner: _state.owner,
                 pixelX: pixelX,
                 pixelY: pixelY,
+                alignBuildingToTiles: _state.alignBuildingsToTiles,
               )
             : objectEditingController.previewCatalogSpriteUnit(
                 capability: capability,
@@ -1003,6 +1023,7 @@ class PlacementCatalogController {
       owner: _state.owner,
       pixelX: pixelX,
       pixelY: pixelY,
+      alignBuildingToTiles: _state.alignBuildingsToTiles,
     );
   }
 
@@ -1277,6 +1298,7 @@ class PlacementCatalogController {
     PointPlacementSnap? pointSnap,
     bool? gridVisible,
     int? gridSpacingPixels,
+    bool? alignBuildingsToTiles,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
     List<EditorDiagnostic>? previewDiagnostics,
@@ -1296,6 +1318,8 @@ class PlacementCatalogController {
     owner: owner ?? _state.owner,
     isContinuous: isContinuous ?? _state.isContinuous,
     pointSnap: pointSnap ?? _state.pointSnap,
+    alignBuildingsToTiles:
+        alignBuildingsToTiles ?? _state.alignBuildingsToTiles,
     gridVisible: gridVisible ?? _state.gridVisible,
     gridSpacingPixels: clearGridSpacing
         ? null

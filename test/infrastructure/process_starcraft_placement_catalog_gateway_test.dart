@@ -116,6 +116,98 @@ void main() {
       expect(page.totalMetadataBytes, 1048576);
     }, skip: !Platform.isWindows);
 
+    final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
+    final realInstallation =
+        Platform.environment['STARCRAFT_TEST_INSTALLATION'];
+    test(
+      'local units.dat metadata carries validated building boxes independently of previews',
+      () async {
+        final page =
+            await ProcessStarCraftPlacementCatalogGateway(
+              helperExecutablePath: realHelper!,
+            ).list(
+              StarCraftPlacementCatalogRequest(
+                operationId: 'real-building-boxes',
+                installationPath: realInstallation!,
+                kind: StarCraftPlacementKind.unit,
+                tileset: StarCraftTilesetAssetSet.badlands,
+                offset: 0,
+                limit: 228,
+                unitMetadataOnly: true,
+              ),
+            );
+        expect(page.isSuccess, isTrue, reason: '${page.diagnostics}');
+        expect(page.entries, hasLength(228));
+        final commandCenter = page.entries[106].unitCapability!;
+        expect(commandCenter.isBuilding, isTrue);
+        expect(commandCenter.placementBox!.width, 128);
+        expect(commandCenter.placementBox!.height, 96);
+        var checked = 0;
+        for (final entry in page.entries) {
+          final capability = entry.unitCapability!;
+          final box = capability.placementBox;
+          if (box != null) {
+            expect(capability.isBuilding, isTrue);
+            expect(box.width % 32, 0);
+            expect(box.height % 32, 0);
+            checked++;
+          }
+        }
+        expect(checked, greaterThan(1));
+      },
+      skip:
+          !Platform.isWindows || realHelper == null || realInstallation == null,
+    );
+
+    for (final scenario in [
+      'StarCraft',
+      'building-box-old',
+      'building-box-null',
+      'building-box-version',
+      'building-box-width',
+      'building-box-height',
+      'building-box-type',
+      'building-box-nonbuilding',
+    ]) {
+      test(
+        'validates optional versioned building placement box $scenario',
+        () async {
+          final page = await createGateway().list(
+            requestFor(
+              scenario,
+              kind: StarCraftPlacementKind.unit,
+              offset: 106,
+              limit: 1,
+            ),
+          );
+          final available = scenario == 'StarCraft';
+          final legacy =
+              scenario == 'building-box-old' || scenario == 'building-box-null';
+          expect(
+            page.isSuccess,
+            available || legacy,
+            reason: page.diagnostics.toString(),
+          );
+          if (page.isSuccess) {
+            expect(page.entries.single.isPlaceable, isTrue);
+            final box = page.entries.single.unitCapability!.placementBox;
+            if (available) {
+              expect(box!.width, 128);
+              expect(box.height, 96);
+            } else {
+              expect(box, isNull);
+            }
+          } else {
+            expect(
+              page.diagnostics.single.code,
+              StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+            );
+          }
+        },
+        skip: !Platform.isWindows,
+      );
+    }
+
     test('clamps the final page and accepts an exhausted page', () async {
       final gateway = createGateway();
       final finalPage = await gateway.list(

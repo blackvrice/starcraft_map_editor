@@ -7,6 +7,7 @@ import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
+import '../../domain/placement/building_placement_box.dart';
 import 'starcraft_data_helper_protocol.dart';
 import '../../domain/placement/unit_weapon_references.dart';
 
@@ -629,6 +630,24 @@ final class ProcessStarCraftPlacementCatalogGateway
     }
 
     final isResourceContainer = flag('isResourceContainer');
+    final isBuilding = flag('isBuilding');
+    BuildingPlacementBox? placementBox;
+    if (raw['placementBox'] != null) {
+      final box = _jsonObject(raw, 'placementBox');
+      final width = _jsonInteger(box, 'width');
+      final height = _jsonInteger(box, 'height');
+      if (!isBuilding ||
+          _jsonInteger(box, 'version') != BuildingPlacementBox.version ||
+          width < 32 ||
+          height < 32 ||
+          width > BuildingPlacementBox.maximumAxis ||
+          height > BuildingPlacementBox.maximumAxis ||
+          width % 32 != 0 ||
+          height % 32 != 0) {
+        throw const FormatException('Building placement box is invalid.');
+      }
+      placementBox = BuildingPlacementBox(width: width, height: height);
+    }
     final isGasResourceContainer = flag('isGasResourceContainer');
     if (isGasResourceContainer && !isResourceContainer) {
       throw const FormatException(
@@ -637,6 +656,7 @@ final class ProcessStarCraftPlacementCatalogGateway
     }
     return UnitPlacementCapability(
       unitId: unitId,
+      placementBox: placementBox,
       isSubunit: raw.containsKey('isSubunit') ? flag('isSubunit') : false,
       weaponReferences: raw['weaponReferences'] == null
           ? null
@@ -655,7 +675,7 @@ final class ProcessStarCraftPlacementCatalogGateway
       isBurrowable: flag('isBurrowable'),
       isCloakable: flag('isCloakable'),
       isInvincible: flag('isInvincible'),
-      isBuilding: flag('isBuilding'),
+      isBuilding: isBuilding,
       requiresRelationLink: flag('requiresRelationLink'),
     );
   }

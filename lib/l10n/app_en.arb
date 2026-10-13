@@ -3676,5 +3676,7 @@
   "placementGridHidden": "Grid off",
   "placementPointSnap": "Point snap",
   "placementCustomSnap": "Custom spacing",
-  "placementSnapRange": "Enter an integer from 1 to 128."
+  "placementSnapRange": "Enter an integer from 1 to 128.",
+  "placementBuildingTileAlignment": "Align buildings to tiles",
+  "placementBuildingBoxUnavailable": "Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment."
 }

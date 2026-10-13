@@ -29,6 +29,8 @@ import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
+import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
+import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void _registerSettingsRoundtrip(bool realArchive) {
@@ -894,6 +896,69 @@ void _registerSettingsRoundtrip(bool realArchive) {
 }
 
 void main() {
+  final buildingArchiveHelper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
+  test(
+    'aligned building UNIT survives native MPQ writing and reopening',
+    () async {
+      final folder = await Directory.systemTemp.createTemp(
+        'building_alignment_',
+      );
+      addTearDown(() => folder.delete(recursive: true));
+      final source = File(
+        'test/fixtures/maps/generated/minimal-self-authored.scx',
+      ).absolute;
+      final before = await source.readAsBytes();
+      final capability = _placementCapability(106, building: true);
+      final point = capability.placementBox!.align(63, 47);
+      final record = const UnitPlacementFactory().create(
+        capability: capability,
+        unitId: 106,
+        owner: 1,
+        x: point.x,
+        y: point.y,
+        classId: 0,
+      );
+      final bytes = Uint8List.fromList([
+        ..._placementSourceChkBytes(),
+        ..._section('UNIT', record.bytes),
+      ]);
+      final gateway = ProcessMapArchiveGateway(
+        helperExecutablePath: buildingArchiveHelper!,
+      );
+      final output = '${folder.path}/aligned-building.scx';
+      final written = await gateway.writeTemporary(
+        MapArchiveWriteRequest(
+          operationId: 'aligned-building-write',
+          sourcePath: source.path,
+          temporaryOutputPath: output,
+          scenarioChkBytes: bytes,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+      expect(written.isSuccess, isTrue, reason: '${written.diagnostics}');
+      final reopened = await gateway.open(
+        MapArchiveOpenRequest(
+          operationId: 'aligned-building-reopen',
+          sourcePath: output,
+          timeout: const Duration(seconds: 30),
+        ),
+      );
+      expect(reopened.isSuccess, isTrue, reason: '${reopened.diagnostics}');
+      expect(reopened.extractedMap!.scenarioChkBytes, bytes);
+      final document = const RawChkParser()
+          .parse(reopened.extractedMap!.scenarioChkBytes)
+          .document!;
+      final unit = const ChkObjectViewDecoder()
+          .decode(document)
+          .unitSections
+          .single
+          .units
+          .single;
+      expect((unit.unitType, unit.x, unit.y), (106, 64, 48));
+      expect(await source.readAsBytes(), before);
+    },
+    skip: !Platform.isWindows || buildingArchiveHelper == null,
+  );
   _registerSettingsRoundtrip(false);
   _registerSettingsRoundtrip(true);
   test(
@@ -987,6 +1052,19 @@ void main() {
       );
       expect(
         editingController
+            .placeCatalogUnit(
+              capability: _placementCapability(106, building: true),
+              unitId: 106,
+              owner: 1,
+              pixelX: 63,
+              pixelY: 47,
+              alignBuildingToTiles: true,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      expect(
+        editingController
             .placeCatalogDoodad(
               recipe: _placementRecipe(),
               owner: 1,
@@ -1020,13 +1098,18 @@ void main() {
 
       final reopened = const ChkObjectViewDecoder().decode(writtenDocument);
       expect(reopened.diagnostics, isEmpty);
-      final unit = reopened.unitSections.single.units.single;
+      final unit = reopened.unitSections.single.units.first;
       expect(unit.unitType, 37);
       expect(unit.owner, 4);
       expect(unit.x, 100);
       expect(unit.y, 120);
       expect(unit.classId, 0);
       expect(unit.validFieldFlags, ChkUnitPlacement.validFieldOwnerFlag);
+      final building = reopened.unitSections.single.units.last;
+      expect(reopened.unitSections.single.units, hasLength(2));
+      expect((building.x, building.y), (64, 48));
+      expect(building.unitType, 106);
+      expect(building.classId, 1);
 
       final sprites = reopened.spriteSections.single.sprites;
       expect(sprites, hasLength(2));
@@ -1059,21 +1142,24 @@ void main() {
   );
 }
 
-UnitPlacementCapability _placementCapability(int unitId) =>
-    UnitPlacementCapability(
-      unitId: unitId,
-      isSpellcaster: false,
-      hasShields: false,
-      isResourceContainer: false,
-      isGasResourceContainer: false,
-      hasHangar: false,
-      isFlyingBuilding: false,
-      isBurrowable: false,
-      isCloakable: false,
-      isInvincible: false,
-      isBuilding: false,
-      requiresRelationLink: false,
-    );
+UnitPlacementCapability _placementCapability(
+  int unitId, {
+  bool building = false,
+}) => UnitPlacementCapability(
+  unitId: unitId,
+  placementBox: building ? BuildingPlacementBox(width: 128, height: 96) : null,
+  isSpellcaster: false,
+  hasShields: false,
+  isResourceContainer: false,
+  isGasResourceContainer: false,
+  hasHangar: false,
+  isFlyingBuilding: false,
+  isBurrowable: false,
+  isCloakable: false,
+  isInvincible: false,
+  isBuilding: building,
+  requiresRelationLink: false,
+);
 
 DoodadPlacementRecipe _placementRecipe() => DoodadPlacementRecipe(
   tileset: StarCraftTilesetAssetSet.jungle,

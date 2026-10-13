@@ -6238,4 +6238,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placementSnapRange => 'Enter an integer from 1 to 128.';
+
+  @override
+  String get placementBuildingTileAlignment => 'Align buildings to tiles';
+
+  @override
+  String get placementBuildingBoxUnavailable =>
+      'Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment.';
 }

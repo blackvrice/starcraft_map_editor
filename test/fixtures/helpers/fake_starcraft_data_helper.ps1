@@ -201,7 +201,33 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                 isCloakable = $false
                 isInvincible = $false
                 isBuilding = $false
+                placementBox = $null
                 requiresRelationLink = ($id -eq 2)
+            }
+            if ($id -eq 106) {
+                $entry.capability.isBuilding = $true
+                $entry.capability.placementBox = [ordered]@{ version = 1; width = 128; height = 96 }
+                if ($request.installationPath -like '*building-box-old*') {
+                    $entry.capability.Remove('placementBox')
+                }
+                if ($request.installationPath -like '*building-box-null*') {
+                    $entry.capability.placementBox = $null
+                }
+                if ($request.installationPath -like '*building-box-version*') {
+                    $entry.capability.placementBox.version = 2
+                }
+                if ($request.installationPath -like '*building-box-width*') {
+                    $entry.capability.placementBox.width = 33
+                }
+                if ($request.installationPath -like '*building-box-height*') {
+                    $entry.capability.placementBox.height = 8193
+                }
+                if ($request.installationPath -like '*building-box-type*') {
+                    $entry.capability.placementBox.width = '128'
+                }
+                if ($request.installationPath -like '*building-box-nonbuilding*') {
+                    $entry.capability.isBuilding = $false
+                }
             }
             if ($id -eq 1 -and -not $request.unitMetadataOnly) {
                 $entry.capabilityIssueCode = "SC_CASC_UNIT_CAPABILITY_UNAVAILABLE"

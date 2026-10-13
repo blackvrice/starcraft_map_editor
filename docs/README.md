@@ -30,6 +30,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [두다드 합성 썸네일](DOODAD_CATALOG_THUMBNAILS.md) | footprint 타일+overlay·누락/자료 일치·상한·조회 회귀 | 두다드 그림 선택을 보완할 때 |
 | [카탈로그 공통 사전 검증](CATALOG_PLACEMENT_PREFLIGHT.md) | Unit/Sprite 정확한 좌표·preview/Apply 공통 검사·진단·회귀와 실제 앱 기록 | 객체 배치 정책을 확장할 때 |
 | [격자와 중심 좌표 스냅](PLACEMENT_GRID_SNAP.md) | 표시/좌표 정렬 분리·사용자 간격·경계 거절·읽기 전용 커서와 회귀 | 카탈로그 정렬과 건물 배치 정책을 확장할 때 |
+| [건물 크기와 타일 정렬](BUILDING_TILE_ALIGNMENT.md) | 로컬 StarEdit 박스·홀짝 중심 정렬·전체 경계·자료 누락·native/앱 회귀 | 건물 배치와 정상/자유 정책을 확장할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

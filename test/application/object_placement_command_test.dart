@@ -20,9 +20,290 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
+import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  for (final vertical in [false, true]) {
+    test(
+      'building alignment refuses u16 output overflow vertical=$vertical',
+      () async {
+        final document = const RawChkParser()
+            .parse(
+              _chkBytes(
+                includeUnits: true,
+                includeSprites: true,
+                includeDoodads: true,
+                duplicateUnits: false,
+              ),
+            )
+            .document!;
+        final bytes = Uint8List.fromList([
+          ...const RawChkEncoder().encode(
+            RawChkDocument(
+              sourceLength: document.sourceLength,
+              sections: document.sections
+                  .where((s) => s.name != 'DIM ' && s.name != 'MTXM')
+                  .toList(),
+            ),
+          ),
+          ..._section('DIM ', vertical ? [8, 0, 1, 8] : [1, 8, 8, 0]),
+          ..._section('MTXM', List.filled(2049 * 8 * 2, 0)),
+        ]);
+        final f = await _openFixture(mapBytes: bytes);
+        addTearDown(f.dispose);
+        final before = f.openMapController.state.session!;
+        final cap = _capability(
+          106,
+          isBuilding: true,
+          placementBox: BuildingPlacementBox(width: 64, height: 64),
+        );
+        final x = vertical ? 64 : 65535;
+        final y = vertical ? 65535 : 64;
+        expect(
+          f.controller.previewCatalogUnit(
+            capability: cap,
+            unitId: 106,
+            owner: 0,
+            pixelX: x,
+            pixelY: y,
+            alignBuildingToTiles: true,
+          ),
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+        expect(
+          f.controller
+              .placeCatalogUnit(
+                capability: cap,
+                unitId: 106,
+                owner: 0,
+                pixelX: x,
+                pixelY: y,
+                alignBuildingToTiles: true,
+              )
+              .issueCode,
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.controller.state.undoDepth, 0);
+      },
+    );
+  }
+  for (final point in [
+    (0, 96),
+    (32, 96),
+    (96, 0),
+    (96, 15),
+    (255, 96),
+    (96, 255),
+    (-1, 96),
+    (256, 96),
+  ]) {
+    test('aligned building refuses entire box outside map at $point', () async {
+      final f = await _openFixture();
+      addTearDown(f.dispose);
+      final cap = _capability(
+        106,
+        isBuilding: true,
+        placementBox: BuildingPlacementBox(width: 128, height: 96),
+      );
+      final before = f.openMapController.state.session!;
+      final issue = f.controller.previewCatalogUnit(
+        capability: cap,
+        unitId: 106,
+        owner: 0,
+        pixelX: point.$1,
+        pixelY: point.$2,
+        alignBuildingToTiles: true,
+      );
+      expect(issue, ObjectPlacementDiagnosticCodes.outOfBounds);
+      expect(
+        f.controller
+            .placeCatalogUnit(
+              capability: cap,
+              unitId: 106,
+              owner: 0,
+              pixelX: point.$1,
+              pixelY: point.$2,
+              alignBuildingToTiles: true,
+            )
+            .issueCode,
+        issue,
+      );
+      expect(f.openMapController.state.session, same(before));
+      expect(f.controller.state.undoDepth, 0);
+    });
+  }
+  for (final point in [(63, 47), (64, 48), (176, 192)]) {
+    test(
+      'building $point preview is read-only, align Apply Undo Redo is exact',
+      () async {
+        final f = await _openFixture();
+        addTearDown(f.dispose);
+        final box = BuildingPlacementBox(width: 128, height: 96);
+        final cap = _capability(106, isBuilding: true, placementBox: box);
+        final before = f.openMapController.state.session!;
+        expect(
+          f.controller.previewCatalogUnit(
+            capability: cap,
+            unitId: 106,
+            owner: 1,
+            pixelX: point.$1,
+            pixelY: point.$2,
+            alignBuildingToTiles: true,
+          ),
+          isNull,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(
+          f.controller
+              .placeCatalogUnit(
+                capability: cap,
+                unitId: 106,
+                owner: 1,
+                pixelX: point.$1,
+                pixelY: point.$2,
+                alignBuildingToTiles: true,
+              )
+              .isPlaced,
+          isTrue,
+        );
+        final after = f.openMapController.state.session!;
+        final actual = after.objectViews.unitSections.single.units.last;
+        expect((x: actual.x, y: actual.y), box.align(point.$1, point.$2));
+        expect(actual.unitType, 106);
+        expect(actual.owner, 1);
+        expect(f.controller.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          const RawChkEncoder().encode(before.rawDocument),
+        );
+        expect(f.controller.redo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          const RawChkEncoder().encode(after.rawDocument),
+        );
+      },
+    );
+  }
+  test(
+    'missing building size refuses alignment, exact legacy placement remains available',
+    () async {
+      final f = await _openFixture();
+      addTearDown(f.dispose);
+      final cap = _capability(106, isBuilding: true);
+      final before = f.openMapController.state.session!;
+      expect(
+        f.controller.previewCatalogUnit(
+          capability: cap,
+          unitId: 106,
+          owner: 0,
+          pixelX: 63,
+          pixelY: 47,
+          alignBuildingToTiles: true,
+        ),
+        ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+      );
+      expect(
+        f.controller
+            .placeCatalogUnit(
+              capability: cap,
+              unitId: 106,
+              owner: 0,
+              pixelX: 63,
+              pixelY: 47,
+              alignBuildingToTiles: true,
+            )
+            .issueCode,
+        ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+      );
+      expect(f.openMapController.state.session, same(before));
+      expect(
+        f.controller
+            .placeCatalogUnit(
+              capability: cap,
+              unitId: 106,
+              owner: 0,
+              pixelX: 63,
+              pixelY: 47,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      final placed = f
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units
+          .last;
+      expect((placed.x, placed.y), (63, 47));
+    },
+  );
+  for (final scenario in [
+    'lock',
+    'history',
+    'relation',
+    'subunit',
+    'mismatch',
+  ]) {
+    test('building alignment retains $scenario safety refusal', () async {
+      final f = await _openFixture();
+      addTearDown(f.dispose);
+      if (scenario == 'lock') {
+        f.mapLayerController.setLocked(MapLayerType.units, true);
+      }
+      if (scenario == 'history') {
+        f.openMapController.editHistory.beginTransaction(Object());
+      }
+      final cap = _capability(
+        scenario == 'mismatch' ? 107 : 106,
+        isBuilding: true,
+        placementBox: BuildingPlacementBox(width: 128, height: 96),
+        requiresRelationLink: scenario == 'relation',
+        isSubunit: scenario == 'subunit',
+      );
+      final expected = switch (scenario) {
+        'lock' => ObjectPlacementDiagnosticCodes.layerLocked,
+        'history' => ObjectPlacementDiagnosticCodes.historyBlocked,
+        'relation' => ObjectPlacementFactoryCodes.unitRelationRequired,
+        'subunit' => ObjectPlacementFactoryCodes.unitSubunit,
+        _ => ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+      };
+      final before = f.openMapController.state.session!;
+      expect(
+        f.controller.previewCatalogUnit(
+          capability: cap,
+          unitId: 106,
+          owner: 0,
+          pixelX: 80,
+          pixelY: 80,
+          alignBuildingToTiles: true,
+        ),
+        expected,
+      );
+      expect(
+        f.controller
+            .placeCatalogUnit(
+              capability: cap,
+              unitId: 106,
+              owner: 0,
+              pixelX: 80,
+              pixelY: 80,
+              alignBuildingToTiles: true,
+            )
+            .issueCode,
+        expected,
+      );
+      expect(f.openMapController.state.session, same(before));
+    });
+  }
   for (final kind in ['unit', 'sprite', 'spriteUnit']) {
     for (final scenario in [
       'locked',
@@ -1479,8 +1760,11 @@ UnitPlacementCapability _capability(
   int unitId, {
   bool requiresRelationLink = false,
   bool isSubunit = false,
+  bool isBuilding = false,
+  BuildingPlacementBox? placementBox,
 }) => UnitPlacementCapability(
   unitId: unitId,
+  placementBox: placementBox,
   isSubunit: isSubunit,
   isSpellcaster: false,
   hasShields: false,
@@ -1491,7 +1775,7 @@ UnitPlacementCapability _capability(
   isBurrowable: false,
   isCloakable: false,
   isInvincible: false,
-  isBuilding: false,
+  isBuilding: isBuilding,
   requiresRelationLink: requiresRelationLink,
 );
 

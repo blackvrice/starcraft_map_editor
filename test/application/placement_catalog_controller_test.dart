@@ -30,6 +30,7 @@ import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
+import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -37,6 +38,91 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  for (final kind in [
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.pureSprite,
+  ]) {
+    test(
+      '$kind tile alignment takes priority only for UNIT buildings',
+      () async {
+        final f = await _openFixture(
+          unitCapabilityAvailable: true,
+          unitIsBuilding: true,
+          placementBox: BuildingPlacementBox(width: 128, height: 96),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(kind);
+        c.confirm(c.state.items.single.key);
+        final before = f.openMapController.state.session!;
+        c.setPointSnap(enabled: true, step: 17);
+        c.setBuildingTileAlignment(true);
+        final expected = kind == StarCraftPlacementKind.unit
+            ? (x: 64, y: 48)
+            : (x: 68, y: 51);
+        expect(c.resolvePoint(63, 47), expected);
+        expect(c.previewAt(pixelX: 63, pixelY: 47, tileX: 1, tileY: 1), isNull);
+        expect(f.openMapController.state.session, same(before));
+        expect(
+          c.placeAt(pixelX: 63, pixelY: 47, tileX: 1, tileY: 1).isPlaced,
+          isTrue,
+        );
+        final session = f.openMapController.state.session!;
+        final point = kind == StarCraftPlacementKind.unit
+            ? (
+                x: session.objectViews.unitSections.single.units.last.x,
+                y: session.objectViews.unitSections.single.units.last.y,
+              )
+            : (
+                x: session.objectViews.spriteSections.single.sprites.last.x,
+                y: session.objectViews.spriteSections.single.sprites.last.y,
+              );
+        expect(point, expected);
+        expect(f.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          const RawChkEncoder().encode(before.rawDocument),
+        );
+        await c.load(StarCraftPlacementKind.doodad);
+        expect(c.state.alignBuildingsToTiles, isTrue);
+        c.setInstallationPath(r'C:\OtherStarCraft');
+        expect(c.state.alignBuildingsToTiles, isTrue);
+      },
+    );
+  }
+  test(
+    'building catalog missing size explains refusal and permits explicit alignment off',
+    () async {
+      final f = await _openFixture(
+        unitCapabilityAvailable: true,
+        unitIsBuilding: true,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      final before = f.openMapController.state.session!;
+      c.setBuildingTileAlignment(true);
+      expect(
+        c.previewAt(pixelX: 63, pixelY: 47, tileX: 1, tileY: 1),
+        ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+      );
+      expect(
+        c.placeAt(pixelX: 63, pixelY: 47, tileX: 1, tileY: 1).issueCode,
+        ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+      );
+      expect(f.openMapController.state.session, same(before));
+      expect(c.state.isPlacementActive, isTrue);
+      c.setBuildingTileAlignment(false);
+      expect(
+        c.placeAt(pixelX: 63, pixelY: 47, tileX: 1, tileY: 1).isPlaced,
+        isTrue,
+      );
+    },
+  );
   for (final kind in [
     StarCraftPlacementKind.unit,
     StarCraftPlacementKind.pureSprite,
@@ -179,6 +265,11 @@ void main() {
             ),
           ),
         );
+        await tester.tap(
+          find.byKey(const Key('placement-building-tile-alignment')),
+        );
+        await tester.pumpAndSettle();
+        expect(fixture.controller.state.alignBuildingsToTiles, isTrue);
         await tester.tap(find.byKey(const Key('placement-grid-visible')));
         await tester.pumpAndSettle();
         expect(fixture.controller.state.gridVisible, isFalse);
@@ -1619,6 +1710,8 @@ final class _Fixture {
 Future<_Fixture> _openFixture({
   int doodadTotal = 2,
   bool unitCapabilityAvailable = false,
+  bool unitIsBuilding = false,
+  BuildingPlacementBox? placementBox,
   StarCraftPlacementCatalogGateway? catalogGateway,
   StarCraftObjectAtlasGateway? objectAtlasGateway,
   StarCraftTileAtlasGateway? tileAtlasGateway,
@@ -1669,6 +1762,8 @@ Future<_Fixture> _openFixture({
   final gateway = _FakeCatalogGateway(
     doodadTotal: doodadTotal,
     unitCapabilityAvailable: unitCapabilityAvailable,
+    unitIsBuilding: unitIsBuilding,
+    placementBox: placementBox,
   );
   final controller = PlacementCatalogController(
     openMapController: openMapController,
@@ -1749,10 +1844,14 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
   _FakeCatalogGateway({
     required this.doodadTotal,
     required this.unitCapabilityAvailable,
+    this.unitIsBuilding = false,
+    this.placementBox,
   });
 
   final int doodadTotal;
   final bool unitCapabilityAvailable;
+  final bool unitIsBuilding;
+  final BuildingPlacementBox? placementBox;
 
   @override
   Future<StarCraftPlacementCatalogPage> list(
@@ -1839,6 +1938,7 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
             verifiedName: 'Terran Marine',
             unitCapability: UnitPlacementCapability(
               unitId: index,
+              placementBox: placementBox,
               weaponReferences: UnitWeaponReferences(
                 ground: index == 0 ? 7 : 130,
                 air: 130,
@@ -1854,7 +1954,7 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
               isBurrowable: false,
               isCloakable: false,
               isInvincible: false,
-              isBuilding: false,
+              isBuilding: unitIsBuilding,
               requiresRelationLink: false,
             ),
           );

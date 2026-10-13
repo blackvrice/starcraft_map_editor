@@ -472,10 +472,40 @@ int main() {
   PutUint32(&units_dat, kFlagsOffset + 37 * 4, 0x20100200U);
 
   UnitCapability building;
+  PutUint16(&units_dat, 11284 + 7 * 4, 128);
+  PutUint16(&units_dat, 11286 + 7 * 4, 96);
   if (!ReadUnitCapability(units_dat, 7, &building) || !building.is_building ||
       !building.has_shields || building.is_spellcaster ||
       building.is_resource_container || building.requires_relation_link) {
     return Fail("A building capability was decoded incorrectly.");
+  }
+  if (!building.placement_box_valid || building.placement_box_width != 128 ||
+      building.placement_box_height != 96) {
+    return Fail("The StarEdit placement dimensions were decoded incorrectly.");
+  }
+  for (const auto axis : {0, 31, 33, 8193, 65535}) {
+    PutUint16(&units_dat, 11284 + 7 * 4, static_cast<std::uint16_t>(axis));
+    if (!ReadUnitCapability(units_dat, 7, &building) ||
+        building.placement_box_valid || !building.is_building) {
+      return Fail("Invalid placement dimensions changed unrelated capability.");
+    }
+  }
+  PutUint16(&units_dat, 11284 + 7 * 4, 32);
+  PutUint16(&units_dat, 11286 + 7 * 4, 8192);
+  if (!ReadUnitCapability(units_dat, 7, &building) || !building.placement_box_valid) {
+    return Fail("Valid placement dimensions at supported limits were refused.");
+  }
+  PutUint16(&units_dat, 11286 + 7 * 4, 0);
+  if (!ReadUnitCapability(units_dat, 7, &building) || building.placement_box_valid) {
+    return Fail("An empty placement height was accepted.");
+  }
+  PutUint16(&units_dat, 11284 + 227 * 4, 96);
+  PutUint16(&units_dat, 11286 + 227 * 4, 64);
+  PutUint32(&units_dat, kFlagsOffset + 227 * 4, 0x00000001U);
+  UnitCapability last_building;
+  if (!ReadUnitCapability(units_dat, 227, &last_building) ||
+      !last_building.placement_box_valid || last_building.placement_box_height != 64) {
+    return Fail("The final placement dimension entry was decoded incorrectly.");
   }
 
   UnitCapability geyser;

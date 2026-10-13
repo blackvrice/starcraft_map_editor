@@ -998,6 +998,7 @@ class ObjectEditingController {
     required int owner,
     required int pixelX,
     required int pixelY,
+    bool alignBuildingToTiles = false,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1005,6 +1006,7 @@ class ObjectEditingController {
       owner: owner,
       pixelX: pixelX,
       pixelY: pixelY,
+      alignBuildingToTiles: alignBuildingToTiles,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1017,12 +1019,14 @@ class ObjectEditingController {
     required int owner,
     required int pixelX,
     required int pixelY,
+    bool alignBuildingToTiles = false,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
     owner: owner,
     pixelX: pixelX,
     pixelY: pixelY,
+    alignBuildingToTiles: alignBuildingToTiles,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1032,6 +1036,7 @@ class ObjectEditingController {
     required int pixelX,
     required int pixelY,
     bool spriteUnit = false,
+    bool alignBuildingToTiles = false,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1058,14 +1063,41 @@ class ObjectEditingController {
           ObjectPlacementDiagnosticCodes.classIdExhausted,
         );
       }
-      return unitPlacementFactory.create(
+      ObjectPlacementRecord create(int x, int y) => unitPlacementFactory.create(
         capability: capability,
         unitId: unitId,
         owner: owner,
-        x: pixelX,
-        y: pixelY,
+        x: x,
+        y: y,
         classId: classId,
       );
+      final record = create(pixelX, pixelY);
+      if (!record.isSynthesized ||
+          !alignBuildingToTiles ||
+          !capability.isBuilding) {
+        return record;
+      }
+      final box = capability.placementBox;
+      if (box == null) {
+        return ObjectPlacementRecord.rejected(
+          ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+        );
+      }
+      final point = box.align(pixelX, pixelY);
+      final dimensions = _singleDimensions(session)!;
+      if (point.x > 0xffff ||
+          point.y > 0xffff ||
+          !box.fits(
+            x: point.x,
+            y: point.y,
+            mapWidth: dimensions.width,
+            mapHeight: dimensions.height,
+          )) {
+        return ObjectPlacementRecord.rejected(
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+      }
+      return create(point.x, point.y);
     },
   );
 

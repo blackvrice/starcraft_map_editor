@@ -1356,6 +1356,8 @@ final class MapCanvasPlacementGhost {
     this.issueCodeAt,
     this.issueCodeAtPixel,
     this.pointAt,
+    this.pointWidthPixels = 32,
+    this.pointHeightPixels = 32,
     this.issueText,
   }) : assert(tileWidth > 0),
        assert(tileHeight > 0);
@@ -1369,6 +1371,8 @@ final class MapCanvasPlacementGhost {
   /// Exact point validation for catalog objects; preferred over tile callbacks.
   final String? Function(int pixelX, int pixelY)? issueCodeAtPixel;
   final ({int x, int y}) Function(int pixelX, int pixelY)? pointAt;
+  final int pointWidthPixels;
+  final int pointHeightPixels;
   final String Function(String code)? issueText;
 
   /// The footprint origin for a ghost centred on [tileX], [tileY].
@@ -2006,8 +2010,8 @@ class MapCanvasPainter extends CustomPainter {
               layout.mapRect.left + point.x * layout.tileExtent / 32,
               layout.mapRect.top + point.y * layout.tileExtent / 32,
             ),
-            width: layout.tileExtent,
-            height: layout.tileExtent,
+            width: layout.tileExtent * ghost.pointWidthPixels / 32,
+            height: layout.tileExtent * ghost.pointHeightPixels / 32,
           );
     final fitsMap = point != null
         ? point.x >= 0 &&

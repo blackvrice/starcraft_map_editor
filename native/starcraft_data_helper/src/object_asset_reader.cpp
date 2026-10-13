@@ -263,6 +263,16 @@ bool ReadUnitCapability(
   capability->is_cloakable = (flags & kUnitFlagCloakable) != 0;
   capability->is_invincible = (flags & kUnitFlagInvincible) != 0;
   capability->is_building = (flags & kUnitFlagBuilding) != 0;
+  // Classic Unit::DatFile StarEdit Dimensions[228], offset 11284, u16 pairs.
+  // This is not unitExtent. Only whole tile boxes within the map size budget
+  // authorize building tile alignment; invalid dimensions keep other flags.
+  capability->placement_box_width = ReadLittleEndianU16(units_dat, 11284 + unit_id * 4u);
+  capability->placement_box_height = ReadLittleEndianU16(units_dat, 11286 + unit_id * 4u);
+  const auto valid_axis = [](const std::uint16_t axis) {
+    return axis >= 32 && axis <= 8192 && axis % 32 == 0;
+  };
+  capability->placement_box_valid = capability->is_building &&
+      valid_axis(capability->placement_box_width) && valid_axis(capability->placement_box_height);
   capability->is_subunit = (flags & 0x00000010U) != 0;  // DAT Subunit = BIT_4.
   capability->requires_relation_link =
       (flags & kUnitFlagAddon) != 0 || unit_id == kZergNydusCanalId;

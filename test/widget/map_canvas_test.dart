@@ -17,6 +17,42 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 
 void main() {
   testWidgets(
+    'building ghost paints the verified box around an aligned center',
+    (tester) async {
+      final recorder = ui.PictureRecorder();
+      final painter = MapCanvasPainter(
+        layout: MapCanvasLayout.fit(
+          viewportSize: const Size(256, 256),
+          mapWidth: 8,
+          mapHeight: 8,
+          contentPadding: 0,
+        ),
+        rawTileValues: null,
+        gridVisible: false,
+        placementGhost: MapCanvasPlacementGhost(
+          pointAt: (x, y) => (x: 96, y: 80),
+          pointWidthPixels: 128,
+          pointHeightPixels: 96,
+        ),
+        placementGhostTile: const TerrainTileCoordinate(x: 3, y: 2),
+        placementGhostPixel: (x: 96, y: 80),
+      );
+      painter.paint(Canvas(recorder), const Size(256, 256));
+      final picture = recorder.endRecording();
+      final image = await tester.runAsync(() => picture.toImage(256, 256));
+      final data = await tester.runAsync(
+        () => image!.toByteData(format: ui.ImageByteFormat.rawRgba),
+      );
+      image!.dispose();
+      picture.dispose();
+      int green(int x, int y) => data!.getUint8((y * 256 + x) * 4 + 1);
+      expect(green(32, 60), greaterThan(green(16, 60)));
+      expect(green(160, 60), greaterThan(green(176, 60)));
+      expect(green(90, 32), greaterThan(green(90, 16)));
+      expect(green(90, 128), greaterThan(green(90, 144)));
+    },
+  );
+  testWidgets(
     'grid visibility and spacing repaint pixels without changing click coordinates',
     (tester) async {
       final layout = MapCanvasLayout.fit(

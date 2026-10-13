@@ -3308,10 +3308,15 @@ MapCanvasPlacementGhost? _placementGhostFor(
     return null;
   }
   final recipe = selection.doodadRecipe;
+  final buildingBox = catalog.isBuildingTileAlignmentActive
+      ? selection.unitCapability?.placementBox
+      : null;
   return MapCanvasPlacementGhost(
     tileWidth: recipe?.width ?? 1,
     tileHeight: recipe?.height ?? 1,
     pointAt: recipe == null ? catalog.resolvePoint : null,
+    pointWidthPixels: buildingBox?.width ?? 32,
+    pointHeightPixels: buildingBox?.height ?? 32,
     issueCodeAtPixel: (x, y) =>
         catalog.previewAt(pixelX: x, pixelY: y, tileX: x ~/ 32, tileY: y ~/ 32),
     issueText: (code) => placementFailureText(l10n, code),

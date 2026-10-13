@@ -50,6 +50,7 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
+import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
@@ -2337,186 +2338,214 @@ void main() {
     expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
 
-  for (final kind in [
-    StarCraftPlacementKind.unit,
-    StarCraftPlacementKind.pureSprite,
-    StarCraftPlacementKind.spriteUnit,
-  ]) {
-    testWidgets(
-      '$kind shell validates hover and click and permits retry after unlock',
-      (tester) async {
-        tester.view.physicalSize = const Size(1440, 900);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        final progress = OperationProgressController();
-        final settings = InMemorySettingsStore();
-        final extracted = _createExtractedMap();
-        final maps = OpenMapController(
-          archiveGateway: _FakeMapArchiveGateway(
-            MapArchiveOpenResult.success(map: extracted),
-          ),
-          filePicker: _FakeMapFilePicker(extracted.sourcePath),
-          fingerprintGateway: _FakeMapFileFingerprintGateway(),
-          recentProjectsService: RecentProjectsService(settings),
-          operationProgressController: progress,
-        );
-        final layers = MapLayerController();
-        final objects = ObjectEditingController(
-          openMapController: maps,
-          mapLayerController: layers,
-        );
-        final terrain = TerrainEditingController(openMapController: maps);
-        final catalog = PlacementCatalogController(
-          openMapController: maps,
-          objectEditingController: objects,
-          terrainEditingController: terrain,
-          catalogGateway: const _PointHoverCatalog(),
-          objectAtlasGateway: _RenderingStarCraftObjectAtlasGateway(),
-        );
-        addTearDown(maps.dispose);
-        addTearDown(layers.dispose);
-        addTearDown(objects.dispose);
-        addTearDown(terrain.dispose);
-        addTearDown(catalog.dispose);
-        addTearDown(progress.dispose);
-        addTearDown(() => tester.pumpWidget(const SizedBox()));
-        await maps.open();
-        await tester.pumpWidget(
-          _createTestApp(
+  for (final building in [false, true]) {
+    for (final kind in [
+      StarCraftPlacementKind.unit,
+      StarCraftPlacementKind.pureSprite,
+      StarCraftPlacementKind.spriteUnit,
+    ]) {
+      testWidgets(
+        '$kind shell validates hover and click and permits retry after unlock building=$building',
+        (tester) async {
+          tester.view.physicalSize = const Size(1440, 900);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final progress = OperationProgressController();
+          final settings = InMemorySettingsStore();
+          final extracted = _createExtractedMap();
+          final maps = OpenMapController(
+            archiveGateway: _FakeMapArchiveGateway(
+              MapArchiveOpenResult.success(map: extracted),
+            ),
+            filePicker: _FakeMapFilePicker(extracted.sourcePath),
+            fingerprintGateway: _FakeMapFileFingerprintGateway(),
+            recentProjectsService: RecentProjectsService(settings),
+            operationProgressController: progress,
+          );
+          final layers = MapLayerController();
+          final objects = ObjectEditingController(
             openMapController: maps,
             mapLayerController: layers,
+          );
+          final terrain = TerrainEditingController(openMapController: maps);
+          final catalog = PlacementCatalogController(
+            openMapController: maps,
             objectEditingController: objects,
             terrainEditingController: terrain,
-            placementCatalogController: catalog,
-            settingsStore: settings,
-            operationProgressController: progress,
-          ),
-        );
-        await tester.pumpAndSettle();
-        catalog.setInstallationPath(r'C:\StarCraft');
-        expect(await catalog.load(kind), isTrue);
-        expect(catalog.confirm(catalog.state.items.single.key), isTrue);
-        catalog.setPointSnap(enabled: true, step: 17);
-        catalog.setGridVisible(false);
-        catalog.setGridSpacing(128);
-        final layer = kind == StarCraftPlacementKind.unit
-            ? MapLayerType.units
-            : MapLayerType.sprites;
-        layers.setLocked(layer, true);
-        await tester.pumpAndSettle();
-        final before = maps.state.session!;
-        final target = tester.getCenter(find.byKey(const Key('map-canvas')));
-        final pointer = await tester.createGesture(
-          kind: PointerDeviceKind.mouse,
-        );
-        await pointer.addPointer(location: target);
-        await pointer.moveTo(target + const Offset(1, 1));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const Key('map-canvas-placement-issue')),
-          findsOneWidget,
-        );
-        expect(find.textContaining('hidden or locked'), findsOneWidget);
-        expect(catalog.state.lastPlacementIssueCode, isNull);
-        expect(maps.state.session, same(before));
-        expect(objects.state.undoDepth, 0);
-        final paint =
-            tester
-                    .widget<CustomPaint>(
-                      find.byKey(const Key('map-canvas-paint')),
-                    )
-                    .painter!
-                as MapCanvasPainter;
-        expect(paint.gridVisible, isFalse);
-        expect(paint.gridSpacingPixels, 128);
-        expect(paint.placementGhostPixel!.x % 17, 0);
-        expect(paint.placementGhostPixel!.y % 17, 0);
-        await tester.tapAt(target);
-        await tester.pumpAndSettle();
-        expect(
-          catalog.state.lastPlacementIssueCode,
-          ObjectPlacementDiagnosticCodes.layerLocked,
-        );
-        expect(
-          find.byKey(const Key('catalog-placement-error')),
-          findsOneWidget,
-        );
-        expect(maps.state.session, same(before));
-        layers.setLocked(layer, false);
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const Key('map-canvas-placement-issue')),
-          findsNothing,
-        );
-        final retryPaint =
-            tester
-                    .widget<CustomPaint>(
-                      find.byKey(const Key('map-canvas-paint')),
-                    )
-                    .painter!
-                as MapCanvasPainter;
-        final rawPoint = retryPaint.layout.coordinateAt(
-          target - tester.getTopLeft(find.byKey(const Key('map-canvas'))),
-        )!;
-        await tester.tapAt(target);
-        await tester.pumpAndSettle();
-        expect(catalog.state.isPlacementActive, isFalse);
-        expect(objects.state.undoDepth, 1);
-        final placed = kind == StarCraftPlacementKind.unit
-            ? (
-                x: maps
-                    .state
-                    .session!
-                    .objectViews
-                    .unitSections
-                    .single
-                    .units
-                    .last
-                    .x,
-                y: maps
-                    .state
-                    .session!
-                    .objectViews
-                    .unitSections
-                    .single
-                    .units
-                    .last
-                    .y,
-              )
-            : (
-                x: maps
-                    .state
-                    .session!
-                    .objectViews
-                    .spriteSections
-                    .single
-                    .sprites
-                    .last
-                    .x,
-                y: maps
-                    .state
-                    .session!
-                    .objectViews
-                    .spriteSections
-                    .single
-                    .sprites
-                    .last
-                    .y,
-              );
-        expect(
-          placed,
-          catalog.state.pointSnap.resolve(rawPoint.pixelX, rawPoint.pixelY),
-        );
-        expect(objects.undo(), isTrue);
-        expect(
-          const RawChkEncoder().encode(maps.state.session!.rawDocument),
-          const RawChkEncoder().encode(before.rawDocument),
-        );
-        await pointer.removePointer();
-        expect(tester.takeException(), isNull);
-      },
-    );
+            catalogGateway: _PointHoverCatalog(building: building),
+            objectAtlasGateway: _RenderingStarCraftObjectAtlasGateway(),
+          );
+          addTearDown(maps.dispose);
+          addTearDown(layers.dispose);
+          addTearDown(objects.dispose);
+          addTearDown(terrain.dispose);
+          addTearDown(catalog.dispose);
+          addTearDown(progress.dispose);
+          addTearDown(() => tester.pumpWidget(const SizedBox()));
+          await maps.open();
+          await tester.pumpWidget(
+            _createTestApp(
+              openMapController: maps,
+              mapLayerController: layers,
+              objectEditingController: objects,
+              terrainEditingController: terrain,
+              placementCatalogController: catalog,
+              settingsStore: settings,
+              operationProgressController: progress,
+            ),
+          );
+          await tester.pumpAndSettle();
+          catalog.setInstallationPath(r'C:\StarCraft');
+          expect(await catalog.load(kind), isTrue);
+          expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+          catalog.setPointSnap(enabled: true, step: 17);
+          catalog.setGridVisible(false);
+          catalog.setGridSpacing(128);
+          await tester.tap(
+            find.byKey(const Key('placement-building-tile-alignment')),
+          );
+          await tester.pumpAndSettle();
+          expect(catalog.state.alignBuildingsToTiles, isTrue);
+          final layer = kind == StarCraftPlacementKind.unit
+              ? MapLayerType.units
+              : MapLayerType.sprites;
+          layers.setLocked(layer, true);
+          await tester.pumpAndSettle();
+          final before = maps.state.session!;
+          final target = tester.getCenter(find.byKey(const Key('map-canvas')));
+          final pointer = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+          await pointer.addPointer(location: target);
+          await pointer.moveTo(target + const Offset(1, 1));
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('map-canvas-placement-issue')),
+            findsOneWidget,
+          );
+          expect(find.textContaining('hidden or locked'), findsOneWidget);
+          expect(catalog.state.lastPlacementIssueCode, isNull);
+          expect(maps.state.session, same(before));
+          expect(objects.state.undoDepth, 0);
+          final paint =
+              tester
+                      .widget<CustomPaint>(
+                        find.byKey(const Key('map-canvas-paint')),
+                      )
+                      .painter!
+                  as MapCanvasPainter;
+          expect(paint.gridVisible, isFalse);
+          expect(paint.gridSpacingPixels, 128);
+          final buildingBox = kind == StarCraftPlacementKind.unit && building
+              ? catalog.state.selection!.unitCapability!.placementBox
+              : null;
+          expect(
+            paint.placementGhost!.pointWidthPixels,
+            buildingBox?.width ?? 32,
+          );
+          expect(
+            paint.placementGhost!.pointHeightPixels,
+            buildingBox?.height ?? 32,
+          );
+          expect(
+            paint.placementGhostPixel!.x % (buildingBox == null ? 17 : 32),
+            0,
+          );
+          expect(
+            paint.placementGhostPixel!.y % (buildingBox == null ? 17 : 32),
+            buildingBox == null ? 0 : 16,
+          );
+          await tester.tapAt(target);
+          await tester.pumpAndSettle();
+          expect(
+            catalog.state.lastPlacementIssueCode,
+            ObjectPlacementDiagnosticCodes.layerLocked,
+          );
+          expect(
+            find.byKey(const Key('catalog-placement-error')),
+            findsOneWidget,
+          );
+          expect(maps.state.session, same(before));
+          layers.setLocked(layer, false);
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('map-canvas-placement-issue')),
+            findsNothing,
+          );
+          final retryPaint =
+              tester
+                      .widget<CustomPaint>(
+                        find.byKey(const Key('map-canvas-paint')),
+                      )
+                      .painter!
+                  as MapCanvasPainter;
+          final rawPoint = retryPaint.layout.coordinateAt(
+            target - tester.getTopLeft(find.byKey(const Key('map-canvas'))),
+          )!;
+          await tester.tapAt(target);
+          await tester.pumpAndSettle();
+          expect(catalog.state.isPlacementActive, isFalse);
+          expect(objects.state.undoDepth, 1);
+          final placed = kind == StarCraftPlacementKind.unit
+              ? (
+                  x: maps
+                      .state
+                      .session!
+                      .objectViews
+                      .unitSections
+                      .single
+                      .units
+                      .last
+                      .x,
+                  y: maps
+                      .state
+                      .session!
+                      .objectViews
+                      .unitSections
+                      .single
+                      .units
+                      .last
+                      .y,
+                )
+              : (
+                  x: maps
+                      .state
+                      .session!
+                      .objectViews
+                      .spriteSections
+                      .single
+                      .sprites
+                      .last
+                      .x,
+                  y: maps
+                      .state
+                      .session!
+                      .objectViews
+                      .spriteSections
+                      .single
+                      .sprites
+                      .last
+                      .y,
+                );
+          expect(
+            placed,
+            buildingBox?.align(rawPoint.pixelX, rawPoint.pixelY) ??
+                catalog.state.pointSnap.resolve(
+                  rawPoint.pixelX,
+                  rawPoint.pixelY,
+                ),
+          );
+          expect(objects.undo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(maps.state.session!.rawDocument),
+            const RawChkEncoder().encode(before.rawDocument),
+          );
+          await pointer.removePointer();
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
   testWidgets(
     'catalog refusals stay visible on the map without changing bytes',
@@ -3177,7 +3206,8 @@ Offset _mapPixelOffset(
 }
 
 final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
-  const _PointHoverCatalog();
+  const _PointHoverCatalog({this.building = false});
+  final bool building;
   @override
   Future<void> cancel(String operationId) async {}
   @override
@@ -3203,6 +3233,9 @@ final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
             ? null
             : UnitPlacementCapability(
                 unitId: 0,
+                placementBox: building
+                    ? BuildingPlacementBox(width: 128, height: 96)
+                    : null,
                 isSpellcaster: false,
                 hasShields: false,
                 isResourceContainer: false,
@@ -3212,7 +3245,7 @@ final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
                 isBurrowable: false,
                 isCloakable: false,
                 isInvincible: false,
-                isBuilding: false,
+                isBuilding: building,
                 requiresRelationLink: false,
               ),
       ),

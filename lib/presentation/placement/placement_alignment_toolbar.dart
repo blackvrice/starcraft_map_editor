@@ -21,6 +21,21 @@ class PlacementAlignmentToolbar extends StatelessWidget {
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        SizedBox(
+          width: 260,
+          child: Material(
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
+              key: const Key('placement-building-tile-alignment'),
+              value: state.alignBuildingsToTiles,
+              onChanged: (value) => controller.setBuildingTileAlignment(value!),
+              title: Text(l10n.placementBuildingTileAlignment),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+          ),
+        ),
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [

@@ -6102,4 +6102,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get placementSnapRange => '1~128 사이의 정수를 입력하세요.';
+
+  @override
+  String get placementBuildingTileAlignment => '건물 타일 정렬';
+
+  @override
+  String get placementBuildingBoxUnavailable =>
+      '검증된 건물 배치 크기 자료가 없습니다. 카탈로그를 다시 불러오거나 건물 타일 정렬을 끄세요.';
 }

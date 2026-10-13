@@ -391,6 +391,9 @@ void AddUnitCapability(
       {"isCloakable", capability->is_cloakable},
       {"isInvincible", capability->is_invincible},
       {"isBuilding", capability->is_building},
+      {"placementBox", capability->placement_box_valid ? json{
+          {"version", 1}, {"width", capability->placement_box_width},
+          {"height", capability->placement_box_height}} : json(nullptr)},
       {"isSubunit", capability->is_subunit},
       {"requiresRelationLink", capability->requires_relation_link},
   };
