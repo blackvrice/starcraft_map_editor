@@ -202,7 +202,40 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                 isInvincible = $false
                 isBuilding = $false
                 placementBox = $null
+                collisionProfile = [ordered]@{ version = 1; left = 3; up = 5; right = 7; down = 9; isFlyer = ($id -eq 8) }
                 requiresRelationLink = ($id -eq 2)
+            }
+            if ($request.installationPath -like '*collision-old*') {
+                $entry.capability.Remove('collisionProfile')
+            }
+            if ($request.installationPath -like '*collision-null*') {
+                $entry.capability.collisionProfile = $null
+            }
+            if ($request.installationPath -like '*collision-version*') {
+                $entry.capability.collisionProfile.version = 2
+            }
+            if ($request.installationPath -like '*collision-flyer*') {
+                $entry.capability.collisionProfile.isFlyer = 1
+            }
+            if ($request.installationPath -like '*collision-object*') {
+                $entry.capability.collisionProfile = 'invalid'
+            }
+            if ($request.installationPath -like '*collision-limits*') {
+                $entry.capability.collisionProfile = [ordered]@{ version = 1; left = 0; up = 65535; right = 65535; down = 0; isFlyer = $false }
+            }
+            foreach ($axis in @('left', 'up', 'right', 'down')) {
+                if ($request.installationPath -like "*collision-$axis-negative*") {
+                    $entry.capability.collisionProfile[$axis] = -1
+                }
+                if ($request.installationPath -like "*collision-$axis-overflow*") {
+                    $entry.capability.collisionProfile[$axis] = 65536
+                }
+                if ($request.installationPath -like "*collision-$axis-type*") {
+                    $entry.capability.collisionProfile[$axis] = '3'
+                }
+                if ($request.installationPath -like "*collision-$axis-missing*") {
+                    $entry.capability.collisionProfile.Remove($axis)
+                }
             }
             if ($id -eq 106) {
                 $entry.capability.isBuilding = $true

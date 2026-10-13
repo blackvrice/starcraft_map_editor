@@ -8,6 +8,7 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/building_placement_box.dart';
+import '../../domain/placement/unit_collision_profile.dart';
 import 'starcraft_data_helper_protocol.dart';
 import '../../domain/placement/unit_weapon_references.dart';
 
@@ -657,6 +658,7 @@ final class ProcessStarCraftPlacementCatalogGateway
     return UnitPlacementCapability(
       unitId: unitId,
       placementBox: placementBox,
+      collisionProfile: _parseCollisionProfile(raw),
       isSubunit: raw.containsKey('isSubunit') ? flag('isSubunit') : false,
       weaponReferences: raw['weaponReferences'] == null
           ? null
@@ -677,6 +679,32 @@ final class ProcessStarCraftPlacementCatalogGateway
       isInvincible: flag('isInvincible'),
       isBuilding: isBuilding,
       requiresRelationLink: flag('requiresRelationLink'),
+    );
+  }
+
+  UnitCollisionProfile? _parseCollisionProfile(Map<String, dynamic> raw) {
+    // Additive field: older helpers remain usable, with unknown geometry.
+    if (raw['collisionProfile'] == null) return null;
+    final profile = _jsonObject(raw, 'collisionProfile');
+    final isFlyer = profile['isFlyer'];
+    if (_jsonInteger(profile, 'version') != UnitCollisionProfile.version ||
+        isFlyer is! bool) {
+      throw const FormatException('Unit collision profile is invalid.');
+    }
+    int offset(String name) {
+      final value = _jsonInteger(profile, name);
+      if (value < 0 || value > UnitCollisionProfile.maximumOffset) {
+        throw const FormatException('Unit collision offset is invalid.');
+      }
+      return value;
+    }
+
+    return UnitCollisionProfile(
+      left: offset('left'),
+      up: offset('up'),
+      right: offset('right'),
+      down: offset('down'),
+      isFlyer: isFlyer,
     );
   }
 

@@ -542,6 +542,23 @@ int main() {
   }
 
   UnitCapability out_of_range;
+  // Check every entry to catch array stride/order and last-entry errors.
+  // Collision offsets are not derived from StarEdit dimensions.
+  for (std::uint16_t id = 0; id < 228; ++id) {
+    PutUint32(&units_dat, kFlagsOffset + id * 4, id % 2 == 0 ? 4u : 0u);
+    PutUint16(&units_dat, 12580 + id * 8, id);
+    PutUint16(&units_dat, 12582 + id * 8, id + 256);
+    PutUint16(&units_dat, 12584 + id * 8, id + 512);
+    PutUint16(&units_dat, 12586 + id * 8, id == 227 ? 65535 : id + 768);
+    UnitCapability collision;
+    if (!ReadUnitCapability(units_dat, id, &collision) ||
+        collision.collision_left != id || collision.collision_up != id + 256 ||
+        collision.collision_right != id + 512 ||
+        collision.collision_down != (id == 227 ? 65535 : id + 768) ||
+        collision.is_flyer != (id % 2 == 0)) {
+      return Fail("Classic collision extents or Flyer bit decoded incorrectly.");
+    }
+  }
   if (ReadUnitCapability(units_dat, 228, &out_of_range)) {
     return Fail("An out of range unit id produced a capability.");
   }

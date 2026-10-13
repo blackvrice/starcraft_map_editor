@@ -391,6 +391,10 @@ void AddUnitCapability(
       {"isCloakable", capability->is_cloakable},
       {"isInvincible", capability->is_invincible},
       {"isBuilding", capability->is_building},
+      {"collisionProfile", {
+          {"version", 1}, {"left", capability->collision_left},
+          {"up", capability->collision_up}, {"right", capability->collision_right},
+          {"down", capability->collision_down}, {"isFlyer", capability->is_flyer}}},
       {"placementBox", capability->placement_box_valid ? json{
           {"version", 1}, {"width", capability->placement_box_width},
           {"height", capability->placement_box_height}} : json(nullptr)},

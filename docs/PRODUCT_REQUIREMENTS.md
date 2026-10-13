@@ -186,6 +186,8 @@ CHK·리소스·EUD 프로젝트·epScript 상태를 별도 앱 데이터에 보
   이어서 optional version1 로컬 StarEdit 건물 크기와 선택적 UNIT 타일 정렬·전체 박스
   경계·preview/Apply/Undo·누락 사유를 [구현](BUILDING_TILE_ALIGNMENT.md)했다.
   정상/자유 충돌·지형·전력/크립·EUD 변경·게임 인수는 계속 별도다.
+  2026-10-14 로컬 collision offset/Flyer와 순수 bounds/겹침을 [제한 구현](PLACEMENT_VALIDATION_CONTRACTS.md)했다.
+  정상/자유 지원표·후속 지형 snapshot 계약은 문서화했으며 실제 충돌 차단/정책 UI는 아직 연결하지 않았다.
 - FR-219: 검증 자료가 있는 높이·건설/이동 가능성·범위/전력/크립 보조 표시를 읽기 전용으로 제공해야 한다. 미확인 자료와 게임 동작 보증 여부를 구분한다.
 - FR-220: raw/ISOM 사용자 브러시 저장·재사용과 검증된 지형 대칭을 지원해야 한다. 타일셋·자료 revision·경계를 검증하고 대응 자료 없는 ramp/두다드를 추측 변환하지 않는다.
 - FR-221: 다수 두다드와 객체·지형의 혼합 선택을 복사하고 지원된 ISOM 경계를 재검증해야 한다. 부분 footprint·불명확한 overlay/관계는 거부하고 한 번의 Undo로 복원한다.

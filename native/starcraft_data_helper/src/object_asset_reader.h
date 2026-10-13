@@ -18,8 +18,8 @@ struct ObjectRenderRequest {
 };
 
 // The verified units.dat facts a CHK UNIT record needs. Only derived
-// booleans, bounded StarEdit dimensions and validated reference IDs leave the
-// helper; raw DAT bytes stay local.
+// booleans, u16 collision offsets, bounded StarEdit dimensions and reference
+// IDs leave the helper; raw DAT bytes stay local.
 struct UnitCapability {
   std::uint16_t unit_id = 0;
   bool weapon_references_valid = false;
@@ -37,6 +37,11 @@ struct UnitCapability {
   bool is_cloakable = false;
   bool is_invincible = false;
   bool is_building = false;
+  bool is_flyer = false;
+  std::uint16_t collision_left = 0;
+  std::uint16_t collision_up = 0;
+  std::uint16_t collision_right = 0;
+  std::uint16_t collision_down = 0;
   bool placement_box_valid = false;
   std::uint16_t placement_box_width = 0;
   std::uint16_t placement_box_height = 0;

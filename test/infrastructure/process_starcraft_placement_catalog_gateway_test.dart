@@ -120,6 +120,112 @@ void main() {
     final realInstallation =
         Platform.environment['STARCRAFT_TEST_INSTALLATION'];
     test(
+      'local collision metadata is available for all classic units without graphics',
+      () async {
+        final page =
+            await ProcessStarCraftPlacementCatalogGateway(
+              helperExecutablePath: realHelper!,
+            ).list(
+              StarCraftPlacementCatalogRequest(
+                operationId: 'real-collision-profiles',
+                installationPath: realInstallation!,
+                kind: StarCraftPlacementKind.unit,
+                tileset: StarCraftTilesetAssetSet.badlands,
+                limit: 228,
+                unitMetadataOnly: true,
+              ),
+            );
+        expect(page.isSuccess, isTrue, reason: '${page.diagnostics}');
+        expect(page.entries, hasLength(228));
+        for (final entry in page.entries) {
+          final profile = entry.unitCapability!.collisionProfile!;
+          for (final offset in [
+            profile.left,
+            profile.up,
+            profile.right,
+            profile.down,
+          ]) {
+            expect(offset, inInclusiveRange(0, 65535));
+          }
+          expect(entry.hasPreview, isFalse);
+        }
+        expect(
+          page.entries[0].unitCapability!.collisionProfile!.isFlyer,
+          isFalse,
+        );
+        expect(
+          page.entries[8].unitCapability!.collisionProfile!.isFlyer,
+          isTrue,
+        );
+        expect(
+          page.entries[106].unitCapability!.collisionProfile!.left,
+          greaterThan(0),
+        );
+      },
+      skip:
+          !Platform.isWindows || realHelper == null || realInstallation == null,
+    );
+
+    for (final scenario in [
+      'StarCraft',
+      'collision-old',
+      'collision-null',
+      'collision-limits',
+      'collision-version',
+      'collision-flyer',
+      'collision-object',
+      for (final axis in ['left', 'up', 'right', 'down'])
+        for (final failure in ['negative', 'overflow', 'type', 'missing'])
+          'collision-$axis-$failure',
+    ]) {
+      test('validates optional collision profile $scenario', () async {
+        for (final metadataOnly in [false, true]) {
+          final page = await createGateway().list(
+            StarCraftPlacementCatalogRequest(
+              operationId: 'collision-profile-test',
+              installationPath: 'C:\\Games\\$scenario',
+              kind: StarCraftPlacementKind.unit,
+              tileset: StarCraftTilesetAssetSet.badlands,
+              offset: 8,
+              limit: 1,
+              unitMetadataOnly: metadataOnly,
+            ),
+          );
+          final legacy =
+              scenario == 'collision-old' || scenario == 'collision-null';
+          final valid =
+              scenario == 'StarCraft' || scenario == 'collision-limits';
+          expect(
+            page.isSuccess,
+            legacy || valid,
+            reason: '${page.diagnostics}',
+          );
+          if (page.isSuccess) {
+            expect(page.entries.single.isPlaceable, isTrue);
+            final profile =
+                page.entries.single.unitCapability!.collisionProfile;
+            if (legacy) {
+              expect(profile, isNull);
+            } else {
+              final limits = scenario == 'collision-limits';
+              expect([
+                profile!.left,
+                profile.up,
+                profile.right,
+                profile.down,
+              ], limits ? [0, 65535, 65535, 0] : [3, 5, 7, 9]);
+              expect(profile.isFlyer, !limits);
+            }
+          } else {
+            expect(
+              page.diagnostics.single.code,
+              StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+            );
+          }
+        }
+      }, skip: !Platform.isWindows);
+    }
+    test(
       'local units.dat metadata carries validated building boxes independently of previews',
       () async {
         final page =

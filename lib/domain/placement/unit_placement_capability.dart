@@ -1,11 +1,12 @@
 import 'unit_weapon_references.dart';
 import 'doodad_placement_recipe.dart';
 import 'building_placement_box.dart';
+import 'unit_collision_profile.dart';
 
 /// The minimum verified `units.dat` capability snapshot required to synthesize
 /// a default `UNIT` record for a unit that the current map does not contain.
 ///
-/// Placement flags are derived booleans; optional weapon references are validated IDs.
+/// Flags are derived booleans; optional geometry and weapon IDs are validated.
 /// Raw DAT bytes never cross the StarCraft
 /// data helper boundary, and a capability that cannot be read is reported as an
 /// item level issue instead of being guessed.
@@ -18,6 +19,7 @@ final class UnitPlacementCapability {
     this.isSubunit = false,
     this.weaponReferences,
     this.placementBox,
+    this.collisionProfile,
     required this.isSpellcaster,
     required this.hasShields,
     required this.isResourceContainer,
@@ -59,6 +61,17 @@ final class UnitPlacementCapability {
 
   /// Optional verified StarEdit tile box, independent of collision extents.
   final BuildingPlacementBox? placementBox;
+
+  /// Local classic DAT geometry, not an EUD/runtime override snapshot.
+  final UnitCollisionProfile? collisionProfile;
+
+  /// A lifted flying building occupies the air layer. Unknown metadata stays
+  /// unknown; the caller must also validate the record's in-transit state.
+  bool? isAirborne({required bool inTransit}) {
+    final profile = collisionProfile;
+    if (profile == null) return null;
+    return profile.isFlyer || (isBuilding && isFlyingBuilding && inTransit);
+  }
 
   /// `Spellcaster` in `units.dat`. Marks the energy field as valid.
   final bool isSpellcaster;

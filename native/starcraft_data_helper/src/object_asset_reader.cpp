@@ -169,6 +169,7 @@ constexpr std::size_t kUnitsDatFlagsOffset = 7032;
 
 constexpr std::uint32_t kUnitFlagBuilding = 1u << 0;
 constexpr std::uint32_t kUnitFlagAddon = 1u << 1;
+constexpr std::uint32_t kUnitFlagFlyer = 1u << 2;
 constexpr std::uint32_t kUnitFlagFlyingBuilding = 1u << 5;
 constexpr std::uint32_t kUnitFlagCloakable = 1u << 9;
 constexpr std::uint32_t kUnitFlagResourceContainer = 1u << 13;
@@ -263,6 +264,14 @@ bool ReadUnitCapability(
   capability->is_cloakable = (flags & kUnitFlagCloakable) != 0;
   capability->is_invincible = (flags & kUnitFlagInvincible) != 0;
   capability->is_building = (flags & kUnitFlagBuilding) != 0;
+  capability->is_flyer = (flags & kUnitFlagFlyer) != 0;
+  // StarEdit boxes (228*4) and addon offsets (96*4) precede Extent[228].
+  // Offset 12580 stores interleaved left/up/right/down u16 pixel offsets.
+  const auto collision_offset = 12580 + unit_id * 8u;
+  capability->collision_left = ReadLittleEndianU16(units_dat, collision_offset);
+  capability->collision_up = ReadLittleEndianU16(units_dat, collision_offset + 2);
+  capability->collision_right = ReadLittleEndianU16(units_dat, collision_offset + 4);
+  capability->collision_down = ReadLittleEndianU16(units_dat, collision_offset + 6);
   // Classic Unit::DatFile StarEdit Dimensions[228], offset 11284, u16 pairs.
   // This is not unitExtent. Only whole tile boxes within the map size budget
   // authorize building tile alignment; invalid dimensions keep other flags.

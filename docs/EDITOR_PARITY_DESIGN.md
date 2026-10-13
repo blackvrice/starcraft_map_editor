@@ -54,6 +54,8 @@ pure sprite와 UNIT를 이름만 바꾸어 생성하지 않는다. 미지원 항
 후속으로 [version1 StarEdit 건물 크기와 UNIT 타일 정렬](BUILDING_TILE_ALIGNMENT.md)을
 구현했다. 격자/중심 스냅과 독립 체크박스이고 전체 배치 박스 경계를 검사한다.
 collision extent·지형·전력/크립·EUD 변경·게임 정상/자유 정책은 아직 미완료다.
+2026-10-14 로컬 version1 collision offset/Flyer와 순수 geometry를 [제한 구현](PLACEMENT_VALIDATION_CONTRACTS.md)했다.
+정상/자유 지원표와 후속 지형 snapshot 계약을 확정했지만 배치 충돌 검사/정책 UI 연결은 남았다.
 
 전체 `PlacementPolicy`(제안)는 격자 표시와 스냅을 분리하고 8/16/32/64/128px 및
 검증된 사용자 값을 지원한다. 건물 타일 정렬과 일반 유닛 정렬은 구분한다.
