@@ -82,11 +82,12 @@ final class ObjectPlacementCatalogLoader {
     bool Function()? isCancelled,
   }) async {
     if (request.kind != StarCraftPlacementKind.unit &&
+        request.kind != StarCraftPlacementKind.spriteUnit &&
         request.kind != StarCraftPlacementKind.pureSprite) {
       throw ArgumentError.value(
         request.kind,
         'request.kind',
-        'Must be unit or pureSprite.',
+        'Must be unit, unit-sprite or pureSprite.',
       );
     }
 
@@ -236,9 +237,9 @@ final class ObjectPlacementCatalogLoader {
 
 StarCraftObjectGraphicKey _graphicKey(StarCraftPlacementCatalogKey key) =>
     StarCraftObjectGraphicKey(
-      kind: key.kind == StarCraftPlacementKind.unit
-          ? StarCraftObjectGraphicKind.unit
-          : StarCraftObjectGraphicKind.sprite,
+      kind: key.kind == StarCraftPlacementKind.pureSprite
+          ? StarCraftObjectGraphicKind.sprite
+          : StarCraftObjectGraphicKind.unit,
       id: key.id,
     );
 

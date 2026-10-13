@@ -410,6 +410,69 @@ void main() {
         StarCraftPlacementCatalogDiagnosticCodes.installationPathInvalid,
       );
     }, skip: !Platform.isWindows);
+    test(
+      'unit-sprite catalog reuses validated Unit metadata with distinct keys',
+      () async {
+        final request = requestFor(
+          'StarCraft',
+          kind: StarCraftPlacementKind.spriteUnit,
+        );
+        final page = await createGateway().list(request);
+        expect(page.isSuccess, isTrue, reason: '${page.diagnostics}');
+        expect(page.request, same(request));
+        expect(page.totalEntries, 228);
+        expect(page.entries.map((e) => e.key.stableId), [
+          'spriteUnit:0',
+          'spriteUnit:1',
+          'spriteUnit:2',
+        ]);
+        expect(page.entries.first.unitCapability!.unitId, 0);
+        expect(page.entries.first.isPlaceable, isTrue);
+        expect(
+          page.entries[1].issue!.code,
+          'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+        );
+        expect(
+          page.entries[2].issue!.code,
+          'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED',
+        );
+        expect(
+          page.helperVersion,
+          ProcessStarCraftPlacementCatalogGateway.helperVersion,
+        );
+        final tail = await createGateway().list(
+          requestFor(
+            'StarCraft',
+            kind: StarCraftPlacementKind.spriteUnit,
+            offset: 226,
+            limit: 4,
+          ),
+        );
+        expect(tail.entries.map((e) => e.key.id), [226, 227]);
+        expect(
+          tail.entries.last.previewIssueCode,
+          'SC_CASC_OBJECT_GRP_UNAVAILABLE',
+        );
+        expect(tail.nextOffset, isNull);
+      },
+      skip: !Platform.isWindows,
+    );
+
+    test(
+      'unit-sprite adaptation preserves rejected metadata responses',
+      () async {
+        final request = requestFor(
+          'catalog-page-mismatch',
+          kind: StarCraftPlacementKind.spriteUnit,
+        );
+        final page = await createGateway().list(request);
+        expect(page.isSuccess, isFalse);
+        expect(page.request, same(request));
+        expect(page.entries, isEmpty);
+        expect(page.diagnostics, isNotEmpty);
+      },
+      skip: !Platform.isWindows,
+    );
   });
 }
 

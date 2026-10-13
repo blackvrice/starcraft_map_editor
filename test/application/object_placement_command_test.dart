@@ -478,6 +478,90 @@ void main() {
   });
 
   group('catalog Sprite placement', () {
+    for (final exists in [true, false]) {
+      test(
+        'unit-sprite appends THG2 (exists=$exists) and restores exact bytes',
+        () async {
+          final fixture = await _openFixture(includeSprites: exists);
+          addTearDown(fixture.dispose);
+          final before = const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          );
+          final result = fixture.controller.placeCatalogSpriteUnit(
+            capability: _capability(37),
+            unitId: 37,
+            owner: 3,
+            pixelX: 80,
+            pixelY: 48,
+          );
+          expect(result.isPlaced, isTrue);
+          expect(result.placedObject!.layer, MapLayerType.sprites);
+          final session = fixture.openMapController.state.session!;
+          final sprite = session.objectViews.spriteSections.single.sprites.last;
+          expect(
+            (sprite.spriteType, sprite.owner, sprite.x, sprite.y),
+            (37, 3, 80, 48),
+          );
+          expect(sprite.flags, ChkSpritePlacement.isUnitFlag);
+          expect(sprite.isSpriteUnitDisabled, isFalse);
+          expect(session.objectViews.unitSections.single.units, hasLength(2));
+          expect(fixture.controller.state.undoDepth, 1);
+          final after = const RawChkEncoder().encode(session.rawDocument);
+          expect(fixture.controller.undo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(
+              fixture.openMapController.state.session!.rawDocument,
+            ),
+            before,
+          );
+          expect(fixture.controller.redo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(
+              fixture.openMapController.state.session!.rawDocument,
+            ),
+            after,
+          );
+        },
+      );
+    }
+    for (final scenario in ['duplicate', 'locked', 'outside', 'relation']) {
+      test('unit-sprite refuses $scenario without partial writes', () async {
+        final fixture = await _openFixture(
+          mapBytes: Uint8List.fromList([
+            ..._chkBytes(
+              includeUnits: true,
+              includeSprites: true,
+              includeDoodads: true,
+              duplicateUnits: false,
+            ),
+            if (scenario == 'duplicate') ..._section('THG2', []),
+          ]),
+        );
+        addTearDown(fixture.dispose);
+        if (scenario == 'locked') {
+          fixture.mapLayerController.setLocked(MapLayerType.sprites, true);
+        }
+        final before = fixture.openMapController.state.session!;
+        final result = fixture.controller.placeCatalogSpriteUnit(
+          capability: _capability(
+            37,
+            requiresRelationLink: scenario == 'relation',
+          ),
+          unitId: 37,
+          owner: 0,
+          pixelX: scenario == 'outside' ? 256 : 32,
+          pixelY: 32,
+        );
+        expect(result.issueCode, switch (scenario) {
+          'duplicate' => ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+          'locked' => ObjectPlacementDiagnosticCodes.layerLocked,
+          'outside' => ObjectPlacementDiagnosticCodes.outOfBounds,
+          _ => ObjectPlacementFactoryCodes.unitRelationRequired,
+        });
+        expect(fixture.openMapController.state.session, same(before));
+        expect(fixture.controller.state.undoDepth, 0);
+      });
+    }
     test('appends a pure sprite and a new THG2 section when missing', () async {
       final fixture = await _openFixture(includeSprites: false);
       addTearDown(fixture.dispose);

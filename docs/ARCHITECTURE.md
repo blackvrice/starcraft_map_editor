@@ -291,6 +291,11 @@ entry를 기준으로 검사한다. 중복 문자열 표에서는 active table�
 
 ### StarCraftPlacementCatalogGateway
 
+2026-10-13 `spriteUnit` 요청은 process adapter가 검증된 Unit page를 구조화
+투영하여 처리한다. native wire/버전을 바꾸지 않고 그래픽은 Unit atlas, 기록은
+THG2로 분리한다. capability는 Unit/unit-sprite 모두에서 자신의 ID와 일치해야 한다.
+현재 지원/검증과 계층 계약은 [unit-sprite 배치](UNIT_SPRITE_PLACEMENT.md)를 따른다.
+
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
 `ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의

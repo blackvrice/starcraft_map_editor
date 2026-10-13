@@ -22,6 +22,10 @@ EP0는 먼저 기본 작업의 회귀 기준선을 만들고 EP6는 누적 인�
 
 ## 2. 배치와 팔레트
 
+2026-10-13 검증된 standalone unit-sprite의 THG2 생성·카탈로그 투영·Unit 그래픽·
+배치/Undo/저장 왕복을 [제한 구현](UNIT_SPRITE_PLACEMENT.md)했다. 관계/터렛 예외,
+두다드 합성 썸네일·스냅·게임 인수는 계획 상태다.
+
 2026-10-13: 두다드의 공통 preview/Apply 검증과 사유/색상 표시를 부분 구현했다.
 [실행 기록](PLACEMENT_PREVIEW.md)의 확인 범위만 인정한다. 나머지 단락은 계속
 계획이며 PlacementPolicy·unit-sprite·썸네일·전체 배치 인수는 미완료다.

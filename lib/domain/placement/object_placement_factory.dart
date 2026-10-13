@@ -157,9 +157,8 @@ class UnitPlacementFactory {
 
 /// Builds a validated default 10 byte `THG2` record.
 ///
-/// Only pure sprites are supported. A sprite-unit needs verified `units.dat`
-/// relations that the placement research has not confirmed, and Doodad overlay
-/// records are produced by [DoodadPlacementRecipe] instead of this factory.
+/// Unit-sprites use a verified standalone Unit capability and the IsUnit flag.
+/// Doodad overlay records remain owned by [DoodadPlacementRecipe].
 class SpritePlacementFactory {
   const SpritePlacementFactory();
 
@@ -189,12 +188,48 @@ class SpritePlacementFactory {
     return ObjectPlacementRecord.synthesized(record);
   }
 
-  /// Sprite-unit placement stays disabled until the unit relation rules are
-  /// verified. The catalog shows the entry with this reason instead of hiding
-  /// it.
-  ObjectPlacementRecord createSpriteUnit() => ObjectPlacementRecord.rejected(
-    ObjectPlacementFactoryCodes.spriteUnitUnsupported,
-  );
+  ObjectPlacementRecord createSpriteUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int x,
+    required int y,
+  }) {
+    RangeError.checkValueInInterval(
+      unitId,
+      0,
+      UnitPlacementCapability.maximumUnitId,
+      'unitId',
+    );
+    RangeError.checkValueInInterval(owner, 0, 0xff, 'owner');
+    RangeError.checkValueInInterval(x, 0, 0xffff, 'x');
+    RangeError.checkValueInInterval(y, 0, 0xffff, 'y');
+    if (capability.unitId != unitId) {
+      return ObjectPlacementRecord.rejected(
+        ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+      );
+    }
+    if (capability.isSubunit) {
+      return ObjectPlacementRecord.rejected(
+        ObjectPlacementFactoryCodes.unitSubunit,
+      );
+    }
+    if (capability.requiresRelationLink) {
+      return ObjectPlacementRecord.rejected(
+        ObjectPlacementFactoryCodes.unitRelationRequired,
+      );
+    }
+    final record = Uint8List(ChkSpritePlacement.recordLength);
+    // A standalone unit-sprite is active, not a pure Sprite or Doodad overlay.
+    ByteData.sublistView(record)
+      ..setUint16(0, unitId, Endian.little)
+      ..setUint16(2, x, Endian.little)
+      ..setUint16(4, y, Endian.little)
+      ..setUint8(6, owner)
+      ..setUint8(7, 0)
+      ..setUint16(8, ChkSpritePlacement.isUnitFlag, Endian.little);
+    return ObjectPlacementRecord.synthesized(record);
+  }
 }
 
 /// One `MTXM` cell a Doodad placement writes.

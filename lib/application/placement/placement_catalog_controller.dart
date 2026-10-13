@@ -806,7 +806,11 @@ class PlacementCatalogController {
         pixelX: pixelX,
         pixelY: pixelY,
       ),
-      StarCraftPlacementKind.spriteUnit ||
+      StarCraftPlacementKind.spriteUnit => _placeUnit(
+        selection,
+        pixelX: pixelX,
+        pixelY: pixelY,
+      ),
       StarCraftPlacementKind.tile => ObjectPlacementResult.refused(
         PlacementCatalogDiagnosticCodes.unsupportedSelection,
       ),
@@ -828,6 +832,15 @@ class PlacementCatalogController {
     if (capability == null) {
       return ObjectPlacementResult.refused(
         'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+      );
+    }
+    if (selection.kind == StarCraftPlacementKind.spriteUnit) {
+      return objectEditingController.placeCatalogSpriteUnit(
+        capability: capability,
+        unitId: selection.key.id,
+        owner: _state.owner,
+        pixelX: pixelX,
+        pixelY: pixelY,
       );
     }
     return objectEditingController.placeCatalogUnit(

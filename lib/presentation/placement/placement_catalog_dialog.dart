@@ -5,21 +5,24 @@ import 'package:flutter/material.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 import 'catalog_thumbnail.dart';
+import '../localization/l10n.dart';
 
 const _kinds = <StarCraftPlacementKind>[
   StarCraftPlacementKind.tile,
   StarCraftPlacementKind.doodad,
   StarCraftPlacementKind.unit,
   StarCraftPlacementKind.pureSprite,
+  StarCraftPlacementKind.spriteUnit,
 ];
 
-String _tabLabel(StarCraftPlacementKind kind) => switch (kind) {
-  StarCraftPlacementKind.tile => 'Tiles',
-  StarCraftPlacementKind.doodad => 'Doodads',
-  StarCraftPlacementKind.unit => 'Units',
-  StarCraftPlacementKind.pureSprite => 'Sprites',
-  StarCraftPlacementKind.spriteUnit => 'Sprite-units',
-};
+String _tabLabel(StarCraftPlacementKind kind, AppLocalizations l10n) =>
+    switch (kind) {
+      StarCraftPlacementKind.tile => 'Tiles',
+      StarCraftPlacementKind.doodad => 'Doodads',
+      StarCraftPlacementKind.unit => 'Units',
+      StarCraftPlacementKind.pureSprite => 'Sprites',
+      StarCraftPlacementKind.spriteUnit => l10n.catalogKindSpriteUnit,
+    };
 
 /// Opens the placement catalog and returns true when the user confirmed a
 /// placement selection.
@@ -224,7 +227,10 @@ class _PlacementCatalogDialogState extends State<PlacementCatalogDialog> {
             key: Key('placement-catalog-tab-${kind.wireName}'),
             dense: true,
             selected: state.kind == kind,
-            title: Text(_tabLabel(kind), style: const TextStyle(fontSize: 11)),
+            title: Text(
+              _tabLabel(kind, context.l10n),
+              style: const TextStyle(fontSize: 11),
+            ),
             onTap: state.kind == kind
                 ? null
                 : () {

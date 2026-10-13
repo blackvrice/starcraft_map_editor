@@ -354,14 +354,78 @@ void main() {
       );
     });
 
-    test('keeps sprite-unit placement disabled with a stable reason', () {
-      final result = spriteFactory.createSpriteUnit();
-
-      expect(result.isSynthesized, isFalse);
-      expect(
-        result.issueCode,
-        ObjectPlacementFactoryCodes.spriteUnitUnsupported,
+    test('synthesizes and decodes every byte of an active unit-sprite', () {
+      final result = spriteFactory.createSpriteUnit(
+        capability: _capability(unitId: 37),
+        unitId: 37,
+        owner: 4,
+        x: 0x0210,
+        y: 0x0184,
       );
+      expect(result.bytes, [37, 0, 0x10, 2, 0x84, 1, 4, 0, 0, 0x20]);
+      final sprite = decoder
+          .decode(_documentWith('THG2', result.bytes))
+          .spriteSections
+          .single
+          .sprites
+          .single;
+      expect(sprite.spriteType, 37);
+      expect(sprite.drawsAsSprite, isFalse);
+      expect(sprite.hasUnitFlag, isTrue);
+      expect(sprite.isSpriteUnitDisabled, isFalse);
+      final copy = result.bytes..[0] = 99;
+      expect(copy, isNot(result.bytes));
+      expect(result.bytes[0], 37);
+    });
+    test('rejects unverified standalone unit-sprite capabilities', () {
+      for (final item in [
+        (
+          _capability(unitId: 1),
+          ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+        ),
+        (
+          _capability(unitId: 0, isSubunit: true),
+          ObjectPlacementFactoryCodes.unitSubunit,
+        ),
+        (
+          _capability(unitId: 0, requiresRelationLink: true),
+          ObjectPlacementFactoryCodes.unitRelationRequired,
+        ),
+      ]) {
+        final result = spriteFactory.createSpriteUnit(
+          capability: item.$1,
+          unitId: 0,
+          owner: 0,
+          x: 0,
+          y: 0,
+        );
+        expect(result.isSynthesized, isFalse);
+        expect(result.issueCode, item.$2);
+        expect(() => result.bytes, throwsStateError);
+      }
+    });
+    test('validates unit-sprite IDs, owners and coordinates', () {
+      for (final input in [
+        (id: -1, owner: 0, x: 0, y: 0),
+        (id: 228, owner: 0, x: 0, y: 0),
+        (id: 0, owner: -1, x: 0, y: 0),
+        (id: 0, owner: 256, x: 0, y: 0),
+        (id: 0, owner: 0, x: -1, y: 0),
+        (id: 0, owner: 0, x: 65536, y: 0),
+        (id: 0, owner: 0, x: 0, y: -1),
+        (id: 0, owner: 0, x: 0, y: 65536),
+      ]) {
+        expect(
+          () => spriteFactory.createSpriteUnit(
+            capability: _capability(unitId: 0),
+            unitId: input.id,
+            owner: input.owner,
+            x: input.x,
+            y: input.y,
+          ),
+          throwsRangeError,
+        );
+      }
     });
   });
 

@@ -1,5 +1,9 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-13: standalone unit-sprite는 새 THG2 10바이트에 unit ID·좌표·owner,
+unused=0·IsUnit(0x2000)을 쓴다. pure sprite와 Doodad overlay는 별도이며 기존
+섹션/flags를 변환하지 않는다. [제한 지원과 저장 왕복](UNIT_SPRITE_PLACEMENT.md)을 따른다.
+
 ## 후속 포맷 설계 경계 (2026-10-04, 미구현)
 
 2026-10-13 두다드 사전 검증은 포맷을 바꾸지 않는다. 실제 적용은 기존

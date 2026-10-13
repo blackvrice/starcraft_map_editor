@@ -167,6 +167,11 @@ Chkdraft는 Unit 항목을 고를 때 36-byte `UNIT` 레코드를 zero-initializ
 
 ### 3.3 Sprite와 sprite-unit
 
+2026-10-13: 아래 2026-09-07의 전체 비활성 정책을 검증된 standalone capability
+범위에 한해 확장했다. 새 flags는 IsUnit=0x2000, DrawAsSprite/Disabled=0이며
+관계 필요·터렛·capability 누락은 계속 거절한다. [생성/실행 계약](../UNIT_SPRITE_PLACEMENT.md)을
+현재 범위로 사용하고 아래 당시 기록은 보존한다.
+
 관찰:
 
 - `THG2`는 10-byte 레코드다. type, x/y, owner, unused와 flags를 가진다.

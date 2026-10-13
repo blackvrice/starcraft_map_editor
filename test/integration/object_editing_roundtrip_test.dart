@@ -225,6 +225,19 @@ void _registerSettingsRoundtrip(bool realArchive) {
         isTrue,
       );
 
+      expect(
+        editingController
+            .placeCatalogSpriteUnit(
+              capability: _placementCapability(0),
+              unitId: 0,
+              owner: 3,
+              pixelX: 192,
+              pixelY: 200,
+            )
+            .isPlaced,
+        isTrue,
+      );
+
       final locationObject = _select(
         openController: openController,
         layerController: layerController,
@@ -670,7 +683,19 @@ void _registerSettingsRoundtrip(bool realArchive) {
         ..setUint16(2, 104, Endian.little)
         ..setUint16(4, 112, Endian.little)
         ..setUint8(6, 7);
-      expect(_sectionNamed(writtenDocument, 'THG2').payload, expectedSprite);
+      expect(_sectionNamed(writtenDocument, 'THG2').payload, [
+        ...expectedSprite,
+        0,
+        0,
+        192,
+        0,
+        200,
+        0,
+        3,
+        0,
+        0,
+        0x20,
+      ]);
       expect(expectedSprite[7], originalSpritePayload[7]);
       expect(
         expectedSprite.sublist(8, 10),
@@ -703,6 +728,13 @@ void _registerSettingsRoundtrip(bool realArchive) {
 
       final reopened = await openController.open(sourcePath: outputPath);
       expect(reopened.status, OpenMapStatus.opened);
+      final unitSprite =
+          reopened.session!.objectViews.spriteSections.single.sprites.last;
+      expect(
+        (unitSprite.spriteType, unitSprite.x, unitSprite.y, unitSprite.owner),
+        (0, 192, 200, 3),
+      );
+      expect(unitSprite.flags, ChkSpritePlacement.isUnitFlag);
       expect(
         ChkTriggerResources.switchName(reopened.session!.rawDocument, 5),
         'Spawn switch',

@@ -1186,12 +1186,18 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 [계획·실행·실패 수정·검증](PLACEMENT_PREVIEW.md)을 따른다. 기존 Doodad 게임/
 외부 에디터 관찰 대기와 EP0 전체 인수는 유지하며 전체 EP1을 완료 표시하지 않는다.
 
-- [ ] THG2 unit-sprite factory/flags/활성 계약 검증과 지원/미지원 사전 표시
+- [x] standalone THG2 unit-sprite factory/flags/활성 기본값·카탈로그/그림 선택·지원/미지원 사전 표시·배치/Undo/저장 왕복
+- [ ] unit-sprite 관계/터렛 예외 지원표 확대와 실제 게임/외부 에디터 인수
 - [ ] 두다드 합성 썸네일
 - [x] 두다드 footprint 공통 preview/Apply 검사·읽기 전용 사유/색상·공통 배치 코드10종 한영 안내와 자동 회귀
 - [ ] 유닛/Sprite 등 다른 유형의 공통 사전 검증과 전체 미지원/실패 안내
 - [ ] 격자/건물·유닛 스냅/정상·자유 배치 정책과 기존 데이터 비정규화
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
+
+EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
+helper의 검증된 Unit metadata/graphics를 재사용하며 일반 UNIT나 두다드 overlay로
+바꾸지 않는다. 실제 CASC/MPQ 확인은 게임 동작 확인이 아니므로 해당 인수는 유지한다.
+다음 코드 단위는 두다드 합성 썸네일이다.
 
 ### EP2. 설정·트리거 작성
 

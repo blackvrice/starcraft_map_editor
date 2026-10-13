@@ -1074,6 +1074,46 @@ class ObjectEditingController {
     );
   }
 
+  /// Places a standalone unit-sprite in THG2, never in UNIT or DD2.
+  ObjectPlacementResult placeCatalogSpriteUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      return ObjectPlacementResult.refused(
+        ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    final blocked = _checkPlacementTarget(
+      session: session,
+      layer: MapLayerType.sprites,
+      pixelX: pixelX,
+      pixelY: pixelY,
+    );
+    if (blocked != null) return ObjectPlacementResult.refused(blocked);
+    final record = spritePlacementFactory.createSpriteUnit(
+      capability: capability,
+      unitId: unitId,
+      owner: owner,
+      x: pixelX,
+      y: pixelY,
+    );
+    if (!record.isSynthesized) {
+      return ObjectPlacementResult.refused(record.issueCode!);
+    }
+    return _appendCatalogRecord(
+      session: session,
+      layer: MapLayerType.sprites,
+      nameBytes: ChkSectionNames.spritePlacements,
+      record: record.bytes,
+      label: 'Place Sprite',
+    );
+  }
+
   /// Places one Doodad as a single atomic command.
   ///
   /// The `DD2 ` metadata, every footprint `MTXM` cell and the optional `THG2`

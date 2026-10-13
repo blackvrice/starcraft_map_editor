@@ -13,6 +13,7 @@ const _kinds = <StarCraftPlacementKind>[
   StarCraftPlacementKind.unit,
   StarCraftPlacementKind.doodad,
   StarCraftPlacementKind.pureSprite,
+  StarCraftPlacementKind.spriteUnit,
   StarCraftPlacementKind.tile,
 ];
 
@@ -368,7 +369,8 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
                 selected: _placeableOnly,
                 onSelected: (value) => setState(() => _placeableOnly = value),
               ),
-              if (state.kind == StarCraftPlacementKind.unit)
+              if (state.kind == StarCraftPlacementKind.unit ||
+                  state.kind == StarCraftPlacementKind.spriteUnit)
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -376,7 +378,7 @@ class _PlacementCatalogPaneState extends State<PlacementCatalogPane> {
                       value: _showComponents,
                       onChanged: (v) => setState(() => _showComponents = v!),
                     ),
-                    Text(l10n.catalogShowComponents),
+                    Flexible(child: Text(l10n.catalogShowComponents)),
                   ],
                 ),
               if (state.diagnostics.isEmpty && state.items.isNotEmpty)

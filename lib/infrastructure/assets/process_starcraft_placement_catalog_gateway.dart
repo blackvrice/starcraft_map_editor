@@ -82,6 +82,44 @@ final class ProcessStarCraftPlacementCatalogGateway
         remediationId: 'editorChooseTheStarCraftInstallationFolderAgain',
       );
     }
+    if (request.kind == StarCraftPlacementKind.spriteUnit) {
+      // The helper already validates Unit IDs/capabilities; only the editor's
+      // catalog identity changes, never the helper protocol or preview IDs.
+      final page = await list(
+        StarCraftPlacementCatalogRequest(
+          operationId: request.operationId,
+          installationPath: request.installationPath,
+          kind: StarCraftPlacementKind.unit,
+          tileset: request.tileset,
+          offset: request.offset,
+          limit: request.limit,
+          unitMetadataOnly: request.unitMetadataOnly,
+        ),
+      );
+      return StarCraftPlacementCatalogPage(
+        request: request,
+        totalEntries: page.totalEntries,
+        storageProduct: page.storageProduct,
+        storageBuildNumber: page.storageBuildNumber,
+        helperVersion: page.helperVersion,
+        cascLibRevision: page.cascLibRevision,
+        totalMetadataBytes: page.totalMetadataBytes,
+        diagnostics: page.diagnostics,
+        entries: [
+          for (final entry in page.entries)
+            StarCraftPlacementCatalogEntry(
+              key: StarCraftPlacementCatalogKey.spriteUnit(entry.key.id),
+              source: entry.source,
+              availability: entry.availability,
+              verifiedName: entry.verifiedName,
+              categoryPath: entry.categoryPath,
+              issue: entry.issue,
+              previewIssueCode: entry.previewIssueCode,
+              unitCapability: entry.unitCapability,
+            ),
+        ],
+      );
+    }
     if (request.kind != StarCraftPlacementKind.tile &&
         request.kind != StarCraftPlacementKind.doodad &&
         request.kind != StarCraftPlacementKind.unit &&

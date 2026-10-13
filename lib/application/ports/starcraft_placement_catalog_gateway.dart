@@ -262,12 +262,13 @@ final class StarCraftPlacementCatalogEntry {
       );
     }
     if (unitCapability != null &&
-        (key.kind != StarCraftPlacementKind.unit ||
+        ((key.kind != StarCraftPlacementKind.unit &&
+                key.kind != StarCraftPlacementKind.spriteUnit) ||
             unitCapability!.unitId != key.id)) {
       throw ArgumentError.value(
         unitCapability,
         'unitCapability',
-        'Only a Unit entry can carry the capability of its own unit.',
+        'Only a Unit or unit-sprite entry can carry its own unit capability.',
       );
     }
     if (doodadRecipeIssueCode != null &&
@@ -302,9 +303,8 @@ final class StarCraftPlacementCatalogEntry {
   final DoodadPlacementRecipe? doodadRecipe;
   final String? doodadRecipeIssueCode;
 
-  /// The verified `units.dat` capability snapshot a Unit placement needs.
-  /// Only Unit entries can carry one, and an entry without it can never be
-  /// placed because its record flags would have to be guessed.
+  /// The verified `units.dat` snapshot for Unit and unit-sprite placement.
+  /// An entry without it cannot safely synthesize a standalone placement.
   final UnitPlacementCapability? unitCapability;
 
   String get displayName =>

@@ -31,6 +31,34 @@ void main() {
   });
 
   test(
+    'unit-sprite preview uses Unit graphics and retains a distinct catalog key',
+    () async {
+      final request = StarCraftPlacementCatalogRequest(
+        operationId: 'sprite-unit-page',
+        installationPath: unitRequest.installationPath,
+        kind: StarCraftPlacementKind.spriteUnit,
+        tileset: unitRequest.tileset,
+      );
+      final key = StarCraftPlacementCatalogKey.spriteUnit(5);
+      final atlas = _AtlasGateway(
+        (request) =>
+            _atlas(request, entries: [_atlasEntry(request.objects.single)]),
+      );
+      final batch = await ObjectPlacementCatalogLoader(
+        catalogGateway: _CatalogGateway(_page(request, entries: [_entry(key)])),
+        objectAtlasGateway: atlas,
+      ).load(request);
+      expect(batch.isSuccess, isTrue);
+      expect(
+        atlas.requests.single.objects.single,
+        StarCraftObjectGraphicKey(kind: StarCraftObjectGraphicKind.unit, id: 5),
+      );
+      expect(batch.thumbnails.keys, [key]);
+      expect(batch.thumbnails[key]!.rgbaBytes, isNotEmpty);
+    },
+  );
+
+  test(
     'invalidation while catalog is pending prevents atlas rendering',
     () async {
       var cancelled = false;

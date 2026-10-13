@@ -35,6 +35,98 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  test(
+    'unit-sprite with missing capability stays read-only before canvas placement',
+    () async {
+      final fixture = await _openFixture(unitCapabilityAvailable: false);
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      final before = fixture.openMapController.state.session!;
+      expect(
+        await fixture.controller.load(StarCraftPlacementKind.spriteUnit),
+        isTrue,
+      );
+      final item = fixture.controller.state.items.single;
+      expect(item.isPlaceable, isFalse);
+      expect(fixture.controller.confirm(item.key), isFalse);
+      expect(
+        fixture.controller.state.lastPlacementIssueCode,
+        'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+      );
+      expect(fixture.controller.state.selection, isNull);
+      expect(fixture.openMapController.state.session, same(before));
+      expect(fixture.objectEditingController.state.undoDepth, 0);
+    },
+  );
+  testWidgets(
+    'unit-sprite tab confirms Unit graphics and places only THG2 with Undo',
+    (tester) async {
+      final fixture = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(fixture.dispose);
+      fixture.controller.setInstallationPath(_installationPath);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PlacementCatalogPane(controller: fixture.controller),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('placement-catalog-tab-spriteUnit')),
+      );
+      await tester.pumpAndSettle();
+      final item = fixture.controller.state.items.single;
+      expect(item.key.kind, StarCraftPlacementKind.spriteUnit);
+      expect(item.hasThumbnail, isTrue);
+      await tester.tap(
+        find.byKey(const Key('placement-catalog-item-spriteUnit:0')),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('placement-catalog-place')));
+      await tester.pumpAndSettle();
+      expect(
+        fixture.controller.state.selection!.kind,
+        StarCraftPlacementKind.spriteUnit,
+      );
+      final before = const RawChkEncoder().encode(
+        fixture.openMapController.state.session!.rawDocument,
+      );
+      fixture.controller.setOwner(3);
+      final result = fixture.controller.placeAt(
+        pixelX: 96,
+        pixelY: 64,
+        tileX: 3,
+        tileY: 2,
+      );
+      expect(result.isPlaced, isTrue);
+      final sprite = fixture
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .spriteSections
+          .single
+          .sprites
+          .single;
+      expect(sprite.flags, ChkSpritePlacement.isUnitFlag);
+      expect(sprite.owner, 3);
+      expect(
+        fixture.openMapController.state.session!.objectViews.unitSections,
+        isEmpty,
+      );
+      expect(fixture.objectEditingController.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          fixture.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   test(
@@ -339,6 +431,7 @@ void main() {
   for (final kind in [
     StarCraftPlacementKind.unit,
     StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
   ]) {
     test(
       'local $kind catalog places and restores exact CHK bytes',
@@ -390,7 +483,11 @@ void main() {
               session.objectViews.spriteSections.single.sprites.single;
           expect(sprite.spriteType, item.key.id);
           expect((sprite.x, sprite.y), (96, 64));
-          expect(sprite.drawsAsSprite, isTrue);
+          expect(
+            sprite.drawsAsSprite,
+            kind == StarCraftPlacementKind.pureSprite,
+          );
+          expect(sprite.hasUnitFlag, kind == StarCraftPlacementKind.spriteUnit);
         }
         final after = bytes();
         expect(after, isNot(equals(before)));
@@ -1370,9 +1467,12 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
           availability: StarCraftPlacementAvailability.placeable,
         );
       case StarCraftPlacementKind.unit:
+      case StarCraftPlacementKind.spriteUnit:
         if (unitCapabilityAvailable) {
           return StarCraftPlacementCatalogEntry(
-            key: StarCraftPlacementCatalogKey.unit(index),
+            key: kind == StarCraftPlacementKind.unit
+                ? StarCraftPlacementCatalogKey.unit(index)
+                : StarCraftPlacementCatalogKey.spriteUnit(index),
             source: StarCraftPlacementCatalogSource.localData,
             availability: StarCraftPlacementAvailability.placeable,
             verifiedName: 'Terran Marine',
@@ -1399,7 +1499,9 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
           );
         }
         return StarCraftPlacementCatalogEntry(
-          key: StarCraftPlacementCatalogKey.unit(index),
+          key: kind == StarCraftPlacementKind.unit
+              ? StarCraftPlacementCatalogKey.unit(index)
+              : StarCraftPlacementCatalogKey.spriteUnit(index),
           source: StarCraftPlacementCatalogSource.localData,
           availability: StarCraftPlacementAvailability.unsupported,
           issue: StarCraftPlacementCatalogIssue(
@@ -1409,7 +1511,6 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
           previewIssueCode: 'SC_CASC_OBJECT_PREVIEW_UNAVAILABLE',
         );
       case StarCraftPlacementKind.pureSprite:
-      case StarCraftPlacementKind.spriteUnit:
         return StarCraftPlacementCatalogEntry(
           key: StarCraftPlacementCatalogKey.pureSprite(index),
           source: StarCraftPlacementCatalogSource.localData,

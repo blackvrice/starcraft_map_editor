@@ -59,6 +59,10 @@ void main() {
     );
     expect(find.byKey(const Key('placement-catalog-tab-unit')), findsOneWidget);
     expect(
+      find.byKey(const Key('placement-catalog-tab-spriteUnit')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const Key('placement-catalog-tab-pureSprite')),
       findsOneWidget,
     );
