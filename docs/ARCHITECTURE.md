@@ -310,6 +310,13 @@ hover 결과를 신뢰하지 않고 현재 문서를 다시 검사한다. `MapCa
 문서 identity에만 캐시하며 문서 교체/Undo/Redo에서 무효화한다.
 [범위·실행 기록](CATALOG_PLACEMENT_PREFLIGHT.md)을 따른다.
 
+2026-10-13 `PointPlacementSnap`은 Flutter/I/O 없는 정수 좌표 정책이다.
+`PlacementCatalogState`가 별도 격자 표시/간격과 스냅 설정을 보유한다(런타임만).
+카탈로그 preview/Apply는 원시 클릭 위치와 정렬한 출력 위치를 모두 검사한다.
+Canvas는 같은 `resolvePoint` 결과로 중심 커서를 그리며 클릭 원시 좌표는 그대로
+컨트롤러에 전달한다. 격자 painter는 그리기만 하며 배치 좌표에 영향을 주지 않는다.
+건물 footprint 자료/정렬·게임 규칙은 포함하지 않는다([계약](PLACEMENT_GRID_SNAP.md)).
+
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
 `ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의

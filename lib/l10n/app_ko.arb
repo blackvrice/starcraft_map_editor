@@ -2919,5 +2919,11 @@
   "placementHistoryBlocked": "진행 중인 편집 작업을 완료하거나 취소한 뒤 다른 오브젝트를 배치하세요.",
   "placementCapabilityMismatch": "유닛 지원 정보가 이 ID와 일치하지 않습니다. 카탈로그를 다시 불러온 뒤 배치하세요.",
   "placementSpriteUnitUnsupported": "이 유닛형 스프라이트는 독립 배치를 지원하지 않습니다.",
-  "placementNoSelection": "지원되는 오브젝트를 선택하고 배치를 확정하세요."
+  "placementNoSelection": "지원되는 오브젝트를 선택하고 배치를 확정하세요.",
+  "placementGrid": "격자",
+  "placementGridAuto": "자동",
+  "placementGridHidden": "격자 꺼짐",
+  "placementPointSnap": "좌표 스냅",
+  "placementCustomSnap": "직접 간격 입력",
+  "placementSnapRange": "1~128 사이의 정수를 입력하세요."
 }

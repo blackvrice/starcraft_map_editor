@@ -59,6 +59,7 @@ import '../map_canvas/map_canvas.dart';
 import '../map_canvas/object_sprite_texture_controller.dart';
 import '../map_canvas/terrain_tile_texture_controller.dart';
 import '../placement/placement_catalog_pane.dart';
+import '../placement/placement_alignment_toolbar.dart';
 import '../settings/map_information_dialog.dart';
 import '../settings/player_settings_dialog.dart';
 import '../settings/force_settings_dialog.dart';
@@ -2881,6 +2882,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 9),
+                      PlacementAlignmentToolbar(
+                        controller: placementCatalogController,
+                      ),
                       Wrap(
                         spacing: 7,
                         runSpacing: 7,
@@ -3178,6 +3182,9 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         placementCatalogController,
                         l10n,
                       ),
+                      gridVisible: placementCatalogController.state.gridVisible,
+                      gridSpacingPixels:
+                          placementCatalogController.state.gridSpacingPixels,
                       onSelectionRequested:
                           editingState.tool == TerrainEditingTool.select
                           ? (request) {
@@ -3304,6 +3311,7 @@ MapCanvasPlacementGhost? _placementGhostFor(
   return MapCanvasPlacementGhost(
     tileWidth: recipe?.width ?? 1,
     tileHeight: recipe?.height ?? 1,
+    pointAt: recipe == null ? catalog.resolvePoint : null,
     issueCodeAtPixel: (x, y) =>
         catalog.previewAt(pixelX: x, pixelY: y, tileX: x ~/ 32, tileY: y ~/ 32),
     issueText: (code) => placementFailureText(l10n, code),

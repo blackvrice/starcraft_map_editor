@@ -10,6 +10,7 @@ import '../../application/layers/selection_navigation_controller.dart';
 import '../../application/ports/starcraft_object_atlas_gateway.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
+import '../localization/l10n.dart';
 import 'object_sprite_texture.dart';
 import 'object_sprite_texture_controller.dart';
 import 'terrain_tile_texture.dart';
@@ -84,6 +85,8 @@ class MapCanvas extends StatefulWidget {
     this.fogPlayer,
     this.isObjectPlacementActive = false,
     this.placementGhost,
+    this.gridVisible = true,
+    this.gridSpacingPixels,
     this.contentPadding = 24,
     this.maximumTileExtent = 32,
     super.key,
@@ -121,6 +124,8 @@ class MapCanvas extends StatefulWidget {
   final MapCanvasPaintObserver? onPaintMeasured;
   final bool isObjectPlacementActive;
   final MapCanvasPlacementGhost? placementGhost;
+  final bool gridVisible;
+  final int? gridSpacingPixels;
   final double contentPadding;
   final double maximumTileExtent;
 
@@ -233,6 +238,9 @@ class _MapCanvasState extends State<MapCanvas> {
               ? null
               : layout.coordinateAt(_pointerPosition!);
           final ghost = widget.placementGhost;
+          final ghostPoint = coordinate == null
+              ? null
+              : ghost?.pointAt?.call(coordinate.pixelX, coordinate.pixelY);
           final placementIssue = ghost == null || coordinate == null
               ? null
               : ghost.issueCodeAtPixel != null
@@ -323,6 +331,9 @@ class _MapCanvasState extends State<MapCanvas> {
                               rectanglePreview: rectanglePreview,
                               placementGhost: widget.placementGhost,
                               placementIsBlocked: placementIssue != null,
+                              placementGhostPixel: ghostPoint,
+                              gridVisible: widget.gridVisible,
+                              gridSpacingPixels: widget.gridSpacingPixels,
                               placementGhostTile: coordinate == null
                                   ? null
                                   : TerrainTileCoordinate(
@@ -363,7 +374,11 @@ class _MapCanvasState extends State<MapCanvas> {
                           child: _CanvasBadge(
                             key: const Key('map-canvas-grid-scale'),
                             icon: Icons.grid_4x4_rounded,
-                            label: 'Grid ${layout.gridStep} tile',
+                            label: !widget.gridVisible
+                                ? context.l10n.placementGridHidden
+                                : widget.gridSpacingPixels == null
+                                ? 'Grid ${layout.gridStep} tile'
+                                : '${context.l10n.placementGrid} ${widget.gridSpacingPixels} px',
                           ),
                         ),
                       ),
@@ -1340,6 +1355,7 @@ final class MapCanvasPlacementGhost {
     this.tileHeight = 1,
     this.issueCodeAt,
     this.issueCodeAtPixel,
+    this.pointAt,
     this.issueText,
   }) : assert(tileWidth > 0),
        assert(tileHeight > 0);
@@ -1352,6 +1368,7 @@ final class MapCanvasPlacementGhost {
 
   /// Exact point validation for catalog objects; preferred over tile callbacks.
   final String? Function(int pixelX, int pixelY)? issueCodeAtPixel;
+  final ({int x, int y}) Function(int pixelX, int pixelY)? pointAt;
   final String Function(String code)? issueText;
 
   /// The footprint origin for a ghost centred on [tileX], [tileY].
@@ -1478,6 +1495,9 @@ class MapCanvasPainter extends CustomPainter {
     this.rectanglePreview,
     this.placementGhost,
     this.placementGhostTile,
+    this.placementGhostPixel,
+    this.gridVisible = true,
+    this.gridSpacingPixels,
     this.placementIsBlocked = false,
     this.layerScene,
     this.selectionRegionPreview,
@@ -1526,6 +1546,9 @@ class MapCanvasPainter extends CustomPainter {
   final TerrainTileRegion? rectanglePreview;
   final MapCanvasPlacementGhost? placementGhost;
   final TerrainTileCoordinate? placementGhostTile;
+  final ({int x, int y})? placementGhostPixel;
+  final bool gridVisible;
+  final int? gridSpacingPixels;
   final bool placementIsBlocked;
   final MapLayerScene? layerScene;
   final MapLayerPixelRegion? selectionRegionPreview;
@@ -1683,28 +1706,33 @@ class MapCanvasPainter extends CustomPainter {
 
   void _paintGrid(Canvas canvas) {
     final bounds = layout.visibleTiles;
-    if (bounds.isEmpty) {
+    if (!gridVisible || bounds.isEmpty) {
       return;
     }
 
-    final step = layout.gridStep;
+    var step = math.max(1, gridSpacingPixels ?? layout.gridStep * 32);
+    final scale = layout.tileExtent / 32;
+    // Thin dense grids at low zoom without changing the map-origin lattice.
+    while (step * scale < 8) {
+      step *= 2;
+    }
     final mapRect = layout.mapRect;
     final gridPaint = Paint()
-      ..color = step == 1 ? minorGrid : majorGrid
+      ..color = step <= 32 ? minorGrid : majorGrid
       ..strokeWidth = 1;
-    final firstColumn = _firstMultipleAtOrAfter(bounds.left, step);
-    final firstRow = _firstMultipleAtOrAfter(bounds.top, step);
+    final firstColumn = _firstMultipleAtOrAfter(bounds.left * 32, step);
+    final firstRow = _firstMultipleAtOrAfter(bounds.top * 32, step);
 
-    for (var x = firstColumn; x <= bounds.rightExclusive; x += step) {
-      final pixelX = mapRect.left + x * layout.tileExtent;
+    for (var x = firstColumn; x <= bounds.rightExclusive * 32; x += step) {
+      final pixelX = mapRect.left + x * scale;
       canvas.drawLine(
         Offset(pixelX, mapRect.top),
         Offset(pixelX, mapRect.bottom),
         gridPaint,
       );
     }
-    for (var y = firstRow; y <= bounds.bottomExclusive; y += step) {
-      final pixelY = mapRect.top + y * layout.tileExtent;
+    for (var y = firstRow; y <= bounds.bottomExclusive * 32; y += step) {
+      final pixelY = mapRect.top + y * scale;
       canvas.drawLine(
         Offset(mapRect.left, pixelY),
         Offset(mapRect.right, pixelY),
@@ -1956,8 +1984,7 @@ class MapCanvasPainter extends CustomPainter {
     _paintPlacementGhost(canvas);
   }
 
-  /// Draws the snapped footprint of the active catalog placement. The ghost is
-  /// tile aligned, so what the user sees is exactly the area a click writes.
+  /// Doodads cover tiles; point objects show a cursor around the stored center.
   void _paintPlacementGhost(Canvas canvas) {
     final ghost = placementGhost;
     final tile = placementGhostTile;
@@ -1966,17 +1993,31 @@ class MapCanvasPainter extends CustomPainter {
     }
     final originX = ghost.originX(tile.x);
     final originY = ghost.originY(tile.y);
-    final rect = Rect.fromLTWH(
-      layout.mapRect.left + originX * layout.tileExtent,
-      layout.mapRect.top + originY * layout.tileExtent,
-      ghost.tileWidth * layout.tileExtent,
-      ghost.tileHeight * layout.tileExtent,
-    );
-    final fitsMap =
-        originX >= 0 &&
-        originY >= 0 &&
-        originX + ghost.tileWidth <= layout.mapWidth &&
-        originY + ghost.tileHeight <= layout.mapHeight;
+    final point = placementGhostPixel;
+    final rect = point == null
+        ? Rect.fromLTWH(
+            layout.mapRect.left + originX * layout.tileExtent,
+            layout.mapRect.top + originY * layout.tileExtent,
+            ghost.tileWidth * layout.tileExtent,
+            ghost.tileHeight * layout.tileExtent,
+          )
+        : Rect.fromCenter(
+            center: Offset(
+              layout.mapRect.left + point.x * layout.tileExtent / 32,
+              layout.mapRect.top + point.y * layout.tileExtent / 32,
+            ),
+            width: layout.tileExtent,
+            height: layout.tileExtent,
+          );
+    final fitsMap = point != null
+        ? point.x >= 0 &&
+              point.y >= 0 &&
+              point.x < layout.mapWidth * 32 &&
+              point.y < layout.mapHeight * 32
+        : originX >= 0 &&
+              originY >= 0 &&
+              originX + ghost.tileWidth <= layout.mapWidth &&
+              originY + ghost.tileHeight <= layout.mapHeight;
     final canPlace = fitsMap && !placementIsBlocked;
     canvas
       ..drawRect(
@@ -1993,6 +2034,21 @@ class MapCanvasPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2,
       );
+    if (point != null) {
+      final paint = Paint()
+        ..color = canPlace ? const Color(0xFF7BE3A6) : const Color(0xFFF48A8A)
+        ..strokeWidth = 1;
+      canvas.drawLine(
+        rect.center - const Offset(4, 0),
+        rect.center + const Offset(4, 0),
+        paint,
+      );
+      canvas.drawLine(
+        rect.center - const Offset(0, 4),
+        rect.center + const Offset(0, 4),
+        paint,
+      );
+    }
   }
 
   Rect _tileRect(int x, int y) => Rect.fromLTWH(
@@ -2010,6 +2066,9 @@ class MapCanvasPainter extends CustomPainter {
         oldDelegate.layout.mapRect != layout.mapRect ||
         oldDelegate.layout.tileExtent != layout.tileExtent ||
         oldDelegate.layout.gridStep != layout.gridStep ||
+        oldDelegate.gridVisible != gridVisible ||
+        oldDelegate.gridSpacingPixels != gridSpacingPixels ||
+        oldDelegate.placementGhostPixel != placementGhostPixel ||
         !identical(oldDelegate.rawTileValues, rawTileValues) ||
         !identical(oldDelegate.fogValues, fogValues) ||
         oldDelegate.fogPlayer != fogPlayer ||

@@ -3670,5 +3670,11 @@
   "placementHistoryBlocked": "Finish or cancel the active editing operation before placing another object.",
   "placementCapabilityMismatch": "The unit capability data does not match this ID. Reload the catalog before placing.",
   "placementSpriteUnitUnsupported": "This unit-sprite type is not supported for standalone placement.",
-  "placementNoSelection": "Select and confirm a supported object before placing it."
+  "placementNoSelection": "Select and confirm a supported object before placing it.",
+  "placementGrid": "Grid",
+  "placementGridAuto": "Auto",
+  "placementGridHidden": "Grid off",
+  "placementPointSnap": "Point snap",
+  "placementCustomSnap": "Custom spacing",
+  "placementSnapRange": "Enter an integer from 1 to 128."
 }

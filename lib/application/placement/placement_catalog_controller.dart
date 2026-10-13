@@ -9,6 +9,7 @@ import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
+import '../../domain/placement/point_placement_snap.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../editing/object_editing_controller.dart';
@@ -111,6 +112,9 @@ final class PlacementCatalogState {
     this.selection,
     this.owner = 0,
     this.isContinuous = false,
+    this.pointSnap = PointPlacementSnap.disabled,
+    this.gridVisible = true,
+    this.gridSpacingPixels,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
     Iterable<EditorDiagnostic> previewDiagnostics = const [],
@@ -130,6 +134,9 @@ final class PlacementCatalogState {
   final PlacementSelection? selection;
   final int owner;
   final bool isContinuous;
+  final PointPlacementSnap pointSnap;
+  final bool gridVisible;
+  final int? gridSpacingPixels;
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
 
@@ -646,7 +653,15 @@ class PlacementCatalogController {
     if (operation != null) unawaited(catalogGateway?.cancel(operation));
     ++_requestSequence;
     _recentKeys.clear();
-    _emit(PlacementCatalogState(kind: _state.kind, owner: _state.owner));
+    _emit(
+      PlacementCatalogState(
+        kind: _state.kind,
+        owner: _state.owner,
+        pointSnap: _state.pointSnap,
+        gridVisible: _state.gridVisible,
+        gridSpacingPixels: _state.gridSpacingPixels,
+      ),
+    );
   }
 
   /// Loads the first page of [kind]. Returns false when the catalog cannot be
@@ -783,9 +798,63 @@ class PlacementCatalogController {
     _emit(_copy(clearSelection: true, lastPlacementIssueCode: null));
   }
 
-  /// Reads current document/layer state without changing selection or history.
-  /// Pixel coordinates are kept exact; only Doodads use a tile footprint origin.
+  void setPointSnap({required bool enabled, required int step}) {
+    final snap = PointPlacementSnap(enabled: enabled, step: step);
+    if (snap.enabled == _state.pointSnap.enabled &&
+        snap.step == _state.pointSnap.step) {
+      return;
+    }
+    _emit(_copy(pointSnap: snap));
+  }
+
+  void setGridVisible(bool visible) {
+    if (visible == _state.gridVisible) return;
+    _emit(_copy(gridVisible: visible));
+  }
+
+  void setGridSpacing(int? pixels) {
+    if (pixels != null && !PointPlacementSnap.presets.contains(pixels)) {
+      throw ArgumentError.value(pixels, 'pixels');
+    }
+    if (pixels == _state.gridSpacingPixels) return;
+    _emit(_copy(gridSpacingPixels: pixels, clearGridSpacing: pixels == null));
+  }
+
+  bool get isPointSnapActive =>
+      _state.pointSnap.enabled &&
+      (_state.selection?.kind == StarCraftPlacementKind.unit ||
+          _state.selection?.kind == StarCraftPlacementKind.pureSprite ||
+          _state.selection?.kind == StarCraftPlacementKind.spriteUnit);
+
+  ({int x, int y}) resolvePoint(int x, int y) =>
+      isPointSnapActive ? _state.pointSnap.resolve(x, y) : (x: x, y: y);
+
+  /// Validates both the input and aligned output; never clamps at map edges.
   String? previewAt({
+    required int pixelX,
+    required int pixelY,
+    required int tileX,
+    required int tileY,
+  }) {
+    final issue = _previewAt(
+      pixelX: pixelX,
+      pixelY: pixelY,
+      tileX: tileX,
+      tileY: tileY,
+    );
+    if (issue != null || !isPointSnapActive) return issue;
+    final point = resolvePoint(pixelX, pixelY);
+    return _previewAt(
+      pixelX: point.x,
+      pixelY: point.y,
+      tileX: point.x ~/ 32,
+      tileY: point.y ~/ 32,
+    );
+  }
+
+  /// Reads current document/layer state without changing selection or history.
+  /// Coordinates are already resolved; only Doodads use a tile footprint origin.
+  String? _previewAt({
     required int pixelX,
     required int pixelY,
     required int tileX,
@@ -857,6 +926,21 @@ class PlacementCatalogController {
       return ObjectPlacementResult.refused(
         PlacementCatalogDiagnosticCodes.unsupportedSelection,
       );
+    }
+    if (isPointSnapActive) {
+      final inputIssue = _previewAt(
+        pixelX: pixelX,
+        pixelY: pixelY,
+        tileX: tileX,
+        tileY: tileY,
+      );
+      if (inputIssue != null) {
+        _emit(_copy(lastPlacementIssueCode: inputIssue));
+        return ObjectPlacementResult.refused(inputIssue);
+      }
+      final point = resolvePoint(pixelX, pixelY);
+      pixelX = point.x;
+      pixelY = point.y;
     }
     final result = switch (selection.kind) {
       StarCraftPlacementKind.pureSprite =>
@@ -1190,12 +1274,16 @@ class PlacementCatalogController {
     PlacementSelection? selection,
     int? owner,
     bool? isContinuous,
+    PointPlacementSnap? pointSnap,
+    bool? gridVisible,
+    int? gridSpacingPixels,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
     List<EditorDiagnostic>? previewDiagnostics,
     List<StarCraftPlacementCatalogKey>? recentKeys,
     bool clearPreview = false,
     bool clearSelection = false,
+    bool clearGridSpacing = false,
   }) => PlacementCatalogState(
     kind: kind ?? _state.kind,
     items: items ?? _state.items,
@@ -1207,6 +1295,11 @@ class PlacementCatalogController {
     selection: clearSelection ? null : (selection ?? _state.selection),
     owner: owner ?? _state.owner,
     isContinuous: isContinuous ?? _state.isContinuous,
+    pointSnap: pointSnap ?? _state.pointSnap,
+    gridVisible: gridVisible ?? _state.gridVisible,
+    gridSpacingPixels: clearGridSpacing
+        ? null
+        : (gridSpacingPixels ?? _state.gridSpacingPixels),
     lastPlacementIssueCode: lastPlacementIssueCode,
     diagnostics: diagnostics ?? _state.diagnostics,
     previewDiagnostics: previewDiagnostics ?? _state.previewDiagnostics,

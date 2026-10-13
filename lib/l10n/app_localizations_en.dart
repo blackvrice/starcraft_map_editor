@@ -6220,4 +6220,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get placementNoSelection =>
       'Select and confirm a supported object before placing it.';
+
+  @override
+  String get placementGrid => 'Grid';
+
+  @override
+  String get placementGridAuto => 'Auto';
+
+  @override
+  String get placementGridHidden => 'Grid off';
+
+  @override
+  String get placementPointSnap => 'Point snap';
+
+  @override
+  String get placementCustomSnap => 'Custom spacing';
+
+  @override
+  String get placementSnapRange => 'Enter an integer from 1 to 128.';
 }

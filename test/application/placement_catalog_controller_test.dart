@@ -30,11 +30,190 @@ import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
+import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
+import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  for (final kind in [
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+  ]) {
+    test(
+      '$kind snap aligns preview and Apply without normalizing the map',
+      () async {
+        final fixture = await _openFixture(unitCapabilityAvailable: true);
+        addTearDown(fixture.dispose);
+        final controller = fixture.controller
+          ..setInstallationPath(_installationPath);
+        await controller.load(kind);
+        controller.confirm(controller.state.items.single.key);
+        final before = fixture.openMapController.state.session!;
+        controller.setPointSnap(enabled: true, step: 16);
+        controller.setGridVisible(false);
+        controller.setGridSpacing(128);
+        expect(fixture.openMapController.state.session, same(before));
+        expect(fixture.objectEditingController.state.undoDepth, 0);
+        expect(controller.resolvePoint(31, 63), (x: 32, y: 64));
+        expect(
+          controller.previewAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1),
+          isNull,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        controller.setPointSnap(enabled: true, step: 17);
+        expect(controller.resolvePoint(31, 63), (x: 34, y: 68));
+        expect(
+          controller
+              .placeAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1)
+              .isPlaced,
+          isTrue,
+        );
+        final session = fixture.openMapController.state.session!;
+        final actual = kind == StarCraftPlacementKind.unit
+            ? (
+                x: session.objectViews.unitSections.single.units.last.x,
+                y: session.objectViews.unitSections.single.units.last.y,
+              )
+            : (
+                x: session.objectViews.spriteSections.single.sprites.last.x,
+                y: session.objectViews.spriteSections.single.sprites.last.y,
+              );
+        expect(actual, (x: 34, y: 68));
+        expect(fixture.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          const RawChkEncoder().encode(before.rawDocument),
+        );
+        expect(fixture.objectEditingController.redo(), isTrue);
+        expect(controller.state.pointSnap.step, 17);
+        final restored = fixture.openMapController.state.session!;
+        controller.confirm(controller.state.items.single.key);
+        controller.setPointSnap(enabled: false, step: 17);
+        expect(controller.resolvePoint(31, 63), (x: 31, y: 63));
+        expect(fixture.openMapController.state.session, same(restored));
+      },
+    );
+    for (final input in [(255, 63), (-1, 63), (256, 63)]) {
+      test('$kind snap refuses edge/input $input without changes', () async {
+        final fixture = await _openFixture(unitCapabilityAvailable: true);
+        addTearDown(fixture.dispose);
+        final controller = fixture.controller
+          ..setInstallationPath(_installationPath);
+        await controller.load(kind);
+        controller.confirm(controller.state.items.single.key);
+        controller.setPointSnap(enabled: true, step: 32);
+        final before = fixture.openMapController.state.session!;
+        final issue = controller.previewAt(
+          pixelX: input.$1,
+          pixelY: input.$2,
+          tileX: 0,
+          tileY: 1,
+        );
+        expect(issue, ObjectPlacementDiagnosticCodes.outOfBounds);
+        expect(
+          controller
+              .placeAt(pixelX: input.$1, pixelY: input.$2, tileX: 0, tileY: 1)
+              .issueCode,
+          issue,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        expect(controller.state.isPlacementActive, isTrue);
+        expect(fixture.objectEditingController.state.undoDepth, 0);
+      });
+    }
+  }
+  test(
+    'alignment settings validate atomically and survive catalog changes',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final c = fixture.controller..setInstallationPath(_installationPath);
+      c.setPointSnap(enabled: true, step: 17);
+      c.setGridSpacing(8);
+      final before = c.state;
+      expect(() => c.setPointSnap(enabled: true, step: 0), throwsRangeError);
+      expect(() => c.setGridSpacing(7), throwsArgumentError);
+      expect(c.state, same(before));
+      await c.load(StarCraftPlacementKind.doodad);
+      c.confirm(c.state.items.first.key);
+      expect(c.resolvePoint(31, 63), (x: 31, y: 63));
+      expect(c.state.pointSnap.step, 17);
+      expect(c.state.gridSpacingPixels, 8);
+      c.setGridSpacing(null);
+      c.setInstallationPath(r'C:\OtherStarCraft');
+      c.cancelSelection();
+      expect(c.state.gridSpacingPixels, isNull);
+      expect(c.state.pointSnap.step, 17);
+      expect(c.resolvePoint(31, 63), (x: 31, y: 63));
+    },
+  );
+  for (final locale in ['en', 'ko']) {
+    testWidgets(
+      'alignment toolbar $locale validates custom spacing at narrow width',
+      (tester) async {
+        final fixture = await _openFixture();
+        addTearDown(fixture.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(locale),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 300,
+                  child: StreamBuilder(
+                    stream: fixture.controller.changes,
+                    builder: (_, _) => PlacementAlignmentToolbar(
+                      controller: fixture.controller,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.byKey(const Key('placement-grid-visible')));
+        await tester.pumpAndSettle();
+        expect(fixture.controller.state.gridVisible, isFalse);
+        expect(
+          tester
+              .widget<DropdownButton<int>>(
+                find.byKey(const Key('placement-grid-spacing')),
+              )
+              .onChanged,
+          isNull,
+        );
+        await tester.tap(find.byKey(const Key('placement-point-snap')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('placement-snap-spacing')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.text(locale == 'ko' ? '직접 간격 입력' : 'Custom spacing').last,
+        );
+        await tester.pumpAndSettle();
+        final input = find.byKey(const Key('placement-custom-snap-input'));
+        await tester.enterText(input, '129');
+        await tester.tap(find.byKey(const Key('placement-custom-snap-apply')));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(fixture.controller.state.pointSnap.step, 32);
+        await tester.enterText(input, '17');
+        await tester.tap(find.byKey(const Key('placement-custom-snap-apply')));
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(fixture.controller.state.pointSnap.step, 17);
+        expect(fixture.openMapController.state.session!.isDirty, isFalse);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   for (final kind in [
     StarCraftPlacementKind.unit,
     StarCraftPlacementKind.pureSprite,

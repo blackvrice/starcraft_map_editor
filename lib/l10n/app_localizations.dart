@@ -10310,6 +10310,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select and confirm a supported object before placing it.'**
   String get placementNoSelection;
+
+  /// No description provided for @placementGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get placementGrid;
+
+  /// No description provided for @placementGridAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get placementGridAuto;
+
+  /// No description provided for @placementGridHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid off'**
+  String get placementGridHidden;
+
+  /// No description provided for @placementPointSnap.
+  ///
+  /// In en, this message translates to:
+  /// **'Point snap'**
+  String get placementPointSnap;
+
+  /// No description provided for @placementCustomSnap.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom spacing'**
+  String get placementCustomSnap;
+
+  /// No description provided for @placementSnapRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an integer from 1 to 128.'**
+  String get placementSnapRange;
 }
 
 class _AppLocalizationsDelegate

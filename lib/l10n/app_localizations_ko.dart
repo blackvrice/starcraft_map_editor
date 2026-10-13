@@ -6084,4 +6084,22 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get placementNoSelection => '지원되는 오브젝트를 선택하고 배치를 확정하세요.';
+
+  @override
+  String get placementGrid => '격자';
+
+  @override
+  String get placementGridAuto => '자동';
+
+  @override
+  String get placementGridHidden => '격자 꺼짐';
+
+  @override
+  String get placementPointSnap => '좌표 스냅';
+
+  @override
+  String get placementCustomSnap => '직접 간격 입력';
+
+  @override
+  String get placementSnapRange => '1~128 사이의 정수를 입력하세요.';
 }

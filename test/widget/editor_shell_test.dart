@@ -2397,6 +2397,9 @@ void main() {
         catalog.setInstallationPath(r'C:\StarCraft');
         expect(await catalog.load(kind), isTrue);
         expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+        catalog.setPointSnap(enabled: true, step: 17);
+        catalog.setGridVisible(false);
+        catalog.setGridSpacing(128);
         final layer = kind == StarCraftPlacementKind.unit
             ? MapLayerType.units
             : MapLayerType.sprites;
@@ -2418,6 +2421,17 @@ void main() {
         expect(catalog.state.lastPlacementIssueCode, isNull);
         expect(maps.state.session, same(before));
         expect(objects.state.undoDepth, 0);
+        final paint =
+            tester
+                    .widget<CustomPaint>(
+                      find.byKey(const Key('map-canvas-paint')),
+                    )
+                    .painter!
+                as MapCanvasPainter;
+        expect(paint.gridVisible, isFalse);
+        expect(paint.gridSpacingPixels, 128);
+        expect(paint.placementGhostPixel!.x % 17, 0);
+        expect(paint.placementGhostPixel!.y % 17, 0);
         await tester.tapAt(target);
         await tester.pumpAndSettle();
         expect(
@@ -2435,10 +2449,65 @@ void main() {
           find.byKey(const Key('map-canvas-placement-issue')),
           findsNothing,
         );
+        final retryPaint =
+            tester
+                    .widget<CustomPaint>(
+                      find.byKey(const Key('map-canvas-paint')),
+                    )
+                    .painter!
+                as MapCanvasPainter;
+        final rawPoint = retryPaint.layout.coordinateAt(
+          target - tester.getTopLeft(find.byKey(const Key('map-canvas'))),
+        )!;
         await tester.tapAt(target);
         await tester.pumpAndSettle();
         expect(catalog.state.isPlacementActive, isFalse);
         expect(objects.state.undoDepth, 1);
+        final placed = kind == StarCraftPlacementKind.unit
+            ? (
+                x: maps
+                    .state
+                    .session!
+                    .objectViews
+                    .unitSections
+                    .single
+                    .units
+                    .last
+                    .x,
+                y: maps
+                    .state
+                    .session!
+                    .objectViews
+                    .unitSections
+                    .single
+                    .units
+                    .last
+                    .y,
+              )
+            : (
+                x: maps
+                    .state
+                    .session!
+                    .objectViews
+                    .spriteSections
+                    .single
+                    .sprites
+                    .last
+                    .x,
+                y: maps
+                    .state
+                    .session!
+                    .objectViews
+                    .spriteSections
+                    .single
+                    .sprites
+                    .last
+                    .y,
+              );
+        expect(
+          placed,
+          catalog.state.pointSnap.resolve(rawPoint.pixelX, rawPoint.pixelY),
+        );
         expect(objects.undo(), isTrue);
         expect(
           const RawChkEncoder().encode(maps.state.session!.rawDocument),

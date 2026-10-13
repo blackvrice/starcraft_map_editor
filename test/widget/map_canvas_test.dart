@@ -17,6 +17,90 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 
 void main() {
   testWidgets(
+    'grid visibility and spacing repaint pixels without changing click coordinates',
+    (tester) async {
+      final layout = MapCanvasLayout.fit(
+        viewportSize: const Size(128, 128),
+        mapWidth: 4,
+        mapHeight: 4,
+        contentPadding: 0,
+      );
+      Future<ByteData> render(bool visible, int spacing) async {
+        final recorder = ui.PictureRecorder();
+        final painter = MapCanvasPainter(
+          layout: layout,
+          rawTileValues: null,
+          gridVisible: visible,
+          gridSpacingPixels: spacing,
+        );
+        painter.paint(Canvas(recorder), const Size(128, 128));
+        final picture = recorder.endRecording();
+        final image = await tester.runAsync(() => picture.toImage(128, 128));
+        final bytes = await tester.runAsync(
+          () => image!.toByteData(format: ui.ImageByteFormat.rawRgba),
+        );
+        image!.dispose();
+        picture.dispose();
+        return bytes!;
+      }
+
+      final hidden = await render(false, 16);
+      final visible = await render(true, 16);
+      final wide = await render(true, 64);
+      int green(ByteData data, int x, int y) =>
+          data.getUint8((y * 128 + x) * 4 + 1);
+      expect(green(visible, 16, 7), isNot(green(hidden, 16, 7)));
+      expect(green(wide, 16, 7), green(hidden, 16, 7));
+      expect(green(wide, 64, 7), isNot(green(hidden, 64, 7)));
+      expect(
+        MapCanvasPainter(
+          layout: layout,
+          rawTileValues: null,
+          gridVisible: false,
+        ).shouldRepaint(MapCanvasPainter(layout: layout, rawTileValues: null)),
+        isTrue,
+      );
+      expect(layout.coordinateAt(const Offset(31, 63))!.pixelX, 31);
+    },
+  );
+  testWidgets(
+    'point ghost renders around aligned center instead of the raw tile',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MapCanvas(
+              mapWidth: 4,
+              mapHeight: 4,
+              placementGhost: MapCanvasPlacementGhost(
+                pointAt: (x, y) => (x: 64, y: 32),
+              ),
+            ),
+          ),
+        ),
+      );
+      final paintFinder = find.byKey(const Key('map-canvas-paint'));
+      final first =
+          tester.widget<CustomPaint>(paintFinder).painter! as MapCanvasPainter;
+      final origin = tester.getTopLeft(find.byKey(const Key('map-canvas')));
+      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await pointer.addPointer(location: origin);
+      await pointer.moveTo(
+        origin + first.layout.mapRect.topLeft + const Offset(17, 19),
+      );
+      await tester.pump();
+      final painter =
+          tester.widget<CustomPaint>(paintFinder).painter! as MapCanvasPainter;
+      expect(painter.placementGhostPixel, (x: 64, y: 32));
+      expect(
+        painter.placementGhostTile,
+        const TerrainTileCoordinate(x: 0, y: 0),
+      );
+      await pointer.removePointer();
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'point ghost preview receives the same exact pixels as the canvas click',
     (tester) async {
       final points = <(int, int)>[];
