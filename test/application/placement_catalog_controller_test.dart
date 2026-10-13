@@ -35,6 +35,90 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  for (final kind in [
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+  ]) {
+    test(
+      '$kind catalog hover is read-only and agrees with click after lock changes',
+      () async {
+        final fixture = await _openFixture(unitCapabilityAvailable: true);
+        addTearDown(fixture.dispose);
+        final controller = fixture.controller
+          ..setInstallationPath(_installationPath);
+        await controller.load(kind);
+        expect(controller.confirm(controller.state.items.single.key), isTrue);
+        final state = controller.state;
+        final before = fixture.openMapController.state.session!;
+        expect(
+          controller.previewAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1),
+          isNull,
+        );
+        expect(controller.state, same(state));
+        expect(fixture.openMapController.state.session, same(before));
+        expect(
+          controller.previewAt(pixelX: 256, pixelY: 63, tileX: 8, tileY: 1),
+          ObjectPlacementDiagnosticCodes.outOfBounds,
+        );
+        final layer = kind == StarCraftPlacementKind.unit
+            ? MapLayerType.units
+            : MapLayerType.sprites;
+        fixture.mapLayerController.setLocked(layer, true);
+        final issue = controller.previewAt(
+          pixelX: 31,
+          pixelY: 63,
+          tileX: 0,
+          tileY: 1,
+        );
+        expect(issue, ObjectPlacementDiagnosticCodes.layerLocked);
+        expect(
+          controller
+              .placeAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1)
+              .issueCode,
+          issue,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        fixture.mapLayerController.setLocked(layer, false);
+        expect(
+          controller.previewAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1),
+          isNull,
+        );
+        expect(
+          controller
+              .placeAt(pixelX: 31, pixelY: 63, tileX: 0, tileY: 1)
+              .isPlaced,
+          isTrue,
+        );
+        expect(fixture.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          const RawChkEncoder().encode(before.rawDocument),
+        );
+      },
+    );
+  }
+  test(
+    'unconfirmed catalog preview and click use a selection reason without changing state',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final before = fixture.controller.state;
+      expect(
+        fixture.controller.previewAt(pixelX: 0, pixelY: 0, tileX: 0, tileY: 0),
+        PlacementCatalogDiagnosticCodes.unsupportedSelection,
+      );
+      expect(
+        fixture.controller
+            .placeAt(pixelX: 0, pixelY: 0, tileX: 0, tileY: 0)
+            .issueCode,
+        PlacementCatalogDiagnosticCodes.unsupportedSelection,
+      );
+      expect(fixture.controller.state, same(before));
+    },
+  );
   testWidgets(
     'Doodad graphic helper failure is nonblocking and is cleared on tab change',
     (tester) async {

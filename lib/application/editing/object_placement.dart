@@ -19,6 +19,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
       'OBJECT_PLACEMENT_DOODAD_TILESET_MISMATCH';
   static const doodadTerrainMismatch =
       'OBJECT_PLACEMENT_DOODAD_TERRAIN_MISMATCH';
+  static const invalidId = 'OBJECT_PLACEMENT_INVALID_ID';
+  static const invalidOwner = 'OBJECT_PLACEMENT_INVALID_OWNER';
+  static const historyBlocked = 'OBJECT_PLACEMENT_HISTORY_BLOCKED';
 
   static const all = <String>{
     sessionNotEditable,
@@ -31,6 +34,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     tilesetUnavailable,
     doodadTilesetMismatch,
     doodadTerrainMismatch,
+    invalidId,
+    invalidOwner,
+    historyBlocked,
   };
 }
 

@@ -397,9 +397,10 @@ Object Palette 헤더의 `+` 버튼이 `Catalog` 탭을 연다. 카탈로그는 
 - `Tile`을 확정하면 지형 브러시 값이 되어 기존 Brush/Rectangle 도구로 칠한다.
   `Doodad`와 `Sprite`는 캔버스 클릭을 기다리며, Doodad는 클릭한 타일을
   footprint 중심으로 삼는다.
-- 배치를 확정하면 캔버스가 커서 아래에 타일에 스냅된 반투명 footprint ghost를
-  그린다. Doodad는 recipe의 폭·높이, Unit과 Sprite는 한 타일이다. 맵 밖으로
-  나가는 위치에서는 ghost가 붉게 바뀐다.
+- 배치를 확정하면 캔버스가 반투명 ghost를 그린다. Doodad는 중심 타일에 맞춘
+  recipe 폭·높이이고 Unit/pure Sprite/unit-sprite는 정확한 픽셀 좌표를 저장한다.
+  후자의 한 타일 커서는 시각적 표시이며 스냅이나 실제 충돌 footprint가 아니다.
+  카탈로그 공통 preview/Apply 검사가 거절하면 붉은 표시와 한영 사유를 보여준다.
 - 캔버스 클릭이 거부되면 사유 코드를 그대로 보여주고 문서는 바뀌지 않는다.
   레이어 잠금, 맵 경계, 중복·부재 섹션, 타일셋 불일치, DDData placibility
   불일치가 여기에 해당한다. `Escape`는 확정된 선택을 취소한다.
@@ -410,7 +411,11 @@ Object Palette 헤더의 `+` 버튼이 `Catalog` 탭을 연다. 카탈로그는 
   읽지 못한 항목은 `SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE`, addon과
   Nydus Canal처럼 관계가 필요한 Unit은
   `SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED` 사유로 비활성 상태를 유지한다.
-- sprite-unit은 여전히 배치 대상이 아니다.
+- 검증된 standalone unit-sprite는 배치할 수 있다. 관계/터렛 구성요소와 자료
+  미확인 항목은 계속 읽기 전용이다([계약](UNIT_SPRITE_PLACEMENT.md)).
+- 현재 사전 검증은 레코드 경계·ID/소유자·capability·레이어·문서/섹션·진행 중
+  transaction을 검사한다. 건물 충돌·전력·크립·게임 인수와 템플릿/로케이션의
+  동일 경로는 포함하지 않는다([실행 기록](CATALOG_PLACEMENT_PREFLIGHT.md)).
 
 ## 7. 선택과 Inspector
 

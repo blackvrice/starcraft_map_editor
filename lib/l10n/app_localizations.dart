@@ -10274,6 +10274,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This doodad belongs to a different tileset. Choose one from this map\'s tileset.'**
   String get placementTilesetMismatch;
+
+  /// No description provided for @placementInvalidId.
+  ///
+  /// In en, this message translates to:
+  /// **'This object ID is outside the supported range. Choose a supported catalog entry.'**
+  String get placementInvalidId;
+
+  /// No description provided for @placementInvalidOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner value is outside the supported byte range. Choose a valid player.'**
+  String get placementInvalidOwner;
+
+  /// No description provided for @placementHistoryBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish or cancel the active editing operation before placing another object.'**
+  String get placementHistoryBlocked;
+
+  /// No description provided for @placementCapabilityMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The unit capability data does not match this ID. Reload the catalog before placing.'**
+  String get placementCapabilityMismatch;
+
+  /// No description provided for @placementSpriteUnitUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This unit-sprite type is not supported for standalone placement.'**
+  String get placementSpriteUnitUnsupported;
+
+  /// No description provided for @placementNoSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Select and confirm a supported object before placing it.'**
+  String get placementNoSelection;
 }
 
 class _AppLocalizationsDelegate

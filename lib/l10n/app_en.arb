@@ -3664,5 +3664,11 @@
   "placementClassIdsExhausted": "No unused unit instance ID is available. Placement was refused.",
   "placementTerrainUnavailable": "The map terrain is missing or ambiguous. Doodad placement is unavailable.",
   "placementTilesetUnavailable": "The map tileset cannot be identified. Doodad placement is unavailable.",
-  "placementTilesetMismatch": "This doodad belongs to a different tileset. Choose one from this map's tileset."
+  "placementTilesetMismatch": "This doodad belongs to a different tileset. Choose one from this map's tileset.",
+  "placementInvalidId": "This object ID is outside the supported range. Choose a supported catalog entry.",
+  "placementInvalidOwner": "The owner value is outside the supported byte range. Choose a valid player.",
+  "placementHistoryBlocked": "Finish or cancel the active editing operation before placing another object.",
+  "placementCapabilityMismatch": "The unit capability data does not match this ID. Reload the catalog before placing.",
+  "placementSpriteUnitUnsupported": "This unit-sprite type is not supported for standalone placement.",
+  "placementNoSelection": "Select and confirm a supported object before placing it."
 }

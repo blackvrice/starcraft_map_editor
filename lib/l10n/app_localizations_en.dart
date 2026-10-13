@@ -6196,4 +6196,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get placementTilesetMismatch =>
       'This doodad belongs to a different tileset. Choose one from this map\'s tileset.';
+
+  @override
+  String get placementInvalidId =>
+      'This object ID is outside the supported range. Choose a supported catalog entry.';
+
+  @override
+  String get placementInvalidOwner =>
+      'The owner value is outside the supported byte range. Choose a valid player.';
+
+  @override
+  String get placementHistoryBlocked =>
+      'Finish or cancel the active editing operation before placing another object.';
+
+  @override
+  String get placementCapabilityMismatch =>
+      'The unit capability data does not match this ID. Reload the catalog before placing.';
+
+  @override
+  String get placementSpriteUnitUnsupported =>
+      'This unit-sprite type is not supported for standalone placement.';
+
+  @override
+  String get placementNoSelection =>
+      'Select and confirm a supported object before placing it.';
 }

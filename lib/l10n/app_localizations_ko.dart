@@ -6062,4 +6062,26 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get placementTilesetMismatch =>
       '이 두다드는 다른 타일셋에 속합니다. 현재 맵의 타일셋에서 선택하세요.';
+
+  @override
+  String get placementInvalidId =>
+      '지원 범위를 벗어난 오브젝트 ID입니다. 지원되는 카탈로그 항목을 선택하세요.';
+
+  @override
+  String get placementInvalidOwner =>
+      '소유자 값이 지원되는 바이트 범위를 벗어났습니다. 올바른 플레이어를 선택하세요.';
+
+  @override
+  String get placementHistoryBlocked =>
+      '진행 중인 편집 작업을 완료하거나 취소한 뒤 다른 오브젝트를 배치하세요.';
+
+  @override
+  String get placementCapabilityMismatch =>
+      '유닛 지원 정보가 이 ID와 일치하지 않습니다. 카탈로그를 다시 불러온 뒤 배치하세요.';
+
+  @override
+  String get placementSpriteUnitUnsupported => '이 유닛형 스프라이트는 독립 배치를 지원하지 않습니다.';
+
+  @override
+  String get placementNoSelection => '지원되는 오브젝트를 선택하고 배치를 확정하세요.';
 }

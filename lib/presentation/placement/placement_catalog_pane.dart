@@ -6,6 +6,7 @@ import '../../application/placement/placement_catalog_controller.dart';
 import '../../application/editing/object_placement.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
+import '../../domain/placement/object_placement_factory.dart';
 import '../localization/l10n.dart';
 import 'catalog_thumbnail.dart';
 
@@ -80,28 +81,49 @@ String _issueText(AppLocalizations l10n, PlacementCatalogItem item) {
 }
 
 /// Keep refusal reasons readable without hiding their stable diagnostic codes.
-String placementFailureText(AppLocalizations l10n, String code) =>
-    switch (code) {
-      ObjectPlacementDiagnosticCodes.doodadTerrainMismatch =>
-        l10n.placementTerrainMismatch,
-      ObjectPlacementDiagnosticCodes.layerLocked => l10n.placementLayerLocked,
-      ObjectPlacementDiagnosticCodes.outOfBounds => l10n.placementOutsideMap,
-      ObjectPlacementDiagnosticCodes.sessionNotEditable =>
-        l10n.placementSessionReadOnly,
-      ObjectPlacementDiagnosticCodes.dimensionsUnavailable =>
-        l10n.placementDimensionsUnavailable,
-      ObjectPlacementDiagnosticCodes.sectionAmbiguous =>
-        l10n.placementSectionAmbiguous,
-      ObjectPlacementDiagnosticCodes.classIdExhausted =>
-        l10n.placementClassIdsExhausted,
-      ObjectPlacementDiagnosticCodes.terrainUnavailable =>
-        l10n.placementTerrainUnavailable,
-      ObjectPlacementDiagnosticCodes.tilesetUnavailable =>
-        l10n.placementTilesetUnavailable,
-      ObjectPlacementDiagnosticCodes.doodadTilesetMismatch =>
-        l10n.placementTilesetMismatch,
-      _ => l10n.catalogCannotPlace,
-    };
+String placementFailureText(
+  AppLocalizations l10n,
+  String code,
+) => switch (code) {
+  ObjectPlacementDiagnosticCodes.doodadTerrainMismatch =>
+    l10n.placementTerrainMismatch,
+  ObjectPlacementDiagnosticCodes.layerLocked => l10n.placementLayerLocked,
+  ObjectPlacementDiagnosticCodes.outOfBounds => l10n.placementOutsideMap,
+  ObjectPlacementDiagnosticCodes.sessionNotEditable =>
+    l10n.placementSessionReadOnly,
+  ObjectPlacementDiagnosticCodes.dimensionsUnavailable =>
+    l10n.placementDimensionsUnavailable,
+  ObjectPlacementDiagnosticCodes.sectionAmbiguous =>
+    l10n.placementSectionAmbiguous,
+  ObjectPlacementDiagnosticCodes.classIdExhausted =>
+    l10n.placementClassIdsExhausted,
+  ObjectPlacementDiagnosticCodes.terrainUnavailable =>
+    l10n.placementTerrainUnavailable,
+  ObjectPlacementDiagnosticCodes.tilesetUnavailable =>
+    l10n.placementTilesetUnavailable,
+  ObjectPlacementDiagnosticCodes.doodadTilesetMismatch =>
+    l10n.placementTilesetMismatch,
+  ObjectPlacementDiagnosticCodes.invalidId => l10n.placementInvalidId,
+  ObjectPlacementDiagnosticCodes.invalidOwner => l10n.placementInvalidOwner,
+  ObjectPlacementDiagnosticCodes.historyBlocked => l10n.placementHistoryBlocked,
+  ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
+    l10n.placementCapabilityMismatch,
+  ObjectPlacementFactoryCodes.unitRelationRequired ||
+  'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED' => l10n.catalogIssueRelation,
+  ObjectPlacementFactoryCodes.unitSubunit ||
+  'SC_CATALOG_ITEM_UNIT_SUBUNIT' => l10n.catalogIssueSubunit,
+  ObjectPlacementFactoryCodes.spriteUnitUnsupported =>
+    l10n.placementSpriteUnitUnsupported,
+  ObjectPlacementFactoryCodes.doodadCenterOutOfRange =>
+    l10n.placementOutsideMap,
+  'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE' => l10n.catalogIssueCapability,
+  'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID' => l10n.catalogIssueRecipe,
+  'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE' => l10n.catalogIssueGraphic,
+  PlacementCatalogDiagnosticCodes.unsupportedSelection =>
+    l10n.placementNoSelection,
+  PlacementCatalogDiagnosticCodes.noOpenMap => l10n.placementSessionReadOnly,
+  _ => l10n.catalogCannotPlace,
+};
 
 /// The placement catalog as a workspace tab.
 ///

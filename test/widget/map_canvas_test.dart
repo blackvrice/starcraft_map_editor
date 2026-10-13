@@ -16,6 +16,66 @@ import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_textur
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture_controller.dart';
 
 void main() {
+  testWidgets(
+    'point ghost preview receives the same exact pixels as the canvas click',
+    (tester) async {
+      final points = <(int, int)>[];
+      (int, int)? click;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MapCanvas(
+              mapWidth: 32,
+              mapHeight: 32,
+              isObjectPlacementActive: true,
+              placementGhost: MapCanvasPlacementGhost(
+                issueCodeAt: (_, _) =>
+                    throw StateError('Point preview must not snap to tiles.'),
+                issueCodeAtPixel: (x, y) {
+                  points.add((x, y));
+                  return 'LOCKED';
+                },
+                issueText: (_) => 'Layer locked',
+              ),
+              onSelectionRequested: (r) =>
+                  click = (r.coordinate.pixelX, r.coordinate.pixelY),
+            ),
+          ),
+        ),
+      );
+      final paint =
+          tester
+                  .widget<CustomPaint>(
+                    find.byKey(const Key('map-canvas-paint')),
+                  )
+                  .painter!
+              as MapCanvasPainter;
+      final origin = tester.getTopLeft(find.byKey(const Key('map-canvas')));
+      final target =
+          origin +
+          paint.layout.mapRect.topLeft +
+          Offset(
+            paint.layout.tileExtent * 3.23,
+            paint.layout.tileExtent * 4.71,
+          );
+      final pointer = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await pointer.addPointer(location: origin);
+      await pointer.moveTo(target);
+      await tester.pump();
+      expect(points, isNotEmpty);
+      expect(points.last.$1 % 32, isNot(0));
+      expect(points.last.$2 % 32, isNot(0));
+      expect(
+        find.byKey(const Key('map-canvas-placement-issue')),
+        findsOneWidget,
+      );
+      await tester.tapAt(target);
+      await tester.pump();
+      expect(click, points.last);
+      await pointer.removePointer();
+      expect(tester.takeException(), isNull);
+    },
+  );
   for (final size in [const Size(320, 240), const Size(800, 600)]) {
     testWidgets(
       'placement hover validates and clears without consuming input at $size',

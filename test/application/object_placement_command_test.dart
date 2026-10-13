@@ -23,6 +23,334 @@ import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  for (final kind in ['unit', 'sprite', 'spriteUnit']) {
+    for (final scenario in [
+      'locked',
+      'hidden',
+      'negative',
+      'right',
+      'bottom',
+      'duplicate',
+      'malformed',
+      'missingDim',
+      'duplicateDim',
+      'protected',
+      'history',
+      'id',
+      'owner',
+    ]) {
+      test(
+        '$kind hover and Apply agree on $scenario without changing data',
+        () async {
+          final name = kind == 'unit' ? 'UNIT' : 'THG2';
+          final base = _chkBytes(
+            includeUnits: kind != 'unit' || scenario != 'malformed',
+            includeSprites: kind == 'unit' || scenario != 'malformed',
+            includeDoodads: true,
+            duplicateUnits: false,
+          );
+          final document = const RawChkParser().parse(base).document!;
+          final bytes = Uint8List.fromList([
+            ...const RawChkEncoder().encode(
+              RawChkDocument(
+                sourceLength: document.sourceLength,
+                sections: document.sections
+                    .where((s) => scenario != 'missingDim' || s.name != 'DIM ')
+                    .toList(),
+              ),
+            ),
+            if (scenario == 'duplicate') ..._section(name, []),
+            if (scenario == 'malformed') ..._section(name, [0]),
+            if (scenario == 'duplicateDim') ..._section('DIM ', [8, 0, 8, 0]),
+            if (scenario == 'protected') ...[...'ISOM'.codeUnits, 0, 0, 0, 128],
+          ]);
+          final fixture = await _openFixture(mapBytes: bytes);
+          addTearDown(fixture.dispose);
+          final layer = kind == 'unit'
+              ? MapLayerType.units
+              : MapLayerType.sprites;
+          if (scenario == 'locked') {
+            fixture.mapLayerController.setLocked(layer, true);
+          }
+          if (scenario == 'hidden') {
+            fixture.mapLayerController.setVisible(layer, false);
+          }
+          final owner = Object();
+          if (scenario == 'history') {
+            fixture.openMapController.editHistory.beginTransaction(owner);
+          }
+          final before = fixture.openMapController.state.session!;
+          final oldSelection = fixture.mapLayerController.state.selection;
+          final x = scenario == 'negative'
+              ? -1
+              : scenario == 'right'
+              ? 256
+              : 31;
+          final y = scenario == 'bottom' ? 256 : 63;
+          final id = scenario == 'id' ? 999 : 37;
+          final player = scenario == 'owner' ? 256 : 0;
+          final expected = switch (scenario) {
+            'locked' || 'hidden' => ObjectPlacementDiagnosticCodes.layerLocked,
+            'negative' ||
+            'right' ||
+            'bottom' => ObjectPlacementDiagnosticCodes.outOfBounds,
+            'duplicate' => ObjectPlacementDiagnosticCodes.sectionAmbiguous,
+            'missingDim' || 'duplicateDim' =>
+              ObjectPlacementDiagnosticCodes.dimensionsUnavailable,
+            'protected' ||
+            'malformed' => ObjectPlacementDiagnosticCodes.sessionNotEditable,
+            'history' => ObjectPlacementDiagnosticCodes.historyBlocked,
+            'id' => ObjectPlacementDiagnosticCodes.invalidId,
+            _ => ObjectPlacementDiagnosticCodes.invalidOwner,
+          };
+          expect(
+            _pointPreview(
+              fixture.controller,
+              kind,
+              x: x,
+              y: y,
+              id: id,
+              owner: player,
+            ),
+            expected,
+          );
+          expect(
+            _pointApply(
+              fixture.controller,
+              kind,
+              x: x,
+              y: y,
+              id: id,
+              owner: player,
+            ).issueCode,
+            expected,
+          );
+          expect(fixture.openMapController.state.session, same(before));
+          expect(
+            fixture.mapLayerController.state.selection,
+            same(oldSelection),
+          );
+          expect(fixture.controller.state.undoDepth, 0);
+          expect(fixture.controller.state.redoDepth, 0);
+          if (scenario == 'history') {
+            fixture.openMapController.editHistory.endTransaction(owner);
+          }
+        },
+      );
+    }
+    test(
+      '$kind allowed hover preserves Redo and missing sections until Apply',
+      () async {
+        final fixture = await _openFixture(
+          includeUnits: false,
+          includeSprites: false,
+        );
+        addTearDown(fixture.dispose);
+        expect(
+          _pointApply(fixture.controller, kind, x: 31, y: 63).isPlaced,
+          isTrue,
+        );
+        expect(fixture.controller.undo(), isTrue);
+        final before = fixture.openMapController.state.session!;
+        final selection = fixture.mapLayerController.state.selection;
+        for (final point in [(0, 0), (31, 63), (255, 255)]) {
+          expect(
+            _pointPreview(fixture.controller, kind, x: point.$1, y: point.$2),
+            isNull,
+          );
+        }
+        expect(fixture.openMapController.state.session, same(before));
+        expect(fixture.mapLayerController.state.selection, same(selection));
+        expect(fixture.controller.state.undoDepth, 0);
+        expect(fixture.controller.state.redoDepth, 1);
+        expect(fixture.controller.redo(), isTrue);
+      },
+    );
+    test(
+      '$kind Apply rechecks layers changed after an allowed hover',
+      () async {
+        final fixture = await _openFixture();
+        addTearDown(fixture.dispose);
+        expect(_pointPreview(fixture.controller, kind, x: 31, y: 63), isNull);
+        final before = fixture.openMapController.state.session!;
+        final layer = kind == 'unit'
+            ? MapLayerType.units
+            : MapLayerType.sprites;
+        fixture.mapLayerController.setLocked(layer, true);
+        expect(
+          _pointApply(fixture.controller, kind, x: 31, y: 63).issueCode,
+          ObjectPlacementDiagnosticCodes.layerLocked,
+        );
+        expect(fixture.openMapController.state.session, same(before));
+        fixture.mapLayerController.setLocked(layer, false);
+        expect(_pointPreview(fixture.controller, kind, x: 31, y: 63), isNull);
+        expect(
+          _pointApply(fixture.controller, kind, x: 31, y: 63).isPlaced,
+          isTrue,
+        );
+        final view = fixture.openMapController.state.session!.objectViews;
+        if (kind == 'unit') {
+          expect(
+            (
+              view.unitSections.single.units.last.x,
+              view.unitSections.single.units.last.y,
+            ),
+            (31, 63),
+          );
+        } else {
+          expect(
+            (
+              view.spriteSections.single.sprites.last.x,
+              view.spriteSections.single.sprites.last.y,
+            ),
+            (31, 63),
+          );
+        }
+      },
+    );
+  }
+  for (final kind in ['unit', 'spriteUnit']) {
+    for (final failure in ['mismatch', 'subunit', 'relation']) {
+      test(
+        '$kind capability $failure has identical preview/Apply refusal',
+        () async {
+          final fixture = await _openFixture();
+          addTearDown(fixture.dispose);
+          final capability = _capability(
+            failure == 'mismatch' ? 36 : 37,
+            isSubunit: failure == 'subunit',
+            requiresRelationLink: failure == 'relation',
+          );
+          final before = fixture.openMapController.state.session!;
+          final code = switch (failure) {
+            'mismatch' => ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+            'subunit' => ObjectPlacementFactoryCodes.unitSubunit,
+            _ => ObjectPlacementFactoryCodes.unitRelationRequired,
+          };
+          expect(
+            _pointPreview(fixture.controller, kind, capability: capability),
+            code,
+          );
+          expect(
+            _pointApply(
+              fixture.controller,
+              kind,
+              capability: capability,
+            ).issueCode,
+            code,
+          );
+          expect(fixture.openMapController.state.session, same(before));
+        },
+      );
+    }
+  }
+  test(
+    'Unit class allocation cache follows Apply Undo Redo and exhaustion',
+    () async {
+      final fixture = await _openFixture(includeUnits: false);
+      addTearDown(fixture.dispose);
+      for (var i = 0; i < 4; i++) {
+        expect(_pointPreview(fixture.controller, 'unit'), isNull);
+        expect(_pointApply(fixture.controller, 'unit').isPlaced, isTrue);
+        expect(
+          fixture
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .unitSections
+              .single
+              .units
+              .last
+              .classId,
+          i,
+        );
+      }
+      expect(fixture.controller.undo(), isTrue);
+      expect(_pointPreview(fixture.controller, 'unit'), isNull);
+      expect(fixture.controller.redo(), isTrue);
+      expect(_pointApply(fixture.controller, 'unit').isPlaced, isTrue);
+      expect(
+        fixture
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .unitSections
+            .single
+            .units
+            .last
+            .classId,
+        4,
+      );
+      final record = _unit(32, 32, 1);
+      ByteData.sublistView(record).setUint32(0, 0xffffffff, Endian.little);
+      final exhausted = await _openFixture(
+        mapBytes: Uint8List.fromList([
+          ..._chkBytes(
+            includeUnits: false,
+            includeSprites: true,
+            includeDoodads: true,
+            duplicateUnits: false,
+          ),
+          ..._section('UNIT', record),
+        ]),
+      );
+      addTearDown(exhausted.dispose);
+      final before = exhausted.openMapController.state.session!;
+      for (var i = 0; i < 3; i++) {
+        expect(
+          _pointPreview(exhausted.controller, 'unit'),
+          ObjectPlacementDiagnosticCodes.classIdExhausted,
+        );
+        expect(
+          _pointApply(exhausted.controller, 'unit').issueCode,
+          ObjectPlacementDiagnosticCodes.classIdExhausted,
+        );
+      }
+      expect(_pointPreview(exhausted.controller, 'spriteUnit'), isNull);
+      expect(exhausted.openMapController.state.session, same(before));
+    },
+  );
+  test(
+    'Doodad preview also refuses invalid owner and active transactions',
+    () async {
+      final fixture = await _openFixture();
+      addTearDown(fixture.dispose);
+      final owner = Object();
+      for (final blocked in [false, true]) {
+        if (blocked) {
+          fixture.openMapController.editHistory.beginTransaction(owner);
+        }
+        final expected = blocked
+            ? ObjectPlacementDiagnosticCodes.historyBlocked
+            : ObjectPlacementDiagnosticCodes.invalidOwner;
+        expect(
+          fixture.controller.previewCatalogDoodad(
+            recipe: _recipe(overlay: true),
+            owner: 256,
+            originTileX: 2,
+            originTileY: 2,
+          ),
+          expected,
+        );
+        expect(
+          fixture.controller
+              .placeCatalogDoodad(
+                recipe: _recipe(overlay: true),
+                owner: 256,
+                originTileX: 2,
+                originTileY: 2,
+              )
+              .issueCode,
+          expected,
+        );
+        if (blocked) {
+          fixture.openMapController.editHistory.endTransaction(owner);
+        }
+      }
+    },
+  );
   testWidgets(
     'Doodad delete dialog requires overlay confirmation and cancellation preserves map',
     (tester) async {
@@ -1086,11 +1414,74 @@ void main() {
 
 const _existingMaximumClassId = 0x5d5c5b5a;
 
+String? _pointPreview(
+  ObjectEditingController c,
+  String kind, {
+  int x = 31,
+  int y = 63,
+  int id = 37,
+  int owner = 0,
+  UnitPlacementCapability? capability,
+}) => switch (kind) {
+  'unit' => c.previewCatalogUnit(
+    capability: capability ?? _capability(37),
+    unitId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+  'spriteUnit' => c.previewCatalogSpriteUnit(
+    capability: capability ?? _capability(37),
+    unitId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+  _ => c.previewCatalogPureSprite(
+    spriteId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+};
+ObjectPlacementResult _pointApply(
+  ObjectEditingController c,
+  String kind, {
+  int x = 31,
+  int y = 63,
+  int id = 37,
+  int owner = 0,
+  UnitPlacementCapability? capability,
+}) => switch (kind) {
+  'unit' => c.placeCatalogUnit(
+    capability: capability ?? _capability(37),
+    unitId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+  'spriteUnit' => c.placeCatalogSpriteUnit(
+    capability: capability ?? _capability(37),
+    unitId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+  _ => c.placeCatalogPureSprite(
+    spriteId: id,
+    owner: owner,
+    pixelX: x,
+    pixelY: y,
+  ),
+};
+
 UnitPlacementCapability _capability(
   int unitId, {
   bool requiresRelationLink = false,
+  bool isSubunit = false,
 }) => UnitPlacementCapability(
   unitId: unitId,
+  isSubunit: isSubunit,
   isSpellcaster: false,
   hasShields: false,
   isResourceContainer: false,

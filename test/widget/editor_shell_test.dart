@@ -19,6 +19,7 @@ import 'package:starcraft_map_editor/application/editing/object_palette_controll
 import 'package:starcraft_map_editor/application/editing/object_placement.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/application/placement/placement_catalog_controller.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dart';
 import 'package:starcraft_map_editor/application/eud/eud_build_controller.dart';
@@ -2336,6 +2337,118 @@ void main() {
     expect(sourceEditor.controller!.text, 'const selectedMap = "Arena";\n');
   });
 
+  for (final kind in [
+    StarCraftPlacementKind.unit,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+  ]) {
+    testWidgets(
+      '$kind shell validates hover and click and permits retry after unlock',
+      (tester) async {
+        tester.view.physicalSize = const Size(1440, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final progress = OperationProgressController();
+        final settings = InMemorySettingsStore();
+        final extracted = _createExtractedMap();
+        final maps = OpenMapController(
+          archiveGateway: _FakeMapArchiveGateway(
+            MapArchiveOpenResult.success(map: extracted),
+          ),
+          filePicker: _FakeMapFilePicker(extracted.sourcePath),
+          fingerprintGateway: _FakeMapFileFingerprintGateway(),
+          recentProjectsService: RecentProjectsService(settings),
+          operationProgressController: progress,
+        );
+        final layers = MapLayerController();
+        final objects = ObjectEditingController(
+          openMapController: maps,
+          mapLayerController: layers,
+        );
+        final terrain = TerrainEditingController(openMapController: maps);
+        final catalog = PlacementCatalogController(
+          openMapController: maps,
+          objectEditingController: objects,
+          terrainEditingController: terrain,
+          catalogGateway: const _PointHoverCatalog(),
+          objectAtlasGateway: _RenderingStarCraftObjectAtlasGateway(),
+        );
+        addTearDown(maps.dispose);
+        addTearDown(layers.dispose);
+        addTearDown(objects.dispose);
+        addTearDown(terrain.dispose);
+        addTearDown(catalog.dispose);
+        addTearDown(progress.dispose);
+        addTearDown(() => tester.pumpWidget(const SizedBox()));
+        await maps.open();
+        await tester.pumpWidget(
+          _createTestApp(
+            openMapController: maps,
+            mapLayerController: layers,
+            objectEditingController: objects,
+            terrainEditingController: terrain,
+            placementCatalogController: catalog,
+            settingsStore: settings,
+            operationProgressController: progress,
+          ),
+        );
+        await tester.pumpAndSettle();
+        catalog.setInstallationPath(r'C:\StarCraft');
+        expect(await catalog.load(kind), isTrue);
+        expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+        final layer = kind == StarCraftPlacementKind.unit
+            ? MapLayerType.units
+            : MapLayerType.sprites;
+        layers.setLocked(layer, true);
+        await tester.pumpAndSettle();
+        final before = maps.state.session!;
+        final target = tester.getCenter(find.byKey(const Key('map-canvas')));
+        final pointer = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await pointer.addPointer(location: target);
+        await pointer.moveTo(target + const Offset(1, 1));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('map-canvas-placement-issue')),
+          findsOneWidget,
+        );
+        expect(find.textContaining('hidden or locked'), findsOneWidget);
+        expect(catalog.state.lastPlacementIssueCode, isNull);
+        expect(maps.state.session, same(before));
+        expect(objects.state.undoDepth, 0);
+        await tester.tapAt(target);
+        await tester.pumpAndSettle();
+        expect(
+          catalog.state.lastPlacementIssueCode,
+          ObjectPlacementDiagnosticCodes.layerLocked,
+        );
+        expect(
+          find.byKey(const Key('catalog-placement-error')),
+          findsOneWidget,
+        );
+        expect(maps.state.session, same(before));
+        layers.setLocked(layer, false);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('map-canvas-placement-issue')),
+          findsNothing,
+        );
+        await tester.tapAt(target);
+        await tester.pumpAndSettle();
+        expect(catalog.state.isPlacementActive, isFalse);
+        expect(objects.state.undoDepth, 1);
+        expect(objects.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(maps.state.session!.rawDocument),
+          const RawChkEncoder().encode(before.rawDocument),
+        );
+        await pointer.removePointer();
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets(
     'catalog refusals stay visible on the map without changing bytes',
     (tester) async {
@@ -2992,6 +3105,50 @@ Offset _mapPixelOffset(
         (pixelX + 0.5) / 32 * painter.layout.tileExtent,
         (pixelY + 0.5) / 32 * painter.layout.tileExtent,
       );
+}
+
+final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
+  const _PointHoverCatalog();
+  @override
+  Future<void> cancel(String operationId) async {}
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async => StarCraftPlacementCatalogPage(
+    request: request,
+    totalEntries: 1,
+    storageProduct: 's1',
+    storageBuildNumber: 13515,
+    helperVersion: '0.3.0',
+    cascLibRevision: 'pinned-casc',
+    entries: [
+      StarCraftPlacementCatalogEntry(
+        key: request.kind == StarCraftPlacementKind.unit
+            ? StarCraftPlacementCatalogKey.unit(0)
+            : request.kind == StarCraftPlacementKind.spriteUnit
+            ? StarCraftPlacementCatalogKey.spriteUnit(0)
+            : StarCraftPlacementCatalogKey.pureSprite(0),
+        source: StarCraftPlacementCatalogSource.localData,
+        availability: StarCraftPlacementAvailability.placeable,
+        unitCapability: request.kind == StarCraftPlacementKind.pureSprite
+            ? null
+            : UnitPlacementCapability(
+                unitId: 0,
+                isSpellcaster: false,
+                hasShields: false,
+                isResourceContainer: false,
+                isGasResourceContainer: false,
+                hasHangar: false,
+                isFlyingBuilding: false,
+                isBurrowable: false,
+                isCloakable: false,
+                isInvincible: false,
+                isBuilding: false,
+                requiresRelationLink: false,
+              ),
+      ),
+    ],
+  );
 }
 
 final class _RefusalDoodadCatalog implements StarCraftPlacementCatalogGateway {

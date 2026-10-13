@@ -235,6 +235,8 @@ class _MapCanvasState extends State<MapCanvas> {
           final ghost = widget.placementGhost;
           final placementIssue = ghost == null || coordinate == null
               ? null
+              : ghost.issueCodeAtPixel != null
+              ? ghost.issueCodeAtPixel!(coordinate.pixelX, coordinate.pixelY)
               : ghost.issueCodeAt?.call(
                   ghost.originX(coordinate.tileX),
                   ghost.originY(coordinate.tileY),
@@ -1337,6 +1339,7 @@ final class MapCanvasPlacementGhost {
     this.tileWidth = 1,
     this.tileHeight = 1,
     this.issueCodeAt,
+    this.issueCodeAtPixel,
     this.issueText,
   }) : assert(tileWidth > 0),
        assert(tileHeight > 0);
@@ -1346,6 +1349,9 @@ final class MapCanvasPlacementGhost {
 
   /// Read-only application validation at the footprint origin, never in paint.
   final String? Function(int originTileX, int originTileY)? issueCodeAt;
+
+  /// Exact point validation for catalog objects; preferred over tile callbacks.
+  final String? Function(int pixelX, int pixelY)? issueCodeAtPixel;
   final String Function(String code)? issueText;
 
   /// The footprint origin for a ghost centred on [tileX], [tileY].

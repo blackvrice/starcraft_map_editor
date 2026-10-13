@@ -302,6 +302,14 @@ THG2로 분리한다. capability는 Unit/unit-sprite 모두에서 자신의 ID�
 분리하고 원본 atlas 버퍼를 보관하지 않는다. 상한·취소·누락·premultiplied/anchor
 계약과 검증은 [두다드 썸네일](DOODAD_CATALOG_THUMBNAILS.md)을 따른다.
 
+2026-10-13 카탈로그 Unit/pure Sprite/unit-sprite는 `ObjectEditingController`의
+동일한 읽기 전용 준비 경로를 preview와 Apply에서 사용한다. Apply는 마지막
+hover 결과를 신뢰하지 않고 현재 문서를 다시 검사한다. `MapCanvas`는 변환한
+정확한 픽셀 좌표를 콜백에 전달하고 painter는 결과만 그린다. 두다드는 기존
+중심 타일/footprint 계약을 유지한다. UNIT class ID의 max+1 요약은 하나의 raw
+문서 identity에만 캐시하며 문서 교체/Undo/Redo에서 무효화한다.
+[범위·실행 기록](CATALOG_PLACEMENT_PREFLIGHT.md)을 따른다.
+
 M6.2의 전체 배치 목록은 `application/ports`의
 `StarCraftPlacementCatalogGateway` 뒤에서 공급한다. 현재 Tile 공급은
 `ProcessStarCraftPlacementCatalogGateway`가 protocol 3/helper 0.10.1의

@@ -217,6 +217,8 @@ class ObjectEditingController {
   ObjectEditingState _state = const ObjectEditingState();
   Object? _trackedSourceSnapshot;
   bool _isCreatingLocation = false;
+  RawChkDocument? _classIdDocument;
+  int? _cachedNextUnitClassId;
 
   ObjectEditingState get state => _state;
   Stream<ObjectEditingState> get changes => _changes.stream;
@@ -716,6 +718,10 @@ class ObjectEditingController {
   }
 
   void synchronizeSession(OpenedMapSession? session) {
+    if (!identical(_classIdDocument, session?.rawDocument)) {
+      _classIdDocument = null;
+      _cachedNextUnitClassId = null;
+    }
     final sourceSnapshot = session?.extractedMap;
     if (identical(sourceSnapshot, _trackedSourceSnapshot)) {
       return;
@@ -992,47 +998,76 @@ class ObjectEditingController {
     required int owner,
     required int pixelX,
     required int pixelY,
-  }) {
-    final session = openMapController.state.session;
-    if (session == null || !_isEditableSession(session)) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.sessionNotEditable,
-      );
-    }
-    final blocked = _checkPlacementTarget(
-      session: session,
-      layer: MapLayerType.units,
-      pixelX: pixelX,
-      pixelY: pixelY,
-    );
-    if (blocked != null) {
-      return ObjectPlacementResult.refused(blocked);
-    }
-    final classId = _nextUnitClassId(session);
-    if (classId == null) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.classIdExhausted,
-      );
-    }
-    final record = unitPlacementFactory.create(
+  }) => _applyCatalogPoint(
+    check: _prepareCatalogUnit(
       capability: capability,
       unitId: unitId,
       owner: owner,
-      x: pixelX,
-      y: pixelY,
-      classId: classId,
-    );
-    if (!record.isSynthesized) {
-      return ObjectPlacementResult.refused(record.issueCode!);
-    }
-    return _appendCatalogRecord(
-      session: session,
-      layer: MapLayerType.units,
-      nameBytes: ChkSectionNames.unitPlacements,
-      record: record.bytes,
-      label: 'Place Unit',
-    );
-  }
+      pixelX: pixelX,
+      pixelY: pixelY,
+    ),
+    layer: MapLayerType.units,
+    nameBytes: ChkSectionNames.unitPlacements,
+    label: 'Place Unit',
+  );
+
+  String? previewCatalogUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) => _prepareCatalogUnit(
+    capability: capability,
+    unitId: unitId,
+    owner: owner,
+    pixelX: pixelX,
+    pixelY: pixelY,
+  ).issueCode;
+
+  _CatalogPointCheck _prepareCatalogUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+    bool spriteUnit = false,
+  }) => _prepareCatalogPoint(
+    layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
+    nameBytes: spriteUnit
+        ? ChkSectionNames.spritePlacements
+        : ChkSectionNames.unitPlacements,
+    id: unitId,
+    maximumId: UnitPlacementCapability.maximumUnitId,
+    owner: owner,
+    pixelX: pixelX,
+    pixelY: pixelY,
+    createRecord: (session) {
+      if (spriteUnit) {
+        return spritePlacementFactory.createSpriteUnit(
+          capability: capability,
+          unitId: unitId,
+          owner: owner,
+          x: pixelX,
+          y: pixelY,
+        );
+      }
+      final classId = _nextUnitClassId(session);
+      if (classId == null) {
+        return ObjectPlacementRecord.rejected(
+          ObjectPlacementDiagnosticCodes.classIdExhausted,
+        );
+      }
+      return unitPlacementFactory.create(
+        capability: capability,
+        unitId: unitId,
+        owner: owner,
+        x: pixelX,
+        y: pixelY,
+        classId: classId,
+      );
+    },
+  );
 
   /// Places a pure Sprite the current map does not have to contain yet.
   ObjectPlacementResult placeCatalogPureSprite({
@@ -1040,39 +1075,50 @@ class ObjectEditingController {
     required int owner,
     required int pixelX,
     required int pixelY,
-  }) {
-    final session = openMapController.state.session;
-    if (session == null || !_isEditableSession(session)) {
-      return ObjectPlacementResult.refused(
-        ObjectPlacementDiagnosticCodes.sessionNotEditable,
-      );
-    }
-    final blocked = _checkPlacementTarget(
-      session: session,
-      layer: MapLayerType.sprites,
+  }) => _applyCatalogPoint(
+    check: _prepareCatalogPureSprite(
+      spriteId: spriteId,
+      owner: owner,
       pixelX: pixelX,
       pixelY: pixelY,
-    );
-    if (blocked != null) {
-      return ObjectPlacementResult.refused(blocked);
-    }
-    final record = spritePlacementFactory.createPureSprite(
+    ),
+    layer: MapLayerType.sprites,
+    nameBytes: ChkSectionNames.spritePlacements,
+    label: 'Place Sprite',
+  );
+
+  String? previewCatalogPureSprite({
+    required int spriteId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) => _prepareCatalogPureSprite(
+    spriteId: spriteId,
+    owner: owner,
+    pixelX: pixelX,
+    pixelY: pixelY,
+  ).issueCode;
+
+  _CatalogPointCheck _prepareCatalogPureSprite({
+    required int spriteId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) => _prepareCatalogPoint(
+    layer: MapLayerType.sprites,
+    nameBytes: ChkSectionNames.spritePlacements,
+    id: spriteId,
+    maximumId: SpritePlacementFactory.maximumSpriteId,
+    owner: owner,
+    pixelX: pixelX,
+    pixelY: pixelY,
+    createRecord: (_) => spritePlacementFactory.createPureSprite(
       spriteId: spriteId,
       owner: owner,
       x: pixelX,
       y: pixelY,
-    );
-    if (!record.isSynthesized) {
-      return ObjectPlacementResult.refused(record.issueCode!);
-    }
-    return _appendCatalogRecord(
-      session: session,
-      layer: MapLayerType.sprites,
-      nameBytes: ChkSectionNames.spritePlacements,
-      record: record.bytes,
-      label: 'Place Sprite',
-    );
-  }
+    ),
+  );
 
   /// Places a standalone unit-sprite in THG2, never in UNIT or DD2.
   ObjectPlacementResult placeCatalogSpriteUnit({
@@ -1081,36 +1127,119 @@ class ObjectEditingController {
     required int owner,
     required int pixelX,
     required int pixelY,
+  }) => _applyCatalogPoint(
+    check: _prepareCatalogUnit(
+      capability: capability,
+      unitId: unitId,
+      owner: owner,
+      pixelX: pixelX,
+      pixelY: pixelY,
+      spriteUnit: true,
+    ),
+    layer: MapLayerType.sprites,
+    nameBytes: ChkSectionNames.spritePlacements,
+    label: 'Place Sprite',
+  );
+
+  String? previewCatalogSpriteUnit({
+    required UnitPlacementCapability capability,
+    required int unitId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+  }) => _prepareCatalogUnit(
+    capability: capability,
+    unitId: unitId,
+    owner: owner,
+    pixelX: pixelX,
+    pixelY: pixelY,
+    spriteUnit: true,
+  ).issueCode;
+
+  /// Hover and Apply both prepare against the current immutable document.
+  /// A hover result is never reused as authorization for a later click.
+  _CatalogPointCheck _prepareCatalogPoint({
+    required MapLayerType layer,
+    required List<int> nameBytes,
+    required int id,
+    required int maximumId,
+    required int owner,
+    required int pixelX,
+    required int pixelY,
+    required ObjectPlacementRecord Function(OpenedMapSession session)
+    createRecord,
   }) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
-      return ObjectPlacementResult.refused(
+      return const _CatalogPointCheck.refused(
         ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    if (openMapController.editHistory.isTransactionActive) {
+      return const _CatalogPointCheck.refused(
+        ObjectPlacementDiagnosticCodes.historyBlocked,
       );
     }
     final blocked = _checkPlacementTarget(
       session: session,
-      layer: MapLayerType.sprites,
+      layer: layer,
       pixelX: pixelX,
       pixelY: pixelY,
     );
-    if (blocked != null) return ObjectPlacementResult.refused(blocked);
-    final record = spritePlacementFactory.createSpriteUnit(
-      capability: capability,
-      unitId: unitId,
-      owner: owner,
-      x: pixelX,
-      y: pixelY,
-    );
+    if (blocked != null) return _CatalogPointCheck.refused(blocked);
+    if (id < 0 || id > maximumId) {
+      return const _CatalogPointCheck.refused(
+        ObjectPlacementDiagnosticCodes.invalidId,
+      );
+    }
+    if (owner < 0 || owner > 0xff) {
+      return const _CatalogPointCheck.refused(
+        ObjectPlacementDiagnosticCodes.invalidOwner,
+      );
+    }
+    final record = createRecord(session);
     if (!record.isSynthesized) {
-      return ObjectPlacementResult.refused(record.issueCode!);
+      return _CatalogPointCheck.refused(record.issueCode!);
+    }
+    final target = _resolveSectionTarget(
+      session: session,
+      nameBytes: nameBytes,
+      decodedIndices: layer == MapLayerType.units
+          ? [
+              for (final section in session.objectViews.unitSections)
+                section.sectionIndex,
+            ]
+          : [
+              for (final section in session.objectViews.spriteSections)
+                section.sectionIndex,
+            ],
+    );
+    if (target.issueCode != null) {
+      return _CatalogPointCheck.refused(target.issueCode!);
+    }
+    return _CatalogPointCheck.allowed(
+      session: session,
+      record: record,
+      target: target,
+    );
+  }
+
+  ObjectPlacementResult _applyCatalogPoint({
+    required _CatalogPointCheck check,
+    required MapLayerType layer,
+    required List<int> nameBytes,
+    required String label,
+  }) {
+    if (check.issueCode != null) {
+      return ObjectPlacementResult.refused(check.issueCode!);
     }
     return _appendCatalogRecord(
-      session: session,
-      layer: MapLayerType.sprites,
-      nameBytes: ChkSectionNames.spritePlacements,
-      record: record.bytes,
-      label: 'Place Sprite',
+      session: check.session!,
+      layer: layer,
+      nameBytes: nameBytes,
+      record: check.record!.bytes,
+      target: check.target!,
+      label: label,
     );
   }
 
@@ -1234,6 +1363,16 @@ class ObjectEditingController {
     if (session == null || !_isEditableSession(session)) {
       return const _DoodadPlacementCheck.refused(
         ObjectPlacementDiagnosticCodes.sessionNotEditable,
+      );
+    }
+    if (openMapController.editHistory.isTransactionActive) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.historyBlocked,
+      );
+    }
+    if (owner < 0 || owner > 0xff) {
+      return const _DoodadPlacementCheck.refused(
+        ObjectPlacementDiagnosticCodes.invalidOwner,
       );
     }
     if (!mapLayerController.state.statusOf(MapLayerType.doodads).isSelectable) {
@@ -2096,7 +2235,9 @@ class ObjectEditingController {
     if (_singleDimensions(session) == null) {
       return ObjectPlacementDiagnosticCodes.dimensionsUnavailable;
     }
-    if (!_pointFitsMap(session, pixelX, pixelY)) {
+    if (pixelX > 0xffff ||
+        pixelY > 0xffff ||
+        !_pointFitsMap(session, pixelX, pixelY)) {
       return ObjectPlacementDiagnosticCodes.outOfBounds;
     }
     return null;
@@ -2122,6 +2263,9 @@ class ObjectEditingController {
   /// Allocates the next class instance so it cannot collide with an existing
   /// record in any `UNIT` section.
   int? _nextUnitClassId(OpenedMapSession session) {
+    if (identical(_classIdDocument, session.rawDocument)) {
+      return _cachedNextUnitClassId;
+    }
     var maximum = -1;
     for (final section in session.objectViews.unitSections) {
       for (final unit in section.units) {
@@ -2131,7 +2275,9 @@ class ObjectEditingController {
       }
     }
     final next = maximum + 1;
-    return next > 0xffffffff ? null : next;
+    // One document-keyed summary avoids rescanning UNIT on every pointer move.
+    _classIdDocument = session.rawDocument;
+    return _cachedNextUnitClassId = next > 0xffffffff ? null : next;
   }
 
   _SectionTarget _resolveSectionTarget({
@@ -2179,27 +2325,8 @@ class ObjectEditingController {
     required List<int> nameBytes,
     required List<int> record,
     required String label,
+    required _SectionTarget target,
   }) {
-    final decodedIndices = switch (layer) {
-      MapLayerType.units => [
-        for (final section in session.objectViews.unitSections)
-          section.sectionIndex,
-      ],
-      MapLayerType.sprites => [
-        for (final section in session.objectViews.spriteSections)
-          section.sectionIndex,
-      ],
-      MapLayerType.doodads => [
-        for (final section in session.objectViews.doodadSections)
-          section.sectionIndex,
-      ],
-      MapLayerType.terrain || MapLayerType.locations => const <int>[],
-    };
-    final target = _resolveSectionTarget(
-      session: session,
-      nameBytes: nameBytes,
-      decodedIndices: decodedIndices,
-    );
     if (target.issueCode != null) {
       return ObjectPlacementResult.refused(target.issueCode!);
     }
@@ -2471,6 +2598,8 @@ class ObjectEditingController {
   }
 
   Future<void> dispose() async {
+    _classIdDocument = null;
+    _cachedNextUnitClassId = null;
     await _sessionSubscription.cancel();
     await _historySubscription.cancel();
     await resourceGateway?.stopPreview();
@@ -2501,6 +2630,22 @@ final class _ObjectEditCommand {
 }
 
 /// Read-only preparation shared by hover and the synchronous placement command.
+final class _CatalogPointCheck {
+  const _CatalogPointCheck.allowed({
+    required this.session,
+    required this.record,
+    required this.target,
+  }) : issueCode = null;
+  const _CatalogPointCheck.refused(this.issueCode)
+    : session = null,
+      record = null,
+      target = null;
+  final String? issueCode;
+  final OpenedMapSession? session;
+  final ObjectPlacementRecord? record;
+  final _SectionTarget? target;
+}
+
 final class _DoodadPlacementCheck {
   const _DoodadPlacementCheck.allowed({
     required this.session,

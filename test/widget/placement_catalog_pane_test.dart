@@ -21,6 +21,7 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 import 'package:starcraft_map_editor/presentation/placement/placement_catalog_pane.dart';
 import 'package:starcraft_map_editor/application/editing/object_placement.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
+import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 
 void main() {
   testWidgets(
@@ -55,7 +56,21 @@ void main() {
     () async {
       for (final locale in [const Locale('en'), const Locale('ko')]) {
         final l10n = await AppLocalizations.delegate.load(locale);
-        for (final code in ObjectPlacementDiagnosticCodes.all) {
+        for (final code in {
+          ...ObjectPlacementDiagnosticCodes.all,
+          ObjectPlacementFactoryCodes.unitRelationRequired,
+          ObjectPlacementFactoryCodes.unitSubunit,
+          ObjectPlacementFactoryCodes.unitCapabilityMismatch,
+          ObjectPlacementFactoryCodes.spriteUnitUnsupported,
+          ObjectPlacementFactoryCodes.doodadCenterOutOfRange,
+          'SC_CATALOG_ITEM_UNIT_RELATION_REQUIRED',
+          'SC_CATALOG_ITEM_UNIT_SUBUNIT',
+          'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE',
+          'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID',
+          'SC_CATALOG_ITEM_OBJECT_GRAPHIC_UNAVAILABLE',
+          PlacementCatalogDiagnosticCodes.unsupportedSelection,
+          PlacementCatalogDiagnosticCodes.noOpenMap,
+        }) {
           final message = placementFailureText(l10n, code);
           expect(message, isNotEmpty);
           expect(

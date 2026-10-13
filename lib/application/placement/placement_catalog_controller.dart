@@ -783,6 +783,66 @@ class PlacementCatalogController {
     _emit(_copy(clearSelection: true, lastPlacementIssueCode: null));
   }
 
+  /// Reads current document/layer state without changing selection or history.
+  /// Pixel coordinates are kept exact; only Doodads use a tile footprint origin.
+  String? previewAt({
+    required int pixelX,
+    required int pixelY,
+    required int tileX,
+    required int tileY,
+  }) {
+    final selection = _state.selection;
+    if (selection == null || !selection.usesCanvasClick) {
+      return PlacementCatalogDiagnosticCodes.unsupportedSelection;
+    }
+    switch (selection.kind) {
+      case StarCraftPlacementKind.pureSprite:
+        return objectEditingController.previewCatalogPureSprite(
+          spriteId: selection.key.id,
+          owner: _state.owner,
+          pixelX: pixelX,
+          pixelY: pixelY,
+        );
+      case StarCraftPlacementKind.unit:
+      case StarCraftPlacementKind.spriteUnit:
+        final capability = selection.unitCapability;
+        if (capability == null) {
+          return 'SC_CATALOG_ITEM_UNIT_CAPABILITY_UNAVAILABLE';
+        }
+        return selection.kind == StarCraftPlacementKind.unit
+            ? objectEditingController.previewCatalogUnit(
+                capability: capability,
+                unitId: selection.key.id,
+                owner: _state.owner,
+                pixelX: pixelX,
+                pixelY: pixelY,
+              )
+            : objectEditingController.previewCatalogSpriteUnit(
+                capability: capability,
+                unitId: selection.key.id,
+                owner: _state.owner,
+                pixelX: pixelX,
+                pixelY: pixelY,
+              );
+      case StarCraftPlacementKind.doodad:
+        final recipe = selection.doodadRecipe;
+        if (recipe == null) return 'SC_CATALOG_ITEM_DOODAD_RECIPE_INVALID';
+        final originX = tileX - recipe.width ~/ 2;
+        final originY = tileY - recipe.height ~/ 2;
+        if (originX < 0 || originY < 0) {
+          return ObjectPlacementDiagnosticCodes.outOfBounds;
+        }
+        return objectEditingController.previewCatalogDoodad(
+          recipe: recipe,
+          owner: _state.owner,
+          originTileX: originX,
+          originTileY: originY,
+        );
+      case StarCraftPlacementKind.tile:
+        return PlacementCatalogDiagnosticCodes.unsupportedSelection;
+    }
+  }
+
   /// Applies the active selection at a canvas position.
   ///
   /// Tiles never reach this path: they are painted by the terrain brush.
@@ -795,7 +855,7 @@ class PlacementCatalogController {
     final selection = _state.selection;
     if (selection == null || !selection.usesCanvasClick) {
       return ObjectPlacementResult.refused(
-        PlacementCatalogDiagnosticCodes.noOpenMap,
+        PlacementCatalogDiagnosticCodes.unsupportedSelection,
       );
     }
     final result = switch (selection.kind) {
