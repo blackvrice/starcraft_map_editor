@@ -32,6 +32,7 @@ import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
@@ -1037,6 +1038,8 @@ void main() {
               owner: 4,
               pixelX: 100,
               pixelY: 120,
+              checkTerrain: true,
+              terrainSnapshot: _placementTerrain(),
               allowUnitOverlap: false,
               collisionCatalog: UnitCollisionCatalog({
                 37: _placementCapability(37),
@@ -1064,6 +1067,8 @@ void main() {
               owner: 1,
               pixelX: 63,
               pixelY: 47,
+              checkTerrain: true,
+              terrainSnapshot: _placementTerrain(),
               alignBuildingToTiles: true,
               allowUnitOverlap: false,
               collisionCatalog: UnitCollisionCatalog({
@@ -1152,6 +1157,13 @@ void main() {
     },
   );
 }
+
+TerrainPlacementSnapshot _placementTerrain() => TerrainPlacementSnapshot(
+  tileset: 4,
+  groupBuildable: [true],
+  megaTileReferences: [List.filled(16, 0)],
+  walkableMasks: [65535],
+);
 
 UnitPlacementCapability _placementCapability(
   int unitId, {

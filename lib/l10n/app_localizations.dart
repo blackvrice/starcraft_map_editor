@@ -10365,6 +10365,36 @@ abstract class AppLocalizations {
   /// **'Allow UNIT overlap'**
   String get placementAllowUnitOverlap;
 
+  /// No description provided for @placementCheckUnitTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check UNIT terrain'**
+  String get placementCheckUnitTerrain;
+
+  /// No description provided for @placementReloadUnitTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload terrain placement data'**
+  String get placementReloadUnitTerrain;
+
+  /// No description provided for @placementUnitTerrainUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'UNIT terrain cannot be verified. Reload the terrain data and catalog, or turn off UNIT terrain checking.'**
+  String get placementUnitTerrainUnavailable;
+
+  /// No description provided for @placementUnitTerrainUnbuildable.
+  ///
+  /// In en, this message translates to:
+  /// **'This building footprint includes unbuildable terrain.'**
+  String get placementUnitTerrainUnbuildable;
+
+  /// No description provided for @placementUnitTerrainUnwalkable.
+  ///
+  /// In en, this message translates to:
+  /// **'This UNIT footprint includes unwalkable terrain.'**
+  String get placementUnitTerrainUnwalkable;
+
   /// No description provided for @placementReloadCollisionMetadata.
   ///
   /// In en, this message translates to:

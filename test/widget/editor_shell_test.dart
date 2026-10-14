@@ -52,6 +52,8 @@ import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
+import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
@@ -2370,7 +2372,9 @@ void main() {
             mapLayerController: layers,
           );
           final terrain = TerrainEditingController(openMapController: maps);
+          final terrainGateway = _HoverTerrainGateway();
           final catalog = PlacementCatalogController(
+            terrainPlacementGateway: terrainGateway,
             openMapController: maps,
             objectEditingController: objects,
             terrainEditingController: terrain,
@@ -2400,6 +2404,8 @@ void main() {
           catalog.setInstallationPath(r'C:\StarCraft');
           expect(await catalog.load(kind), isTrue);
           expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+          catalog.setCheckUnitTerrain(true);
+          await catalog.loadTerrainPlacement();
           if (kind == StarCraftPlacementKind.unit) {
             await tester.tap(
               find.byKey(const Key('placement-allow-unit-overlap')),
@@ -2476,6 +2482,23 @@ void main() {
           expect(maps.state.session, same(before));
           layers.setLocked(layer, false);
           await tester.pumpAndSettle();
+          if (kind == StarCraftPlacementKind.unit) {
+            terrainGateway.blocked = true;
+            await catalog.loadTerrainPlacement(reload: true);
+            await tester.pumpAndSettle();
+            expect(find.textContaining('unwalkable terrain'), findsOneWidget);
+            expect(maps.state.session, same(before));
+            await tester.tapAt(target);
+            await tester.pumpAndSettle();
+            expect(
+              catalog.state.lastPlacementIssueCode,
+              ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable,
+            );
+            expect(objects.state.undoDepth, 0);
+            terrainGateway.blocked = false;
+            await catalog.loadTerrainPlacement(reload: true);
+            await tester.pumpAndSettle();
+          }
           expect(
             find.byKey(const Key('map-canvas-placement-issue')),
             findsNothing,
@@ -3306,6 +3329,33 @@ final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
                 ),
         ),
     ],
+  );
+}
+
+final class _HoverTerrainGateway implements TerrainPlacementSnapshotGateway {
+  bool blocked = false;
+  @override
+  void cancel(String operationId) {}
+  @override
+  Future<TerrainPlacementReadResult> readPlacement({
+    required String operationId,
+    required String installationPath,
+    required int tileset,
+  }) async => TerrainPlacementReadResult(
+    source: TerrainPlacementSource(
+      snapshot: TerrainPlacementSnapshot(
+        tileset: tileset,
+        groupBuildable: List.filled(4096, true),
+        megaTileReferences: List.generate(4096, (_) => List.filled(16, 0)),
+        walkableMasks: [blocked ? 0 : 65535],
+      ),
+      revision: 'synthetic-shell',
+      helperVersion: '0.3.0',
+      cascLibRevision: 'pinned-casc',
+      storageProduct: 's1',
+      storageBuildNumber: 13515,
+      assets: [],
+    ),
   );
 }
 

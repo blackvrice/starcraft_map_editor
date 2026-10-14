@@ -1220,9 +1220,12 @@ UNIT 건물의 StarEdit 박스 전체를 맵 경계에서 검사하며 Sprite/Do
 이어서 [CV5/VF4 지형 자료와 순수 footprint](TERRAIN_PLACEMENT_SNAPSHOT.md)를 구현했다.
 기존 ISOM v2는 유지하고 두 자산만 읽는 새 version1 연산/포트와 출처 revision,
 닫힌 footprint의 건설/이동·unknown/경계/검사 예산을 추가했다. 앱 배치 동작은 유지한다.
-다음 코드 단위는 PlacementCatalog에 지형 포트·source/tileset/epoch별 조회 수명·
-체크박스·최종 좌표 preview/Apply·미확인 안내를 연결하는 작업이다. 대규모 profile·
-자원 거리·전력/크립·EUD 변경·전체 정상/자유 UI·게임/외부 인수는 별도다.
+이어서 [UNIT 지형 검사 연결](UNIT_TERRAIN_PLACEMENT_POLICY.md)을 구현했다.
+기본 꺼짐 체크박스·로딩/재조회·source/tileset/epoch 수명과 최종 좌표 preview/Apply를
+연결하고 current MTXM/Undo 재판정·미확인 거절을 검증했다. 실제 앱 새 맵의 UNIT
+배치/메뉴 Undo와 로컬 자료 허용/거절을 확인했으며 게임/외부 인수는 유지한다.
+다음 코드 단위는 지상/공중·건물별 정상/자유 정책 지원표와 명시적 상태 UI다.
+대규모 profile·자원 거리·전력/크립·EUD 변경·게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성
 

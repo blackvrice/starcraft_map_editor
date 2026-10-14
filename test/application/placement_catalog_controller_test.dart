@@ -13,6 +13,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
+import 'package:starcraft_map_editor/application/documents/opened_map_session.dart';
+import 'package:starcraft_map_editor/infrastructure/assets/process_terrain_connection_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_placement.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
@@ -32,6 +34,8 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
+import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
@@ -39,7 +43,268 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 
 const _installationPath = r'C:\StarCraft';
 
+final _terrainProfile = UnitCollisionProfile(
+  left: 0,
+  up: 0,
+  right: 0,
+  down: 0,
+  isFlyer: false,
+);
+
+final class _TerrainPlacementGateway
+    implements TerrainPlacementSnapshotGateway {
+  _TerrainPlacementGateway({
+    this.failure,
+    this.hold = false,
+    this.mask = 65535,
+  });
+  String? failure;
+  final bool hold;
+  final int mask;
+  int calls = 0;
+  final release = Completer<void>();
+  final cancelled = <String>[];
+  @override
+  Future<TerrainPlacementReadResult> readPlacement({
+    required String operationId,
+    required String installationPath,
+    required int tileset,
+  }) {
+    calls++;
+    if (failure == 'sync') throw StateError('Synthetic synchronous failure');
+    return () async {
+      if (hold) await release.future;
+      if (failure == 'throw') throw StateError('Synthetic failure');
+      return TerrainPlacementReadResult(
+        source: TerrainPlacementSource(
+          snapshot: TerrainPlacementSnapshot(
+            tileset: failure == 'tileset' ? 0 : tileset,
+            groupBuildable: [true],
+            megaTileReferences: [List.filled(16, 0)],
+            walkableMasks: [failure == 'walk' ? 0 : mask],
+          ),
+          revision: 'synthetic-v1',
+          helperVersion: '0.7.0',
+          cascLibRevision: 'abc',
+          storageProduct: 's1',
+          storageBuildNumber: failure == 'source' ? 9 : 13515,
+          assets: [],
+        ),
+      );
+    }();
+  }
+
+  @override
+  void cancel(String operationId) => cancelled.add(operationId);
+}
+
 void main() {
+  test(
+    'same map ERA change invalidates terrain cache and reloads selected UNIT',
+    () async {
+      final gateway = _TerrainPlacementGateway();
+      final f = await _openFixture(
+        terrainPlacementGateway: gateway,
+        unitCapabilityAvailable: true,
+        collisionProfile: _terrainProfile,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller;
+      c.synchronizeSession(f.openMapController.state.session);
+      c.setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setCheckUnitTerrain(true);
+      await c.loadTerrainPlacement();
+      final before = f.openMapController.state.session!;
+      final document = const RawChkParser()
+          .parse(
+            Uint8List.fromList(
+              before.rawDocument.sections
+                  .expand(
+                    (s) =>
+                        _section(s.name, s.name == 'ERA ' ? [0, 0] : s.payload),
+                  )
+                  .toList(),
+            ),
+          )
+          .document!;
+      final edited = OpenedMapSession(
+        extractedMap: before.extractedMap,
+        rawDocument: document,
+        metadataViews: const ChkMetadataViewDecoder().decode(document),
+        terrainViews: before.terrainViews,
+        objectViews: before.objectViews,
+        stringViews: before.stringViews,
+        sourceFingerprint: before.sourceFingerprint,
+        diagnostics: before.diagnostics,
+      );
+      f.openMapController.adoptEditedSession(edited);
+      expect(
+        c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+        ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+      );
+      c.synchronizeSession(edited);
+      await c.loadTerrainPlacement();
+      expect(gateway.calls, 2);
+      expect(c.state.selection, isNotNull);
+      expect(c.lastTerrainPlacementRead!.source!.snapshot.tileset, 0);
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+    },
+  );
+  test(
+    'UNIT terrain reads current MTXM after paint and shared Undo/Redo without reread',
+    () async {
+      final gateway = _TerrainPlacementGateway();
+      final f = await _openFixture(
+        terrainPlacementGateway: gateway,
+        unitCapabilityAvailable: true,
+        collisionProfile: _terrainProfile,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller;
+      c.synchronizeSession(f.openMapController.state.session);
+      c.setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setCheckUnitTerrain(true);
+      await c.loadTerrainPlacement();
+      String? preview() =>
+          c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2);
+      expect(preview(), isNull);
+      final terrain = f.terrainEditingController;
+      expect(terrain.selectCatalogTile(16), isTrue);
+      expect(terrain.beginBrushStroke(), isTrue);
+      expect(
+        terrain.paintTiles([const TerrainTileCoordinate(x: 2, y: 2)]),
+        isTrue,
+      );
+      expect(terrain.commitBrushStroke(), isTrue);
+      c.synchronizeSession(f.openMapController.state.session);
+      expect(preview(), ObjectPlacementDiagnosticCodes.unitTerrainUnavailable);
+      expect(terrain.undo(), isTrue);
+      c.synchronizeSession(f.openMapController.state.session);
+      expect(preview(), isNull);
+      expect(terrain.redo(), isTrue);
+      expect(preview(), ObjectPlacementDiagnosticCodes.unitTerrainUnavailable);
+      expect(gateway.calls, 1);
+    },
+  );
+  for (final failure in [null, 'walk', 'source', 'tileset', 'throw', 'sync']) {
+    test('UNIT terrain checkbox preview/click/retry $failure', () async {
+      final gateway = _TerrainPlacementGateway(failure: failure);
+      final f = await _openFixture(
+        terrainPlacementGateway: gateway,
+        unitCapabilityAvailable: true,
+        collisionProfile: _terrainProfile,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setContinuous(true);
+      expect(c.state.checkUnitTerrain, isFalse);
+      expect(gateway.calls, 0);
+      c.setCheckUnitTerrain(true);
+      await c.loadTerrainPlacement();
+      final before = f.openMapController.state.session;
+      final expected = failure == null
+          ? null
+          : failure == 'walk'
+          ? ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable
+          : ObjectPlacementDiagnosticCodes.unitTerrainUnavailable;
+      for (var i = 0; i < 10; i++) {
+        expect(
+          c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+          expected,
+        );
+      }
+      expect(gateway.calls, 1);
+      expect(identical(f.openMapController.state.session, before), isTrue);
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+        expected,
+      );
+      if (failure == null) {
+        expect(f.objectEditingController.undo(), isTrue);
+        expect(f.objectEditingController.redo(), isTrue);
+      } else {
+        expect(f.objectEditingController.state.undoDepth, 0);
+        gateway.failure = null;
+        expect(await c.loadTerrainPlacement(reload: true), isTrue);
+        expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      }
+      c.setCheckUnitTerrain(false);
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+    });
+  }
+  for (final action in ['reload', 'installation', 'session', 'dispose']) {
+    test(
+      'terrain read coalesces and rejects obsolete $action completion',
+      () async {
+        final gateway = _TerrainPlacementGateway(hold: true);
+        final f = await _openFixture(terrainPlacementGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller;
+        c.synchronizeSession(f.openMapController.state.session);
+        c.setInstallationPath(_installationPath);
+        final first = c.loadTerrainPlacement();
+        expect(identical(first, c.loadTerrainPlacement()), isTrue);
+        expect(c.state.isTerrainPlacementLoading, isTrue);
+        if (action == 'reload') {
+          unawaited(c.loadTerrainPlacement(reload: true));
+        } else if (action == 'installation') {
+          c.setInstallationPath(r'C:\Other');
+        } else if (action == 'session') {
+          c.synchronizeSession(null);
+        } else {
+          await c.dispose();
+        }
+        gateway.release.complete();
+        expect(await first, isFalse);
+        await Future<void>.delayed(Duration.zero);
+        expect(gateway.cancelled, hasLength(1));
+        expect(c.state.isTerrainPlacementLoading, isFalse);
+        expect(
+          c.lastTerrainPlacementRead,
+          action == 'reload' ? isNotNull : isNull,
+        );
+      },
+    );
+  }
+  test(
+    'terrain policy checks final snapped coordinate, not raw terrain',
+    () async {
+      final gateway = _TerrainPlacementGateway(mask: 1);
+      final f = await _openFixture(
+        terrainPlacementGateway: gateway,
+        unitCapabilityAvailable: true,
+        collisionProfile: _terrainProfile,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setCheckUnitTerrain(true);
+      await c.loadTerrainPlacement();
+      c.setPointSnap(enabled: true, step: 32);
+      expect(c.previewAt(pixelX: 60, pixelY: 60, tileX: 1, tileY: 1), isNull);
+      expect(
+        c.placeAt(pixelX: 60, pixelY: 60, tileX: 1, tileY: 1).isPlaced,
+        isTrue,
+      );
+      final unit = f
+          .openMapController
+          .state
+          .session!
+          .objectViews
+          .unitSections
+          .single
+          .units
+          .single;
+      expect((unit.x, unit.y), (64, 64));
+    },
+  );
   test(
     'synchronous collision gateway failure clears pending state and remains retryable',
     () async {
@@ -476,6 +741,17 @@ void main() {
             ),
           ),
         );
+        await tester.tap(find.byKey(const Key('placement-check-unit-terrain')));
+        await tester.pumpAndSettle();
+        expect(fixture.controller.state.checkUnitTerrain, isTrue);
+        expect(
+          find.byKey(const Key('placement-reload-unit-terrain')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('placement-reload-unit-terrain')),
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('placement-allow-unit-overlap')));
         await tester.pumpAndSettle();
         expect(fixture.controller.state.allowUnitOverlap, isFalse);
@@ -786,6 +1062,86 @@ void main() {
 
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
+  test(
+    'local CV5 VF4 source drives actual UNIT terrain placement and Undo',
+    () async {
+      final gateway = ProcessTerrainConnectionSnapshotGateway(
+        helperExecutablePath: realHelper!,
+      );
+      final read = await gateway.readPlacement(
+        operationId: 'test-placement-ground',
+        installationPath: realInstallation!,
+        tileset: 4,
+      );
+      expect(
+        read.isSuccess,
+        isTrue,
+        reason: '${read.errorCode} ${read.stderr}',
+      );
+      final snapshot = read.source!.snapshot;
+      int tileWhere(
+        bool Function(({bool buildable, int walkableMask})) predicate,
+      ) {
+        for (var raw = 0; raw < snapshot.groupBuildable.length * 16; raw++) {
+          final tile = snapshot.tile(raw);
+          if (tile != null && predicate(tile)) return raw;
+        }
+        throw StateError('No verified local test tile found');
+      }
+
+      final clear = tileWhere((t) => t.buildable && t.walkableMask == 65535);
+      final blocked = tileWhere((t) => t.walkableMask == 0);
+      for (final raw in [clear, blocked]) {
+        final bytes = Uint8List(128);
+        final data = ByteData.sublistView(bytes);
+        for (var i = 0; i < 64; i++) {
+          data.setUint16(i * 2, raw, Endian.little);
+        }
+        final f = await _openFixture(
+          chkBytesOverride: _chkBytes(terrainBytes: bytes),
+          catalogGateway: ProcessStarCraftPlacementCatalogGateway(
+            helperExecutablePath: realHelper,
+          ),
+          objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+            helperExecutablePath: realHelper,
+          ),
+          terrainPlacementGateway: gateway,
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(realInstallation);
+        expect(await c.load(StarCraftPlacementKind.unit), isTrue);
+        expect(c.confirm(c.state.items.first.key), isTrue);
+        c.setCheckUnitTerrain(true);
+        expect(await c.loadTerrainPlacement(), isTrue);
+        final before = f.openMapController.state.session;
+        final expected = raw == clear
+            ? null
+            : ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable;
+        expect(
+          c.previewAt(pixelX: 100, pixelY: 100, tileX: 3, tileY: 3),
+          expected,
+        );
+        expect(identical(f.openMapController.state.session, before), isTrue);
+        expect(
+          c.placeAt(pixelX: 100, pixelY: 100, tileX: 3, tileY: 3).issueCode,
+          expected,
+        );
+        if (raw == clear) {
+          expect(f.objectEditingController.undo(), isTrue);
+          expect(
+            f.openMapController.state.session!.objectViews.unitSections,
+            isEmpty,
+          );
+          expect(f.objectEditingController.redo(), isTrue);
+        } else {
+          expect(f.objectEditingController.state.undoDepth, 0);
+        }
+      }
+    },
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null
+        ? 'Set local StarCraft installation and helper paths.'
+        : false,
+  );
   test(
     'profiles complete local object catalogs and clears retained thumbnails',
     () async {
@@ -1956,6 +2312,7 @@ Future<_Fixture> _openFixture({
   StarCraftPlacementCatalogGateway? catalogGateway,
   StarCraftObjectAtlasGateway? objectAtlasGateway,
   StarCraftTileAtlasGateway? tileAtlasGateway,
+  TerrainPlacementSnapshotGateway? terrainPlacementGateway,
   Uint8List? chkBytesOverride,
   int pageSize = 2,
   int tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -2008,6 +2365,7 @@ Future<_Fixture> _openFixture({
     collisionProfile: collisionProfile,
   );
   final controller = PlacementCatalogController(
+    terrainPlacementGateway: terrainPlacementGateway,
     openMapController: openMapController,
     objectEditingController: objectEditingController,
     terrainEditingController: terrainEditingController,

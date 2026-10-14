@@ -133,6 +133,7 @@ void bootstrap() {
   final tileAtlasGateway = ProcessStarCraftTileAtlasGateway.bundled();
   final objectAtlasGateway = ProcessStarCraftObjectAtlasGateway.bundled();
   final placementCatalogController = PlacementCatalogController(
+    terrainPlacementGateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
     openMapController: openMapController,
     objectEditingController: objectEditingController,
     terrainEditingController: terrainEditingController,

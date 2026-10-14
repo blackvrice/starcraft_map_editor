@@ -10,6 +10,8 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
+import '../../domain/placement/terrain_placement_snapshot.dart';
+import '../ports/terrain_placement_snapshot_gateway.dart';
 import '../../domain/placement/point_placement_snap.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
@@ -121,6 +123,8 @@ final class PlacementCatalogState {
     this.alignBuildingsToTiles = false,
     this.allowUnitOverlap = true,
     this.isCollisionMetadataLoading = false,
+    this.checkUnitTerrain = false,
+    this.isTerrainPlacementLoading = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
     Iterable<EditorDiagnostic> previewDiagnostics = const [],
@@ -146,6 +150,8 @@ final class PlacementCatalogState {
   final bool alignBuildingsToTiles;
   final bool allowUnitOverlap;
   final bool isCollisionMetadataLoading;
+  final bool checkUnitTerrain;
+  final bool isTerrainPlacementLoading;
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
 
@@ -194,6 +200,7 @@ class PlacementCatalogController {
     this.eudDatGateway,
     this.tileAtlasGateway,
     this.objectAtlasGateway,
+    this.terrainPlacementGateway,
     this.pageSize = StarCraftPlacementCatalogRequest.defaultLimit,
     this.recentLimit = 12,
     this.tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -214,6 +221,7 @@ class PlacementCatalogController {
   final StarCraftPlacementCatalogGateway? catalogGateway;
   final StarCraftTileAtlasGateway? tileAtlasGateway;
   final StarCraftObjectAtlasGateway? objectAtlasGateway;
+  final TerrainPlacementSnapshotGateway? terrainPlacementGateway;
   final int pageSize;
   final int recentLimit;
   final int tileThumbnailBudgetBytes;
@@ -379,6 +387,12 @@ class PlacementCatalogController {
   String? _collisionOperation;
   int _collisionEpoch = 0;
   StarCraftPlacementCatalogPage? lastCollisionMetadataPage;
+  TerrainPlacementSource? _terrainPlacementSource;
+  Future<bool>? _terrainPlacementPending;
+  String? _terrainPlacementOperation;
+  int _terrainPlacementEpoch = 0;
+  StarCraftTilesetAssetSet? _sessionTileset;
+  TerrainPlacementReadResult? lastTerrainPlacementRead;
   final EudDatGateway? eudDatGateway;
   EudDatSource? _eudData;
   Future<EudDatSource>? _eudDataPending;
@@ -514,8 +528,18 @@ class PlacementCatalogController {
   void synchronizeSession(OpenedMapSession? session) {
     if (_disposed) return;
     final snapshot = session?.extractedMap;
-    if (identical(snapshot, _mapSnapshot)) return;
+    final tileset = mapTileset;
+    if (identical(snapshot, _mapSnapshot)) {
+      if (tileset != _sessionTileset) {
+        _sessionTileset = tileset;
+        _invalidateTerrainPlacement();
+        _emit(_state);
+        if (_state.checkUnitTerrain) unawaited(loadTerrainPlacement());
+      }
+      return;
+    }
     _mapSnapshot = snapshot;
+    _sessionTileset = tileset;
     _invalidateCatalog();
   }
 
@@ -662,6 +686,7 @@ class PlacementCatalogController {
 
   void _invalidateCatalog() {
     _invalidateCollisionMetadata();
+    _invalidateTerrainPlacement();
     _unitCatalogIdentity = null;
     _unitGridPages.clear();
     _invalidateEudData();
@@ -680,6 +705,7 @@ class PlacementCatalogController {
         gridSpacingPixels: _state.gridSpacingPixels,
         alignBuildingsToTiles: _state.alignBuildingsToTiles,
         allowUnitOverlap: _state.allowUnitOverlap,
+        checkUnitTerrain: _state.checkUnitTerrain,
       ),
     );
   }
@@ -815,6 +841,10 @@ class PlacementCatalogController {
         item.key.kind == StarCraftPlacementKind.unit) {
       unawaited(loadCollisionMetadata());
     }
+    if (_state.checkUnitTerrain &&
+        item.key.kind == StarCraftPlacementKind.unit) {
+      unawaited(loadTerrainPlacement());
+    }
     return true;
   }
 
@@ -843,6 +873,103 @@ class PlacementCatalogController {
     if (_disposed || allowed == _state.allowUnitOverlap) return;
     _emit(_copy(allowUnitOverlap: allowed));
     if (!allowed) unawaited(loadCollisionMetadata());
+  }
+
+  void setCheckUnitTerrain(bool enabled) {
+    if (_disposed || enabled == _state.checkUnitTerrain) return;
+    _emit(_copy(checkUnitTerrain: enabled));
+    if (enabled) unawaited(loadTerrainPlacement());
+  }
+
+  void _invalidateTerrainPlacement() {
+    _terrainPlacementEpoch++;
+    final operation = _terrainPlacementOperation;
+    if (operation != null) terrainPlacementGateway?.cancel(operation);
+    _terrainPlacementOperation = null;
+    _terrainPlacementPending = null;
+    _terrainPlacementSource = null;
+    lastTerrainPlacementRead = null;
+    _state = _copy(isTerrainPlacementLoading: false);
+  }
+
+  /// Cache numeric assets, not MTXM decisions: every hover/click reads the
+  /// current document. Only explicit load/reload starts an external process.
+  Future<bool> loadTerrainPlacement({bool reload = false}) {
+    if (_disposed) return Future.value(false);
+    if (reload ||
+        (_terrainPlacementSource != null &&
+            _terrainPlacementSource!.snapshot.tileset !=
+                mapTileset?.rawValue)) {
+      _invalidateTerrainPlacement();
+    }
+    if (_terrainPlacementSource != null) return Future.value(true);
+    if (_terrainPlacementPending != null) return _terrainPlacementPending!;
+    final gateway = terrainPlacementGateway, path = _installationPath;
+    final tileset = mapTileset;
+    if (gateway == null || path == null || tileset == null) {
+      if (reload) _emit(_state);
+      return Future.value(false);
+    }
+    final epoch = _terrainPlacementEpoch;
+    final operation = 'unit-terrain-${++_weaponRequest}';
+    _terrainPlacementOperation = operation;
+    final future = () async {
+      try {
+        final result = await Future.sync(
+          () => gateway.readPlacement(
+            operationId: operation,
+            installationPath: path,
+            tileset: tileset.rawValue,
+          ),
+        );
+        if (_disposed ||
+            epoch != _terrainPlacementEpoch ||
+            mapTileset != tileset) {
+          return false;
+        }
+        lastTerrainPlacementRead = result;
+        final source = result.source;
+        if (!result.isSuccess ||
+            source == null ||
+            source.snapshot.tileset != tileset.rawValue ||
+            source.revision.isEmpty ||
+            source.storageProduct.isEmpty ||
+            source.helperVersion.isEmpty ||
+            source.cascLibRevision.isEmpty ||
+            source.storageBuildNumber < 0) {
+          return false;
+        }
+        _terrainPlacementSource = source;
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        if (!_disposed && _terrainPlacementOperation == operation) {
+          _terrainPlacementOperation = null;
+          _terrainPlacementPending = null;
+          _emit(_copy(isTerrainPlacementLoading: false));
+        }
+      }
+    }();
+    _terrainPlacementPending = future;
+    _emit(_copy(isTerrainPlacementLoading: true));
+    return future;
+  }
+
+  TerrainPlacementSnapshot? get _currentTerrainPlacement {
+    final source = _terrainPlacementSource;
+    if (source == null || source.snapshot.tileset != mapTileset?.rawValue) {
+      return null;
+    }
+    final identity = (
+      source.storageProduct,
+      source.storageBuildNumber,
+      source.helperVersion,
+      source.cascLibRevision,
+    );
+    return _state.selection?.unitSourceIdentity == identity
+        ? source.snapshot
+        : null;
   }
 
   void _invalidateCollisionMetadata() {
@@ -986,7 +1113,7 @@ class PlacementCatalogController {
       pixelY: pixelY,
       tileX: tileX,
       tileY: tileY,
-      checkOverlap: !isPointSnapActive,
+      checkPolicies: !isPointSnapActive,
     );
     if (issue != null || !isPointSnapActive) return issue;
     final point = resolvePoint(pixelX, pixelY);
@@ -1005,7 +1132,7 @@ class PlacementCatalogController {
     required int pixelY,
     required int tileX,
     required int tileY,
-    bool checkOverlap = true,
+    bool checkPolicies = true,
   }) {
     final selection = _state.selection;
     if (selection == null || !selection.usesCanvasClick) {
@@ -1033,8 +1160,10 @@ class PlacementCatalogController {
                 pixelX: pixelX,
                 pixelY: pixelY,
                 alignBuildingToTiles: _state.alignBuildingsToTiles,
-                allowUnitOverlap: !checkOverlap || _state.allowUnitOverlap,
+                allowUnitOverlap: !checkPolicies || _state.allowUnitOverlap,
                 collisionCatalog: _currentCollisionCatalog,
+                checkTerrain: checkPolicies && _state.checkUnitTerrain,
+                terrainSnapshot: _currentTerrainPlacement,
               )
             : objectEditingController.previewCatalogSpriteUnit(
                 capability: capability,
@@ -1083,7 +1212,7 @@ class PlacementCatalogController {
         pixelY: pixelY,
         tileX: tileX,
         tileY: tileY,
-        checkOverlap: false,
+        checkPolicies: false,
       );
       if (inputIssue != null) {
         _emit(_copy(lastPlacementIssueCode: inputIssue));
@@ -1157,6 +1286,8 @@ class PlacementCatalogController {
       alignBuildingToTiles: _state.alignBuildingsToTiles,
       allowUnitOverlap: _state.allowUnitOverlap,
       collisionCatalog: _currentCollisionCatalog,
+      checkTerrain: _state.checkUnitTerrain,
+      terrainSnapshot: _currentTerrainPlacement,
     );
   }
 
@@ -1191,6 +1322,7 @@ class PlacementCatalogController {
 
   Future<void> dispose() {
     _invalidateCollisionMetadata();
+    _invalidateTerrainPlacement();
     _invalidateEudData();
     if (_disposed) return _changes.close();
     _resetThumbnails();
@@ -1343,6 +1475,17 @@ class PlacementCatalogController {
         if (_collisionIdentity != null && _collisionIdentity != identity) {
           _invalidateCollisionMetadata();
         }
+        final terrainSource = _terrainPlacementSource;
+        if (terrainSource != null &&
+            (
+                  terrainSource.storageProduct,
+                  terrainSource.storageBuildNumber,
+                  terrainSource.helperVersion,
+                  terrainSource.cascLibRevision,
+                ) !=
+                identity) {
+          _invalidateTerrainPlacement();
+        }
       }
     }
 
@@ -1458,6 +1601,8 @@ class PlacementCatalogController {
     bool? alignBuildingsToTiles,
     bool? allowUnitOverlap,
     bool? isCollisionMetadataLoading,
+    bool? checkUnitTerrain,
+    bool? isTerrainPlacementLoading,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
     List<EditorDiagnostic>? previewDiagnostics,
@@ -1482,6 +1627,9 @@ class PlacementCatalogController {
     allowUnitOverlap: allowUnitOverlap ?? _state.allowUnitOverlap,
     isCollisionMetadataLoading:
         isCollisionMetadataLoading ?? _state.isCollisionMetadataLoading,
+    checkUnitTerrain: checkUnitTerrain ?? _state.checkUnitTerrain,
+    isTerrainPlacementLoading:
+        isTerrainPlacementLoading ?? _state.isTerrainPlacementLoading,
     gridVisible: gridVisible ?? _state.gridVisible,
     gridSpacingPixels: clearGridSpacing
         ? null

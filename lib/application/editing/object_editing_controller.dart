@@ -20,6 +20,7 @@ import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
+import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../documents/pending_map_resources.dart';
@@ -1002,6 +1003,8 @@ class ObjectEditingController {
     bool alignBuildingToTiles = false,
     bool allowUnitOverlap = true,
     UnitCollisionCatalog? collisionCatalog,
+    bool checkTerrain = false,
+    TerrainPlacementSnapshot? terrainSnapshot,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1012,6 +1015,8 @@ class ObjectEditingController {
       alignBuildingToTiles: alignBuildingToTiles,
       allowUnitOverlap: allowUnitOverlap,
       collisionCatalog: collisionCatalog,
+      checkTerrain: checkTerrain,
+      terrainSnapshot: terrainSnapshot,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1027,6 +1032,8 @@ class ObjectEditingController {
     bool alignBuildingToTiles = false,
     bool allowUnitOverlap = true,
     UnitCollisionCatalog? collisionCatalog,
+    bool checkTerrain = false,
+    TerrainPlacementSnapshot? terrainSnapshot,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
@@ -1036,6 +1043,8 @@ class ObjectEditingController {
     alignBuildingToTiles: alignBuildingToTiles,
     allowUnitOverlap: allowUnitOverlap,
     collisionCatalog: collisionCatalog,
+    checkTerrain: checkTerrain,
+    terrainSnapshot: terrainSnapshot,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1048,6 +1057,8 @@ class ObjectEditingController {
     bool alignBuildingToTiles = false,
     bool allowUnitOverlap = true,
     UnitCollisionCatalog? collisionCatalog,
+    bool checkTerrain = false,
+    TerrainPlacementSnapshot? terrainSnapshot,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1107,6 +1118,41 @@ class ObjectEditingController {
           );
         }
         record = create(point.x, point.y);
+      }
+      if (checkTerrain) {
+        final profile = capability.collisionProfile;
+        if (profile == null) {
+          return ObjectPlacementRecord.rejected(
+            ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+          );
+        }
+        // New UNITs are grounded (state flags zero); airborne nonbuildings
+        // do not use ground walkability. Never substitute the StarEdit box.
+        if (capability.isBuilding || !profile.isFlyer) {
+          final terrain = _singleTerrainView(session);
+          final tilesets = session.metadataViews.tilesets;
+          final check = terrain == null || tilesets.length != 1
+              ? TerrainFootprintCheck.unavailable
+              : terrainSnapshot?.check(
+                      terrain: terrain,
+                      mapTileset: tilesets.single.rawValue,
+                      bounds: profile.boundsAt(point.x, point.y),
+                      requireBuildable: capability.isBuilding,
+                    ) ??
+                    TerrainFootprintCheck.unavailable;
+          final issue = switch (check) {
+            TerrainFootprintCheck.clear => null,
+            TerrainFootprintCheck.unavailable =>
+              ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+            TerrainFootprintCheck.unbuildable =>
+              ObjectPlacementDiagnosticCodes.unitTerrainUnbuildable,
+            TerrainFootprintCheck.unwalkable =>
+              ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable,
+            TerrainFootprintCheck.outOfBounds =>
+              ObjectPlacementDiagnosticCodes.outOfBounds,
+          };
+          if (issue != null) return ObjectPlacementRecord.rejected(issue);
+        }
       }
       if (!allowUnitOverlap) {
         final check =

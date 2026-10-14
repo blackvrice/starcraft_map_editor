@@ -6114,6 +6114,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementAllowUnitOverlap => 'UNIT 겹침 허용';
 
   @override
+  String get placementCheckUnitTerrain => 'UNIT 지형 검사';
+
+  @override
+  String get placementReloadUnitTerrain => '배치 지형 자료 다시 읽기';
+
+  @override
+  String get placementUnitTerrainUnavailable =>
+      'UNIT 배치 지형을 검증할 수 없습니다. 지형 자료와 카탈로그를 다시 읽거나 UNIT 지형 검사를 해제하세요.';
+
+  @override
+  String get placementUnitTerrainUnbuildable =>
+      '건물 영역에 건설할 수 없는 지형이 포함되어 있습니다.';
+
+  @override
+  String get placementUnitTerrainUnwalkable =>
+      'UNIT 영역에 이동할 수 없는 지형이 포함되어 있습니다.';
+
+  @override
   String get placementReloadCollisionMetadata => '유닛 충돌 자료 다시 불러오기';
 
   @override

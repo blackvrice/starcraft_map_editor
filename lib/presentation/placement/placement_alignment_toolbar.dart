@@ -26,6 +26,44 @@ class PlacementAlignmentToolbar extends StatelessWidget {
           child: Material(
             type: MaterialType.transparency,
             child: CheckboxListTile(
+              key: const Key('placement-check-unit-terrain'),
+              value: state.checkUnitTerrain,
+              onChanged: (value) => controller.setCheckUnitTerrain(value!),
+              title: Text(l10n.placementCheckUnitTerrain),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              secondary: !state.checkUnitTerrain
+                  ? null
+                  : SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: state.isTerrainPlacementLoading
+                          ? const Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : IconButton(
+                              key: const Key('placement-reload-unit-terrain'),
+                              tooltip: l10n.placementReloadUnitTerrain,
+                              icon: const Icon(Icons.refresh),
+                              onPressed: () =>
+                                  controller.loadTerrainPlacement(reload: true),
+                            ),
+                    ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 260,
+          child: Material(
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
               key: const Key('placement-allow-unit-overlap'),
               value: state.allowUnitOverlap,
               onChanged: (value) => controller.setAllowUnitOverlap(value!),

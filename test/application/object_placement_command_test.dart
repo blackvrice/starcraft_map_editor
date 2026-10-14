@@ -23,9 +23,152 @@ import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  for (final kind in [
+    'clear',
+    'walk',
+    'build',
+    'ground-unbuildable',
+    'missing',
+    'profile',
+    'tileset',
+    'reference',
+    'edge',
+    'air',
+    'air-building',
+    'aligned',
+    'duplicate-terrain',
+    'missing-terrain',
+  ]) {
+    test('UNIT terrain shared preview/Apply $kind is atomic', () async {
+      var bytes = _chkBytes(
+        includeUnits: false,
+        includeSprites: true,
+        includeDoodads: true,
+        duplicateUnits: false,
+      );
+      if (kind == 'missing-terrain') {
+        bytes = Uint8List.fromList(
+          const RawChkParser()
+              .parse(bytes)
+              .document!
+              .sections
+              .where((s) => s.name != 'MTXM')
+              .expand((s) => _section(s.name, s.payload))
+              .toList(),
+        );
+      }
+      if (kind == 'duplicate-terrain') {
+        bytes = Uint8List.fromList([
+          ...bytes,
+          ..._section('MTXM', List.filled(128, 0)),
+        ]);
+      }
+      final f = await _openFixture(mapBytes: bytes);
+      addTearDown(f.dispose);
+      final before = f.openMapController.state.session!;
+      final building = ['build', 'air-building', 'aligned'].contains(kind);
+      final cap = _capability(
+        37,
+        isBuilding: building,
+        placementBox: building
+            ? BuildingPlacementBox(width: 64, height: 32)
+            : null,
+        collisionProfile: kind == 'profile'
+            ? null
+            : UnitCollisionProfile(
+                left: 1,
+                up: 1,
+                right: 1,
+                down: 1,
+                isFlyer: kind.startsWith('air'),
+              ),
+      );
+      final snapshot = kind == 'missing'
+          ? null
+          : TerrainPlacementSnapshot(
+              tileset: kind == 'tileset' ? 0 : 4,
+              groupBuildable: [
+                !['build', 'ground-unbuildable'].contains(kind),
+              ],
+              megaTileReferences: [
+                List.filled(16, kind == 'reference' ? 9 : 0),
+              ],
+              walkableMasks: [
+                kind == 'walk' || kind.startsWith('air') ? 0 : 65535,
+              ],
+            );
+      final expected = switch (kind) {
+        'missing' ||
+        'profile' ||
+        'tileset' ||
+        'reference' ||
+        'missing-terrain' ||
+        'duplicate-terrain' =>
+          ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+        'walk' ||
+        'air-building' => ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable,
+        'build' => ObjectPlacementDiagnosticCodes.unitTerrainUnbuildable,
+        'edge' => ObjectPlacementDiagnosticCodes.outOfBounds,
+        _ => null,
+      };
+      final x = kind == 'edge' ? 0 : 63;
+      expect(
+        f.controller.previewCatalogUnit(
+          capability: cap,
+          unitId: 37,
+          owner: 0,
+          pixelX: x,
+          pixelY: 47,
+          checkTerrain: true,
+          terrainSnapshot: snapshot,
+          alignBuildingToTiles: kind == 'aligned',
+        ),
+        expected,
+      );
+      expect(identical(f.openMapController.state.session, before), isTrue);
+      expect(f.controller.state.undoDepth, 0);
+      final result = f.controller.placeCatalogUnit(
+        capability: cap,
+        unitId: 37,
+        owner: 0,
+        pixelX: x,
+        pixelY: 47,
+        checkTerrain: true,
+        terrainSnapshot: snapshot,
+        alignBuildingToTiles: kind == 'aligned',
+      );
+      expect(result.issueCode, expected);
+      if (expected == null) {
+        expect(result.isPlaced, isTrue);
+        expect(f.controller.state.undoDepth, 1);
+        if (kind == 'aligned') {
+          final unit = f
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .unitSections
+              .single
+              .units
+              .single;
+          expect((unit.x, unit.y), (64, 48));
+        }
+        expect(f.controller.undo(), isTrue);
+        expect(
+          f.openMapController.state.session!.objectViews.unitSections,
+          isEmpty,
+        );
+        expect(f.controller.redo(), isTrue);
+      } else {
+        expect(identical(f.openMapController.state.session, before), isTrue);
+        expect(f.controller.state.undoDepth, 0);
+      }
+    });
+  }
   for (final kind in [
     'overlap',
     'clear',

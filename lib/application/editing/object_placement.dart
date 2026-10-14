@@ -26,6 +26,12 @@ abstract final class ObjectPlacementDiagnosticCodes {
       'OBJECT_PLACEMENT_BUILDING_BOX_UNAVAILABLE';
   static const unitOverlap = 'OBJECT_PLACEMENT_UNIT_OVERLAP';
   static const collisionUnavailable = 'OBJECT_PLACEMENT_COLLISION_UNAVAILABLE';
+  static const unitTerrainUnavailable =
+      'OBJECT_PLACEMENT_UNIT_TERRAIN_UNAVAILABLE';
+  static const unitTerrainUnbuildable =
+      'OBJECT_PLACEMENT_UNIT_TERRAIN_UNBUILDABLE';
+  static const unitTerrainUnwalkable =
+      'OBJECT_PLACEMENT_UNIT_TERRAIN_UNWALKABLE';
   static const collisionStateUnsupported =
       'OBJECT_PLACEMENT_COLLISION_STATE_UNSUPPORTED';
 
@@ -46,6 +52,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     buildingBoxUnavailable,
     unitOverlap,
     collisionUnavailable,
+    unitTerrainUnavailable,
+    unitTerrainUnbuildable,
+    unitTerrainUnwalkable,
     collisionStateUnsupported,
   };
 }

@@ -111,6 +111,12 @@ String placementFailureText(
   ObjectPlacementDiagnosticCodes.unitOverlap => l10n.placementUnitOverlap,
   ObjectPlacementDiagnosticCodes.collisionUnavailable =>
     l10n.placementCollisionUnavailable,
+  ObjectPlacementDiagnosticCodes.unitTerrainUnavailable =>
+    l10n.placementUnitTerrainUnavailable,
+  ObjectPlacementDiagnosticCodes.unitTerrainUnbuildable =>
+    l10n.placementUnitTerrainUnbuildable,
+  ObjectPlacementDiagnosticCodes.unitTerrainUnwalkable =>
+    l10n.placementUnitTerrainUnwalkable,
   ObjectPlacementDiagnosticCodes.collisionStateUnsupported =>
     l10n.placementCollisionStateUnsupported,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>

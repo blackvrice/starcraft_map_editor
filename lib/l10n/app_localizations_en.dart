@@ -6250,6 +6250,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placementAllowUnitOverlap => 'Allow UNIT overlap';
 
   @override
+  String get placementCheckUnitTerrain => 'Check UNIT terrain';
+
+  @override
+  String get placementReloadUnitTerrain => 'Reload terrain placement data';
+
+  @override
+  String get placementUnitTerrainUnavailable =>
+      'UNIT terrain cannot be verified. Reload the terrain data and catalog, or turn off UNIT terrain checking.';
+
+  @override
+  String get placementUnitTerrainUnbuildable =>
+      'This building footprint includes unbuildable terrain.';
+
+  @override
+  String get placementUnitTerrainUnwalkable =>
+      'This UNIT footprint includes unwalkable terrain.';
+
+  @override
   String get placementReloadCollisionMetadata => 'Reload unit collision data';
 
   @override
