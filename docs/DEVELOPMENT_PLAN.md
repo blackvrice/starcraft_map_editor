@@ -1199,6 +1199,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 지형 자료: CV5/VF4 전용 version1 read-only snapshot·출처/상한·순수 footprint 판정·기존 ISOM/로컬8타일셋 회귀 (배치/UI 연결 제외)
 - [x] EP1 UNIT 정책 UI: 검사/자유 프리셋·실제 checkbox 조합의 custom 상태·지상/공중/건물별 정책/자료 지원표·자동 회귀 (실제 Windows 클릭/게임 인수 제외)
 - [x] EP1 자원 거리 기반: optional version1 DAT 기지/자원 역할·엄격한 decode·순수3tile pair·unknown/경계·native/실제 로컬 회귀 (배치 정책 연결 제외)
+- [x] EP1 자원 거리 aggregate: source 일치·현재 UNIT 역할/geometry·flight 지원 상태·최종 좌표 read-only 검사·문서/Undo 무변경 회귀 (배치 차단/UI 연결 제외)
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1233,8 +1234,12 @@ UNIT 건물의 StarEdit 박스 전체를 맵 경계에서 검사하며 Sprite/Do
 이어서 [자원·기지 거리 자료와 순수 판정](UNIT_RESOURCE_DISTANCE.md)을 구현했다.
 DAT bit12/13 역할과 collision 영역의3tile 사각형 pair 검사를 추가했으며,
 기존 UNIT bytes·배치/UI는 유지한다. 실제 설치/native와 전체 자동 회귀를 확인했다.
-다음 단위는 출처가 일치하는 현재 UNIT snapshot의 자원 거리 aggregate와 지원 상태
-검증이다. 그 뒤 최종 preview/Apply·명시적 checkbox/프리셋을 연결한다.
+2026-10-15 [현재 UNIT 자원 거리 aggregate](UNIT_RESOURCE_DISTANCE_AGGREGATE.md)를 구현했다.
+선택/source와 현재 UNIT 역할/geometry·flight 지원 상태를 읽기 전용으로 검사하고
+기존 metadata 조회/취소/수명을 재사용한다. 실제 배치/UI와 기존 CHK는 유지한다.
+전체 자동1508통과/56skip, 로컬 process62통과, Windows Debug/native7종을 확인했다.
+전체 format 기존3파일·기준 SDK 재검증 및 실제 앱/게임/외부 인수는 남는다.
+다음 단위는 최종 preview/Apply·명시적 자원 거리 checkbox/프리셋·지원표 연결이다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

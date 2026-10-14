@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_distance.dart';
+import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 
 void main() {
@@ -268,6 +272,45 @@ void main() {
                 ? UnitResourceDistanceCheck.tooClose
                 : UnitResourceDistanceCheck.clear,
           );
+          final record = const UnitPlacementFactory()
+              .create(
+                capability: resource,
+                unitId: resource.unitId,
+                owner: 11,
+                x: x,
+                y: 1024,
+                classId: 1,
+              )
+              .bytes;
+          final bytes = Uint8List(8 + record.length)
+            ..setRange(0, 4, 'UNIT'.codeUnits)
+            ..setRange(8, 8 + record.length, record);
+          ByteData.sublistView(
+            bytes,
+          ).setUint32(4, record.length, Endian.little);
+          final before = Uint8List.fromList(bytes);
+          final units = const ChkObjectViewDecoder()
+              .decode(const RawChkParser().parse(bytes).document!)
+              .unitSections
+              .single
+              .units;
+          expect(
+            UnitResourceDistanceCatalog({
+              for (final entry in metadata.entries)
+                entry.key.id: entry.unitCapability!,
+            }).check(
+              candidate: graphics.entries.single.unitCapability!,
+              x: 1024,
+              y: 1024,
+              mapWidthTiles: 64,
+              mapHeightTiles: 64,
+              existing: units,
+            ),
+            x == 1024
+                ? UnitResourceDistanceCatalogCheck.tooClose
+                : UnitResourceDistanceCatalogCheck.clear,
+          );
+          expect(bytes, orderedEquals(before));
         }
       },
       skip:

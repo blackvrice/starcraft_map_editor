@@ -5,6 +5,9 @@
 차단에는 아직 연결하지 않았다. 현재 UI 지원표의 자원 거리 `미구현`은 배치 정책
 연결을 뜻하며 기존 배치·Undo·CHK/저장 동작은 유지한다.
 
+2026-10-15 후속 [현재 UNIT aggregate와 application 조회](UNIT_RESOURCE_DISTANCE_AGGREGATE.md)를
+구현했다. 아래는 기반 단위의 당시 결과이며 실제 배치 차단/UI 연결은 계속 별도다.
+
 ## 1. 실행 계획과 소스 분석
 
 1. 기존 capability/native reader·엄격한 decoder·충돌 영역을 조사한다.
@@ -124,9 +127,9 @@ skip은 실제 도구·별도 환경 검증이고 통과로 계산하지 않는�
 
 ## 7. 다음 구현 단위
 
-현재 UNIT catalog snapshot과 후보 source를 일치시키고 모든 기존 UNIT의 역할/
-geometry·지원 상태를 검사하는 read-only aggregate가 먼저 필요하다. 미확인 UNIT를
-거리만 보고 무시하지 않고, 기존 raw flight/예외 상태와 보호 맵은 추측하지 않는다.
-그 뒤 최종 정렬 좌표 preview/Apply와 명시적 자원 거리 checkbox/프리셋·지원표에
+현재 UNIT snapshot과 후보 source를 일치시켜 역할/geometry·지원 상태를 검사하는
+[read-only aggregate](UNIT_RESOURCE_DISTANCE_AGGREGATE.md)를 후속 구현했다. 미확인
+UNIT를 거리만 보고 무시하지 않으며 raw flight/예외 상태를 추측하지 않는다.
+다음은 최종 정렬 좌표 preview/Apply와 명시적 자원 거리 checkbox/프리셋·지원표에
 연결한다. 전력/크립·EUD override·게임 인수는 계속 별도다. 이번 자료 단위를
 전체 거리 배치 기능이나 EP1 완료로 표시하지 않는다.

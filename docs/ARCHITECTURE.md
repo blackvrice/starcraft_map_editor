@@ -9,7 +9,9 @@
 mode는 기존 두 설정에서 파생하며 지원표는 application의 자료/정책 상태다.
 UI에 독립 배치 허용 판정이나 native/파일 접근을 추가하지 않았다.
 후속 [자원·기지 거리 자료](UNIT_RESOURCE_DISTANCE.md)는 optional resourceProfile과
-순수 pair geometry만 제공한다. application 배치 정책/UI 연결과 전체 UNIT 판정은 별도다.
+순수 pair geometry를 제공한다. 2026-10-15 [현재 UNIT aggregate](UNIT_RESOURCE_DISTANCE_AGGREGATE.md)는
+domain 숫자 snapshot과 application 출처·최종 좌표·공통 안전 검증을 결합한다.
+기존 full metadata 요청/무효화 경계를 재사용하며 실제 배치 정책/UI 연결은 별도다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

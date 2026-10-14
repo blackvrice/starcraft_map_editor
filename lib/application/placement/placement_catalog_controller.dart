@@ -10,6 +10,8 @@ import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
+import '../../domain/placement/unit_resource_distance_catalog.dart';
+import 'unit_resource_distance_inspection.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../../domain/placement/unit_placement_policy.dart';
 import 'placement_policy_support.dart';
@@ -387,6 +389,7 @@ class PlacementCatalogController {
   Object? _mapSnapshot;
   bool _disposed = false;
   UnitCollisionCatalog? _collisionCatalog;
+  UnitResourceDistanceCatalog? _resourceDistanceCatalog;
   (String?, int?, String?, String?)? _collisionIdentity;
   (String?, int?, String?, String?)? _unitCatalogIdentity;
   Future<bool>? _collisionPending;
@@ -1065,6 +1068,7 @@ class PlacementCatalogController {
     _collisionOperation = null;
     _collisionPending = null;
     _collisionCatalog = null;
+    _resourceDistanceCatalog = null;
     _collisionIdentity = null;
     lastCollisionMetadataPage = null;
     _state = _copy(isCollisionMetadataLoading: false);
@@ -1131,6 +1135,7 @@ class PlacementCatalogController {
           }
         }
         _collisionCatalog = UnitCollisionCatalog(units);
+        _resourceDistanceCatalog = UnitResourceDistanceCatalog(units);
         _collisionIdentity = source;
         return true;
       } catch (_) {
@@ -1153,6 +1158,53 @@ class PlacementCatalogController {
           _state.selection!.unitSourceIdentity == _collisionIdentity
       ? _collisionCatalog
       : null;
+
+  /// Uses the current UNIT document and source-matched numeric metadata only.
+  /// Does not load assets, mutate history, or enable a placement policy.
+  UnitResourceDistanceInspection inspectUnitResourceDistanceAt({
+    required int pixelX,
+    required int pixelY,
+  }) {
+    if (_state.selection?.kind != StarCraftPlacementKind.unit) {
+      return const UnitResourceDistanceInspection.notApplicable();
+    }
+    String? preflight(int x, int y) => _previewAt(
+      pixelX: x,
+      pixelY: y,
+      tileX: x ~/ 32,
+      tileY: y ~/ 32,
+      checkPolicies: false,
+    );
+    final inputIssue = preflight(pixelX, pixelY);
+    if (inputIssue != null) {
+      return UnitResourceDistanceInspection.refused(inputIssue);
+    }
+    final point = resolvePoint(pixelX, pixelY);
+    if (point != (x: pixelX, y: pixelY)) {
+      final issue = preflight(point.x, point.y);
+      if (issue != null) return UnitResourceDistanceInspection.refused(issue);
+    }
+    // Common preflight has established one usable DIM and an editable session.
+    final session = openMapController.state.session!;
+    final dimensions = session.metadataViews.dimensions.single;
+    final catalog = _currentCollisionCatalog == null
+        ? null
+        : _resourceDistanceCatalog;
+    return UnitResourceDistanceInspection.checked(
+      catalog?.check(
+            candidate: _state.selection!.unitCapability!,
+            x: point.x,
+            y: point.y,
+            mapWidthTiles: dimensions.width,
+            mapHeightTiles: dimensions.height,
+            existing: session.objectViews.unitSections.expand(
+              (section) => section.units,
+            ),
+          ) ??
+          UnitResourceDistanceCatalogCheck.metadataUnavailable,
+      point: point,
+    );
+  }
 
   bool get isBuildingTileAlignmentActive =>
       _state.alignBuildingsToTiles &&

@@ -34,6 +34,8 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
@@ -101,6 +103,260 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  test(
+    'resource inspection coalesces metadata and reads latest UNIT/Undo without writes',
+    () async {
+      final gateway = _ResourceGateway(hold: true);
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.metadataUnavailable,
+      );
+      final pending = c.loadCollisionMetadata();
+      expect(c.loadCollisionMetadata(), same(pending));
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.metadataUnavailable,
+      );
+      gateway.release.complete();
+      expect(await pending, isTrue);
+      for (var i = 0; i < 10; i++) {
+        final before = f.openMapController.state.session!;
+        final state = c.state;
+        final result = c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64);
+        expect(result.check, UnitResourceDistanceCatalogCheck.clear);
+        expect(result.point, (x: 64, y: 64));
+        expect(result.issueCode, isNull);
+        expect(f.openMapController.state.session, same(before));
+        expect(c.state, same(state));
+        expect(f.objectEditingController.state.undoDepth, 0);
+      }
+      expect(
+        f.objectEditingController
+            .placeCatalogUnit(
+              capability: gateway.capability(1),
+              unitId: 1,
+              owner: 0,
+              pixelX: 96,
+              pixelY: 64,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      final placed = f.openMapController.state.session!;
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.tooClose,
+      );
+      expect(f.openMapController.state.session, same(placed));
+      expect(f.objectEditingController.state.undoDepth, 1);
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.clear,
+      );
+      expect(f.objectEditingController.redo(), isTrue);
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.tooClose,
+      );
+      expect(gateway.metadataRequests, 1);
+      // No checkbox or placement enforcement is silently enabled in this stage.
+      expect(c.state.allowUnitOverlap, isTrue);
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+        PlacementPolicySupportStatus.notImplemented,
+      );
+    },
+  );
+  for (final alignment in ['point', 'building']) {
+    test('resource inspection uses final $alignment position', () async {
+      final gateway = _ResourceGateway(building: alignment == 'building');
+      final f = await _openFixture(
+        catalogGateway: gateway,
+        chkBytesOverride: Uint8List.fromList([
+          ..._chkBytes(),
+          ..._section(
+            'UNIT',
+            const UnitPlacementFactory()
+                .create(
+                  capability: gateway.capability(1),
+                  unitId: 1,
+                  owner: 0,
+                  x: 191,
+                  y: 64,
+                  classId: 1,
+                )
+                .bytes,
+          ),
+        ]),
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      await c.loadCollisionMetadata();
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 63, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.clear,
+      );
+      c.setPointSnap(enabled: true, step: 32);
+      c.setBuildingTileAlignment(alignment == 'building');
+      final result = c.inspectUnitResourceDistanceAt(pixelX: 63, pixelY: 64);
+      expect(result.point, (x: 64, y: 64));
+      expect(result.check, UnitResourceDistanceCatalogCheck.tooClose);
+      expect(f.objectEditingController.state.undoDepth, 0);
+    });
+  }
+  test(
+    'resource inspection retains raw/final bounds and locked-layer guards',
+    () async {
+      final gateway = _ResourceGateway();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      await c.loadCollisionMetadata();
+      c.setPointSnap(enabled: true, step: 32);
+      final before = f.openMapController.state.session!;
+      for (final x in [-1, 255, 256]) {
+        final result = c.inspectUnitResourceDistanceAt(pixelX: x, pixelY: 64);
+        expect(result.issueCode, ObjectPlacementDiagnosticCodes.outOfBounds);
+        expect(result.check, isNull);
+        expect(result.point, isNull);
+      }
+      f.mapLayerController.setLocked(MapLayerType.units, true);
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).issueCode,
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+      expect(f.openMapController.state.session, same(before));
+      expect(f.objectEditingController.state.undoDepth, 0);
+    },
+  );
+  test(
+    'resource inspection does not inherit optional terrain or overlap refusal',
+    () async {
+      final gateway = _ResourceGateway();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      await c.loadCollisionMetadata();
+      c.setAllowUnitOverlap(false);
+      c.setCheckUnitTerrain(true);
+      expect(
+        c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+        ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+      );
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.clear,
+      );
+    },
+  );
+  for (final failure in ['source', 'coverage', 'geometry', 'role']) {
+    test(
+      'resource metadata $failure remains unknown and explicit reload recovers',
+      () async {
+        final gateway = _ResourceGateway(failure: failure);
+        final f = await _openFixture(catalogGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        await c.loadCollisionMetadata();
+        expect(
+          c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+          UnitResourceDistanceCatalogCheck.metadataUnavailable,
+        );
+        gateway.failure = null;
+        expect(await c.loadCollisionMetadata(reload: true), isTrue);
+        expect(
+          c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+          UnitResourceDistanceCatalogCheck.clear,
+        );
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+  for (final change in ['installation', 'session', 'dispose']) {
+    test('resource snapshot discards pending data after $change', () async {
+      final gateway = _ResourceGateway(hold: true);
+      final f = await _openFixture(catalogGateway: gateway);
+      final c = f.controller..setInstallationPath(_installationPath);
+      c.synchronizeSession(f.openMapController.state.session);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      final pending = c.loadCollisionMetadata();
+      if (change == 'installation') c.setInstallationPath(r'C:\Other');
+      if (change == 'session') c.synchronizeSession(null);
+      if (change == 'dispose') await f.dispose();
+      gateway.release.complete();
+      expect(await pending, isFalse);
+      expect(gateway.cancelled, hasLength(1));
+      expect(c.lastCollisionMetadataPage, isNull);
+      if (change != 'dispose') {
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        expect(
+          c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+          UnitResourceDistanceCatalogCheck.metadataUnavailable,
+        );
+        await f.dispose();
+      }
+    });
+  }
+  test(
+    'legacy helper without resource roles is unknown, never nonparticipant',
+    () async {
+      final f = await _openFixture(catalogGateway: _CollisionGateway());
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      await c.loadCollisionMetadata();
+      expect(
+        c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+        UnitResourceDistanceCatalogCheck.metadataUnavailable,
+      );
+    },
+  );
+  for (final kind in [
+    StarCraftPlacementKind.tile,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test(
+      '$kind resource inspection is not applicable and starts no process',
+      () async {
+        final f = await _openFixture(unitCapabilityAvailable: true);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        expect(
+          c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64).check,
+          UnitResourceDistanceCatalogCheck.notApplicable,
+        );
+        await c.load(kind);
+        c.confirm(c.state.items.first.key);
+        final state = c.state;
+        final result = c.inspectUnitResourceDistanceAt(pixelX: 64, pixelY: 64);
+        expect(result.check, UnitResourceDistanceCatalogCheck.notApplicable);
+        expect(result.point, isNull);
+        expect(result.issueCode, isNull);
+        expect(c.state, same(state));
+        expect(c.lastCollisionMetadataPage, isNull);
+      },
+    );
+  }
   test(
     'UNIT presets atomically configure checks and preserve document and unrelated preferences',
     () async {
@@ -2868,6 +3124,78 @@ final class _CollisionGateway implements StarCraftPlacementCatalogGateway {
   }
 }
 
+final class _ResourceGateway implements StarCraftPlacementCatalogGateway {
+  _ResourceGateway({this.failure, this.hold = false, this.building = false});
+  String? failure;
+  final bool hold;
+  final bool building;
+  final release = Completer<void>();
+  final cancelled = <String>[];
+  int metadataRequests = 0;
+
+  UnitPlacementCapability capability(int id, {bool numeric = false}) =>
+      UnitPlacementCapability(
+        unitId: id,
+        resourceProfile: UnitResourceProfile(
+          isDepot: id == 0 && !(numeric && failure == 'role'),
+          isResource: id == 1,
+        ),
+        collisionProfile: UnitCollisionProfile(
+          left: numeric && failure == 'geometry' ? 1 : 0,
+          up: 0,
+          right: 0,
+          down: 0,
+          isFlyer: false,
+        ),
+        placementBox: building
+            ? BuildingPlacementBox(width: 64, height: 64)
+            : null,
+        isBuilding: building,
+        isFlyingBuilding: false,
+        isSpellcaster: false,
+        hasShields: false,
+        isResourceContainer: id == 1,
+        isGasResourceContainer: false,
+        hasHangar: false,
+        isBurrowable: false,
+        isCloakable: false,
+        isInvincible: false,
+        requiresRelationLink: false,
+      );
+
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async {
+    if (request.unitMetadataOnly) {
+      metadataRequests++;
+      if (hold) await release.future;
+    }
+    final page = await _FakeCatalogGateway(
+      doodadTotal: 2,
+      unitCapabilityAvailable: true,
+      unitCapabilityForId: (id) =>
+          capability(id, numeric: request.unitMetadataOnly),
+    ).list(request);
+    return StarCraftPlacementCatalogPage(
+      request: request,
+      totalEntries: page.totalEntries,
+      entries: request.unitMetadataOnly && failure == 'coverage'
+          ? page.entries.take(227)
+          : page.entries,
+      storageProduct: page.storageProduct,
+      storageBuildNumber: request.unitMetadataOnly && failure == 'source'
+          ? 123
+          : page.storageBuildNumber,
+      helperVersion: page.helperVersion,
+      cascLibRevision: page.cascLibRevision,
+    );
+  }
+
+  @override
+  Future<void> cancel(String operationId) async => cancelled.add(operationId);
+}
+
 final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
   _FakeCatalogGateway({
     required this.doodadTotal,
@@ -2875,6 +3203,7 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
     this.unitIsBuilding = false,
     this.placementBox,
     this.collisionProfile,
+    this.unitCapabilityForId,
   });
 
   final int doodadTotal;
@@ -2882,6 +3211,7 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
   final bool unitIsBuilding;
   final BuildingPlacementBox? placementBox;
   final UnitCollisionProfile? collisionProfile;
+  final UnitPlacementCapability Function(int)? unitCapabilityForId;
 
   @override
   Future<StarCraftPlacementCatalogPage> list(
@@ -2966,28 +3296,30 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
             source: StarCraftPlacementCatalogSource.localData,
             availability: StarCraftPlacementAvailability.placeable,
             verifiedName: 'Terran Marine',
-            unitCapability: UnitPlacementCapability(
-              unitId: index,
-              placementBox: placementBox,
-              collisionProfile: collisionProfile,
-              weaponReferences: UnitWeaponReferences(
-                ground: index == 0 ? 7 : 130,
-                air: 130,
-                subunit1: index == 1 ? 0 : 228,
-                subunit2: 228,
-              ),
-              isSpellcaster: false,
-              hasShields: false,
-              isResourceContainer: false,
-              isGasResourceContainer: false,
-              hasHangar: false,
-              isFlyingBuilding: false,
-              isBurrowable: false,
-              isCloakable: false,
-              isInvincible: false,
-              isBuilding: unitIsBuilding,
-              requiresRelationLink: false,
-            ),
+            unitCapability:
+                unitCapabilityForId?.call(index) ??
+                UnitPlacementCapability(
+                  unitId: index,
+                  placementBox: placementBox,
+                  collisionProfile: collisionProfile,
+                  weaponReferences: UnitWeaponReferences(
+                    ground: index == 0 ? 7 : 130,
+                    air: 130,
+                    subunit1: index == 1 ? 0 : 228,
+                    subunit2: 228,
+                  ),
+                  isSpellcaster: false,
+                  hasShields: false,
+                  isResourceContainer: false,
+                  isGasResourceContainer: false,
+                  hasHangar: false,
+                  isFlyingBuilding: false,
+                  isBurrowable: false,
+                  isCloakable: false,
+                  isInvincible: false,
+                  isBuilding: unitIsBuilding,
+                  requiresRelationLink: false,
+                ),
           );
         }
         return StarCraftPlacementCatalogEntry(
