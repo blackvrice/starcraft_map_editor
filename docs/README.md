@@ -33,6 +33,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [건물 크기와 타일 정렬](BUILDING_TILE_ALIGNMENT.md) | 로컬 StarEdit 박스·홀짝 중심 정렬·전체 경계·자료 누락·native/앱 회귀 | 건물 배치와 정상/자유 정책을 확장할 때 |
 | [배치 검증 자료와 정책 계약](PLACEMENT_VALIDATION_CONTRACTS.md) | 충돌 offset/Flyer 조회·순수 겹침·정상/자유 지원표·후속 지형 계약·실행 기록 | 충돌/지형 정책을 연결할 때 |
 | [UNIT 겹침 배치 정책](UNIT_OVERLAP_POLICY.md) | 로컬 전체 metadata·지상/공중 겹침·허용 체크박스·최종 좌표·Undo/저장 회귀 | 배치 충돌 검사와 지형 정책을 확장할 때 |
+| [배치용 CV5/VF4 지형 자료](TERRAIN_PLACEMENT_SNAPSHOT.md) | 파생 건설/미니타일 이동 자료·출처·순수 footprint·상한·로컬8타일셋 회귀 | 배치 지형 검사를 연결할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

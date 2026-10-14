@@ -1,4 +1,5 @@
 #include "terrain_connection_snapshot.h"
+#include "terrain_placement_snapshot.h"
 #include "tileset_tile_decoder.h"
 
 #ifdef NDEBUG
@@ -15,6 +16,47 @@ void Put(std::vector<std::byte>& bytes, std::size_t at, std::uint16_t value) {
 }
 
 int main() {
+  std::array<std::vector<std::byte>, 2> placement;
+  placement[0].resize(2 * 52);
+  placement[1].resize(2 * 32);
+  Put(placement[0], 2, 0x80);
+  Put(placement[0], 54, 0x0001);  // CV5 Walkable is not VF4 walkability.
+  for (std::size_t member = 0; member < 16; ++member) {
+    Put(placement[0], 20 + member * 2, static_cast<std::uint16_t>(member % 2));
+    Put(placement[1], member * 2, member % 2 == 0 ? 0x11 : 0x10);
+  }
+  Put(placement[0], 52 + 20 + 15 * 2, 65535);  // Unknown reference stays unknown.
+  const auto placement_original = placement;
+  const auto projected = sc::ReadTerrainPlacement(placement);
+  assert(projected.success && projected.group_buildable.size() == 2);
+  assert(!projected.group_buildable[0] && projected.group_buildable[1]);
+  assert((projected.walkable_masks == std::vector<std::uint16_t>{0x5555, 0}));
+  assert(projected.mega_tile_references[0][15] == 1);
+  assert(projected.mega_tile_references[1][15] == 65535);
+  assert(placement == placement_original);
+  for (std::size_t i = 0; i < 2; ++i) {
+    auto bad = placement_original;
+    bad[i].pop_back();
+    assert(!sc::ReadTerrainPlacement(bad).success);
+    bad[i].clear();
+    assert(!sc::ReadTerrainPlacement(bad).success);
+    bad = placement_original;
+    bad[i][0] = std::byte{255};
+    const auto changed = sc::ReadTerrainPlacement(bad);
+    assert(changed.success && changed.asset_sha256[i] != projected.asset_sha256[i]);
+    assert(changed.asset_sha256[1 - i] == projected.asset_sha256[1 - i]);
+  }
+  auto limits = placement_original;
+  limits[0].resize(4096 * 52);
+  limits[1].resize(65536 * 32);
+  Put(limits[1], 65535 * 32 + 30, 1);
+  const auto largest = sc::ReadTerrainPlacement(limits);
+  assert(largest.success && largest.walkable_masks.back() == 0x8000);
+  limits[0].resize(4097 * 52);
+  assert(!sc::ReadTerrainPlacement(limits).success);
+  limits[0].resize(4096 * 52);
+  limits[1].resize(65537 * 32);
+  assert(!sc::ReadTerrainPlacement(limits).success);
   assert(sc::TerrainAssetSha256({}) ==
       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   assert(sc::TerrainAssetSha256({std::byte{'a'}, std::byte{'b'}, std::byte{'c'}}) ==

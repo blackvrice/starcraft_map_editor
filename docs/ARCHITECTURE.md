@@ -1,5 +1,10 @@
 # 아키텍처
 
+2026-10-14: `TerrainPlacementSnapshotGateway`와 `readTerrainPlacement` v1은 CV5/VF4
+2종만 읽고 파생 숫자·출처를 반환한다. 순수 domain footprint와 기존 ISOM 포트의
+공통 bounded 프로세스 경계는 [계약](TERRAIN_PLACEMENT_SNAPSHOT.md)을 따른다.
+배치 UI 연결은 후속이며 Domain의 I/O 비의존·기존 ISOM v2 형식은 유지한다.
+
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
 클래스 선언 전체가 아니다. 새 맵의 원본 없는 세션·helper 0.5.0 신규 MPQ 저장은

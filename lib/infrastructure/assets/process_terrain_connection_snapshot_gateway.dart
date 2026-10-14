@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../../application/ports/terrain_connection_snapshot_gateway.dart';
+import '../../application/ports/terrain_placement_snapshot_gateway.dart';
 import 'starcraft_data_helper_protocol.dart';
 import 'terrain_connection_snapshot_decoder.dart';
+import 'terrain_placement_snapshot_decoder.dart';
 
 final class ProcessTerrainConnectionSnapshotGateway
-    implements TerrainConnectionSnapshotGateway {
+    implements
+        TerrainConnectionSnapshotGateway,
+        TerrainPlacementSnapshotGateway {
   ProcessTerrainConnectionSnapshotGateway({
     required this.helperExecutablePath,
     List<String> helperArguments = const [],
@@ -52,16 +56,71 @@ final class ProcessTerrainConnectionSnapshotGateway
     required String installationPath,
     required int tileset,
   }) async {
+    final result = await _read(
+      operationId: operationId,
+      installationPath: installationPath,
+      tileset: tileset,
+      operation: 'readTerrainConnections',
+      decode: (json) => const TerrainConnectionSnapshotDecoder().decode(
+        json,
+        operationId: operationId,
+        installationPath: installationPath,
+        tileset: tileset,
+      ),
+    );
+    return TerrainSnapshotReadResult(
+      snapshot: result.snapshot as TerrainConnectionSnapshot?,
+      errorCode: result.errorCode,
+      exitCode: result.exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    );
+  }
+
+  @override
+  Future<TerrainPlacementReadResult> readPlacement({
+    required String operationId,
+    required String installationPath,
+    required int tileset,
+  }) async {
+    final result = await _read(
+      operationId: operationId,
+      installationPath: installationPath,
+      tileset: tileset,
+      operation: 'readTerrainPlacement',
+      decode: (json) => const TerrainPlacementSnapshotDecoder().decode(
+        json,
+        operationId: operationId,
+        installationPath: installationPath,
+        tileset: tileset,
+      ),
+    );
+    return TerrainPlacementReadResult(
+      source: result.snapshot as TerrainPlacementSource?,
+      errorCode: result.errorCode,
+      exitCode: result.exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    );
+  }
+
+  Future<_TerrainProcessReadResult> _read({
+    required String operationId,
+    required String installationPath,
+    required int tileset,
+    required String operation,
+    required Object Function(Map<String, dynamic>) decode,
+  }) async {
     if (!RegExp(r'^[a-zA-Z0-9_-]{1,128}$').hasMatch(operationId) ||
         !_absolute(installationPath) ||
         tileset < 0 ||
         tileset > 7) {
-      return const TerrainSnapshotReadResult(
+      return const _TerrainProcessReadResult(
         errorCode: 'SC_TERRAIN_REQUEST_INVALID',
       );
     }
     if (_active.containsKey(operationId)) {
-      return const TerrainSnapshotReadResult(
+      return const _TerrainProcessReadResult(
         errorCode: 'SC_TERRAIN_OPERATION_ACTIVE',
       );
     }
@@ -95,7 +154,7 @@ final class ProcessTerrainConnectionSnapshotGateway
           jsonEncode({
             'protocolVersion': StarCraftDataHelperProtocol.version,
             'requestId': operationId,
-            'operation': 'readTerrainConnections',
+            'operation': operation,
             'installationPath': installationPath,
             'tileset': tileset,
           }),
@@ -113,12 +172,7 @@ final class ProcessTerrainConnectionSnapshotGateway
       if (json is! Map<String, dynamic>) {
         throw const FormatException('Expected terrain response object.');
       }
-      final snapshot = const TerrainConnectionSnapshotDecoder().decode(
-        json,
-        operationId: operationId,
-        installationPath: installationPath,
-        tileset: tileset,
-      );
+      final snapshot = decode(json);
       return op.result(snapshot: snapshot);
     } on FormatException {
       return op.result(error: 'SC_TERRAIN_RESPONSE_INVALID');
@@ -194,14 +248,26 @@ class _ReadOperation {
     return done.future;
   }
 
-  TerrainSnapshotReadResult result({
-    String? error,
-    TerrainConnectionSnapshot? snapshot,
-  }) => TerrainSnapshotReadResult(
-    snapshot: snapshot,
-    errorCode: this.error ?? error,
-    exitCode: exit,
-    stdout: utf8.decode(stdoutBytes, allowMalformed: true),
-    stderr: utf8.decode(stderrBytes, allowMalformed: true),
-  );
+  _TerrainProcessReadResult result({String? error, Object? snapshot}) =>
+      _TerrainProcessReadResult(
+        snapshot: snapshot,
+        errorCode: this.error ?? error,
+        exitCode: exit,
+        stdout: utf8.decode(stdoutBytes, allowMalformed: true),
+        stderr: utf8.decode(stderrBytes, allowMalformed: true),
+      );
+}
+
+final class _TerrainProcessReadResult {
+  const _TerrainProcessReadResult({
+    this.snapshot,
+    this.errorCode,
+    this.exitCode,
+    this.stdout = '',
+    this.stderr = '',
+  });
+  final Object? snapshot;
+  final String? errorCode;
+  final int? exitCode;
+  final String stdout, stderr;
 }

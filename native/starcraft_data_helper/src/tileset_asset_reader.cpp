@@ -331,6 +331,27 @@ const std::array<std::string_view, 7>& EudDatAssetPaths() {
       "arr\\techdata.dat", "arr\\sprites.dat", "arr\\images.dat"};
   return paths;
 }
+
+const std::array<std::array<std::string_view, 2>, kTilesetCount>&
+TerrainPlacementAssetPaths() {
+  // Reuse the verified tileset paths without reading graphics/dddata assets.
+  static const auto paths = [] {
+    std::array<std::array<std::string_view, 2>, kTilesetCount> result{};
+    for (std::size_t i = 0; i < result.size(); ++i) {
+      result[i] = {kDoodadAssetPaths[i][0], kDoodadAssetPaths[i][5]};
+    }
+    return result;
+  }();
+  return paths;
+}
+
+TerrainPlacementAssetReadResult ReadTerrainPlacementAssets(
+    const std::filesystem::path& path, const std::uint32_t tileset) {
+  return ReadAssets<TerrainPlacementAssetReadResult>(path, tileset,
+      TerrainPlacementAssetPaths(), "SC_CASC_TERRAIN_PLACEMENT_MISSING",
+      "SC_CASC_TERRAIN_PLACEMENT_INVALID", "CV5 or VF4 is missing.",
+      "CV5 or VF4 is unreadable.");
+}
 EudDatAssetReadResult ReadEudDatAssets(const std::filesystem::path& path) {
   std::array<std::array<std::string_view, 7>, kTilesetCount> paths;
   paths.fill(EudDatAssetPaths());

@@ -70,6 +70,8 @@ add_library(starcraft_data_core STATIC
   src/tileset_asset_reader.h
   src/terrain_connection_snapshot.cpp
   src/terrain_connection_snapshot.h
+  src/terrain_placement_snapshot.cpp
+  src/terrain_placement_snapshot.h
   src/tileset_tile_decoder.cpp
   src/tileset_tile_decoder.h
 )

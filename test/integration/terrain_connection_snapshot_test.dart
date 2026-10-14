@@ -37,7 +37,10 @@ void main() {
         expect(second.snapshot!.revision, first.snapshot!.revision);
         expect(first.snapshot!.groups, isNotEmpty);
         expect(first.snapshot!.assets, hasLength(4));
-        expect(first.stdout, contains('"helperVersion":"0.12.0"'));
+        expect(
+          jsonDecode(first.stdout)['helperVersion'],
+          StarCraftDataHelperProtocol.helperVersion,
+        );
       }
     },
     skip: canRun ? false : 'Requires local Windows CASC helper/installation.',

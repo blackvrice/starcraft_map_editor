@@ -51,6 +51,19 @@ struct DoodadAssetReadResult {
   std::uint32_t native_error = 0;
 };
 
+struct TerrainPlacementAssetReadResult {
+  bool success = false;
+  std::string installation_path, storage_product, error_code, message, stage;
+  std::uint32_t storage_build_number = 0, native_error = 0;
+  std::uint64_t total_asset_bytes = 0;
+  std::array<std::vector<std::byte>, 2> assets;
+};
+
+const std::array<std::array<std::string_view, 2>, kTilesetCount>&
+TerrainPlacementAssetPaths();
+TerrainPlacementAssetReadResult ReadTerrainPlacementAssets(
+    const std::filesystem::path& installation_path, std::uint32_t tileset);
+
 const std::array<
     std::array<std::string_view, kRenderAssetCount>,
     kTilesetCount>&
