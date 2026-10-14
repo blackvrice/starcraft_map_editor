@@ -2,6 +2,7 @@ import 'unit_weapon_references.dart';
 import 'doodad_placement_recipe.dart';
 import 'building_placement_box.dart';
 import 'unit_collision_profile.dart';
+import 'unit_resource_profile.dart';
 
 /// The minimum verified `units.dat` capability snapshot required to synthesize
 /// a default `UNIT` record for a unit that the current map does not contain.
@@ -20,6 +21,7 @@ final class UnitPlacementCapability {
     this.weaponReferences,
     this.placementBox,
     this.collisionProfile,
+    this.resourceProfile,
     required this.isSpellcaster,
     required this.hasShields,
     required this.isResourceContainer,
@@ -38,6 +40,12 @@ final class UnitPlacementCapability {
     if (isGasResourceContainer && !isResourceContainer) {
       throw ArgumentError(
         'A gas resource container must also be a resource container.',
+      );
+    }
+    if (resourceProfile != null &&
+        resourceProfile!.isResource != isResourceContainer) {
+      throw ArgumentError(
+        'Resource profile must match the resource container flag.',
       );
     }
   }
@@ -64,6 +72,9 @@ final class UnitPlacementCapability {
 
   /// Local classic DAT geometry, not an EUD/runtime override snapshot.
   final UnitCollisionProfile? collisionProfile;
+
+  /// Optional versioned roles; absent profiles do not imply a non-depot.
+  final UnitResourceProfile? resourceProfile;
 
   /// A lifted flying building occupies the air layer. Unknown metadata stays
   /// unknown; the caller must also validate the record's in-transit state.

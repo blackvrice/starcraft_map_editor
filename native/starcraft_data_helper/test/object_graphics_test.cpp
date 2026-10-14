@@ -545,7 +545,10 @@ int main() {
   // Check every entry to catch array stride/order and last-entry errors.
   // Collision offsets are not derived from StarEdit dimensions.
   for (std::uint16_t id = 0; id < 228; ++id) {
-    PutUint32(&units_dat, kFlagsOffset + id * 4, id % 2 == 0 ? 4u : 0u);
+    const auto flags = (id % 2 == 0 ? 4u : 0u) |
+        ((id & 1u) != 0 ? (1u << 12) : 0u) |
+        ((id & 2u) != 0 ? (1u << 13) : 0u);
+    PutUint32(&units_dat, kFlagsOffset + id * 4, flags);
     PutUint16(&units_dat, 12580 + id * 8, id);
     PutUint16(&units_dat, 12582 + id * 8, id + 256);
     PutUint16(&units_dat, 12584 + id * 8, id + 512);
@@ -555,7 +558,9 @@ int main() {
         collision.collision_left != id || collision.collision_up != id + 256 ||
         collision.collision_right != id + 512 ||
         collision.collision_down != (id == 227 ? 65535 : id + 768) ||
-        collision.is_flyer != (id % 2 == 0)) {
+        collision.is_flyer != (id % 2 == 0) ||
+        collision.is_resource_depot != ((id & 1u) != 0) ||
+        collision.is_resource_container != ((id & 2u) != 0)) {
       return Fail("Classic collision extents or Flyer bit decoded incorrectly.");
     }
   }

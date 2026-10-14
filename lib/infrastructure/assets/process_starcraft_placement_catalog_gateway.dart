@@ -9,6 +9,7 @@ import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/building_placement_box.dart';
 import '../../domain/placement/unit_collision_profile.dart';
+import '../../domain/placement/unit_resource_profile.dart';
 import 'starcraft_data_helper_protocol.dart';
 import '../../domain/placement/unit_weapon_references.dart';
 
@@ -659,6 +660,7 @@ final class ProcessStarCraftPlacementCatalogGateway
       unitId: unitId,
       placementBox: placementBox,
       collisionProfile: _parseCollisionProfile(raw),
+      resourceProfile: _parseResourceProfile(raw, isResourceContainer),
       isSubunit: raw.containsKey('isSubunit') ? flag('isSubunit') : false,
       weaponReferences: raw['weaponReferences'] == null
           ? null
@@ -680,6 +682,22 @@ final class ProcessStarCraftPlacementCatalogGateway
       isBuilding: isBuilding,
       requiresRelationLink: flag('requiresRelationLink'),
     );
+  }
+
+  UnitResourceProfile? _parseResourceProfile(
+    Map<String, dynamic> raw,
+    bool isResourceContainer,
+  ) {
+    if (raw['resourceProfile'] == null) return null;
+    final profile = _jsonObject(raw, 'resourceProfile');
+    final depot = profile['isDepot'], resource = profile['isResource'];
+    if (_jsonInteger(profile, 'version') != UnitResourceProfile.version ||
+        depot is! bool ||
+        resource is! bool ||
+        resource != isResourceContainer) {
+      throw const FormatException('Unit resource profile is invalid.');
+    }
+    return UnitResourceProfile(isDepot: depot, isResource: resource);
   }
 
   UnitCollisionProfile? _parseCollisionProfile(Map<String, dynamic> raw) {

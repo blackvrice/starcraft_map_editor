@@ -426,6 +426,9 @@ void AddUnitCapability(
       {"isSpellcaster", capability->is_spellcaster},
       {"hasShields", capability->has_shields},
       {"isResourceContainer", capability->is_resource_container},
+      {"resourceProfile", {
+          {"version", 1}, {"isDepot", capability->is_resource_depot},
+          {"isResource", capability->is_resource_container}}},
       {"isGasResourceContainer", capability->is_gas_resource_container},
       {"hasHangar", capability->has_hangar},
       {"isFlyingBuilding", capability->is_flying_building},

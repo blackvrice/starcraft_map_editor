@@ -8,6 +8,8 @@
 이어서 [UNIT 정책 프리셋·지원표](UNIT_PLACEMENT_POLICY_UI.md)를 추가했다.
 mode는 기존 두 설정에서 파생하며 지원표는 application의 자료/정책 상태다.
 UI에 독립 배치 허용 판정이나 native/파일 접근을 추가하지 않았다.
+후속 [자원·기지 거리 자료](UNIT_RESOURCE_DISTANCE.md)는 optional resourceProfile과
+순수 pair geometry만 제공한다. application 배치 정책/UI 연결과 전체 UNIT 판정은 별도다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

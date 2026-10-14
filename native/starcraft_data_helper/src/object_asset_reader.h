@@ -30,6 +30,7 @@ struct UnitCapability {
   bool is_spellcaster = false;
   bool has_shields = false;
   bool is_resource_container = false;
+  bool is_resource_depot = false;
   bool is_gas_resource_container = false;
   bool has_hangar = false;
   bool is_flying_building = false;

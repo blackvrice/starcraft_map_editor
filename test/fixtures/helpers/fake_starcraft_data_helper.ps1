@@ -208,6 +208,24 @@ elseif ($request.operation -eq "listPlacementCatalog") {
             if ($request.installationPath -like '*collision-old*') {
                 $entry.capability.Remove('collisionProfile')
             }
+            if ($request.installationPath -like '*resource-*') {
+                $entry.capability.resourceProfile = [ordered]@{ version = 1; isDepot = $false; isResource = $false }
+                if ($request.installationPath -like '*resource-depot*') { $entry.capability.resourceProfile.isDepot = $true }
+                if ($request.installationPath -like '*resource-container*' -or $request.installationPath -like '*resource-both*') {
+                    $entry.capability.isResourceContainer = $true
+                    $entry.capability.resourceProfile.isResource = $true
+                }
+                if ($request.installationPath -like '*resource-both*') { $entry.capability.resourceProfile.isDepot = $true }
+                if ($request.installationPath -like '*resource-old*') { $entry.capability.Remove('resourceProfile') }
+                if ($request.installationPath -like '*resource-null*') { $entry.capability.resourceProfile = $null }
+                if ($request.installationPath -like '*resource-version*') { $entry.capability.resourceProfile.version = 2 }
+                if ($request.installationPath -like '*resource-object*') { $entry.capability.resourceProfile = 'invalid' }
+                if ($request.installationPath -like '*resource-mismatch*') { $entry.capability.resourceProfile.isResource = $true }
+                foreach ($field in @('isDepot', 'isResource')) {
+                    if ($request.installationPath -like "*resource-$field-type*") { $entry.capability.resourceProfile[$field] = 1 }
+                    if ($request.installationPath -like "*resource-$field-missing*") { $entry.capability.resourceProfile.Remove($field) }
+                }
+            }
             if ($request.installationPath -like '*collision-null*') {
                 $entry.capability.collisionProfile = $null
             }

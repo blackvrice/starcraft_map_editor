@@ -1,5 +1,8 @@
 # UNIT 배치 정책 프리셋과 지원표
 
+후속 [자원·기지 거리 자료·순수 pair](UNIT_RESOURCE_DISTANCE.md)를 구현했다.
+실제 배치 정책에는 아직 연결하지 않아 현재 지원표의 자원 거리 미구현 표시는 유지한다.
+
 2026-10-14. EP1, FR-218/219의 후속 코드 단위다. 기존
 [겹침 정책](UNIT_OVERLAP_POLICY.md)과 [지형 검사](UNIT_TERRAIN_PLACEMENT_POLICY.md)를
 한 번에 설정하는 **검사 배치 / 자유 배치** 프리셋과 읽기 전용 지원표를 구현했다.

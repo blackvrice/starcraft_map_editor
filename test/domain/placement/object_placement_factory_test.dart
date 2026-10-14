@@ -6,6 +6,7 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
 
 void main() {
   const unitFactory = UnitPlacementFactory();
@@ -292,6 +293,52 @@ void main() {
   });
 
   group('UnitPlacementCapability', () {
+    test(
+      'resource profile consistency is validated without changing record defaults',
+      () {
+        expect(
+          () => _capability(
+            unitId: 37,
+            resourceProfile: const UnitResourceProfile(
+              isDepot: false,
+              isResource: true,
+            ),
+          ),
+          throwsArgumentError,
+        );
+        final cap = _capability(
+          unitId: 37,
+          resourceProfile: const UnitResourceProfile(
+            isDepot: true,
+            isResource: false,
+          ),
+        );
+        final old = _capability(unitId: 37);
+        expect(old.resourceProfile, isNull);
+        expect(
+          unitFactory
+              .create(
+                capability: cap,
+                unitId: 37,
+                owner: 0,
+                x: 64,
+                y: 64,
+                classId: 1,
+              )
+              .bytes,
+          unitFactory
+              .create(
+                capability: old,
+                unitId: 37,
+                owner: 0,
+                x: 64,
+                y: 64,
+                classId: 1,
+              )
+              .bytes,
+        );
+      },
+    );
     test('rejects a gas container that is not a resource container', () {
       expect(
         () => _capability(unitId: 188, isGasResourceContainer: true),
@@ -587,7 +634,9 @@ UnitPlacementCapability _capability({
   bool isInvincible = false,
   bool isBuilding = false,
   bool requiresRelationLink = false,
+  UnitResourceProfile? resourceProfile,
 }) => UnitPlacementCapability(
+  resourceProfile: resourceProfile,
   unitId: unitId,
   isSubunit: isSubunit,
   isSpellcaster: isSpellcaster,

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/ports/starcraft_placement_catalog_gateway.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_distance.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 
 void main() {
@@ -98,6 +99,73 @@ void main() {
         }
       },
     );
+    for (final scenario in [
+      'resource-neither',
+      'resource-depot',
+      'resource-container',
+      'resource-both',
+      'resource-old',
+      'resource-null',
+      'resource-version',
+      'resource-object',
+      'resource-mismatch',
+      'resource-isDepot-type',
+      'resource-isDepot-missing',
+      'resource-isResource-type',
+      'resource-isResource-missing',
+    ]) {
+      test('validates optional versioned resource roles $scenario', () async {
+        for (final metadataOnly in [false, true]) {
+          final page = await createGateway().list(
+            StarCraftPlacementCatalogRequest(
+              operationId: 'resource-profile-test',
+              installationPath: 'C:\\Games\\$scenario',
+              kind: StarCraftPlacementKind.unit,
+              tileset: StarCraftTilesetAssetSet.badlands,
+              offset: 8,
+              limit: 1,
+              unitMetadataOnly: metadataOnly,
+            ),
+          );
+          final legacy =
+              scenario == 'resource-old' || scenario == 'resource-null';
+          final valid = [
+            'resource-neither',
+            'resource-depot',
+            'resource-container',
+            'resource-both',
+          ].contains(scenario);
+          expect(
+            page.isSuccess,
+            legacy || valid,
+            reason: '${page.diagnostics}',
+          );
+          if (page.isSuccess) {
+            final cap = page.entries.single.unitCapability!;
+            expect(page.entries.single.isPlaceable, isTrue);
+            if (legacy) {
+              expect(cap.resourceProfile, isNull);
+            } else {
+              final profile = cap.resourceProfile!;
+              expect(
+                profile.isDepot,
+                ['resource-depot', 'resource-both'].contains(scenario),
+              );
+              expect(
+                profile.isResource,
+                ['resource-container', 'resource-both'].contains(scenario),
+              );
+              expect(profile.isResource, cap.isResourceContainer);
+            }
+          } else {
+            expect(
+              page.diagnostics.single.code,
+              StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+            );
+          }
+        }
+      }, skip: !Platform.isWindows);
+    }
     test('lists a validated contiguous Tile page', () async {
       final page = await createGateway().list(requestFor('StarCraft'));
 
@@ -119,6 +187,92 @@ void main() {
     final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
     final realInstallation =
         Platform.environment['STARCRAFT_TEST_INSTALLATION'];
+    test(
+      'local resource roles cover classic DAT and agree across metadata and graphics',
+      () async {
+        final gateway = ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: realHelper!,
+        );
+        final metadata = await gateway.list(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'real-resource-metadata',
+            installationPath: realInstallation!,
+            kind: StarCraftPlacementKind.unit,
+            tileset: StarCraftTilesetAssetSet.badlands,
+            limit: 228,
+            unitMetadataOnly: true,
+          ),
+        );
+        expect(metadata.isSuccess, isTrue, reason: '${metadata.diagnostics}');
+        expect(metadata.entries, hasLength(228));
+        for (final entry in metadata.entries) {
+          final cap = entry.unitCapability!;
+          expect(cap.resourceProfile, isNotNull);
+          expect(cap.resourceProfile!.isResource, cap.isResourceContainer);
+          expect(entry.hasPreview, isFalse);
+        }
+        final depot = metadata.entries[106].unitCapability!;
+        final resource = metadata.entries[188].unitCapability!;
+        expect(depot.resourceProfile!.isDepot, isTrue);
+        expect(depot.resourceProfile!.isResource, isFalse);
+        expect(resource.resourceProfile!.isResource, isTrue);
+        expect(resource.isGasResourceContainer, isTrue);
+        expect(
+          metadata.entries.first.unitCapability!.resourceProfile!.isDepot,
+          isFalse,
+        );
+        final graphics = await gateway.list(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'real-resource-graphics',
+            installationPath: realInstallation,
+            kind: StarCraftPlacementKind.unit,
+            tileset: StarCraftTilesetAssetSet.badlands,
+            offset: 106,
+            limit: 1,
+          ),
+        );
+        expect(graphics.isSuccess, isTrue, reason: '${graphics.diagnostics}');
+        expect(
+          (
+            graphics.storageProduct,
+            graphics.storageBuildNumber,
+            graphics.helperVersion,
+            graphics.cascLibRevision,
+          ),
+          (
+            metadata.storageProduct,
+            metadata.storageBuildNumber,
+            metadata.helperVersion,
+            metadata.cascLibRevision,
+          ),
+        );
+        expect(
+          graphics.entries.single.unitCapability!.resourceProfile!.isDepot,
+          depot.resourceProfile!.isDepot,
+        );
+        expect(
+          graphics.entries.single.unitCapability!.resourceProfile!.isResource,
+          depot.resourceProfile!.isResource,
+        );
+        for (final x in [1024, 1600]) {
+          expect(
+            UnitResourceDistance.checkPair(
+              candidateRole: depot.resourceProfile,
+              existingRole: resource.resourceProfile,
+              candidateBounds: depot.collisionProfile!.boundsAt(1024, 1024),
+              existingBounds: resource.collisionProfile!.boundsAt(x, 1024),
+              mapWidthTiles: 64,
+              mapHeightTiles: 64,
+            ),
+            x == 1024
+                ? UnitResourceDistanceCheck.tooClose
+                : UnitResourceDistanceCheck.clear,
+          );
+        }
+      },
+      skip:
+          !Platform.isWindows || realHelper == null || realInstallation == null,
+    );
     test(
       'local collision metadata is available for all classic units without graphics',
       () async {
