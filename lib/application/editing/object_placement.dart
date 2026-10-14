@@ -24,6 +24,10 @@ abstract final class ObjectPlacementDiagnosticCodes {
   static const historyBlocked = 'OBJECT_PLACEMENT_HISTORY_BLOCKED';
   static const buildingBoxUnavailable =
       'OBJECT_PLACEMENT_BUILDING_BOX_UNAVAILABLE';
+  static const unitOverlap = 'OBJECT_PLACEMENT_UNIT_OVERLAP';
+  static const collisionUnavailable = 'OBJECT_PLACEMENT_COLLISION_UNAVAILABLE';
+  static const collisionStateUnsupported =
+      'OBJECT_PLACEMENT_COLLISION_STATE_UNSUPPORTED';
 
   static const all = <String>{
     sessionNotEditable,
@@ -40,6 +44,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     invalidOwner,
     historyBlocked,
     buildingBoxUnavailable,
+    unitOverlap,
+    collisionUnavailable,
+    collisionStateUnsupported,
   };
 }
 

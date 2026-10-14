@@ -6109,4 +6109,22 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get placementBuildingBoxUnavailable =>
       '검증된 건물 배치 크기 자료가 없습니다. 카탈로그를 다시 불러오거나 건물 타일 정렬을 끄세요.';
+
+  @override
+  String get placementAllowUnitOverlap => 'UNIT 겹침 허용';
+
+  @override
+  String get placementReloadCollisionMetadata => '유닛 충돌 자료 다시 불러오기';
+
+  @override
+  String get placementUnitOverlap =>
+      '같은 지상·공중 영역의 유닛과 겹칩니다. 위치를 옮기거나 UNIT 겹침을 허용하세요.';
+
+  @override
+  String get placementCollisionUnavailable =>
+      '현재 로컬 DAT 자료로 유닛 겹침을 검증할 수 없습니다. 충돌 자료와 카탈로그를 다시 불러오거나 UNIT 겹침을 허용하세요.';
+
+  @override
+  String get placementCollisionStateUnsupported =>
+      '기존 UNIT에 지원하지 않는 비행 중 상태가 있어 충돌 영역을 확인할 수 없습니다. UNIT 겹침 허용으로 이 검사를 생략할 수 있습니다.';
 }

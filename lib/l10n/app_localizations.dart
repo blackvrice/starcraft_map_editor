@@ -10358,6 +10358,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment.'**
   String get placementBuildingBoxUnavailable;
+
+  /// No description provided for @placementAllowUnitOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow UNIT overlap'**
+  String get placementAllowUnitOverlap;
+
+  /// No description provided for @placementReloadCollisionMetadata.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload unit collision data'**
+  String get placementReloadCollisionMetadata;
+
+  /// No description provided for @placementUnitOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'This UNIT overlaps another unit in the same ground or air layer. Move it or allow UNIT overlap.'**
+  String get placementUnitOverlap;
+
+  /// No description provided for @placementCollisionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit overlap cannot be verified with the current local DAT data. Reload collision data and the catalog, or allow UNIT overlap.'**
+  String get placementCollisionUnavailable;
+
+  /// No description provided for @placementCollisionStateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'An existing UNIT has an unsupported in-transit state. Its collision layer cannot be verified. Allow UNIT overlap to skip this check.'**
+  String get placementCollisionStateUnsupported;
 }
 
 class _AppLocalizationsDelegate

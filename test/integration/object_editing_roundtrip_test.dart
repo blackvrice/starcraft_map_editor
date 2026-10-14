@@ -30,6 +30,8 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
@@ -1035,6 +1037,10 @@ void main() {
               owner: 4,
               pixelX: 100,
               pixelY: 120,
+              allowUnitOverlap: false,
+              collisionCatalog: UnitCollisionCatalog({
+                37: _placementCapability(37),
+              }),
             )
             .isPlaced,
         isTrue,
@@ -1059,6 +1065,11 @@ void main() {
               pixelX: 63,
               pixelY: 47,
               alignBuildingToTiles: true,
+              allowUnitOverlap: false,
+              collisionCatalog: UnitCollisionCatalog({
+                37: _placementCapability(37),
+                106: _placementCapability(106, building: true),
+              }),
             )
             .isPlaced,
         isTrue,
@@ -1148,6 +1159,13 @@ UnitPlacementCapability _placementCapability(
 }) => UnitPlacementCapability(
   unitId: unitId,
   placementBox: building ? BuildingPlacementBox(width: 128, height: 96) : null,
+  collisionProfile: UnitCollisionProfile(
+    left: 3,
+    up: 5,
+    right: 8,
+    down: 9,
+    isFlyer: false,
+  ),
   isSpellcaster: false,
   hasShields: false,
   isResourceContainer: false,

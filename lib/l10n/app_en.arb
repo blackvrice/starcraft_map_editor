@@ -3678,5 +3678,10 @@
   "placementCustomSnap": "Custom spacing",
   "placementSnapRange": "Enter an integer from 1 to 128.",
   "placementBuildingTileAlignment": "Align buildings to tiles",
-  "placementBuildingBoxUnavailable": "Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment."
+  "placementBuildingBoxUnavailable": "Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment.",
+  "placementAllowUnitOverlap": "Allow UNIT overlap",
+  "placementReloadCollisionMetadata": "Reload unit collision data",
+  "placementUnitOverlap": "This UNIT overlaps another unit in the same ground or air layer. Move it or allow UNIT overlap.",
+  "placementCollisionUnavailable": "Unit overlap cannot be verified with the current local DAT data. Reload collision data and the catalog, or allow UNIT overlap.",
+  "placementCollisionStateUnsupported": "An existing UNIT has an unsupported in-transit state. Its collision layer cannot be verified. Allow UNIT overlap to skip this check."
 }

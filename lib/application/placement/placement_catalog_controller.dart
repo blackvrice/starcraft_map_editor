@@ -9,6 +9,7 @@ import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
+import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/point_placement_snap.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
@@ -87,6 +88,7 @@ final class PlacementSelection {
     required this.displayName,
     this.doodadRecipe,
     this.unitCapability,
+    this.unitSourceIdentity,
   });
 
   final StarCraftPlacementKind kind;
@@ -94,6 +96,7 @@ final class PlacementSelection {
   final String displayName;
   final DoodadPlacementRecipe? doodadRecipe;
   final UnitPlacementCapability? unitCapability;
+  final (String?, int?, String?, String?)? unitSourceIdentity;
 
   /// A Tile selection becomes the terrain brush value instead of a canvas
   /// click target, so it never activates the object placement cursor.
@@ -116,6 +119,8 @@ final class PlacementCatalogState {
     this.gridVisible = true,
     this.gridSpacingPixels,
     this.alignBuildingsToTiles = false,
+    this.allowUnitOverlap = true,
+    this.isCollisionMetadataLoading = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
     Iterable<EditorDiagnostic> previewDiagnostics = const [],
@@ -139,6 +144,8 @@ final class PlacementCatalogState {
   final bool gridVisible;
   final int? gridSpacingPixels;
   final bool alignBuildingsToTiles;
+  final bool allowUnitOverlap;
+  final bool isCollisionMetadataLoading;
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
 
@@ -365,6 +372,13 @@ class PlacementCatalogController {
   String? _installationPath;
   Object? _mapSnapshot;
   bool _disposed = false;
+  UnitCollisionCatalog? _collisionCatalog;
+  (String?, int?, String?, String?)? _collisionIdentity;
+  (String?, int?, String?, String?)? _unitCatalogIdentity;
+  Future<bool>? _collisionPending;
+  String? _collisionOperation;
+  int _collisionEpoch = 0;
+  StarCraftPlacementCatalogPage? lastCollisionMetadataPage;
   final EudDatGateway? eudDatGateway;
   EudDatSource? _eudData;
   Future<EudDatSource>? _eudDataPending;
@@ -647,6 +661,8 @@ class PlacementCatalogController {
   }
 
   void _invalidateCatalog() {
+    _invalidateCollisionMetadata();
+    _unitCatalogIdentity = null;
     _unitGridPages.clear();
     _invalidateEudData();
     _resetThumbnails();
@@ -663,6 +679,7 @@ class PlacementCatalogController {
         gridVisible: _state.gridVisible,
         gridSpacingPixels: _state.gridSpacingPixels,
         alignBuildingsToTiles: _state.alignBuildingsToTiles,
+        allowUnitOverlap: _state.allowUnitOverlap,
       ),
     );
   }
@@ -786,11 +803,18 @@ class PlacementCatalogController {
           displayName: item.displayName,
           doodadRecipe: item.entry.doodadRecipe,
           unitCapability: item.entry.unitCapability,
+          unitSourceIdentity: item.key.kind == StarCraftPlacementKind.unit
+              ? _unitCatalogIdentity
+              : null,
         ),
         lastPlacementIssueCode: null,
         recentKeys: _recentKeys[item.key.kind] ?? const [],
       ),
     );
+    if (!_state.allowUnitOverlap &&
+        item.key.kind == StarCraftPlacementKind.unit) {
+      unawaited(loadCollisionMetadata());
+    }
     return true;
   }
 
@@ -814,6 +838,108 @@ class PlacementCatalogController {
     if (enabled == _state.alignBuildingsToTiles) return;
     _emit(_copy(alignBuildingsToTiles: enabled));
   }
+
+  void setAllowUnitOverlap(bool allowed) {
+    if (_disposed || allowed == _state.allowUnitOverlap) return;
+    _emit(_copy(allowUnitOverlap: allowed));
+    if (!allowed) unawaited(loadCollisionMetadata());
+  }
+
+  void _invalidateCollisionMetadata() {
+    _collisionEpoch++;
+    final operation = _collisionOperation;
+    if (operation != null) unawaited(catalogGateway?.cancel(operation));
+    _collisionOperation = null;
+    _collisionPending = null;
+    _collisionCatalog = null;
+    _collisionIdentity = null;
+    lastCollisionMetadataPage = null;
+    _state = _copy(isCollisionMetadataLoading: false);
+  }
+
+  /// Coalesces the full numeric metadata request; hover never starts a process.
+  /// A returned failure is retryable and never authorizes placement.
+  Future<bool> loadCollisionMetadata({bool reload = false}) {
+    if (_disposed) return Future.value(false);
+    if (reload) _invalidateCollisionMetadata();
+    if (_collisionCatalog != null) return Future.value(true);
+    if (_collisionPending != null) return _collisionPending!;
+    final gateway = catalogGateway, path = _installationPath;
+    if (gateway == null || path == null) return Future.value(false);
+    final epoch = _collisionEpoch;
+    final operation = 'unit-collision-${++_weaponRequest}';
+    _collisionOperation = operation;
+    final request = StarCraftPlacementCatalogRequest(
+      operationId: operation,
+      installationPath: path,
+      kind: StarCraftPlacementKind.unit,
+      tileset: mapTileset ?? StarCraftTilesetAssetSet.badlands,
+      limit: 228,
+      unitMetadataOnly: true,
+    );
+    final future = () async {
+      try {
+        final page = await Future.sync(() => gateway.list(request));
+        if (_disposed || epoch != _collisionEpoch) return false;
+        lastCollisionMetadataPage = page;
+        final source = (
+          page.storageProduct,
+          page.storageBuildNumber,
+          page.helperVersion,
+          page.cascLibRevision,
+        );
+        if (!page.isSuccess ||
+            page.totalEntries != 228 ||
+            page.entries.length != 228 ||
+            source.$1 == null ||
+            source.$1!.isEmpty ||
+            source.$2 == null ||
+            source.$3 == null ||
+            source.$3!.isEmpty ||
+            source.$4 == null ||
+            source.$4!.isEmpty ||
+            page.request.operationId != operation ||
+            page.request.installationPath != path ||
+            page.request.kind != request.kind ||
+            page.request.tileset != request.tileset ||
+            page.request.offset != 0 ||
+            page.request.limit != 228 ||
+            !page.request.unitMetadataOnly) {
+          return false;
+        }
+        final units = <int, UnitPlacementCapability>{};
+        for (var i = 0; i < 228; i++) {
+          final entry = page.entries[i];
+          if (entry.key.id != i) return false;
+          final capability = entry.unitCapability;
+          if (capability != null) {
+            if (capability.unitId != i) return false;
+            units[i] = capability;
+          }
+        }
+        _collisionCatalog = UnitCollisionCatalog(units);
+        _collisionIdentity = source;
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        if (!_disposed && _collisionOperation == operation) {
+          _collisionPending = null;
+          _collisionOperation = null;
+          _emit(_copy(isCollisionMetadataLoading: false));
+        }
+      }
+    }();
+    _collisionPending = future;
+    _emit(_copy(isCollisionMetadataLoading: true));
+    return future;
+  }
+
+  UnitCollisionCatalog? get _currentCollisionCatalog =>
+      _state.selection?.unitSourceIdentity != null &&
+          _state.selection!.unitSourceIdentity == _collisionIdentity
+      ? _collisionCatalog
+      : null;
 
   bool get isBuildingTileAlignmentActive =>
       _state.alignBuildingsToTiles &&
@@ -860,6 +986,7 @@ class PlacementCatalogController {
       pixelY: pixelY,
       tileX: tileX,
       tileY: tileY,
+      checkOverlap: !isPointSnapActive,
     );
     if (issue != null || !isPointSnapActive) return issue;
     final point = resolvePoint(pixelX, pixelY);
@@ -878,6 +1005,7 @@ class PlacementCatalogController {
     required int pixelY,
     required int tileX,
     required int tileY,
+    bool checkOverlap = true,
   }) {
     final selection = _state.selection;
     if (selection == null || !selection.usesCanvasClick) {
@@ -905,6 +1033,8 @@ class PlacementCatalogController {
                 pixelX: pixelX,
                 pixelY: pixelY,
                 alignBuildingToTiles: _state.alignBuildingsToTiles,
+                allowUnitOverlap: !checkOverlap || _state.allowUnitOverlap,
+                collisionCatalog: _currentCollisionCatalog,
               )
             : objectEditingController.previewCatalogSpriteUnit(
                 capability: capability,
@@ -953,6 +1083,7 @@ class PlacementCatalogController {
         pixelY: pixelY,
         tileX: tileX,
         tileY: tileY,
+        checkOverlap: false,
       );
       if (inputIssue != null) {
         _emit(_copy(lastPlacementIssueCode: inputIssue));
@@ -1024,6 +1155,8 @@ class PlacementCatalogController {
       pixelX: pixelX,
       pixelY: pixelY,
       alignBuildingToTiles: _state.alignBuildingsToTiles,
+      allowUnitOverlap: _state.allowUnitOverlap,
+      collisionCatalog: _currentCollisionCatalog,
     );
   }
 
@@ -1057,6 +1190,7 @@ class PlacementCatalogController {
   }
 
   Future<void> dispose() {
+    _invalidateCollisionMetadata();
     _invalidateEudData();
     if (_disposed) return _changes.close();
     _resetThumbnails();
@@ -1187,6 +1321,29 @@ class PlacementCatalogController {
         for (final entry in batch.page.entries)
           _objectCatalogItem(entry, batch.thumbnails[entry.key]),
       ];
+      if (kind == StarCraftPlacementKind.unit && diagnostics.isEmpty) {
+        final identity = (
+          batch.page.storageProduct,
+          batch.page.storageBuildNumber,
+          batch.page.helperVersion,
+          batch.page.cascLibRevision,
+        );
+        if (offset > 0 && _unitCatalogIdentity != identity) {
+          _emit(
+            _copy(
+              isLoading: false,
+              diagnostics: [
+                _diagnostic(PlacementCatalogDiagnosticCodes.inconsistentPage),
+              ],
+            ),
+          );
+          return false;
+        }
+        _unitCatalogIdentity = identity;
+        if (_collisionIdentity != null && _collisionIdentity != identity) {
+          _invalidateCollisionMetadata();
+        }
+      }
     }
 
     if (sequence != _requestSequence) {
@@ -1299,6 +1456,8 @@ class PlacementCatalogController {
     bool? gridVisible,
     int? gridSpacingPixels,
     bool? alignBuildingsToTiles,
+    bool? allowUnitOverlap,
+    bool? isCollisionMetadataLoading,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
     List<EditorDiagnostic>? previewDiagnostics,
@@ -1320,6 +1479,9 @@ class PlacementCatalogController {
     pointSnap: pointSnap ?? _state.pointSnap,
     alignBuildingsToTiles:
         alignBuildingsToTiles ?? _state.alignBuildingsToTiles,
+    allowUnitOverlap: allowUnitOverlap ?? _state.allowUnitOverlap,
+    isCollisionMetadataLoading:
+        isCollisionMetadataLoading ?? _state.isCollisionMetadataLoading,
     gridVisible: gridVisible ?? _state.gridVisible,
     gridSpacingPixels: clearGridSpacing
         ? null

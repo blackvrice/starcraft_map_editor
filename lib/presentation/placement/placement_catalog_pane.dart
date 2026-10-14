@@ -108,6 +108,11 @@ String placementFailureText(
   ObjectPlacementDiagnosticCodes.historyBlocked => l10n.placementHistoryBlocked,
   ObjectPlacementDiagnosticCodes.buildingBoxUnavailable =>
     l10n.placementBuildingBoxUnavailable,
+  ObjectPlacementDiagnosticCodes.unitOverlap => l10n.placementUnitOverlap,
+  ObjectPlacementDiagnosticCodes.collisionUnavailable =>
+    l10n.placementCollisionUnavailable,
+  ObjectPlacementDiagnosticCodes.collisionStateUnsupported =>
+    l10n.placementCollisionStateUnsupported,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
     l10n.placementCapabilityMismatch,
   ObjectPlacementFactoryCodes.unitRelationRequired ||

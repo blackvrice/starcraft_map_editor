@@ -6245,4 +6245,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get placementBuildingBoxUnavailable =>
       'Verified building placement dimensions are unavailable. Reload the catalog or turn off building tile alignment.';
+
+  @override
+  String get placementAllowUnitOverlap => 'Allow UNIT overlap';
+
+  @override
+  String get placementReloadCollisionMetadata => 'Reload unit collision data';
+
+  @override
+  String get placementUnitOverlap =>
+      'This UNIT overlaps another unit in the same ground or air layer. Move it or allow UNIT overlap.';
+
+  @override
+  String get placementCollisionUnavailable =>
+      'Unit overlap cannot be verified with the current local DAT data. Reload collision data and the catalog, or allow UNIT overlap.';
+
+  @override
+  String get placementCollisionStateUnsupported =>
+      'An existing UNIT has an unsupported in-transit state. Its collision layer cannot be verified. Allow UNIT overlap to skip this check.';
 }

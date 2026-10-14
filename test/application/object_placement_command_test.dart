@@ -21,9 +21,198 @@ import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart'
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 
 void main() {
+  for (final kind in [
+    'overlap',
+    'clear',
+    'missing',
+    'unknown-unit',
+    'flight-state',
+    'hidden',
+  ]) {
+    test(
+      'shared UNIT collision preview/Apply $kind preserves rejected documents',
+      () async {
+        final profile = UnitCollisionProfile(
+          left: 3,
+          up: 5,
+          right: 8,
+          down: 9,
+          isFlyer: false,
+        );
+        final cap = _capability(37, collisionProfile: profile);
+        final occupant = const UnitPlacementFactory()
+            .create(
+              capability: cap,
+              unitId: 37,
+              owner: 0,
+              x: 64,
+              y: 64,
+              classId: 1,
+            )
+            .bytes;
+        if (kind == 'unknown-unit') {
+          ByteData.sublistView(occupant).setUint16(8, 300, Endian.little);
+        }
+        if (kind == 'flight-state') {
+          ByteData.sublistView(occupant).setUint16(26, 4, Endian.little);
+        }
+        final f = await _openFixture(
+          mapBytes: Uint8List.fromList([
+            ..._chkBytes(
+              includeUnits: false,
+              includeSprites: true,
+              includeDoodads: true,
+              duplicateUnits: false,
+            ),
+            ..._section('UNIT', occupant),
+            ..._section('XTRA', [1, 255, 0, 47]),
+          ]),
+        );
+        addTearDown(f.dispose);
+        if (kind == 'hidden') {
+          f.mapLayerController.setVisible(MapLayerType.units, false);
+        }
+        final before = f.openMapController.state.session!;
+        final catalog = kind == 'missing'
+            ? null
+            : UnitCollisionCatalog({37: cap});
+        final expected = switch (kind) {
+          'clear' => null,
+          'missing' ||
+          'unknown-unit' => ObjectPlacementDiagnosticCodes.collisionUnavailable,
+          'flight-state' =>
+            ObjectPlacementDiagnosticCodes.collisionStateUnsupported,
+          'hidden' => ObjectPlacementDiagnosticCodes.layerLocked,
+          _ => ObjectPlacementDiagnosticCodes.unitOverlap,
+        };
+        final x = kind == 'clear' ? 100 : 64;
+        expect(
+          f.controller.previewCatalogUnit(
+            capability: cap,
+            unitId: 37,
+            owner: 0,
+            pixelX: x,
+            pixelY: 64,
+            allowUnitOverlap: false,
+            collisionCatalog: catalog,
+          ),
+          expected,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(
+          f.controller
+              .placeCatalogUnit(
+                capability: cap,
+                unitId: 37,
+                owner: 0,
+                pixelX: x,
+                pixelY: 64,
+                allowUnitOverlap: false,
+                collisionCatalog: catalog,
+              )
+              .issueCode,
+          expected,
+        );
+        if (expected != null) {
+          expect(f.openMapController.state.session, same(before));
+          expect(f.controller.state.undoDepth, 0);
+        } else {
+          expect(f.controller.state.undoDepth, 1);
+          expect(f.controller.undo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(
+              f.openMapController.state.session!.rawDocument,
+            ),
+            const RawChkEncoder().encode(before.rawDocument),
+          );
+          expect(f.controller.redo(), isTrue);
+        }
+      },
+    );
+  }
+
+  for (final occupantX in [63, 64]) {
+    test(
+      'building collision uses aligned center rather than raw x=$occupantX',
+      () async {
+        final profile = UnitCollisionProfile(
+          left: 0,
+          up: 0,
+          right: 0,
+          down: 0,
+          isFlyer: false,
+        );
+        final building = _capability(
+          106,
+          isBuilding: true,
+          collisionProfile: profile,
+          placementBox: BuildingPlacementBox(width: 128, height: 96),
+        );
+        final cap = _capability(37, collisionProfile: profile);
+        final f = await _openFixture(
+          mapBytes: Uint8List.fromList([
+            ..._chkBytes(
+              includeUnits: false,
+              includeSprites: true,
+              includeDoodads: true,
+              duplicateUnits: false,
+            ),
+            ..._section(
+              'UNIT',
+              const UnitPlacementFactory()
+                  .create(
+                    capability: cap,
+                    unitId: 37,
+                    owner: 0,
+                    x: occupantX,
+                    y: 48,
+                    classId: 1,
+                  )
+                  .bytes,
+            ),
+          ]),
+        );
+        addTearDown(f.dispose);
+        final catalog = UnitCollisionCatalog({37: cap, 106: building});
+        final expected = occupantX == 64
+            ? ObjectPlacementDiagnosticCodes.unitOverlap
+            : null;
+        expect(
+          f.controller.previewCatalogUnit(
+            capability: building,
+            unitId: 106,
+            owner: 0,
+            pixelX: 63,
+            pixelY: 47,
+            alignBuildingToTiles: true,
+            allowUnitOverlap: false,
+            collisionCatalog: catalog,
+          ),
+          expected,
+        );
+        expect(
+          f.controller
+              .placeCatalogUnit(
+                capability: building,
+                unitId: 106,
+                owner: 0,
+                pixelX: 63,
+                pixelY: 47,
+                alignBuildingToTiles: true,
+                allowUnitOverlap: false,
+                collisionCatalog: catalog,
+              )
+              .issueCode,
+          expected,
+        );
+      },
+    );
+  }
   for (final vertical in [false, true]) {
     test(
       'building alignment refuses u16 output overflow vertical=$vertical',
@@ -1762,9 +1951,11 @@ UnitPlacementCapability _capability(
   bool isSubunit = false,
   bool isBuilding = false,
   BuildingPlacementBox? placementBox,
+  UnitCollisionProfile? collisionProfile,
 }) => UnitPlacementCapability(
   unitId: unitId,
   placementBox: placementBox,
+  collisionProfile: collisionProfile,
   isSubunit: isSubunit,
   isSpellcaster: false,
   hasShields: false,

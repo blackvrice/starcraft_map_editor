@@ -19,6 +19,7 @@ import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
+import '../../domain/placement/unit_collision_catalog.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
 import '../documents/pending_map_resources.dart';
@@ -999,6 +1000,8 @@ class ObjectEditingController {
     required int pixelX,
     required int pixelY,
     bool alignBuildingToTiles = false,
+    bool allowUnitOverlap = true,
+    UnitCollisionCatalog? collisionCatalog,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1007,6 +1010,8 @@ class ObjectEditingController {
       pixelX: pixelX,
       pixelY: pixelY,
       alignBuildingToTiles: alignBuildingToTiles,
+      allowUnitOverlap: allowUnitOverlap,
+      collisionCatalog: collisionCatalog,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1020,6 +1025,8 @@ class ObjectEditingController {
     required int pixelX,
     required int pixelY,
     bool alignBuildingToTiles = false,
+    bool allowUnitOverlap = true,
+    UnitCollisionCatalog? collisionCatalog,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
@@ -1027,6 +1034,8 @@ class ObjectEditingController {
     pixelX: pixelX,
     pixelY: pixelY,
     alignBuildingToTiles: alignBuildingToTiles,
+    allowUnitOverlap: allowUnitOverlap,
+    collisionCatalog: collisionCatalog,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1037,6 +1046,8 @@ class ObjectEditingController {
     required int pixelY,
     bool spriteUnit = false,
     bool alignBuildingToTiles = false,
+    bool allowUnitOverlap = true,
+    UnitCollisionCatalog? collisionCatalog,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1071,33 +1082,53 @@ class ObjectEditingController {
         y: y,
         classId: classId,
       );
-      final record = create(pixelX, pixelY);
-      if (!record.isSynthesized ||
-          !alignBuildingToTiles ||
-          !capability.isBuilding) {
-        return record;
+      var record = create(pixelX, pixelY);
+      if (!record.isSynthesized) return record;
+      var point = (x: pixelX, y: pixelY);
+      if (alignBuildingToTiles && capability.isBuilding) {
+        final box = capability.placementBox;
+        if (box == null) {
+          return ObjectPlacementRecord.rejected(
+            ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
+          );
+        }
+        point = box.align(pixelX, pixelY);
+        final dimensions = _singleDimensions(session)!;
+        if (point.x > 0xffff ||
+            point.y > 0xffff ||
+            !box.fits(
+              x: point.x,
+              y: point.y,
+              mapWidth: dimensions.width,
+              mapHeight: dimensions.height,
+            )) {
+          return ObjectPlacementRecord.rejected(
+            ObjectPlacementDiagnosticCodes.outOfBounds,
+          );
+        }
+        record = create(point.x, point.y);
       }
-      final box = capability.placementBox;
-      if (box == null) {
-        return ObjectPlacementRecord.rejected(
-          ObjectPlacementDiagnosticCodes.buildingBoxUnavailable,
-        );
+      if (!allowUnitOverlap) {
+        final check =
+            collisionCatalog?.check(
+              candidate: capability,
+              x: point.x,
+              y: point.y,
+              existing: session.objectViews.unitSections.expand((s) => s.units),
+            ) ??
+            UnitCollisionCheck.metadataUnavailable;
+        final issue = switch (check) {
+          UnitCollisionCheck.clear => null,
+          UnitCollisionCheck.overlap =>
+            ObjectPlacementDiagnosticCodes.unitOverlap,
+          UnitCollisionCheck.metadataUnavailable =>
+            ObjectPlacementDiagnosticCodes.collisionUnavailable,
+          UnitCollisionCheck.stateUnsupported =>
+            ObjectPlacementDiagnosticCodes.collisionStateUnsupported,
+        };
+        if (issue != null) return ObjectPlacementRecord.rejected(issue);
       }
-      final point = box.align(pixelX, pixelY);
-      final dimensions = _singleDimensions(session)!;
-      if (point.x > 0xffff ||
-          point.y > 0xffff ||
-          !box.fits(
-            x: point.x,
-            y: point.y,
-            mapWidth: dimensions.width,
-            mapHeight: dimensions.height,
-          )) {
-        return ObjectPlacementRecord.rejected(
-          ObjectPlacementDiagnosticCodes.outOfBounds,
-        );
-      }
-      return create(point.x, point.y);
+      return record;
     },
   );
 

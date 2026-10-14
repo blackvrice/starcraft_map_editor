@@ -31,6 +31,8 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -38,6 +40,215 @@ import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_
 const _installationPath = r'C:\StarCraft';
 
 void main() {
+  test(
+    'synchronous collision gateway failure clears pending state and remains retryable',
+    () async {
+      final gateway = _SynchronousCollisionFailure();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      expect(await c.loadCollisionMetadata(), isFalse);
+      expect(c.state.isCollisionMetadataLoading, isFalse);
+      expect(await c.loadCollisionMetadata(), isFalse);
+      expect(gateway.calls, 2);
+    },
+  );
+  test(
+    'UNIT overlap checkbox loads one snapshot, refuses current overlap and preserves Undo',
+    () async {
+      final gateway = _CollisionGateway();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setContinuous(true);
+      c.setAllowUnitOverlap(false);
+      expect(await c.loadCollisionMetadata(), isTrue);
+      expect(gateway.metadataRequests, 1);
+      final before = f.openMapController.state.session!;
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      expect(f.openMapController.state.session, same(before));
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+      final placed = f.openMapController.state.session!;
+      expect(
+        c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+        ObjectPlacementDiagnosticCodes.unitOverlap,
+      );
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+        ObjectPlacementDiagnosticCodes.unitOverlap,
+      );
+      expect(f.openMapController.state.session, same(placed));
+      expect(f.objectEditingController.state.undoDepth, 1);
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      expect(f.objectEditingController.redo(), isTrue);
+      expect(
+        c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+        ObjectPlacementDiagnosticCodes.unitOverlap,
+      );
+      c.setAllowUnitOverlap(true);
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+      expect(gateway.metadataRequests, 1);
+    },
+  );
+
+  for (final existingX in [63, 64]) {
+    test(
+      'point snap checks only final saved center with occupant at $existingX',
+      () async {
+        final gateway = _CollisionGateway();
+        final f = await _openFixture(
+          catalogGateway: gateway,
+          chkBytesOverride: Uint8List.fromList([
+            ..._chkBytes(),
+            ..._section(
+              'UNIT',
+              const UnitPlacementFactory()
+                  .create(
+                    capability: gateway.capability,
+                    unitId: 0,
+                    owner: 0,
+                    x: existingX,
+                    y: 64,
+                    classId: 1,
+                  )
+                  .bytes,
+            ),
+          ]),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        c.setAllowUnitOverlap(false);
+        await c.loadCollisionMetadata();
+        c.setPointSnap(enabled: true, step: 32);
+        final before = f.openMapController.state.session!;
+        final expected = existingX == 64
+            ? ObjectPlacementDiagnosticCodes.unitOverlap
+            : null;
+        expect(
+          c.previewAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2),
+          expected,
+        );
+        expect(
+          c.placeAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2).issueCode,
+          expected,
+        );
+        if (expected == null) {
+          final unit = f
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .unitSections
+              .single
+              .units
+              .last;
+          expect((unit.x, unit.y), (64, 64));
+        } else {
+          expect(f.openMapController.state.session, same(before));
+        }
+      },
+    );
+  }
+
+  for (final failure in [
+    'coverage',
+    'source',
+    'changed-source',
+    'exception',
+    'profile',
+  ]) {
+    test(
+      'collision metadata $failure refuses without mutation and retry is safe',
+      () async {
+        final gateway = _CollisionGateway(failure: failure);
+        final f = await _openFixture(catalogGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        final before = f.openMapController.state.session!;
+        c.setAllowUnitOverlap(false);
+        await c.loadCollisionMetadata();
+        expect(c.state.isCollisionMetadataLoading, isFalse);
+        expect(
+          c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+          ObjectPlacementDiagnosticCodes.collisionUnavailable,
+        );
+        expect(
+          c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+          ObjectPlacementDiagnosticCodes.collisionUnavailable,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        gateway.failure = null;
+        expect(await c.loadCollisionMetadata(reload: true), isTrue);
+        // A missing graphic-page profile also requires a fresh catalog selection.
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        await c.loadCollisionMetadata();
+        expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      },
+    );
+  }
+
+  for (final change in ['installation', 'session', 'dispose']) {
+    test(
+      'pending collision metadata is cancelled and discarded on $change',
+      () async {
+        final gateway = _CollisionGateway(hold: true);
+        final f = await _openFixture(catalogGateway: gateway);
+        final c = f.controller..setInstallationPath(_installationPath);
+        c.synchronizeSession(f.openMapController.state.session);
+        c.setAllowUnitOverlap(false);
+        final pending = c.loadCollisionMetadata();
+        expect(c.state.isCollisionMetadataLoading, isTrue);
+        if (change == 'installation') c.setInstallationPath(r'C:\Other');
+        if (change == 'session') c.synchronizeSession(null);
+        if (change == 'dispose') await f.dispose();
+        gateway.release.complete();
+        expect(await pending, isFalse);
+        expect(gateway.cancelled, hasLength(1));
+        expect(c.lastCollisionMetadataPage, isNull);
+        if (change != 'dispose') {
+          expect(c.state.allowUnitOverlap, isFalse);
+          expect(c.state.isCollisionMetadataLoading, isFalse);
+          await f.dispose();
+        }
+      },
+    );
+  }
+
+  for (final kind in [
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test('$kind does not inherit UNIT overlap refusal', () async {
+      final f = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      c.setAllowUnitOverlap(false);
+      await c.loadCollisionMetadata();
+      await c.load(kind);
+      c.confirm(c.state.items.first.key);
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+    });
+  }
   for (final kind in [
     StarCraftPlacementKind.unit,
     StarCraftPlacementKind.spriteUnit,
@@ -264,6 +475,13 @@ void main() {
               ),
             ),
           ),
+        );
+        await tester.tap(find.byKey(const Key('placement-allow-unit-overlap')));
+        await tester.pumpAndSettle();
+        expect(fixture.controller.state.allowUnitOverlap, isFalse);
+        expect(
+          find.byKey(const Key('placement-reload-collision')),
+          findsOneWidget,
         );
         await tester.tap(
           find.byKey(const Key('placement-building-tile-alignment')),
@@ -973,6 +1191,28 @@ void main() {
       expect(preview?.hasThumbnail, isTrue);
       final references = await fixture.controller.loadWeaponReferences();
       expect(references.index.preferredWeapon(0), isNotNull);
+      final c = fixture.controller;
+      expect(await c.load(StarCraftPlacementKind.unit), isTrue);
+      expect(c.confirm(c.state.items.first.key), isTrue);
+      c.setContinuous(true);
+      c.setAllowUnitOverlap(false);
+      expect(await c.loadCollisionMetadata(), isTrue);
+      expect(c.lastCollisionMetadataPage!.entries, hasLength(228));
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+      final before = fixture.openMapController.state.session!;
+      expect(
+        c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+        ObjectPlacementDiagnosticCodes.unitOverlap,
+      );
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+        ObjectPlacementDiagnosticCodes.unitOverlap,
+      );
+      expect(fixture.openMapController.state.session, same(before));
+      expect(fixture.objectEditingController.undo(), isTrue);
     },
     skip: realInstallation == null || realHelper == null
         ? 'Set local StarCraft installation and helper paths.'
@@ -1712,6 +1952,7 @@ Future<_Fixture> _openFixture({
   bool unitCapabilityAvailable = false,
   bool unitIsBuilding = false,
   BuildingPlacementBox? placementBox,
+  UnitCollisionProfile? collisionProfile,
   StarCraftPlacementCatalogGateway? catalogGateway,
   StarCraftObjectAtlasGateway? objectAtlasGateway,
   StarCraftTileAtlasGateway? tileAtlasGateway,
@@ -1764,6 +2005,7 @@ Future<_Fixture> _openFixture({
     unitCapabilityAvailable: unitCapabilityAvailable,
     unitIsBuilding: unitIsBuilding,
     placementBox: placementBox,
+    collisionProfile: collisionProfile,
   );
   final controller = PlacementCatalogController(
     openMapController: openMapController,
@@ -1840,18 +2082,91 @@ final class _DeferredCatalogGateway
   Future<void> cancel(String operationId) async {}
 }
 
+final class _SynchronousCollisionFailure
+    implements StarCraftPlacementCatalogGateway {
+  int calls = 0;
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) {
+    calls++;
+    throw StateError('Synthetic synchronous gateway failure');
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {}
+}
+
+final class _CollisionGateway implements StarCraftPlacementCatalogGateway {
+  _CollisionGateway({this.failure, this.hold = false});
+  String? failure;
+  final bool hold;
+  final release = Completer<void>();
+  final cancelled = <String>[];
+  int metadataRequests = 0;
+
+  _FakeCatalogGateway get delegate => _FakeCatalogGateway(
+    doodadTotal: 2,
+    unitCapabilityAvailable: true,
+    collisionProfile: failure == 'profile'
+        ? null
+        : UnitCollisionProfile(
+            left: 0,
+            up: 0,
+            right: 0,
+            down: 0,
+            isFlyer: false,
+          ),
+  );
+
+  UnitPlacementCapability get capability => delegate
+      ._entry(StarCraftPlacementKind.unit, StarCraftTilesetAssetSet.jungle, 0)
+      .unitCapability!;
+
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async {
+    if (request.unitMetadataOnly) {
+      metadataRequests++;
+      if (hold) await release.future;
+      if (failure == 'exception') throw StateError('Synthetic process failure');
+    }
+    final page = await delegate.list(request);
+    if (!request.unitMetadataOnly) return page;
+    return StarCraftPlacementCatalogPage(
+      request: request,
+      totalEntries: 228,
+      entries: failure == 'coverage' ? page.entries.take(227) : page.entries,
+      storageProduct: failure == 'source' ? null : page.storageProduct,
+      storageBuildNumber: failure == 'changed-source'
+          ? 123
+          : page.storageBuildNumber,
+      helperVersion: page.helperVersion,
+      cascLibRevision: page.cascLibRevision,
+    );
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {
+    cancelled.add(operationId);
+  }
+}
+
 final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
   _FakeCatalogGateway({
     required this.doodadTotal,
     required this.unitCapabilityAvailable,
     this.unitIsBuilding = false,
     this.placementBox,
+    this.collisionProfile,
   });
 
   final int doodadTotal;
   final bool unitCapabilityAvailable;
   final bool unitIsBuilding;
   final BuildingPlacementBox? placementBox;
+  final UnitCollisionProfile? collisionProfile;
 
   @override
   Future<StarCraftPlacementCatalogPage> list(
@@ -1939,6 +2254,7 @@ final class _FakeCatalogGateway implements StarCraftPlacementCatalogGateway {
             unitCapability: UnitPlacementCapability(
               unitId: index,
               placementBox: placementBox,
+              collisionProfile: collisionProfile,
               weaponReferences: UnitWeaponReferences(
                 ground: index == 0 ? 7 : 130,
                 air: 130,

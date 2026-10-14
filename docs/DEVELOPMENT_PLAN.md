@@ -1195,6 +1195,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] versioned 로컬 StarEdit 건물 크기·타일 정렬·전체 박스 경계·preview/Apply/Undo·누락 사유와 기존 데이터 보존
 - [ ] 정상/자유 배치 정책·충돌/지형/전력/크립·EUD 변경 자료의 검증 지원표
 - [x] EP1 자료 계약: version1 로컬 collision offset/Flyer 조회·순수 bounds/겹침·정상/자유 지원표·지형 snapshot 설계 (정책 연결/게임 검사는 제외)
+- [x] EP1 UNIT 겹침 정책: 로컬 전체 metadata·지상/공중·최종 정렬 좌표·검증 불가·허용 체크박스·공통 preview/Apply/Undo/저장 회귀 (지형/전체 정상 모드 제외)
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1212,9 +1213,12 @@ UNIT 건물의 StarEdit 박스 전체를 맵 경계에서 검사하며 Sprite/Do
 2026-10-14 [배치 검증 자료와 정책 계약](PLACEMENT_VALIDATION_CONTRACTS.md)을 추가했다.
 로컬 classic collision offset/Flyer·순수 geometry만 구현했고 정상/자유/지형 지원표와
 후속 지형 snapshot 계약을 분리했다. 실제 배치 거절/허용과 기존 CHK는 바꾸지 않았다.
-다음 코드 단위는 전체 유닛 metadata snapshot과 기존 UNIT의 read-only 충돌 검사·
-검증 불가 사유 및 명시적 겹침 허용 정책 연결이다. 이후 지형 자료/footprint 검사,
-정상 모드 UI·전력/크립·EUD 변경·게임 인수를 이어간다.
+이어서 [UNIT 겹침 정책](UNIT_OVERLAP_POLICY.md)을 연결했다. 기본 겹침 허용을 유지하고
+해제하면 로컬 metadata와 현재 UNIT의 지상/공중 겹침·미확인 자료를 공통 경로로 검사한다.
+점 스냅/건물 정렬의 최종 좌표·Undo/저장·source/epoch·조회 실패 재시도를 검증한다.
+다음 코드 단위는 CV5/VF4 건설·이동 가능성의 versioned read-only snapshot과 footprint
+지형 검사다. 충돌 영역 맵 경계/대규모 profile·자원 거리·전력/크립·EUD 변경,
+정상/자유 지원표 UI·게임/외부 에디터 인수를 별도로 이어간다.
 
 ### EP2. 설정·트리거 작성
 

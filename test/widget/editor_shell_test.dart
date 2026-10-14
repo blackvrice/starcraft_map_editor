@@ -51,6 +51,7 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic_parser.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/terrain_tile_texture.dart';
@@ -2399,6 +2400,12 @@ void main() {
           catalog.setInstallationPath(r'C:\StarCraft');
           expect(await catalog.load(kind), isTrue);
           expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+          if (kind == StarCraftPlacementKind.unit) {
+            await tester.tap(
+              find.byKey(const Key('placement-allow-unit-overlap')),
+            );
+            await catalog.loadCollisionMetadata();
+          }
           catalog.setPointSnap(enabled: true, step: 17);
           catalog.setGridVisible(false);
           catalog.setGridSpacing(128);
@@ -2536,6 +2543,47 @@ void main() {
                   rawPoint.pixelY,
                 ),
           );
+          if (kind == StarCraftPlacementKind.unit) {
+            expect(catalog.confirm(catalog.state.items.single.key), isTrue);
+            await tester.pumpAndSettle();
+            expect(catalog.state.allowUnitOverlap, isFalse);
+            expect(
+              catalog.previewAt(
+                pixelX: placed.x,
+                pixelY: placed.y,
+                tileX: placed.x ~/ 32,
+                tileY: placed.y ~/ 32,
+              ),
+              ObjectPlacementDiagnosticCodes.unitOverlap,
+            );
+            final collisionTarget = _mapPixelOffset(
+              tester,
+              pixelX: placed.x,
+              pixelY: placed.y,
+            );
+            await pointer.moveTo(target - const Offset(2, 2));
+            await pointer.moveTo(collisionTarget);
+            await tester.pumpAndSettle();
+            expect(
+              find.textContaining('same ground or air layer'),
+              findsOneWidget,
+            );
+            final current = maps.state.session;
+            await tester.tapAt(collisionTarget);
+            await tester.pumpAndSettle();
+            expect(
+              catalog.state.lastPlacementIssueCode,
+              ObjectPlacementDiagnosticCodes.unitOverlap,
+            );
+            expect(maps.state.session, same(current));
+            expect(objects.state.undoDepth, 1);
+            catalog.setAllowUnitOverlap(true);
+            await tester.pumpAndSettle();
+            expect(
+              find.byKey(const Key('map-canvas-placement-issue')),
+              findsNothing,
+            );
+          }
           expect(objects.undo(), isTrue);
           expect(
             const RawChkEncoder().encode(maps.state.session!.rawDocument),
@@ -3215,40 +3263,48 @@ final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
     StarCraftPlacementCatalogRequest request,
   ) async => StarCraftPlacementCatalogPage(
     request: request,
-    totalEntries: 1,
+    totalEntries: request.unitMetadataOnly ? 228 : 1,
     storageProduct: 's1',
     storageBuildNumber: 13515,
     helperVersion: '0.3.0',
     cascLibRevision: 'pinned-casc',
     entries: [
-      StarCraftPlacementCatalogEntry(
-        key: request.kind == StarCraftPlacementKind.unit
-            ? StarCraftPlacementCatalogKey.unit(0)
-            : request.kind == StarCraftPlacementKind.spriteUnit
-            ? StarCraftPlacementCatalogKey.spriteUnit(0)
-            : StarCraftPlacementCatalogKey.pureSprite(0),
-        source: StarCraftPlacementCatalogSource.localData,
-        availability: StarCraftPlacementAvailability.placeable,
-        unitCapability: request.kind == StarCraftPlacementKind.pureSprite
-            ? null
-            : UnitPlacementCapability(
-                unitId: 0,
-                placementBox: building
-                    ? BuildingPlacementBox(width: 128, height: 96)
-                    : null,
-                isSpellcaster: false,
-                hasShields: false,
-                isResourceContainer: false,
-                isGasResourceContainer: false,
-                hasHangar: false,
-                isFlyingBuilding: false,
-                isBurrowable: false,
-                isCloakable: false,
-                isInvincible: false,
-                isBuilding: building,
-                requiresRelationLink: false,
-              ),
-      ),
+      for (var id = 0; id < (request.unitMetadataOnly ? 228 : 1); id++)
+        StarCraftPlacementCatalogEntry(
+          key: request.kind == StarCraftPlacementKind.unit
+              ? StarCraftPlacementCatalogKey.unit(id)
+              : request.kind == StarCraftPlacementKind.spriteUnit
+              ? StarCraftPlacementCatalogKey.spriteUnit(0)
+              : StarCraftPlacementCatalogKey.pureSprite(0),
+          source: StarCraftPlacementCatalogSource.localData,
+          availability: StarCraftPlacementAvailability.placeable,
+          unitCapability: request.kind == StarCraftPlacementKind.pureSprite
+              ? null
+              : UnitPlacementCapability(
+                  unitId: id,
+                  collisionProfile: UnitCollisionProfile(
+                    left: 0,
+                    up: 0,
+                    right: 0,
+                    down: 0,
+                    isFlyer: false,
+                  ),
+                  placementBox: building
+                      ? BuildingPlacementBox(width: 128, height: 96)
+                      : null,
+                  isSpellcaster: false,
+                  hasShields: false,
+                  isResourceContainer: false,
+                  isGasResourceContainer: false,
+                  hasHangar: false,
+                  isFlyingBuilding: false,
+                  isBurrowable: false,
+                  isCloakable: false,
+                  isInvincible: false,
+                  isBuilding: building,
+                  requiresRelationLink: false,
+                ),
+        ),
     ],
   );
 }
