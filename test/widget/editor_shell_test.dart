@@ -52,6 +52,7 @@ import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic
 import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
@@ -2404,12 +2405,9 @@ void main() {
           catalog.setInstallationPath(r'C:\StarCraft');
           expect(await catalog.load(kind), isTrue);
           expect(catalog.confirm(catalog.state.items.single.key), isTrue);
-          catalog.setCheckUnitTerrain(true);
+          catalog.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
           await catalog.loadTerrainPlacement();
           if (kind == StarCraftPlacementKind.unit) {
-            await tester.tap(
-              find.byKey(const Key('placement-allow-unit-overlap')),
-            );
             await catalog.loadCollisionMetadata();
           }
           catalog.setPointSnap(enabled: true, step: 17);

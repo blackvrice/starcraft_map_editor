@@ -35,6 +35,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [UNIT 겹침 배치 정책](UNIT_OVERLAP_POLICY.md) | 로컬 전체 metadata·지상/공중 겹침·허용 체크박스·최종 좌표·Undo/저장 회귀 | 배치 충돌 검사와 지형 정책을 확장할 때 |
 | [배치용 CV5/VF4 지형 자료](TERRAIN_PLACEMENT_SNAPSHOT.md) | 파생 건설/미니타일 이동 자료·출처·순수 footprint·상한·로컬8타일셋 회귀 | 배치 지형 검사를 연결할 때 |
 | [UNIT 배치 지형 검사](UNIT_TERRAIN_PLACEMENT_POLICY.md) | 체크박스·최종 좌표 preview/Apply·출처/epoch·현재 MTXM·거절/Undo | 새 UNIT 지형 배치를 확인할 때 |
+| [UNIT 정책 프리셋과 지원표](UNIT_PLACEMENT_POLICY_UI.md) | 검사/자유·혼합 설정·원자 변경·정책/자료 상태·한영 화면 회귀 | UNIT 배치 정책과 미지원 범위를 확인할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

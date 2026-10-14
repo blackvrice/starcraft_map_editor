@@ -9,6 +9,9 @@
 현재 정책 연결·검증 범위는 후속 문서를 따른다. 전체 정상/지형/게임 검증은 여전히 미완료다.
 후속 [CV5/VF4 파생 자료·순수 footprint](TERRAIN_PLACEMENT_SNAPSHOT.md)도 구현했으며,
 실제 지형 배치 정책/UI 연결은 아직 남았다. 아래 지형 snapshot 단락은 그 첫 설계 기록이다.
+이어서 [UNIT 지형 검사](UNIT_TERRAIN_PLACEMENT_POLICY.md)와
+[검사/자유 프리셋·현행 지원표](UNIT_PLACEMENT_POLICY_UI.md)를 연결했다.
+아래 정상/자유 표의 당시 미연결 표시는 역사적 범위이며 현재 UI는 후속 문서를 따른다.
 
 ## 1. 실행 계획과 소스 분석
 

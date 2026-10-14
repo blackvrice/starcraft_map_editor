@@ -1197,6 +1197,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 자료 계약: version1 로컬 collision offset/Flyer 조회·순수 bounds/겹침·정상/자유 지원표·지형 snapshot 설계 (정책 연결/게임 검사는 제외)
 - [x] EP1 UNIT 겹침 정책: 로컬 전체 metadata·지상/공중·최종 정렬 좌표·검증 불가·허용 체크박스·공통 preview/Apply/Undo/저장 회귀 (지형/전체 정상 모드 제외)
 - [x] EP1 지형 자료: CV5/VF4 전용 version1 read-only snapshot·출처/상한·순수 footprint 판정·기존 ISOM/로컬8타일셋 회귀 (배치/UI 연결 제외)
+- [x] EP1 UNIT 정책 UI: 검사/자유 프리셋·실제 checkbox 조합의 custom 상태·지상/공중/건물별 정책/자료 지원표·자동 회귀 (실제 Windows 클릭/게임 인수 제외)
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1224,8 +1225,12 @@ UNIT 건물의 StarEdit 박스 전체를 맵 경계에서 검사하며 Sprite/Do
 기본 꺼짐 체크박스·로딩/재조회·source/tileset/epoch 수명과 최종 좌표 preview/Apply를
 연결하고 current MTXM/Undo 재판정·미확인 거절을 검증했다. 실제 앱 새 맵의 UNIT
 배치/메뉴 Undo와 로컬 자료 허용/거절을 확인했으며 게임/외부 인수는 유지한다.
-다음 코드 단위는 지상/공중·건물별 정상/자유 정책 지원표와 명시적 상태 UI다.
-대규모 profile·자원 거리·전력/크립·EUD 변경·게임/외부 인수는 별도다.
+이어서 [UNIT 정책 프리셋과 지원표](UNIT_PLACEMENT_POLICY_UI.md)를 구현했다.
+검사/자유 선택으로 기존 지형/겹침 설정을 원자 변경하고 실제 혼합 설정을 표시한다.
+자료 로딩/확인 불가·정책 생략·대상 아님·미구현/인수 대기를 구분하며 검사 사용을
+좌표 통과로 표시하지 않는다. 사용자 요청으로 이번 Windows 클릭은 실행하지 않았다.
+다음 단위는 자원·기지 거리 등 미지원 검사별 자료/예외 계약 및 PAR-01~03 시나리오다.
+대규모 profile·전력/크립·EUD 변경·게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성
 

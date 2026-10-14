@@ -10365,6 +10365,138 @@ abstract class AppLocalizations {
   /// **'Allow UNIT overlap'**
   String get placementAllowUnitOverlap;
 
+  /// No description provided for @placementUnitPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'UNIT placement'**
+  String get placementUnitPolicy;
+
+  /// No description provided for @placementPolicyChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked'**
+  String get placementPolicyChecked;
+
+  /// No description provided for @placementPolicyFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get placementPolicyFree;
+
+  /// No description provided for @placementPolicyCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get placementPolicyCustom;
+
+  /// No description provided for @placementPolicySupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Placement check support'**
+  String get placementPolicySupport;
+
+  /// No description provided for @placementPolicyNoTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'No placement target'**
+  String get placementPolicyNoTarget;
+
+  /// No description provided for @placementPolicyRecordSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure, bounds and record safety'**
+  String get placementPolicyRecordSafety;
+
+  /// No description provided for @placementPolicyUnitOverlap.
+  ///
+  /// In en, this message translates to:
+  /// **'UNIT ground/air overlap'**
+  String get placementPolicyUnitOverlap;
+
+  /// No description provided for @placementPolicyTerrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Local terrain footprint'**
+  String get placementPolicyTerrain;
+
+  /// No description provided for @placementPolicyResourceDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource / depot distance'**
+  String get placementPolicyResourceDistance;
+
+  /// No description provided for @placementPolicyPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Power'**
+  String get placementPolicyPower;
+
+  /// No description provided for @placementPolicyCreep.
+  ///
+  /// In en, this message translates to:
+  /// **'Creep'**
+  String get placementPolicyCreep;
+
+  /// No description provided for @placementPolicyEudRuntime.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD / runtime DAT changes'**
+  String get placementPolicyEudRuntime;
+
+  /// No description provided for @placementPolicyGameAcceptance.
+  ///
+  /// In en, this message translates to:
+  /// **'Game / external editor acceptance'**
+  String get placementPolicyGameAcceptance;
+
+  /// No description provided for @placementPolicyEnforced.
+  ///
+  /// In en, this message translates to:
+  /// **'Always enforced'**
+  String get placementPolicyEnforced;
+
+  /// No description provided for @placementPolicyEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Check enabled'**
+  String get placementPolicyEnabled;
+
+  /// No description provided for @placementPolicySkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped by policy'**
+  String get placementPolicySkipped;
+
+  /// No description provided for @placementPolicyNotApplicable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not applicable'**
+  String get placementPolicyNotApplicable;
+
+  /// No description provided for @placementPolicyLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading data'**
+  String get placementPolicyLoading;
+
+  /// No description provided for @placementPolicyUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Data unavailable'**
+  String get placementPolicyUnavailable;
+
+  /// No description provided for @placementPolicyNotImplemented.
+  ///
+  /// In en, this message translates to:
+  /// **'Not implemented'**
+  String get placementPolicyNotImplemented;
+
+  /// No description provided for @placementPolicyAcceptancePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Acceptance pending'**
+  String get placementPolicyAcceptancePending;
+
   /// No description provided for @placementCheckUnitTerrain.
   ///
   /// In en, this message translates to:

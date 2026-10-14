@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/point_placement_snap.dart';
+import '../../domain/placement/unit_placement_policy.dart';
 import '../localization/l10n.dart';
+import 'placement_policy_dialog.dart';
 
 class PlacementAlignmentToolbar extends StatelessWidget {
   const PlacementAlignmentToolbar({required this.controller, super.key});
@@ -15,12 +17,81 @@ class PlacementAlignmentToolbar extends StatelessWidget {
     final l10n = context.l10n;
     final state = controller.state;
     final snap = state.pointSnap;
+    final mode = state.unitPlacementPolicy.mode;
     return Wrap(
       key: const Key('placement-alignment-toolbar'),
       spacing: 16,
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(
+                width: 160,
+                height: 40,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${l10n.placementUnitPolicy}: ${switch (mode) {
+                      UnitPlacementMode.checked => l10n.placementPolicyChecked,
+                      UnitPlacementMode.free => l10n.placementPolicyFree,
+                      UnitPlacementMode.custom => l10n.placementPolicyCustom,
+                    }}',
+                    key: const Key('placement-policy-mode'),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 226,
+                height: 40,
+                child: SegmentedButton<UnitPlacementMode>(
+                  key: const Key('placement-policy-presets'),
+                  emptySelectionAllowed: true,
+                  selected: {if (mode != UnitPlacementMode.custom) mode},
+                  onSelectionChanged: (selection) {
+                    if (selection.isEmpty) return;
+                    controller.setUnitPlacementPolicy(
+                      selection.single == UnitPlacementMode.checked
+                          ? UnitPlacementPolicy.checked
+                          : UnitPlacementPolicy.free,
+                    );
+                  },
+                  segments: [
+                    ButtonSegment(
+                      value: UnitPlacementMode.checked,
+                      label: Text(l10n.placementPolicyChecked),
+                      icon: const Icon(Icons.fact_check_outlined),
+                    ),
+                    ButtonSegment(
+                      value: UnitPlacementMode.free,
+                      label: Text(l10n.placementPolicyFree),
+                      icon: const Icon(Icons.open_with),
+                    ),
+                  ],
+                  style: const ButtonStyle(
+                    visualDensity: VisualDensity.compact,
+                    textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('placement-policy-support'),
+                tooltip: l10n.placementPolicySupport,
+                icon: const Icon(Icons.rule),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => PlacementPolicyDialog(controller: controller),
+                ),
+              ),
+            ],
+          ),
+        ),
         SizedBox(
           width: 260,
           child: Material(

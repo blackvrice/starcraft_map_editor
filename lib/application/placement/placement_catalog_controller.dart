@@ -11,6 +11,8 @@ import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
+import '../../domain/placement/unit_placement_policy.dart';
+import 'placement_policy_support.dart';
 import '../ports/terrain_placement_snapshot_gateway.dart';
 import '../../domain/placement/point_placement_snap.dart';
 import '../documents/open_map_controller.dart';
@@ -152,6 +154,10 @@ final class PlacementCatalogState {
   final bool isCollisionMetadataLoading;
   final bool checkUnitTerrain;
   final bool isTerrainPlacementLoading;
+  late final unitPlacementPolicy = UnitPlacementPolicy(
+    checkTerrain: checkUnitTerrain,
+    allowOverlap: allowUnitOverlap,
+  );
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
 
@@ -879,6 +885,86 @@ class PlacementCatalogController {
     if (_disposed || enabled == _state.checkUnitTerrain) return;
     _emit(_copy(checkUnitTerrain: enabled));
     if (enabled) unawaited(loadTerrainPlacement());
+  }
+
+  /// Apply both preferences atomically; never paint or normalize existing UNITs.
+  void setUnitPlacementPolicy(UnitPlacementPolicy policy) {
+    if (_disposed ||
+        (policy.checkTerrain == _state.checkUnitTerrain &&
+            policy.allowOverlap == _state.allowUnitOverlap)) {
+      return;
+    }
+    _emit(
+      _copy(
+        checkUnitTerrain: policy.checkTerrain,
+        allowUnitOverlap: policy.allowOverlap,
+      ),
+    );
+    if (policy.checkTerrain) unawaited(loadTerrainPlacement());
+    if (!policy.allowOverlap) unawaited(loadCollisionMetadata());
+  }
+
+  Map<PlacementPolicyRule, PlacementPolicySupportStatus>
+  get placementPolicySupport {
+    final selection = _state.selection;
+    final isUnit = selection?.kind == StarCraftPlacementKind.unit;
+    final cap = isUnit ? selection?.unitCapability : null;
+    final building = cap?.isBuilding == true;
+    final profile = cap?.collisionProfile;
+    PlacementPolicySupportStatus terrainStatus() {
+      if (!isUnit) return PlacementPolicySupportStatus.notApplicable;
+      if (!_state.checkUnitTerrain) return PlacementPolicySupportStatus.skipped;
+      if (profile == null) return PlacementPolicySupportStatus.unavailable;
+      if (!building && profile.isFlyer) {
+        return PlacementPolicySupportStatus.notApplicable;
+      }
+      if (_state.isTerrainPlacementLoading) {
+        return PlacementPolicySupportStatus.loading;
+      }
+      return _currentTerrainPlacement == null
+          ? PlacementPolicySupportStatus.unavailable
+          : PlacementPolicySupportStatus.enabled;
+    }
+
+    PlacementPolicySupportStatus overlapStatus() {
+      if (!isUnit) return PlacementPolicySupportStatus.notApplicable;
+      if (_state.allowUnitOverlap) return PlacementPolicySupportStatus.skipped;
+      if (_state.isCollisionMetadataLoading) {
+        return PlacementPolicySupportStatus.loading;
+      }
+      return profile == null || _currentCollisionCatalog == null
+          ? PlacementPolicySupportStatus.unavailable
+          : PlacementPolicySupportStatus.enabled;
+    }
+
+    // Report configured support, not a cached preview verdict. Existing UNIT
+    // metadata, map structure and exact footprints are rechecked at placement.
+    return Map.unmodifiable({
+      PlacementPolicyRule.recordSafety: PlacementPolicySupportStatus.enforced,
+      PlacementPolicyRule.buildingAlignment: !isUnit || !building
+          ? PlacementPolicySupportStatus.notApplicable
+          : !_state.alignBuildingsToTiles
+          ? PlacementPolicySupportStatus.skipped
+          : cap?.placementBox == null
+          ? PlacementPolicySupportStatus.unavailable
+          : PlacementPolicySupportStatus.enabled,
+      PlacementPolicyRule.unitOverlap: overlapStatus(),
+      PlacementPolicyRule.terrain: terrainStatus(),
+      PlacementPolicyRule.resourceDistance: isUnit
+          ? PlacementPolicySupportStatus.notImplemented
+          : PlacementPolicySupportStatus.notApplicable,
+      PlacementPolicyRule.power: building
+          ? PlacementPolicySupportStatus.notImplemented
+          : PlacementPolicySupportStatus.notApplicable,
+      PlacementPolicyRule.creep: building
+          ? PlacementPolicySupportStatus.notImplemented
+          : PlacementPolicySupportStatus.notApplicable,
+      PlacementPolicyRule.eudRuntime: isUnit
+          ? PlacementPolicySupportStatus.notImplemented
+          : PlacementPolicySupportStatus.notApplicable,
+      PlacementPolicyRule.gameAcceptance:
+          PlacementPolicySupportStatus.acceptancePending,
+    });
   }
 
   void _invalidateTerrainPlacement() {

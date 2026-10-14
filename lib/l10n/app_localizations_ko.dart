@@ -6114,6 +6114,72 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementAllowUnitOverlap => 'UNIT 겹침 허용';
 
   @override
+  String get placementUnitPolicy => 'UNIT 배치';
+
+  @override
+  String get placementPolicyChecked => '검사 배치';
+
+  @override
+  String get placementPolicyFree => '자유 배치';
+
+  @override
+  String get placementPolicyCustom => '사용자 설정';
+
+  @override
+  String get placementPolicySupport => '배치 검사 지원표';
+
+  @override
+  String get placementPolicyNoTarget => '배치 대상 없음';
+
+  @override
+  String get placementPolicyRecordSafety => '구조·경계·레코드 안전';
+
+  @override
+  String get placementPolicyUnitOverlap => 'UNIT 지상/공중 겹침';
+
+  @override
+  String get placementPolicyTerrain => '로컬 지형 영역';
+
+  @override
+  String get placementPolicyResourceDistance => '자원·기지 거리';
+
+  @override
+  String get placementPolicyPower => '전력';
+
+  @override
+  String get placementPolicyCreep => '크립';
+
+  @override
+  String get placementPolicyEudRuntime => 'EUD·런타임 DAT 변경';
+
+  @override
+  String get placementPolicyGameAcceptance => '게임·외부 에디터 인수';
+
+  @override
+  String get placementPolicyEnforced => '항상 검사';
+
+  @override
+  String get placementPolicyEnabled => '검사 사용';
+
+  @override
+  String get placementPolicySkipped => '정책으로 생략';
+
+  @override
+  String get placementPolicyNotApplicable => '대상 아님';
+
+  @override
+  String get placementPolicyLoading => '자료 로딩 중';
+
+  @override
+  String get placementPolicyUnavailable => '자료 확인 불가';
+
+  @override
+  String get placementPolicyNotImplemented => '미구현';
+
+  @override
+  String get placementPolicyAcceptancePending => '인수 대기';
+
+  @override
   String get placementCheckUnitTerrain => 'UNIT 지형 검사';
 
   @override

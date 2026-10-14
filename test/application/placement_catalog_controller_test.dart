@@ -34,6 +34,8 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
+import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
@@ -99,6 +101,209 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  test(
+    'UNIT presets atomically configure checks and preserve document and unrelated preferences',
+    () async {
+      final terrain = _TerrainPlacementGateway(hold: true);
+      final collision = _CollisionGateway(hold: true);
+      final f = await _openFixture(
+        terrainPlacementGateway: terrain,
+        catalogGateway: collision,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setBuildingTileAlignment(true);
+      c.setPointSnap(enabled: true, step: 17);
+      c.setGridVisible(false);
+      c.setGridSpacing(128);
+      c.setOwner(4);
+      c.setContinuous(true);
+      final before = f.openMapController.state.session;
+      final selection = c.state.selection;
+      final states = <PlacementCatalogState>[];
+      final sub = c.changes.listen(states.add);
+      addTearDown(sub.cancel);
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.checked);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.terrain],
+        PlacementPolicySupportStatus.loading,
+      );
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.unitOverlap],
+        PlacementPolicySupportStatus.loading,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        states.every((s) => s.checkUnitTerrain && !s.allowUnitOverlap),
+        isTrue,
+      );
+      expect(terrain.calls, 1);
+      expect(collision.metadataRequests, 1);
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.terrain],
+        PlacementPolicySupportStatus.skipped,
+      );
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.unitOverlap],
+        PlacementPolicySupportStatus.skipped,
+      );
+      terrain.release.complete();
+      collision.release.complete();
+      await c.loadTerrainPlacement();
+      await c.loadCollisionMetadata();
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.free);
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.terrain],
+        PlacementPolicySupportStatus.enabled,
+      );
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.unitOverlap],
+        PlacementPolicySupportStatus.enabled,
+      );
+      expect((terrain.calls, collision.metadataRequests), (1, 1));
+      expect(identical(f.openMapController.state.session, before), isTrue);
+      expect(c.state.selection, same(selection));
+      expect(f.objectEditingController.state.undoDepth, 0);
+      expect(c.state.alignBuildingsToTiles, isTrue);
+      expect(c.state.pointSnap.step, 17);
+      expect(c.state.gridVisible, isFalse);
+      expect(c.state.gridSpacingPixels, 128);
+      expect(c.state.owner, 4);
+      expect(c.state.isContinuous, isTrue);
+      c.setAllowUnitOverlap(true);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+      c.setCheckUnitTerrain(false);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.free);
+      c.setAllowUnitOverlap(false);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+      c.setCheckUnitTerrain(true);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.checked);
+    },
+  );
+  for (final kind in [
+    'ground',
+    'air',
+    'building',
+    'building-missing-box',
+    'missing-profile',
+    'terrain-source',
+    'collision-source',
+    'no-selection',
+    'pure-sprite',
+    'unit-sprite',
+    'doodad',
+  ]) {
+    test(
+      'UNIT policy support reports $kind without authorizing or mutating a coordinate',
+      () async {
+        final building = kind.startsWith('building');
+        final terrain = _TerrainPlacementGateway(
+          failure: kind == 'terrain-source' ? 'source' : null,
+        );
+        final collision = kind == 'collision-source'
+            ? _CollisionGateway(failure: 'changed-source')
+            : null;
+        final f = await _openFixture(
+          terrainPlacementGateway: terrain,
+          catalogGateway: collision,
+          unitCapabilityAvailable: true,
+          unitIsBuilding: building,
+          placementBox: kind == 'building'
+              ? BuildingPlacementBox(width: 64, height: 32)
+              : null,
+          collisionProfile: kind == 'missing-profile'
+              ? null
+              : UnitCollisionProfile(
+                  left: 0,
+                  up: 0,
+                  right: 0,
+                  down: 0,
+                  isFlyer: kind == 'air',
+                ),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        final selectedKind = switch (kind) {
+          'pure-sprite' => StarCraftPlacementKind.pureSprite,
+          'unit-sprite' => StarCraftPlacementKind.spriteUnit,
+          'doodad' => StarCraftPlacementKind.doodad,
+          _ => StarCraftPlacementKind.unit,
+        };
+        await c.load(selectedKind);
+        if (kind != 'no-selection') c.confirm(c.state.items.first.key);
+        c.setBuildingTileAlignment(true);
+        c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
+        await c.loadTerrainPlacement();
+        await c.loadCollisionMetadata();
+        final before = f.openMapController.state.session;
+        final support = c.placementPolicySupport;
+        final notUnit = [
+          'no-selection',
+          'pure-sprite',
+          'unit-sprite',
+          'doodad',
+        ].contains(kind);
+        expect(support, hasLength(PlacementPolicyRule.values.length));
+        expect(() => support.clear(), throwsUnsupportedError);
+        expect(
+          support[PlacementPolicyRule.recordSafety],
+          PlacementPolicySupportStatus.enforced,
+        );
+        expect(
+          support[PlacementPolicyRule.terrain],
+          notUnit || kind == 'air'
+              ? PlacementPolicySupportStatus.notApplicable
+              : ['missing-profile', 'terrain-source'].contains(kind)
+              ? PlacementPolicySupportStatus.unavailable
+              : PlacementPolicySupportStatus.enabled,
+        );
+        expect(
+          support[PlacementPolicyRule.unitOverlap],
+          notUnit
+              ? PlacementPolicySupportStatus.notApplicable
+              : ['missing-profile', 'collision-source'].contains(kind)
+              ? PlacementPolicySupportStatus.unavailable
+              : PlacementPolicySupportStatus.enabled,
+        );
+        expect(
+          support[PlacementPolicyRule.buildingAlignment],
+          !building
+              ? PlacementPolicySupportStatus.notApplicable
+              : kind == 'building-missing-box'
+              ? PlacementPolicySupportStatus.unavailable
+              : PlacementPolicySupportStatus.enabled,
+        );
+        expect(
+          support[PlacementPolicyRule.power],
+          building
+              ? PlacementPolicySupportStatus.notImplemented
+              : PlacementPolicySupportStatus.notApplicable,
+        );
+        expect(
+          support[PlacementPolicyRule.creep],
+          support[PlacementPolicyRule.power],
+        );
+        expect(
+          support[PlacementPolicyRule.eudRuntime],
+          notUnit
+              ? PlacementPolicySupportStatus.notApplicable
+              : PlacementPolicySupportStatus.notImplemented,
+        );
+        expect(
+          support[PlacementPolicyRule.gameAcceptance],
+          PlacementPolicySupportStatus.acceptancePending,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
   test(
     'same map ERA change invalidates terrain cache and reloads selected UNIT',
     () async {
@@ -716,6 +921,143 @@ void main() {
   );
   for (final locale in ['en', 'ko']) {
     testWidgets(
+      'UNIT policy presets and live support dialog $locale at narrow width',
+      (tester) async {
+        tester.view.physicalSize = const Size(500, 760);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final terrain = _TerrainPlacementGateway(hold: true, failure: 'throw');
+        final f = await _openFixture(
+          terrainPlacementGateway: terrain,
+          unitCapabilityAvailable: true,
+          collisionProfile: _terrainProfile,
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        final before = f.openMapController.state.session;
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(locale),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 300,
+                  child: StreamBuilder(
+                    stream: c.changes,
+                    builder: (_, _) => PlacementAlignmentToolbar(controller: c),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        final presets = find.byKey(const Key('placement-policy-presets'));
+        final checkedLabel = locale == 'ko' ? '검사 배치' : 'Checked';
+        final freeLabel = locale == 'ko' ? '자유 배치' : 'Free';
+        expect(
+          tester.widget<SegmentedButton<UnitPlacementMode>>(presets).selected,
+          {UnitPlacementMode.free},
+        );
+        await tester.tap(
+          find.descendant(of: presets, matching: find.text(checkedLabel)),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.checked);
+        expect(c.state.checkUnitTerrain, isTrue);
+        expect(c.state.allowUnitOverlap, isFalse);
+        await tester.tap(find.byKey(const Key('placement-policy-support')));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        final dialog = find.byKey(const Key('placement-policy-dialog'));
+        expect(dialog, findsOneWidget);
+        final l10n = AppLocalizations.of(tester.element(dialog))!;
+        Finder rowText(PlacementPolicyRule rule, String label) =>
+            find.descendant(
+              of: find.byKey(ValueKey('placement-policy-${rule.name}')),
+              matching: find.text(label),
+            );
+        expect(
+          rowText(PlacementPolicyRule.terrain, l10n.placementPolicyLoading),
+          findsOneWidget,
+        );
+        expect(
+          rowText(
+            PlacementPolicyRule.recordSafety,
+            l10n.placementPolicyEnforced,
+          ),
+          findsOneWidget,
+        );
+        expect(
+          rowText(
+            PlacementPolicyRule.eudRuntime,
+            l10n.placementPolicyNotImplemented,
+          ),
+          findsOneWidget,
+        );
+        expect(
+          rowText(
+            PlacementPolicyRule.gameAcceptance,
+            l10n.placementPolicyAcceptancePending,
+          ),
+          findsOneWidget,
+        );
+        terrain.release.complete();
+        await c.loadTerrainPlacement();
+        await c.loadCollisionMetadata();
+        await tester.pumpAndSettle();
+        expect(
+          rowText(PlacementPolicyRule.terrain, l10n.placementPolicyUnavailable),
+          findsOneWidget,
+        );
+        expect(
+          rowText(PlacementPolicyRule.unitOverlap, l10n.placementPolicyEnabled),
+          findsOneWidget,
+        );
+        c.setAllowUnitOverlap(true);
+        await tester.pumpAndSettle();
+        expect(
+          rowText(PlacementPolicyRule.unitOverlap, l10n.placementPolicySkipped),
+          findsOneWidget,
+        );
+        expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+        terrain.failure = null;
+        await c.loadTerrainPlacement(reload: true);
+        await tester.pumpAndSettle();
+        expect(
+          rowText(PlacementPolicyRule.terrain, l10n.placementPolicyEnabled),
+          findsOneWidget,
+        );
+        await tester.tap(find.text(l10n.editorClose));
+        await tester.pumpAndSettle();
+        expect(dialog, findsNothing);
+        expect(
+          tester.widget<SegmentedButton<UnitPlacementMode>>(presets).selected,
+          isEmpty,
+        );
+        expect(
+          find.textContaining(locale == 'ko' ? '사용자 설정' : 'Custom'),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.descendant(of: presets, matching: find.text(freeLabel)),
+        );
+        await tester.pumpAndSettle();
+        expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.free);
+        expect(c.state.checkUnitTerrain, isFalse);
+        expect(c.state.allowUnitOverlap, isTrue);
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
       'alignment toolbar $locale validates custom spacing at narrow width',
       (tester) async {
         final fixture = await _openFixture();
@@ -1111,8 +1453,13 @@ void main() {
         final c = f.controller..setInstallationPath(realInstallation);
         expect(await c.load(StarCraftPlacementKind.unit), isTrue);
         expect(c.confirm(c.state.items.first.key), isTrue);
-        c.setCheckUnitTerrain(true);
+        c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
         expect(await c.loadTerrainPlacement(), isTrue);
+        expect(await c.loadCollisionMetadata(), isTrue);
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.unitOverlap],
+          PlacementPolicySupportStatus.enabled,
+        );
         final before = f.openMapController.state.session;
         final expected = raw == clear
             ? null
@@ -1135,6 +1482,16 @@ void main() {
           expect(f.objectEditingController.redo(), isTrue);
         } else {
           expect(f.objectEditingController.state.undoDepth, 0);
+          c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+          expect(
+            c.previewAt(pixelX: 100, pixelY: 100, tileX: 3, tileY: 3),
+            isNull,
+          );
+          expect(
+            c.placeAt(pixelX: 100, pixelY: 100, tileX: 3, tileY: 3).isPlaced,
+            isTrue,
+          );
+          expect(f.objectEditingController.undo(), isTrue);
         }
       }
     },

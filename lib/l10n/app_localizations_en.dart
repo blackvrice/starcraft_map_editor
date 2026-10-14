@@ -6250,6 +6250,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placementAllowUnitOverlap => 'Allow UNIT overlap';
 
   @override
+  String get placementUnitPolicy => 'UNIT placement';
+
+  @override
+  String get placementPolicyChecked => 'Checked';
+
+  @override
+  String get placementPolicyFree => 'Free';
+
+  @override
+  String get placementPolicyCustom => 'Custom';
+
+  @override
+  String get placementPolicySupport => 'Placement check support';
+
+  @override
+  String get placementPolicyNoTarget => 'No placement target';
+
+  @override
+  String get placementPolicyRecordSafety =>
+      'Structure, bounds and record safety';
+
+  @override
+  String get placementPolicyUnitOverlap => 'UNIT ground/air overlap';
+
+  @override
+  String get placementPolicyTerrain => 'Local terrain footprint';
+
+  @override
+  String get placementPolicyResourceDistance => 'Resource / depot distance';
+
+  @override
+  String get placementPolicyPower => 'Power';
+
+  @override
+  String get placementPolicyCreep => 'Creep';
+
+  @override
+  String get placementPolicyEudRuntime => 'EUD / runtime DAT changes';
+
+  @override
+  String get placementPolicyGameAcceptance =>
+      'Game / external editor acceptance';
+
+  @override
+  String get placementPolicyEnforced => 'Always enforced';
+
+  @override
+  String get placementPolicyEnabled => 'Check enabled';
+
+  @override
+  String get placementPolicySkipped => 'Skipped by policy';
+
+  @override
+  String get placementPolicyNotApplicable => 'Not applicable';
+
+  @override
+  String get placementPolicyLoading => 'Loading data';
+
+  @override
+  String get placementPolicyUnavailable => 'Data unavailable';
+
+  @override
+  String get placementPolicyNotImplemented => 'Not implemented';
+
+  @override
+  String get placementPolicyAcceptancePending => 'Acceptance pending';
+
+  @override
   String get placementCheckUnitTerrain => 'Check UNIT terrain';
 
   @override
