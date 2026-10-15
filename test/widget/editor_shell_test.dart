@@ -53,6 +53,7 @@ import 'package:starcraft_map_editor/presentation/map_canvas/map_canvas.dart';
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/presentation/map_canvas/object_sprite_texture.dart';
@@ -3302,6 +3303,10 @@ final class _PointHoverCatalog implements StarCraftPlacementCatalogGateway {
           unitCapability: request.kind == StarCraftPlacementKind.pureSprite
               ? null
               : UnitPlacementCapability(
+                  resourceProfile: const UnitResourceProfile(
+                    isDepot: false,
+                    isResource: false,
+                  ),
                   unitId: id,
                   collisionProfile: UnitCollisionProfile(
                     left: 0,

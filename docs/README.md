@@ -38,6 +38,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [UNIT 정책 프리셋과 지원표](UNIT_PLACEMENT_POLICY_UI.md) | 검사/자유·혼합 설정·원자 변경·정책/자료 상태·한영 화면 회귀 | UNIT 배치 정책과 미지원 범위를 확인할 때 |
 | [자원·기지 거리 자료](UNIT_RESOURCE_DISTANCE.md) | DAT 자원/기지 역할·엄격한 profile·순수3tile pair·경계/미확인·실제 로컬 회귀 | 자원 거리 배치 검사를 연결할 때 |
 | [현재 UNIT 자원 거리 검사](UNIT_RESOURCE_DISTANCE_AGGREGATE.md) | source 일치·전체 UNIT 지원 상태·읽기 전용 최종 좌표 검사·Undo/캐시 회귀 | 자원 거리 정책 연결을 이어갈 때 |
+| [UNIT 자원 거리 배치 정책](UNIT_RESOURCE_DISTANCE_POLICY.md) | 실제 preview/Apply·체크박스·프리셋/지원표·진단·Undo/Save As 회귀 | 자원 거리 정책의 지원 범위와 검증을 확인할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

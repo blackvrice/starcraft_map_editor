@@ -6,12 +6,14 @@
 이어서 [UNIT 지형 검사](UNIT_TERRAIN_PLACEMENT_POLICY.md)를 catalog preview/Apply와
 체크박스에 연결했다. Domain의 I/O 비의존·기존 ISOM v2 형식은 유지한다.
 이어서 [UNIT 정책 프리셋·지원표](UNIT_PLACEMENT_POLICY_UI.md)를 추가했다.
-mode는 기존 두 설정에서 파생하며 지원표는 application의 자료/정책 상태다.
+mode는 실제 검사 설정에서 파생하며 지원표는 application의 자료/정책 상태다.
 UI에 독립 배치 허용 판정이나 native/파일 접근을 추가하지 않았다.
 후속 [자원·기지 거리 자료](UNIT_RESOURCE_DISTANCE.md)는 optional resourceProfile과
 순수 pair geometry를 제공한다. 2026-10-15 [현재 UNIT aggregate](UNIT_RESOURCE_DISTANCE_AGGREGATE.md)는
 domain 숫자 snapshot과 application 출처·최종 좌표·공통 안전 검증을 결합한다.
-기존 full metadata 요청/무효화 경계를 재사용하며 실제 배치 정책/UI 연결은 별도다.
+기존 full metadata 요청/무효화 경계를 재사용한다. 후속 [자원 거리 정책](UNIT_RESOURCE_DISTANCE_POLICY.md)은
+같은 object prepare에 preview/Apply를 연결하며 세 checkbox의 실제 조합으로 mode를 파생한다.
+UI는 독립 거리 판정기나 파일/process 접근을 갖지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

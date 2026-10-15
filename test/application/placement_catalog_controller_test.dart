@@ -103,6 +103,231 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  for (final alignment in ['point', 'building']) {
+    test(
+      'resource policy blocks final $alignment point, free mode preserves Undo bytes',
+      () async {
+        final gateway = _ResourceGateway(building: alignment == 'building');
+        final f = await _openFixture(
+          catalogGateway: gateway,
+          chkBytesOverride: Uint8List.fromList([
+            ..._chkBytes(),
+            ..._section('XTRA', [255, 0, 128]),
+            ..._section(
+              'UNIT',
+              const UnitPlacementFactory()
+                  .create(
+                    capability: gateway.capability(1),
+                    unitId: 1,
+                    owner: 11,
+                    x: 191,
+                    y: 64,
+                    classId: 1,
+                  )
+                  .bytes,
+            ),
+          ]),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        c.setContinuous(true);
+        expect(c.state.checkResourceDistance, isFalse);
+        c.setCheckResourceDistance(true);
+        await c.loadCollisionMetadata();
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+          PlacementPolicySupportStatus.enabled,
+        );
+        expect(c.previewAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2), isNull);
+        c.setPointSnap(enabled: true, step: 32);
+        c.setBuildingTileAlignment(alignment == 'building');
+        final before = f.openMapController.state.session!;
+        final raw = const RawChkEncoder().encode(before.rawDocument);
+        final state = c.state;
+        expect(
+          c.previewAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2),
+          ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+        );
+        expect(c.state, same(state));
+        expect(
+          c.placeAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2).issueCode,
+          ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        expect(c.state.selection, same(state.selection));
+        c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+        expect(c.state.checkResourceDistance, isFalse);
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+          PlacementPolicySupportStatus.skipped,
+        );
+        expect(
+          c.placeAt(pixelX: 63, pixelY: 64, tileX: 1, tileY: 2).isPlaced,
+          isTrue,
+        );
+        final unit = f
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .unitSections
+            .single
+            .units
+            .last;
+        expect((unit.x, unit.y), (64, 64));
+        expect(f.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          raw,
+        );
+        expect(f.objectEditingController.redo(), isTrue);
+        expect(gateway.metadataRequests, 1);
+      },
+    );
+  }
+  for (final failure in ['source', 'coverage', 'geometry', 'role']) {
+    test(
+      'resource policy rejects $failure without edits and reload recovers',
+      () async {
+        final gateway = _ResourceGateway(failure: failure);
+        final f = await _openFixture(catalogGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        c.setCheckResourceDistance(true);
+        await c.loadCollisionMetadata();
+        final before = f.openMapController.state.session;
+        expect(
+          c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+          ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable,
+        );
+        expect(
+          c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+          ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        gateway.failure = null;
+        await c.loadCollisionMetadata(reload: true);
+        expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+        expect(
+          c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+          isTrue,
+        );
+      },
+    );
+  }
+  for (final kind in ['unknown', 'flight', 'outside']) {
+    test(
+      'resource policy preserves aggregate refusal $kind priority',
+      () async {
+        final gateway = _ResourceGateway();
+        final record = Uint8List.fromList(
+          const UnitPlacementFactory()
+              .create(
+                capability: gateway.capability(1),
+                unitId: 1,
+                owner: 11,
+                x: 64,
+                y: 64,
+                classId: 1,
+              )
+              .bytes,
+        );
+        final data = ByteData.sublistView(record);
+        if (kind == 'unknown') data.setUint16(8, 300, Endian.little);
+        if (kind == 'flight') data.setUint16(26, 4, Endian.little);
+        if (kind == 'outside') data.setUint16(4, 256, Endian.little);
+        final f = await _openFixture(
+          catalogGateway: gateway,
+          chkBytesOverride: Uint8List.fromList([
+            ..._chkBytes(),
+            ..._section('UNIT', record),
+          ]),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        c.setCheckResourceDistance(true);
+        await c.loadCollisionMetadata();
+        final expected = switch (kind) {
+          'unknown' =>
+            ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable,
+          'flight' =>
+            ObjectPlacementDiagnosticCodes.resourceDistanceStateUnsupported,
+          _ => ObjectPlacementDiagnosticCodes.outOfBounds,
+        };
+        final before = f.openMapController.state.session;
+        expect(
+          c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2),
+          expected,
+        );
+        expect(
+          c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+          expected,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+  test(
+    'resource policy loading blocks and cancelling preset never restores checks',
+    () async {
+      final gateway = _ResourceGateway(hold: true);
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setCheckResourceDistance(true);
+      final pending = c.loadCollisionMetadata();
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+        PlacementPolicySupportStatus.loading,
+      );
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).issueCode,
+        ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable,
+      );
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+      gateway.release.complete();
+      await pending;
+      expect(c.state.checkResourceDistance, isFalse);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.free);
+      expect(f.objectEditingController.state.undoDepth, 0);
+    },
+  );
+  for (final kind in [
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test('$kind bypasses UNIT resource policy without metadata', () async {
+      final f = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      c.setCheckResourceDistance(true);
+      await c.load(kind);
+      c.confirm(c.state.items.first.key);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+        PlacementPolicySupportStatus.notApplicable,
+      );
+      expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+    });
+  }
   test(
     'resource inspection coalesces metadata and reads latest UNIT/Undo without writes',
     () async {
@@ -170,7 +395,7 @@ void main() {
       expect(c.previewAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2), isNull);
       expect(
         c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
-        PlacementPolicySupportStatus.notImplemented,
+        PlacementPolicySupportStatus.skipped,
       );
     },
   );
@@ -394,7 +619,12 @@ void main() {
       );
       await Future<void>.delayed(Duration.zero);
       expect(
-        states.every((s) => s.checkUnitTerrain && !s.allowUnitOverlap),
+        states.every(
+          (s) =>
+              s.checkUnitTerrain &&
+              !s.allowUnitOverlap &&
+              s.checkResourceDistance,
+        ),
         isTrue,
       );
       expect(terrain.calls, 1);
@@ -435,10 +665,14 @@ void main() {
       c.setAllowUnitOverlap(true);
       expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
       c.setCheckUnitTerrain(false);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+      c.setCheckResourceDistance(false);
       expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.free);
       c.setAllowUnitOverlap(false);
       expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
       c.setCheckUnitTerrain(true);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+      c.setCheckResourceDistance(true);
       expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.checked);
     },
   );
@@ -1342,6 +1576,19 @@ void main() {
         await tester.tap(find.byKey(const Key('placement-check-unit-terrain')));
         await tester.pumpAndSettle();
         expect(fixture.controller.state.checkUnitTerrain, isTrue);
+        await tester.tap(
+          find.byKey(const Key('placement-check-resource-distance')),
+        );
+        await tester.pumpAndSettle();
+        expect(fixture.controller.state.checkResourceDistance, isTrue);
+        expect(
+          find.byKey(const Key('placement-reload-resource-distance')),
+          findsOneWidget,
+        );
+        await tester.tap(
+          find.byKey(const Key('placement-reload-resource-distance')),
+        );
+        await tester.pumpAndSettle();
         expect(
           find.byKey(const Key('placement-reload-unit-terrain')),
           findsOneWidget,
@@ -1660,6 +1907,92 @@ void main() {
 
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
+  test(
+    'local DAT resource policy rejects near, accepts far and preserves Undo',
+    () async {
+      final gateway = ProcessStarCraftPlacementCatalogGateway(
+        helperExecutablePath: realHelper!,
+      );
+      final metadata = await gateway.list(
+        StarCraftPlacementCatalogRequest(
+          operationId: 'resource-policy-local-fixture',
+          installationPath: realInstallation!,
+          kind: StarCraftPlacementKind.unit,
+          tileset: StarCraftTilesetAssetSet.jungle,
+          unitMetadataOnly: true,
+          limit: 228,
+        ),
+      );
+      expect(metadata.isSuccess, isTrue, reason: '${metadata.diagnostics}');
+      final resource = metadata.entries[188].unitCapability!;
+      final f = await _openFixture(
+        catalogGateway: gateway,
+        pageSize: 128,
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+        chkBytesOverride: Uint8List.fromList([
+          ..._chkBytes(mapSize: 64),
+          ..._section('XTRA', [255, 0, 128]),
+          ..._section(
+            'UNIT',
+            const UnitPlacementFactory()
+                .create(
+                  capability: resource,
+                  unitId: 188,
+                  owner: 11,
+                  x: 1024,
+                  y: 1024,
+                  classId: 1,
+                )
+                .bytes,
+          ),
+        ]),
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(realInstallation);
+      expect(await c.load(StarCraftPlacementKind.unit), isTrue);
+      expect(
+        c.confirm(c.state.items.firstWhere((item) => item.key.id == 106).key),
+        isTrue,
+      );
+      c.setCheckResourceDistance(true);
+      c.setContinuous(true);
+      expect(await c.loadCollisionMetadata(), isTrue);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.resourceDistance],
+        PlacementPolicySupportStatus.enabled,
+      );
+      final before = f.openMapController.state.session!;
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+      );
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+      );
+      expect(f.openMapController.state.session, same(before));
+      expect(f.objectEditingController.state.undoDepth, 0);
+      expect(
+        c.previewAt(pixelX: 512, pixelY: 512, tileX: 16, tileY: 16),
+        isNull,
+      );
+      expect(
+        c.placeAt(pixelX: 512, pixelY: 512, tileX: 16, tileY: 16).isPlaced,
+        isTrue,
+      );
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        ),
+        const RawChkEncoder().encode(before.rawDocument),
+      );
+      expect(f.objectEditingController.redo(), isTrue);
+    },
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null,
+  );
   test(
     'local CV5 VF4 source drives actual UNIT terrain placement and Undo',
     () async {

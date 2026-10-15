@@ -6321,6 +6321,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placementCheckUnitTerrain => 'Check UNIT terrain';
 
   @override
+  String get placementCheckResourceDistance => 'Check resource distance';
+
+  @override
+  String get placementReloadResourceDistance =>
+      'Reload resource distance metadata';
+
+  @override
+  String get placementResourceDistanceTooClose =>
+      'This resource and depot are too close together.';
+
+  @override
+  String get placementResourceDistanceUnavailable =>
+      'Resource distance cannot be verified. Reload the unit catalog and metadata, or turn off resource distance checking.';
+
+  @override
+  String get placementResourceDistanceStateUnsupported =>
+      'Resource distance checking does not support these UNIT flight states. Turn off the check to place without this rule.';
+
+  @override
   String get placementReloadUnitTerrain => 'Reload terrain placement data';
 
   @override

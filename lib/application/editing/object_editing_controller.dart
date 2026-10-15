@@ -20,6 +20,7 @@ import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
+import '../../domain/placement/unit_resource_distance_catalog.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
@@ -1005,6 +1006,8 @@ class ObjectEditingController {
     UnitCollisionCatalog? collisionCatalog,
     bool checkTerrain = false,
     TerrainPlacementSnapshot? terrainSnapshot,
+    bool checkResourceDistance = false,
+    UnitResourceDistanceCatalog? resourceDistanceCatalog,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1017,6 +1020,8 @@ class ObjectEditingController {
       collisionCatalog: collisionCatalog,
       checkTerrain: checkTerrain,
       terrainSnapshot: terrainSnapshot,
+      checkResourceDistance: checkResourceDistance,
+      resourceDistanceCatalog: resourceDistanceCatalog,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1034,6 +1039,8 @@ class ObjectEditingController {
     UnitCollisionCatalog? collisionCatalog,
     bool checkTerrain = false,
     TerrainPlacementSnapshot? terrainSnapshot,
+    bool checkResourceDistance = false,
+    UnitResourceDistanceCatalog? resourceDistanceCatalog,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
@@ -1045,6 +1052,8 @@ class ObjectEditingController {
     collisionCatalog: collisionCatalog,
     checkTerrain: checkTerrain,
     terrainSnapshot: terrainSnapshot,
+    checkResourceDistance: checkResourceDistance,
+    resourceDistanceCatalog: resourceDistanceCatalog,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1059,6 +1068,8 @@ class ObjectEditingController {
     UnitCollisionCatalog? collisionCatalog,
     bool checkTerrain = false,
     TerrainPlacementSnapshot? terrainSnapshot,
+    bool checkResourceDistance = false,
+    UnitResourceDistanceCatalog? resourceDistanceCatalog,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1171,6 +1182,32 @@ class ObjectEditingController {
             ObjectPlacementDiagnosticCodes.collisionUnavailable,
           UnitCollisionCheck.stateUnsupported =>
             ObjectPlacementDiagnosticCodes.collisionStateUnsupported,
+        };
+        if (issue != null) return ObjectPlacementRecord.rejected(issue);
+      }
+      if (checkResourceDistance) {
+        final dimensions = _singleDimensions(session)!;
+        final check =
+            resourceDistanceCatalog?.check(
+              candidate: capability,
+              x: point.x,
+              y: point.y,
+              mapWidthTiles: dimensions.width,
+              mapHeightTiles: dimensions.height,
+              existing: session.objectViews.unitSections.expand((s) => s.units),
+            ) ??
+            UnitResourceDistanceCatalogCheck.metadataUnavailable;
+        final issue = switch (check) {
+          UnitResourceDistanceCatalogCheck.clear ||
+          UnitResourceDistanceCatalogCheck.notApplicable => null,
+          UnitResourceDistanceCatalogCheck.tooClose =>
+            ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+          UnitResourceDistanceCatalogCheck.metadataUnavailable =>
+            ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable,
+          UnitResourceDistanceCatalogCheck.stateUnsupported =>
+            ObjectPlacementDiagnosticCodes.resourceDistanceStateUnsupported,
+          UnitResourceDistanceCatalogCheck.outOfBounds =>
+            ObjectPlacementDiagnosticCodes.outOfBounds,
         };
         if (issue != null) return ObjectPlacementRecord.rejected(issue);
       }

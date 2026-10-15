@@ -119,6 +119,12 @@ String placementFailureText(
     l10n.placementUnitTerrainUnwalkable,
   ObjectPlacementDiagnosticCodes.collisionStateUnsupported =>
     l10n.placementCollisionStateUnsupported,
+  ObjectPlacementDiagnosticCodes.resourceDistanceTooClose =>
+    l10n.placementResourceDistanceTooClose,
+  ObjectPlacementDiagnosticCodes.resourceDistanceUnavailable =>
+    l10n.placementResourceDistanceUnavailable,
+  ObjectPlacementDiagnosticCodes.resourceDistanceStateUnsupported =>
+    l10n.placementResourceDistanceStateUnsupported,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
     l10n.placementCapabilityMismatch,
   ObjectPlacementFactoryCodes.unitRelationRequired ||

@@ -34,6 +34,12 @@ abstract final class ObjectPlacementDiagnosticCodes {
       'OBJECT_PLACEMENT_UNIT_TERRAIN_UNWALKABLE';
   static const collisionStateUnsupported =
       'OBJECT_PLACEMENT_COLLISION_STATE_UNSUPPORTED';
+  static const resourceDistanceTooClose =
+      'OBJECT_PLACEMENT_RESOURCE_DISTANCE_TOO_CLOSE';
+  static const resourceDistanceUnavailable =
+      'OBJECT_PLACEMENT_RESOURCE_DISTANCE_UNAVAILABLE';
+  static const resourceDistanceStateUnsupported =
+      'OBJECT_PLACEMENT_RESOURCE_DISTANCE_STATE_UNSUPPORTED';
 
   static const all = <String>{
     sessionNotEditable,
@@ -56,6 +62,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     unitTerrainUnbuildable,
     unitTerrainUnwalkable,
     collisionStateUnsupported,
+    resourceDistanceTooClose,
+    resourceDistanceUnavailable,
+    resourceDistanceStateUnsupported,
   };
 }
 

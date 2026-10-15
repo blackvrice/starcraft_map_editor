@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starcraft_map_editor/application/documents/open_map_controller.dart';
 import 'package:starcraft_map_editor/application/documents/save_map_controller.dart';
 import 'package:starcraft_map_editor/application/editing/object_editing_controller.dart';
+import 'package:starcraft_map_editor/application/editing/object_placement.dart';
 import 'package:starcraft_map_editor/application/editing/object_properties.dart';
 import 'package:starcraft_map_editor/application/layers/map_layer_controller.dart';
 import 'package:starcraft_map_editor/application/operations/operation_progress_controller.dart';
@@ -32,6 +33,8 @@ import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.
 import 'package:starcraft_map_editor/domain/placement/building_placement_box.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -1044,6 +1047,10 @@ void main() {
               collisionCatalog: UnitCollisionCatalog({
                 37: _placementCapability(37),
               }),
+              checkResourceDistance: true,
+              resourceDistanceCatalog: UnitResourceDistanceCatalog({
+                37: _placementCapability(37),
+              }),
             )
             .isPlaced,
         isTrue,
@@ -1075,6 +1082,11 @@ void main() {
                 37: _placementCapability(37),
                 106: _placementCapability(106, building: true),
               }),
+              checkResourceDistance: true,
+              resourceDistanceCatalog: UnitResourceDistanceCatalog({
+                37: _placementCapability(37),
+                106: _placementCapability(106, building: true),
+              }),
             )
             .isPlaced,
         isTrue,
@@ -1091,6 +1103,57 @@ void main() {
         isTrue,
       );
 
+      final resource = _placementCapability(188);
+      final resourceCatalog = UnitResourceDistanceCatalog({
+        37: _placementCapability(37),
+        106: _placementCapability(106, building: true),
+        188: resource,
+      });
+      final beforeRefusal = openController.state.session!;
+      final beforeDepth = editingController.state.undoDepth;
+      expect(
+        editingController
+            .placeCatalogUnit(
+              capability: resource,
+              unitId: 188,
+              owner: 11,
+              pixelX: 100,
+              pixelY: 100,
+              checkResourceDistance: true,
+              resourceDistanceCatalog: resourceCatalog,
+            )
+            .issueCode,
+        ObjectPlacementDiagnosticCodes.resourceDistanceTooClose,
+      );
+      expect(openController.state.session, same(beforeRefusal));
+      expect(editingController.state.undoDepth, beforeDepth);
+      expect(
+        editingController
+            .placeCatalogUnit(
+              capability: resource,
+              unitId: 188,
+              owner: 11,
+              pixelX: 230,
+              pixelY: 230,
+              checkResourceDistance: true,
+              resourceDistanceCatalog: resourceCatalog,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      final afterResource = const RawChkEncoder().encode(
+        openController.state.session!.rawDocument,
+      );
+      expect(editingController.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(openController.state.session!.rawDocument),
+        const RawChkEncoder().encode(beforeRefusal.rawDocument),
+      );
+      expect(editingController.redo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(openController.state.session!.rawDocument),
+        afterResource,
+      );
       final saved = await saveController.saveAs();
       expect(saved.status, SaveMapStatus.saved);
       expect(sourceMap.scenarioChkBytes, sourceChk);
@@ -1121,11 +1184,32 @@ void main() {
       expect(unit.y, 120);
       expect(unit.classId, 0);
       expect(unit.validFieldFlags, ChkUnitPlacement.validFieldOwnerFlag);
-      final building = reopened.unitSections.single.units.last;
-      expect(reopened.unitSections.single.units, hasLength(2));
+      final building = reopened.unitSections.single.units[1];
+      expect(reopened.unitSections.single.units, hasLength(3));
       expect((building.x, building.y), (64, 48));
       expect(building.unitType, 106);
       expect(building.classId, 1);
+      final savedResource = reopened.unitSections.single.units.last;
+      expect(
+        (
+          savedResource.unitType,
+          savedResource.x,
+          savedResource.y,
+          savedResource.owner,
+        ),
+        (188, 230, 230, 11),
+      );
+      expect(
+        resourceCatalog.check(
+          candidate: _placementCapability(106, building: true),
+          x: 64,
+          y: 48,
+          mapWidthTiles: 8,
+          mapHeightTiles: 8,
+          existing: [savedResource],
+        ),
+        UnitResourceDistanceCatalogCheck.clear,
+      );
 
       final sprites = reopened.spriteSections.single.sprites;
       expect(sprites, hasLength(2));
@@ -1170,6 +1254,10 @@ UnitPlacementCapability _placementCapability(
   bool building = false,
 }) => UnitPlacementCapability(
   unitId: unitId,
+  resourceProfile: UnitResourceProfile(
+    isDepot: unitId == 106,
+    isResource: unitId == 188,
+  ),
   placementBox: building ? BuildingPlacementBox(width: 128, height: 96) : null,
   collisionProfile: UnitCollisionProfile(
     left: 3,
@@ -1180,8 +1268,8 @@ UnitPlacementCapability _placementCapability(
   ),
   isSpellcaster: false,
   hasShields: false,
-  isResourceContainer: false,
-  isGasResourceContainer: false,
+  isResourceContainer: unitId == 188,
+  isGasResourceContainer: unitId == 188,
   hasHangar: false,
   isFlyingBuilding: false,
   isBurrowable: false,

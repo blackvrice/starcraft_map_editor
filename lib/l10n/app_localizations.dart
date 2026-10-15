@@ -10503,6 +10503,36 @@ abstract class AppLocalizations {
   /// **'Check UNIT terrain'**
   String get placementCheckUnitTerrain;
 
+  /// No description provided for @placementCheckResourceDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Check resource distance'**
+  String get placementCheckResourceDistance;
+
+  /// No description provided for @placementReloadResourceDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload resource distance metadata'**
+  String get placementReloadResourceDistance;
+
+  /// No description provided for @placementResourceDistanceTooClose.
+  ///
+  /// In en, this message translates to:
+  /// **'This resource and depot are too close together.'**
+  String get placementResourceDistanceTooClose;
+
+  /// No description provided for @placementResourceDistanceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource distance cannot be verified. Reload the unit catalog and metadata, or turn off resource distance checking.'**
+  String get placementResourceDistanceUnavailable;
+
+  /// No description provided for @placementResourceDistanceStateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Resource distance checking does not support these UNIT flight states. Turn off the check to place without this rule.'**
+  String get placementResourceDistanceStateUnsupported;
+
   /// No description provided for @placementReloadUnitTerrain.
   ///
   /// In en, this message translates to:

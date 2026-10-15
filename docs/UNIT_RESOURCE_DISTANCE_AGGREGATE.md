@@ -1,5 +1,8 @@
 # 현재 UNIT의 자원 거리 검사
 
+후속 [자원 거리 배치 정책](UNIT_RESOURCE_DISTANCE_POLICY.md)을 연결했다. 아래는
+read-only aggregate 단위의 당시 계약/검증이며 실제 checkbox/preview/Apply는 후속 문서를 따른다.
+
 2026-10-15. EP1/FR-218의 제한 구현이다. [역할·pair 기반](UNIT_RESOURCE_DISTANCE.md)에
 현재 UNIT 전체를 결합하는 순수 aggregate와 source-aware application 조회를 추가했다.
 **읽기 전용 검사만 구현**했으며 실제 배치 차단, ghost, checkbox/프리셋은 다음 단위다.
@@ -130,7 +133,7 @@ skip은 외부 도구/환경 의존 검증이며 통과로 계산하지 않는�
 
 ## 7. 다음 단위
 
-현재 read-only 검사와 최종 preview/Apply를 공통 경로에서 연결하고 명시적 자원 거리
-checkbox(기본 꺼짐), 프리셋/custom·자료 지원표·진단 한영 안내를 추가한다. 상태/metadata
-불가를 단순 거리 위반으로 표현하지 않고, 거절 시 문서/Undo 무변경과 Save As 왕복을
-검증한다. 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
+[실제 자원 거리 정책](UNIT_RESOURCE_DISTANCE_POLICY.md)의 checkbox·프리셋·지원표와
+최종 preview/Apply를 연결했다. 상태/metadata 불가와 거리 위반을 구분하고 거절 시
+문서/Undo 보존을 검증한다. 다음은 전력/크립 요구 자료의 조사·계약이며 대규모 profile·
+EUD 변경·PAR-01~03 게임/외부 인수는 별도다.

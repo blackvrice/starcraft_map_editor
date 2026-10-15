@@ -6183,6 +6183,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementCheckUnitTerrain => 'UNIT 지형 검사';
 
   @override
+  String get placementCheckResourceDistance => '자원 거리 검사';
+
+  @override
+  String get placementReloadResourceDistance => '자원 거리 자료 다시 읽기';
+
+  @override
+  String get placementResourceDistanceTooClose => '자원과 기지 사이의 거리가 너무 가깝습니다.';
+
+  @override
+  String get placementResourceDistanceUnavailable =>
+      '자원 거리를 검증할 수 없습니다. 유닛 카탈로그와 자료를 다시 읽거나 자원 거리 검사를 해제하세요.';
+
+  @override
+  String get placementResourceDistanceStateUnsupported =>
+      '이 UNIT 비행 상태는 자원 거리 검사에서 지원하지 않습니다. 이 규칙 없이 배치하려면 검사를 해제하세요.';
+
+  @override
   String get placementReloadUnitTerrain => '배치 지형 자료 다시 읽기';
 
   @override
