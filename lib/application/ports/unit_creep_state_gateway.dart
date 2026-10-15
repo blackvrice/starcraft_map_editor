@@ -1,5 +1,6 @@
 import '../../domain/placement/unit_creep_catalog.dart';
 import '../../domain/placement/unit_creep_coverage.dart';
+import '../../domain/placement/unit_creep_observation.dart';
 import '../documents/opened_map_session.dart';
 
 typedef UnitCreepDataIdentity = (String, int, String, String);
@@ -46,18 +47,32 @@ final class UnitCreepStateRequest {
 }
 
 final class UnitCreepStateSnapshot {
-  const UnitCreepStateSnapshot({
+  UnitCreepStateSnapshot({
     required this.request,
     required this.providerId,
     required this.revision,
     required this.model,
     required this.creepModelRevision,
-    required this.coverage,
-  });
+    required UnitCreepCoverage coverage,
+    this.observation,
+  }) : coverage =
+           (observation?.isInitialMapObservation == true
+               ? observation!.restrictCoverage(coverage)
+               : null) ??
+           UnitCreepCoverage(
+             width: coverage.width,
+             height: coverage.height,
+             tiles: List.filled(coverage.tiles.length, UnitCreepTile.unknown),
+           );
 
   final UnitCreepStateRequest request;
   final String providerId, revision, creepModelRevision;
   final UnitCreepStateModel model;
+
+  /// Legacy packets lack evidence and remain unavailable, never assumed full-map.
+  final UnitCreepObservation? observation;
+
+  /// Normalized once: hidden tiles and unusable evidence cannot expose known state.
   final UnitCreepCoverage coverage;
 
   /// Use only after checking the request is still current. Echoing a request
@@ -68,6 +83,9 @@ final class UnitCreepStateSnapshot {
     if (!identical(request, currentRequest) ||
         model != currentRequest.model ||
         model != UnitCreepStateModel.initialMap ||
+        observation?.isInitialMapObservation != true ||
+        observation!.width != coverage.width ||
+        observation!.height != coverage.height ||
         providerId.trim().isEmpty ||
         revision.trim().isEmpty ||
         creepModelRevision != UnitCreepCatalog.revision ||
@@ -84,7 +102,8 @@ final class UnitCreepStateSnapshot {
         dimensions.single.height != coverage.height) {
       return null;
     }
-    // Live collection needs a frame/observer freshness contract before use.
+    // Initial phase/visibility evidence is necessary, not proof of a real engine
+    // capture. Live still needs independent freshness/restart/permission handling.
     return coverage;
   }
 }

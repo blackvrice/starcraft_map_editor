@@ -2,6 +2,9 @@
 
 후속 [초기 크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md)에서 실제 collector
 미지원과 정적 후보 자료의 지원 경계를 확정했다. 아래는 앱 API 연결 단계의 기록이다.
+후속 [초기 관찰 증거 검증](UNIT_CREEP_OBSERVATION.md)은 snapshot에 명시적 관찰 정보를
+요구하고 미관찰 present/absent를 unknown으로 정규화한다. evidence-free legacy는 조회를
+거절하며 아래 합성 API 연결 당시의 테스트 수/계약 기록과 구분한다.
 
 2026-10-15. EP1/FR-218의 [초기 크립 자료와 순수 판정](UNIT_CREEP_VALIDATION.md)을
 application에 연결했다. 이번 결과는 **개발용 API와 문서/자료 수명 관리**다.

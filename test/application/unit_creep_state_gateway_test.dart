@@ -6,8 +6,10 @@ import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_creep_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_creep_coverage.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_creep_observation.dart';
 
 import '../fixtures/basic_editing_fixture.dart';
+import '../fixtures/creep_observation_fixture.dart';
 
 void main() {
   late OpenedMapSession session;
@@ -28,7 +30,68 @@ void main() {
     expect(snapshot.providerId, 'test-observer');
     expect(snapshot.revision, 'observation-7');
     expect(snapshot.request.dataIdentity, _source);
+    expect(snapshot.observation!.gameVersion, 'synthetic-game-not-SCR');
   });
+  test(
+    'legacy evidence-free packet never implies observed absence or presence',
+    () {
+      final snapshot = _snapshot(request, includeObservation: false);
+      expect(snapshot.coverageFor(request), isNull);
+      expect(snapshot.coverage.tiles, everyElement(UnitCreepTile.unknown));
+    },
+  );
+  for (final observation in [
+    syntheticCreepObservation(phase: UnitCreepObservationPhase.running),
+    syntheticCreepObservation(phase: UnitCreepObservationPhase.unknown),
+    syntheticCreepObservation(simulationFrame: 1),
+    syntheticCreepObservation(
+      authority: UnitCreepObservationAuthority.unverified,
+    ),
+    syntheticCreepObservation(contractRevision: 'future-contract'),
+    syntheticCreepObservation(width: 31),
+    syntheticCreepObservation(height: 31),
+  ].indexed) {
+    test(
+      'unusable observation evidence ${observation.$1} stays unavailable',
+      () {
+        final snapshot = _snapshot(request, observation: observation.$2);
+        expect(snapshot.coverageFor(request), isNull);
+        expect(snapshot.coverage.tiles, everyElement(UnitCreepTile.unknown));
+      },
+    );
+  }
+  test(
+    'hidden present and absent are redacted once; explicit unknown remains unknown',
+    () {
+      final mask = List.filled(32 * 32, true)
+        ..[0] = false
+        ..[1] = false;
+      final tiles = List.filled(32 * 32, UnitCreepTile.unknown)
+        ..[0] = UnitCreepTile.present
+        ..[1] = UnitCreepTile.absent
+        ..[2] = UnitCreepTile.present;
+      final raw = UnitCreepCoverage(width: 32, height: 32, tiles: tiles);
+      final snapshot = _snapshot(
+        request,
+        coverage: raw,
+        observation: syntheticCreepObservation(
+          authority: UnitCreepObservationAuthority.playerVision,
+          observerPlayer: 3,
+          observedTiles: mask,
+        ),
+      );
+      final normalized = snapshot.coverageFor(request)!;
+      expect(normalized.tiles.take(4), [
+        UnitCreepTile.unknown,
+        UnitCreepTile.unknown,
+        UnitCreepTile.present,
+        UnitCreepTile.unknown,
+      ]);
+      expect(snapshot.coverage, same(normalized));
+      expect(snapshot.coverageFor(request), same(normalized));
+      expect(raw.tiles.first, UnitCreepTile.present);
+    },
+  );
   test(
     'identical bytes or equal request fields are not the same observation',
     () {
@@ -242,6 +305,8 @@ UnitCreepStateSnapshot _snapshot(
   String rules = UnitCreepCatalog.revision,
   UnitCreepStateModel model = UnitCreepStateModel.initialMap,
   UnitCreepCoverage? coverage,
+  UnitCreepObservation? observation,
+  bool includeObservation = true,
 }) => UnitCreepStateSnapshot(
   request: request,
   providerId: providerId,
@@ -249,6 +314,9 @@ UnitCreepStateSnapshot _snapshot(
   model: model,
   creepModelRevision: rules,
   coverage: coverage ?? _coverage(),
+  observation: includeObservation
+      ? observation ?? syntheticCreepObservation()
+      : null,
 );
 
 UnitCreepCoverage _coverage({int width = 32, int height = 32}) =>

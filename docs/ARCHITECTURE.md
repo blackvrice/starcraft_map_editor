@@ -38,6 +38,9 @@ raw MTXM/THG2 비트나 생성 유닛에서 자동 coverage를 만들지 않는�
 optional version1 `creepCandidateProfile`을 추가한다. 기존 helper 응답은 null profile로
 유지하고 출처/revision은 부모 snapshot에 결합한다. bit6/12/14의 숫자 자료이지
 실제 coverage나 배치 정책 입력이 아니며 UI/수집기·의존성은 추가하지 않는다.
+후속 [초기 크립 관찰 증거](UNIT_CREEP_OBSERVATION.md)는 domain의 불변 관찰 정보와
+수신 시 unknown 정규화를 추가한다. snapshot은 phase/frame·권한·mask/DIM이 맞을 때만
+현재 request에 coverage를 반환한다. legacy는 unavailable이며 실제 collector·live는 여전히 없다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

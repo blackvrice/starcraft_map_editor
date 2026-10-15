@@ -44,6 +44,7 @@ import 'package:starcraft_map_editor/application/ports/unit_creep_state_gateway.
 import 'package:starcraft_map_editor/domain/placement/unit_creep_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_creep_coverage.dart';
 import 'package:starcraft_map_editor/domain/placement/cv5_creep_candidate_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_creep_observation.dart';
 import 'package:starcraft_map_editor/infrastructure/placement/preplaced_unit_power_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
@@ -53,6 +54,7 @@ import 'package:starcraft_map_editor/domain/placement/object_placement_factory.d
 import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
+import '../fixtures/creep_observation_fixture.dart';
 
 const _installationPath = r'C:\StarCraft';
 
@@ -4388,6 +4390,12 @@ void _unitCreepInspectionTests() {
     'rules',
     'width',
     'height',
+    'observationMissing',
+    'observationPhase',
+    'observationFrame',
+    'observationAuthority',
+    'observationRules',
+    'observationSize',
   ]) {
     test(
       'creep rejects $failure response and explicit retry recovers',
@@ -4413,6 +4421,57 @@ void _unitCreepInspectionTests() {
         expect(f.objectEditingController.state.undoDepth, 0);
       },
     );
+  }
+  for (final authority in [
+    UnitCreepObservationAuthority.fullMap,
+    UnitCreepObservationAuthority.playerVision,
+  ]) {
+    for (final fill in [UnitCreepTile.present, UnitCreepTile.absent]) {
+      test(
+        'creep $authority unobserved $fill remains unknown without mutation',
+        () async {
+          final gateway = _CreepStateGateway(
+            fill: fill,
+            authority: authority,
+            observationsVisible: false,
+          );
+          final bytes = _powerChkBytes();
+          final f = await _openFixture(
+            catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+            unitCreepStateGateway: gateway,
+            chkBytesOverride: bytes,
+          );
+          addTearDown(f.dispose);
+          await _selectPowerUnit(f);
+          final session = f.openMapController.state.session!;
+          final state = f.controller.state;
+          expect(await f.controller.loadUnitCreepState(), isTrue);
+          final result = f.controller.inspectUnitCreepAt(
+            pixelX: 1024,
+            pixelY: 1024,
+          );
+          expect(result.check, UnitCreepCheck.unavailable);
+          expect(result.providerId, 'synthetic-creep');
+          expect(gateway.requests, hasLength(1));
+          expect(await f.controller.loadUnitCreepState(), isTrue);
+          expect(gateway.requests, hasLength(1));
+          expect(f.controller.state, same(state));
+          expect(f.openMapController.state.session, same(session));
+          expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+          expect(f.objectEditingController.state.undoDepth, 0);
+          expect(f.openMapController.editHistory.redoDepth, 0);
+          expect(
+            f
+                .controller
+                .lastUnitCreepStateRead!
+                .snapshot!
+                .observation!
+                .authority,
+            authority,
+          );
+        },
+      );
+    }
   }
   for (final fill in [UnitCreepTile.absent, UnitCreepTile.unknown]) {
     test(
@@ -4737,11 +4796,15 @@ final class _CreepStateGateway implements UnitCreepStateGateway {
     this.hold = false,
     this.failCancel,
     this.fill = UnitCreepTile.present,
+    this.observationsVisible = true,
+    this.authority = UnitCreepObservationAuthority.fullMap,
   });
   String? failure;
   bool hold;
   final String? failCancel;
   final UnitCreepTile fill;
+  final bool observationsVisible;
+  final UnitCreepObservationAuthority authority;
   final requests = <UnitCreepStateRequest>[];
   final cancelled = <String>[];
   final _pending = <String, Completer<void>>{};
@@ -4787,6 +4850,36 @@ final class _CreepStateGateway implements UnitCreepStateGateway {
                 creepModelRevision: failure == 'rules'
                     ? 'other'
                     : UnitCreepCatalog.revision,
+                observation: failure == 'observationMissing'
+                    ? null
+                    : syntheticCreepObservation(
+                        width: failure == 'observationSize'
+                            ? dim.width - 1
+                            : dim.width,
+                        height: dim.height,
+                        contractRevision: failure == 'observationRules'
+                            ? 'unsupported-contract'
+                            : UnitCreepObservation.revision,
+                        phase: failure == 'observationPhase'
+                            ? UnitCreepObservationPhase.running
+                            : UnitCreepObservationPhase
+                                  .initializedBeforeFirstTriggerCycle,
+                        simulationFrame: failure == 'observationFrame' ? 1 : 0,
+                        authority: failure == 'observationAuthority'
+                            ? UnitCreepObservationAuthority.unverified
+                            : authority,
+                        observerPlayer:
+                            authority ==
+                                UnitCreepObservationAuthority.playerVision
+                            ? 0
+                            : null,
+                        observedTiles: failure == 'observationSize'
+                            ? null
+                            : List.filled(
+                                dim.width * dim.height,
+                                observationsVisible,
+                              ),
+                      ),
                 coverage: UnitCreepCoverage(
                   width: width,
                   height: height,

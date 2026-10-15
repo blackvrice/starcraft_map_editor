@@ -1210,6 +1210,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 앱 크립 조회: 문서/자료/revision 수명·명시적 snapshot 검증·최종 좌표 read-only inspection (collector/UI 정책 별도)
 - [x] EP1 초기 크립 수집 feasibility: 자료/시점/권한·미확인 영역과 실제 adapter/설계 모델 지원 범위 확정 (실제 collector 완료 아님)
 - [x] EP1 CV5 크립 후보 플래그 자료: optional 숫자 profile·독립 bit6/12/14·출처/strict decode·합성/native/8타일셋 회귀 (실제 coverage 제외)
+- [x] EP1 초기 크립 관찰 증거: phase/frame·게임/수집기/세션/setup 기록·권한/mask·미관찰 unknown·legacy 거절 (실제 collector/지원 build 승인 제외)
 - [ ] 실제 initialMap/live 크립 collector·관찰 시점/권한·SC:R 비교 인수 검증
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
@@ -1313,6 +1314,15 @@ Windows Debug/native7종을 확인했다. 초기 analyze의 테스트 중괄호3
 변경 Dart8파일 포맷은 통과, 전체 포맷은 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
 기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 별도다. 다음 단위는 실제 초기/live
 collector의 관찰 시점/권한/지원 버전과 unknown 입력 검증이며 게임 인수는 별도다.
+이어서 [초기 크립 관찰 증거](UNIT_CREEP_OBSERVATION.md)와 [ADR-0017](decisions/0017-creep-observation-evidence.md)을 구현했다.
+게임/수집기 버전과 세션/setup·phase·원시/정규화 frame·권한/관찰자를 기록하고
+미관찰 present/absent를 unknown으로 정규화한다. legacy/부적격 증거는 초기 상태로 사용하지 않는다.
+이는 metadata 형식/일관성 검증이며 실제 engine 관찰·권한·지원 build를 증명하지 않는다.
+새74개·전체1,993통과/59skip·로컬 연결410통과·analyze 무이슈·Windows Debug/native7종을 확인했다.
+변경 Dart6파일 포맷은 통과했으며 전체 포맷은 기존3파일 차이로 exit1이다. 실행 SDK3.47.5/3.13.4와
+기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 남는다.
+다음은 현재 실행 입력/리소스/setup fingerprint와 검증된 collector transport/지원 버전의 결합,
+명시적 수집·SC:R 비교 인수다. 실제 collector/live·UI/배치 정책은 계속 미완료다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성
