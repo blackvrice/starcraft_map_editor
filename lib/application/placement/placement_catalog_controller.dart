@@ -12,6 +12,9 @@ import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/unit_resource_distance_catalog.dart';
 import 'unit_resource_distance_inspection.dart';
+import '../../domain/placement/unit_power_catalog.dart';
+import '../ports/unit_power_state_gateway.dart';
+import 'unit_power_inspection.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../../domain/placement/unit_placement_policy.dart';
 import 'placement_policy_support.dart';
@@ -212,6 +215,7 @@ class PlacementCatalogController {
     this.tileAtlasGateway,
     this.objectAtlasGateway,
     this.terrainPlacementGateway,
+    this.unitPowerStateGateway,
     this.pageSize = StarCraftPlacementCatalogRequest.defaultLimit,
     this.recentLimit = 12,
     this.tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -222,6 +226,18 @@ class PlacementCatalogController {
         'tileThumbnailBudgetBytes',
       );
     }
+    _powerSession = openMapController.state.session;
+    _powerSessionSubscription = openMapController.changes.listen((state) {
+      if (!identical(_powerSession, state.session)) {
+        _powerSession = state.session;
+        _invalidatePowerState();
+      }
+    });
+    // History notifications also invalidate an edit/Undo cycle that returns to
+    // an earlier snapshot. Never revive a previously collected state packet.
+    _powerHistorySubscription = openMapController.editHistory.changes.listen(
+      (_) => _invalidatePowerState(),
+    );
   }
 
   static const maximumRecentPerKind = 12;
@@ -233,6 +249,7 @@ class PlacementCatalogController {
   final StarCraftTileAtlasGateway? tileAtlasGateway;
   final StarCraftObjectAtlasGateway? objectAtlasGateway;
   final TerrainPlacementSnapshotGateway? terrainPlacementGateway;
+  final UnitPowerStateGateway? unitPowerStateGateway;
   final int pageSize;
   final int recentLimit;
   final int tileThumbnailBudgetBytes;
@@ -393,6 +410,15 @@ class PlacementCatalogController {
   bool _disposed = false;
   UnitCollisionCatalog? _collisionCatalog;
   UnitResourceDistanceCatalog? _resourceDistanceCatalog;
+  UnitPowerCatalog? _powerCatalog;
+  OpenedMapSession? _powerSession;
+  late final StreamSubscription<OpenMapState> _powerSessionSubscription;
+  late final StreamSubscription<void> _powerHistorySubscription;
+  int _powerDocumentRevision = 0;
+  Future<bool>? _powerStatePending;
+  UnitPowerStateRequest? _powerStateRequest;
+  UnitPowerStateSnapshot? _powerStateSnapshot;
+  UnitPowerStateReadResult? lastUnitPowerStateRead;
   (String?, int?, String?, String?)? _collisionIdentity;
   (String?, int?, String?, String?)? _unitCatalogIdentity;
   Future<bool>? _collisionPending;
@@ -539,6 +565,10 @@ class PlacementCatalogController {
 
   void synchronizeSession(OpenedMapSession? session) {
     if (_disposed) return;
+    if (!identical(_powerSession, session)) {
+      _powerSession = session;
+      _invalidatePowerState();
+    }
     final snapshot = session?.extractedMap;
     final tileset = mapTileset;
     if (identical(snapshot, _mapSnapshot)) {
@@ -1100,6 +1130,7 @@ class PlacementCatalogController {
   }
 
   void _invalidateCollisionMetadata() {
+    _invalidatePowerState();
     _collisionEpoch++;
     final operation = _collisionOperation;
     if (operation != null) unawaited(catalogGateway?.cancel(operation));
@@ -1107,6 +1138,7 @@ class PlacementCatalogController {
     _collisionPending = null;
     _collisionCatalog = null;
     _resourceDistanceCatalog = null;
+    _powerCatalog = null;
     _collisionIdentity = null;
     lastCollisionMetadataPage = null;
     _state = _copy(isCollisionMetadataLoading: false);
@@ -1174,6 +1206,7 @@ class PlacementCatalogController {
         }
         _collisionCatalog = UnitCollisionCatalog(units);
         _resourceDistanceCatalog = UnitResourceDistanceCatalog(units);
+        _powerCatalog = UnitPowerCatalog(units);
         _collisionIdentity = source;
         return true;
       } catch (_) {
@@ -1199,6 +1232,160 @@ class PlacementCatalogController {
 
   UnitResourceDistanceCatalog? get _currentResourceDistanceCatalog =>
       _currentCollisionCatalog == null ? null : _resourceDistanceCatalog;
+
+  UnitPowerDataIdentity? get _currentPowerIdentity {
+    final source = _collisionIdentity;
+    if (_currentCollisionCatalog == null ||
+        source == null ||
+        source.$1 == null ||
+        source.$1!.isEmpty ||
+        source.$2 == null ||
+        source.$2! < 0 ||
+        source.$3 == null ||
+        source.$3!.isEmpty ||
+        source.$4 == null ||
+        source.$4!.isEmpty) {
+      return null;
+    }
+    return (source.$1!, source.$2!, source.$3!, source.$4!);
+  }
+
+  void _invalidatePowerState() {
+    _powerDocumentRevision++;
+    final request = _powerStateRequest;
+    _powerStateRequest = null;
+    _powerStateSnapshot = null;
+    _powerStatePending = null;
+    lastUnitPowerStateRead = null;
+    if (request != null) {
+      unawaited(
+        Future.sync(
+          () => unitPowerStateGateway?.cancel(request.operationId),
+        ).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      );
+    }
+  }
+
+  bool _isPowerRequestCurrent(UnitPowerStateRequest request) =>
+      !_disposed &&
+      request.documentRevision == _powerDocumentRevision &&
+      identical(request.session, openMapController.state.session) &&
+      request.installationPath == _installationPath &&
+      request.dataIdentity == _currentPowerIdentity;
+
+  /// Explicit collection only; never called by hover/preview/Apply. There is
+  /// deliberately no default adapter that guesses state from raw CHK/DAT.
+  Future<bool> loadUnitPowerState({bool reload = false}) {
+    if (_disposed) return Future.value(false);
+    if (reload) _invalidatePowerState();
+    final cached = _powerStateSnapshot;
+    if (cached != null && _isPowerRequestCurrent(cached.request)) {
+      return Future.value(true);
+    }
+    if (_powerStatePending != null) return _powerStatePending!;
+    final session = openMapController.state.session;
+    final source = _currentPowerIdentity;
+    final gateway = unitPowerStateGateway;
+    if (session == null ||
+        source == null ||
+        gateway == null ||
+        openMapController.editHistory.isTransactionActive ||
+        session.requiresRestrictedEditing) {
+      return Future.value(false);
+    }
+    final request = UnitPowerStateRequest(
+      operationId: 'unit-power-${++_weaponRequest}',
+      session: session,
+      documentRevision: _powerDocumentRevision,
+      installationPath: _installationPath!,
+      dataIdentity: source,
+    );
+    _powerStateRequest = request;
+    final future = () async {
+      try {
+        final result = await Future.sync(() => gateway.read(request));
+        if (!_isPowerRequestCurrent(request) ||
+            !identical(_powerStateRequest, request)) {
+          return false;
+        }
+        lastUnitPowerStateRead = result;
+        final snapshot = result.snapshot;
+        if (!result.isSuccess ||
+            snapshot == null ||
+            !identical(snapshot.request, request) ||
+            snapshot.providerId.trim().isEmpty ||
+            snapshot.revision.trim().isEmpty ||
+            snapshot.model != UnitPowerStateModel.initialMap ||
+            snapshot.powerModelRevision != UnitPowerCatalog.revision ||
+            snapshot.units.length != request.units.length) {
+          return false;
+        }
+        for (var i = 0; i < request.units.length; i++) {
+          if (!identical(snapshot.units[i].unit, request.units[i])) {
+            return false;
+          }
+        }
+        _powerStateSnapshot = snapshot;
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        if (identical(_powerStateRequest, request)) {
+          _powerStateRequest = null;
+          _powerStatePending = null;
+        }
+      }
+    }();
+    _powerStatePending = future;
+    return future;
+  }
+
+  UnitPowerInspection inspectUnitPowerAt({
+    required int pixelX,
+    required int pixelY,
+  }) {
+    if (_state.selection?.kind != StarCraftPlacementKind.unit) {
+      return const UnitPowerInspection.notApplicable();
+    }
+    String? preflight(int x, int y) => _previewAt(
+      pixelX: x,
+      pixelY: y,
+      tileX: x ~/ 32,
+      tileY: y ~/ 32,
+      checkPolicies: false,
+    );
+    final issue = preflight(pixelX, pixelY);
+    if (issue != null) return UnitPowerInspection.refused(issue);
+    final point = resolvePoint(pixelX, pixelY);
+    if (point != (x: pixelX, y: pixelY)) {
+      final finalIssue = preflight(point.x, point.y);
+      if (finalIssue != null) return UnitPowerInspection.refused(finalIssue);
+    }
+    final session = openMapController.state.session!;
+    final dimensions = session.metadataViews.dimensions.single;
+    final snapshot = _powerStateSnapshot;
+    final candidate = _state.selection!.unitCapability!;
+    final catalog = _currentPowerIdentity == null ? null : _powerCatalog;
+    final statesCurrent =
+        snapshot != null && _isPowerRequestCurrent(snapshot.request);
+    // A confirmed no-psi candidate needs no supplier facts. All other cases
+    // require a current packet, including a verified empty UNIT collection.
+    final check =
+        catalog == null ||
+            (candidate.environmentProfile?.requiresPsi != false &&
+                !statesCurrent)
+        ? UnitPowerCheck.unavailable
+        : catalog.check(
+            candidate: candidate,
+            owner: _state.owner,
+            x: point.x,
+            y: point.y,
+            mapWidthTiles: dimensions.width,
+            mapHeightTiles: dimensions.height,
+            existing: statesCurrent ? snapshot.units : const [],
+          );
+    return UnitPowerInspection.checked(check, point: point);
+  }
 
   /// Uses the current UNIT document and source-matched numeric metadata only.
   /// Does not load assets, mutate history, or enable a placement policy.
@@ -1502,7 +1689,7 @@ class PlacementCatalogController {
     );
   }
 
-  Future<void> dispose() {
+  Future<void> dispose() async {
     _invalidateCollisionMetadata();
     _invalidateTerrainPlacement();
     _invalidateEudData();
@@ -1521,7 +1708,9 @@ class PlacementCatalogController {
     _mapSnapshot = null;
     _installationPath = null;
     _weaponOperation = null;
-    return _changes.close();
+    await _powerSessionSubscription.cancel();
+    await _powerHistorySubscription.cancel();
+    await _changes.close();
   }
 
   String? _blockingCode(StarCraftPlacementKind kind) {

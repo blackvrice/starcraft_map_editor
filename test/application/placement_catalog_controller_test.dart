@@ -36,6 +36,10 @@ import 'package:starcraft_map_editor/domain/placement/building_placement_box.dar
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_power_unit_state.dart';
+import 'package:starcraft_map_editor/application/ports/unit_power_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
@@ -103,6 +107,7 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _unitPowerInspectionTests();
   for (final alignment in ['point', 'building']) {
     test(
       'resource policy blocks final $alignment point, free mode preserves Undo bytes',
@@ -3222,6 +3227,523 @@ final class _InconsistentPagingGateway
   Future<void> cancel(String operationId) async {}
 }
 
+void _unitPowerInspectionTests() {
+  test(
+    'power without a state adapter stays unknown and never guesses CHK',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(await f.controller.loadUnitPowerState(), isFalse);
+      expect(_powerAt(f), UnitPowerCheck.unavailable);
+      expect(f.controller.lastUnitPowerStateRead, isNull);
+    },
+  );
+  test(
+    'power explicit collection coalesces; hover is read-only and uses current owner',
+    () async {
+      final gateway = _PowerStateGateway(hold: true);
+      final catalog = _PowerCatalogGateway();
+      final f = await _openFixture(
+        catalogGateway: catalog,
+        unitPowerStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(_powerAt(f), UnitPowerCheck.unavailable);
+      expect(gateway.requests, isEmpty);
+      final pending = c.loadUnitPowerState();
+      expect(c.loadUnitPowerState(), same(pending));
+      expect(_powerAt(f), UnitPowerCheck.unavailable);
+      gateway.release(gateway.requests.single);
+      expect(await pending, isTrue);
+      final session = f.openMapController.state.session!;
+      final bytes = const RawChkEncoder().encode(session.rawDocument);
+      final state = c.state;
+      for (var i = 0; i < 10; i++) {
+        expect(_powerAt(f), UnitPowerCheck.powered);
+        expect(_powerAt(f, x: 768), UnitPowerCheck.unpowered);
+      }
+      expect(c.state, same(state));
+      expect(f.openMapController.state.session, same(session));
+      expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+      expect(f.objectEditingController.state.undoDepth, 0);
+      expect(f.openMapController.editHistory.redoDepth, 0);
+      expect(gateway.requests, hasLength(1));
+      expect(catalog.metadataRequests, 1);
+      expect(await c.loadUnitPowerState(), isTrue);
+      expect(gateway.requests, hasLength(1));
+      c.setOwner(1);
+      expect(_powerAt(f), UnitPowerCheck.unpowered);
+      c.setOwner(0);
+      expect(_powerAt(f), UnitPowerCheck.powered);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.power],
+        PlacementPolicySupportStatus.notImplemented,
+      );
+      expect(
+        c.previewAt(pixelX: 768, pixelY: 1024, tileX: 24, tileY: 32),
+        isNull,
+      );
+      final request = gateway.requests.single;
+      expect(() => request.units.clear(), throwsUnsupportedError);
+      expect(
+        () => c.lastUnitPowerStateRead!.snapshot!.units.clear(),
+        throwsUnsupportedError,
+      );
+    },
+  );
+  for (final alignment in ['point', 'building']) {
+    test('power inspection uses final $alignment coordinate', () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: _PowerStateGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(await f.controller.loadUnitPowerState(), isTrue);
+      expect(_powerAt(f, x: 769), UnitPowerCheck.powered);
+      f.controller.setPointSnap(enabled: true, step: 32);
+      f.controller.setBuildingTileAlignment(alignment == 'building');
+      final result = f.controller.inspectUnitPowerAt(pixelX: 769, pixelY: 1024);
+      expect(result.point, (x: 768, y: 1024));
+      expect(result.check, UnitPowerCheck.unpowered);
+    });
+  }
+  test(
+    'power retains raw/final bounds, layer and history guards, not optional policy refusals',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: _PowerStateGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitPowerState(), isTrue);
+      c.setPointSnap(enabled: true, step: 32);
+      for (final x in [-1, 2047, 2048, 0x7fffffffffffffff]) {
+        final result = c.inspectUnitPowerAt(pixelX: x, pixelY: 1024);
+        expect(result.issueCode, ObjectPlacementDiagnosticCodes.outOfBounds);
+        expect(result.check, isNull);
+        expect(result.point, isNull);
+      }
+      f.mapLayerController.setLocked(MapLayerType.units, true);
+      expect(
+        c.inspectUnitPowerAt(pixelX: 1024, pixelY: 1024).issueCode,
+        ObjectPlacementDiagnosticCodes.layerLocked,
+      );
+      f.mapLayerController.setLocked(MapLayerType.units, false);
+      final owner = Object();
+      f.openMapController.editHistory.beginTransaction(owner);
+      expect(
+        c.inspectUnitPowerAt(pixelX: 1024, pixelY: 1024).issueCode,
+        ObjectPlacementDiagnosticCodes.historyBlocked,
+      );
+      expect(await c.loadUnitPowerState(), isFalse);
+      f.openMapController.editHistory.endTransaction(owner);
+      expect(await c.loadUnitPowerState(), isTrue);
+      c.setCheckUnitTerrain(true);
+      c.setAllowUnitOverlap(false);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+      );
+      expect(_powerAt(f), UnitPowerCheck.powered);
+    },
+  );
+  for (final failure in [
+    'sync',
+    'throw',
+    'error',
+    'nonzeroExit',
+    'request',
+    'provider',
+    'revision',
+    'model',
+    'powerModel',
+    'coverage',
+    'record',
+    'order',
+    'duplicate',
+  ]) {
+    test(
+      'power rejects $failure packets and explicit retry recovers',
+      () async {
+        final gateway = _PowerStateGateway(failure: failure);
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: gateway,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(), isFalse);
+        expect(_powerAt(f), UnitPowerCheck.unavailable);
+        gateway.failure = null;
+        expect(await f.controller.loadUnitPowerState(), isTrue);
+        expect(_powerAt(f), UnitPowerCheck.powered);
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+  for (final failure in ['unknown', 'disabled']) {
+    test(
+      'power accepts explicit $failure facts without upgrading them to supply',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: _PowerStateGateway(failure: failure),
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(), isTrue);
+        expect(
+          _powerAt(f),
+          failure == 'unknown'
+              ? UnitPowerCheck.unavailable
+              : UnitPowerCheck.stateUnsupported,
+        );
+      },
+    );
+  }
+  for (final failure in ['source', 'coverage', 'role']) {
+    test('power rejects $failure metadata and reload recovers', () async {
+      final catalog = _PowerCatalogGateway(failure: failure);
+      final f = await _openFixture(
+        catalogGateway: catalog,
+        unitPowerStateGateway: _PowerStateGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      await f.controller.loadUnitPowerState();
+      expect(_powerAt(f), UnitPowerCheck.unavailable);
+      catalog.failure = null;
+      expect(await f.controller.loadCollisionMetadata(reload: true), isTrue);
+      expect(await f.controller.loadUnitPowerState(), isTrue);
+      expect(_powerAt(f), UnitPowerCheck.powered);
+    });
+  }
+  test(
+    'power known no-psi needs no state packet, legacy unknown does',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresPsi: false),
+        chkBytesOverride: _chkBytes(mapSize: 64),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(_powerAt(f), UnitPowerCheck.notApplicable);
+      final legacy = await _openFixture(
+        catalogGateway: _CollisionGateway(),
+        chkBytesOverride: _chkBytes(mapSize: 64),
+      );
+      addTearDown(legacy.dispose);
+      await _selectPowerUnit(legacy);
+      expect(_powerAt(legacy), UnitPowerCheck.unavailable);
+    },
+  );
+  for (final pending in [false, true]) {
+    for (final change in [
+      'editUndo',
+      'history',
+      'installation',
+      'session',
+      'metadata',
+      'reopen',
+      'dispose',
+    ]) {
+      test(
+        'power ${pending ? 'pending' : 'cached'} state is discarded after $change',
+        () async {
+          final gateway = _PowerStateGateway(hold: pending);
+          final f = await _openFixture(
+            catalogGateway: _PowerCatalogGateway(),
+            unitPowerStateGateway: gateway,
+            chkBytesOverride: _powerChkBytes(),
+          );
+          await _selectPowerUnit(f);
+          final c = f.controller;
+          final read = c.loadUnitPowerState();
+          if (!pending) expect(await read, isTrue);
+          switch (change) {
+            case 'editUndo':
+              expect(
+                f.objectEditingController
+                    .placeCatalogUnit(
+                      capability: _PowerCatalogGateway().capability(0),
+                      unitId: 0,
+                      owner: 0,
+                      pixelX: 1800,
+                      pixelY: 1800,
+                    )
+                    .isPlaced,
+                isTrue,
+              );
+              expect(_powerAt(f), UnitPowerCheck.unavailable);
+              expect(f.objectEditingController.undo(), isTrue);
+            case 'history':
+              final owner = Object();
+              f.openMapController.editHistory.beginTransaction(owner);
+              f.openMapController.editHistory.endTransaction(owner);
+            case 'installation':
+              c.setInstallationPath(r'C:\Other');
+              c.setInstallationPath(_installationPath);
+            case 'session':
+              c.synchronizeSession(null);
+            case 'metadata':
+              expect(await c.loadCollisionMetadata(reload: true), isTrue);
+            case 'reopen':
+              await f.openMapController.open(
+                sourcePath: r'C:\Maps\Catalog.scx',
+              );
+            case 'dispose':
+              await f.dispose();
+          }
+          if (pending) {
+            expect(
+              gateway.cancelled,
+              contains(gateway.requests.single.operationId),
+            );
+            gateway.release(gateway.requests.single);
+            expect(await read, isFalse);
+          }
+          expect(c.lastUnitPowerStateRead, isNull);
+          if (change != 'dispose') {
+            await _selectPowerUnit(f);
+            expect(_powerAt(f), UnitPowerCheck.unavailable);
+            gateway.hold = false;
+            expect(await c.loadUnitPowerState(), isTrue);
+            expect(_powerAt(f), UnitPowerCheck.powered);
+            await f.dispose();
+          } else {
+            expect(await c.loadUnitPowerState(), isFalse);
+          }
+        },
+      );
+    }
+  }
+  test(
+    'power older response cannot replace a newer reload, even when cancel fails',
+    () async {
+      final gateway = _PowerStateGateway(hold: true, failCancel: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      final first = c.loadUnitPowerState();
+      final second = c.loadUnitPowerState(reload: true);
+      gateway.release(gateway.requests.last);
+      expect(await second, isTrue);
+      final latest = c.lastUnitPowerStateRead;
+      gateway.release(gateway.requests.first);
+      expect(await first, isFalse);
+      expect(c.lastUnitPowerStateRead, same(latest));
+      expect(_powerAt(f), UnitPowerCheck.powered);
+    },
+  );
+  for (final kind in [
+    StarCraftPlacementKind.tile,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test('$kind power query is not applicable and collects no state', () async {
+      final gateway = _PowerStateGateway();
+      final f = await _openFixture(
+        unitCapabilityAvailable: true,
+        unitPowerStateGateway: gateway,
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(kind);
+      c.confirm(c.state.items.first.key);
+      final result = c.inspectUnitPowerAt(pixelX: 64, pixelY: 64);
+      expect(result.check, UnitPowerCheck.notApplicable);
+      expect(result.point, isNull);
+      expect(gateway.requests, isEmpty);
+    });
+  }
+}
+
+Future<void> _selectPowerUnit(_Fixture f) async {
+  f.controller.setInstallationPath(_installationPath);
+  await f.controller.load(StarCraftPlacementKind.unit);
+  f.controller.confirm(f.controller.state.items.single.key);
+  await f.controller.loadCollisionMetadata();
+}
+
+UnitPowerCheck? _powerAt(_Fixture f, {int x = 1024}) =>
+    f.controller.inspectUnitPowerAt(pixelX: x, pixelY: 1024).check;
+
+Uint8List _powerChkBytes() => Uint8List.fromList([
+  ..._chkBytes(mapSize: 64),
+  ..._section('XTRA', [255, 0, 128]),
+  ..._section('UNIT', [
+    for (final owner in [0, 1])
+      ...const UnitPlacementFactory()
+          .create(
+            capability: _PowerCatalogGateway().capability(156),
+            unitId: 156,
+            owner: owner,
+            x: 1024 + owner * 512,
+            y: 1024,
+            classId: owner + 1,
+          )
+          .bytes,
+  ]),
+]);
+
+final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
+  _PowerCatalogGateway({this.failure, this.requiresPsi = true});
+  String? failure;
+  final bool requiresPsi;
+  int metadataRequests = 0;
+  UnitPlacementCapability capability(int id, {bool numeric = false}) =>
+      UnitPlacementCapability(
+        unitId: id,
+        environmentProfile: numeric && failure == 'role'
+            ? null
+            : UnitEnvironmentProfile(
+                requiresPsi: id == 0 && requiresPsi,
+                requiresCreep: false,
+              ),
+        placementBox: BuildingPlacementBox(width: 64, height: 64),
+        collisionProfile: _terrainProfile,
+        isBuilding: true,
+        isFlyingBuilding: false,
+        isSpellcaster: false,
+        hasShields: false,
+        isResourceContainer: false,
+        isGasResourceContainer: false,
+        hasHangar: false,
+        isBurrowable: false,
+        isCloakable: false,
+        isInvincible: false,
+        requiresRelationLink: false,
+      );
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async {
+    if (request.unitMetadataOnly) metadataRequests++;
+    final page = await _FakeCatalogGateway(
+      doodadTotal: 2,
+      unitCapabilityAvailable: true,
+      unitCapabilityForId: (id) =>
+          capability(id, numeric: request.unitMetadataOnly),
+    ).list(request);
+    return StarCraftPlacementCatalogPage(
+      request: request,
+      totalEntries: page.totalEntries,
+      entries: request.unitMetadataOnly && failure == 'coverage'
+          ? page.entries.take(227)
+          : page.entries,
+      storageProduct: page.storageProduct,
+      storageBuildNumber: request.unitMetadataOnly && failure == 'source'
+          ? 7
+          : page.storageBuildNumber,
+      helperVersion: page.helperVersion,
+      cascLibRevision: page.cascLibRevision,
+    );
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {}
+}
+
+final class _PowerStateGateway implements UnitPowerStateGateway {
+  _PowerStateGateway({
+    this.failure,
+    this.hold = false,
+    this.failCancel = false,
+  });
+  String? failure;
+  bool hold;
+  final bool failCancel;
+  final requests = <UnitPowerStateRequest>[];
+  final cancelled = <String>[];
+  final _pending = <String, Completer<void>>{};
+  void release(UnitPowerStateRequest request) =>
+      _pending[request.operationId]!.complete();
+  @override
+  Future<UnitPowerStateReadResult> read(UnitPowerStateRequest request) {
+    requests.add(request);
+    if (failure == 'sync') throw StateError('Synthetic synchronous failure');
+    return () async {
+      if (hold) {
+        await (_pending[request.operationId] = Completer<void>()).future;
+      }
+      if (failure == 'throw') throw StateError('Synthetic async failure');
+      var records = request.units;
+      if (failure == 'record') {
+        records = const ChkObjectViewDecoder()
+            .decode(request.session.rawDocument)
+            .unitSections
+            .single
+            .units;
+      }
+      if (failure == 'coverage') records = [];
+      if (failure == 'order') records = records.reversed.toList();
+      if (failure == 'duplicate') records = [records.first, records.first];
+      return UnitPowerStateReadResult(
+        snapshot: UnitPowerStateSnapshot(
+          request: failure == 'request'
+              ? UnitPowerStateRequest(
+                  operationId: request.operationId,
+                  session: request.session,
+                  documentRevision: request.documentRevision + 1,
+                  installationPath: request.installationPath,
+                  dataIdentity: request.dataIdentity,
+                )
+              : request,
+          providerId: failure == 'provider' ? '' : 'self-authored-test-state',
+          revision: failure == 'revision'
+              ? ''
+              : 'synthetic-${request.operationId}',
+          model: failure == 'model'
+              ? UnitPowerStateModel.live
+              : UnitPowerStateModel.initialMap,
+          powerModelRevision: failure == 'powerModel'
+              ? 'unsupported'
+              : UnitPowerCatalog.revision,
+          units: [
+            for (final unit in records)
+              UnitPowerUnitState(
+                unit,
+                exists: true,
+                isCompleted: failure == 'unknown' ? null : true,
+                isEnabled: failure != 'disabled',
+              ),
+          ],
+        ),
+        errorCode: failure == 'error' ? 'SYNTHETIC_FAILURE' : null,
+        exitCode: failure == 'error' || failure == 'nonzeroExit' ? 1 : 0,
+        stdout: 'self-authored state, not game evidence',
+      );
+    }();
+  }
+
+  @override
+  Future<void> cancel(String operationId) async {
+    cancelled.add(operationId);
+    if (failCancel) throw StateError('Synthetic cancellation failure');
+  }
+}
+
 final class _Fixture {
   const _Fixture({
     required this.openMapController,
@@ -3259,6 +3781,7 @@ Future<_Fixture> _openFixture({
   StarCraftObjectAtlasGateway? objectAtlasGateway,
   StarCraftTileAtlasGateway? tileAtlasGateway,
   TerrainPlacementSnapshotGateway? terrainPlacementGateway,
+  UnitPowerStateGateway? unitPowerStateGateway,
   Uint8List? chkBytesOverride,
   int pageSize = 2,
   int tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -3311,6 +3834,7 @@ Future<_Fixture> _openFixture({
     collisionProfile: collisionProfile,
   );
   final controller = PlacementCatalogController(
+    unitPowerStateGateway: unitPowerStateGateway,
     terrainPlacementGateway: terrainPlacementGateway,
     openMapController: openMapController,
     objectEditingController: objectEditingController,

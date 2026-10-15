@@ -1203,6 +1203,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 자원 거리 정책: 기본 꺼짐 checkbox·검사/자유/custom·지원표·한영 진단·최종 preview/Apply 거절·Undo/Save As 회귀 (게임/외부 인수 제외)
 - [x] EP1 전력/크립 요구 자료: optional version1 DAT bit17/19·strict decode·생성/공급과 요구 구분·후속 판정 계약 (coverage/배치 차단 제외)
 - [x] EP1 순수 전력 판정:10x16 psi mask·명시적 공급 상태·classic Pylon/소유자/후보 자료·unknown/경계 검증 (앱 상태 공급/배치 차단 제외)
+- [x] EP1 앱 전력 조회: 명시적 상태 포트·문서/출처/record/revision 결합·최종 좌표·취소/Undo 무효화 (실제 상태 adapter/UI 정책 제외)
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1256,7 +1257,12 @@ optional version1 profile과 strict decoder를 추가하고 실제 공급·생�
 공급 상태·자료 일치·소유자/지원 상태를 검사하며 CHK에서 완공/활성을 추측하지 않는다.
 집중66·전체1620통과/58skip, 로컬 process84·analyze·Windows Debug/native7종을 확인했다.
 Flutter3.47.5/Dart3.13.4로 실행했으며 기준 SDK·기존 format3파일·앱/게임/외부 인수는 남는다.
-다음 코드 단위는 source/document/state revision이 일치하는 application 읽기 전용 조회다.
+이어서 [앱 계층 전력 조회](UNIT_POWER_INSPECTION.md)의 상태 포트와 문서/출처/record/revision
+검증·최종 좌표·변경/Undo/재열기/취소 무효화를 구현했다. 실제 상태를 추측하는 adapter나
+전력 checkbox/배치 차단은 추가하지 않았다.
+새 전력43개 포함 집중180통과/9skip·전체1663통과/58skip·로컬 controller189통과와
+analyze·Windows Debug/native7종을 확인했다. 기준 SDK·기존 format3파일·앱/게임 인수는 별도다.
+다음 코드 단위는 초기 맵 공급 상태의 근거/지원 범위와 검증된 상태 adapter다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

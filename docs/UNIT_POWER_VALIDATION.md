@@ -1,5 +1,8 @@
 # 읽기 전용 전력 mask와 공급자 검증
 
+후속 [앱 계층의 전력 조회](UNIT_POWER_INSPECTION.md)에 문서/출처/state revision 연결을
+추가했다. 아래는 순수 판정 단계의 당시 기록이다. 실제 상태 adapter와 UI 정책은 여전히 별도다.
+
 2026-10-15. EP1/FR-218의 [전력·크립 요구 자료](UNIT_ENVIRONMENT_REQUIREMENTS.md)에
 순수 전력 mask와 공급자 상태 aggregate를 추가했다. **명시적으로 제공된 상태**를
 판정하는 도메인 단계이며 앱의 상태 공급·checkbox·ghost/Apply에는 아직 연결하지 않았다.
@@ -140,7 +143,7 @@ mask는 O(1), catalog는 UNIT 수 n에 O(n), 추가 작업 공간은 O(1)이다.
 
 ## 7. 다음 단위
 
-다음은 application의 읽기 전용 power inspection과 source/document/state revision
-연결이다. 권위 있는 공급 상태가 없으면 unavailable을 반환하도록 한다. 이후 명시적
+후속 application의 읽기 전용 power inspection과 source/document/state revision
+연결을 구현했다. 권위 있는 공급 상태가 없으면 unavailable을 반환한다. 이후 명시적
 기본 꺼짐 정책·checkbox·공통 preview/Apply를 연결한다. 크립 영역·EUD 런타임 변경과
 게임/외부 에디터 인수는 별도다. 사용자 지시에 따라 이번 실제 앱/게임 조작은 하지 않는다.
