@@ -170,6 +170,86 @@ void main() {
         }
       }, skip: !Platform.isWindows);
     }
+    for (final scenario in [
+      'environment-neither',
+      'environment-psi',
+      'environment-creep',
+      'environment-both',
+      'environment-building',
+      'environment-old',
+      'environment-null',
+      'environment-version',
+      'environment-version-missing',
+      'environment-version-type',
+      'environment-version-fraction',
+      'environment-object',
+      'environment-array',
+      'environment-requiresPsi-type',
+      'environment-requiresPsi-text',
+      'environment-requiresPsi-null',
+      'environment-requiresPsi-missing',
+      'environment-requiresCreep-type',
+      'environment-requiresCreep-text',
+      'environment-requiresCreep-null',
+      'environment-requiresCreep-missing',
+    ]) {
+      test(
+        'validates optional versioned environment flags $scenario',
+        () async {
+          for (final metadataOnly in [false, true]) {
+            final page = await createGateway().list(
+              StarCraftPlacementCatalogRequest(
+                operationId: 'environment-profile-test',
+                installationPath: 'C:\\Games\\$scenario',
+                kind: StarCraftPlacementKind.unit,
+                tileset: StarCraftTilesetAssetSet.badlands,
+                offset: 8,
+                limit: 1,
+                unitMetadataOnly: metadataOnly,
+              ),
+            );
+            final legacy =
+                scenario == 'environment-old' || scenario == 'environment-null';
+            final valid = [
+              'environment-neither',
+              'environment-psi',
+              'environment-creep',
+              'environment-both',
+              'environment-building',
+            ].contains(scenario);
+            expect(
+              page.isSuccess,
+              legacy || valid,
+              reason: '${page.diagnostics}',
+            );
+            if (page.isSuccess) {
+              final cap = page.entries.single.unitCapability!;
+              expect(page.entries.single.isPlaceable, isTrue);
+              expect(cap.isBuilding, scenario == 'environment-building');
+              if (legacy) {
+                expect(cap.environmentProfile, isNull);
+              } else {
+                final profile = cap.environmentProfile!;
+                expect(
+                  profile.requiresPsi,
+                  ['environment-psi', 'environment-both'].contains(scenario),
+                );
+                expect(
+                  profile.requiresCreep,
+                  ['environment-creep', 'environment-both'].contains(scenario),
+                );
+              }
+            } else {
+              expect(
+                page.diagnostics.single.code,
+                StarCraftPlacementCatalogDiagnosticCodes.helperInvalidResponse,
+              );
+            }
+          }
+        },
+        skip: !Platform.isWindows,
+      );
+    }
     test('lists a validated contiguous Tile page', () async {
       final page = await createGateway().list(requestFor('StarCraft'));
 
@@ -191,6 +271,93 @@ void main() {
     final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
     final realInstallation =
         Platform.environment['STARCRAFT_TEST_INSTALLATION'];
+    test(
+      'local environment roles cover all units and match graphics source',
+      () async {
+        final gateway = ProcessStarCraftPlacementCatalogGateway(
+          helperExecutablePath: realHelper!,
+        );
+        final metadata = await gateway.list(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'real-environment-metadata',
+            installationPath: realInstallation!,
+            kind: StarCraftPlacementKind.unit,
+            tileset: StarCraftTilesetAssetSet.badlands,
+            limit: 228,
+            unitMetadataOnly: true,
+          ),
+        );
+        expect(metadata.isSuccess, isTrue, reason: '${metadata.diagnostics}');
+        expect(metadata.entries, hasLength(228));
+        for (final entry in metadata.entries) {
+          expect(entry.unitCapability!.environmentProfile, isNotNull);
+          expect(entry.hasPreview, isFalse);
+        }
+        // Check known classic cases, including producers that do not require creep.
+        for (final id in [106, 131, 149, 154, 156, 157]) {
+          final profile =
+              metadata.entries[id].unitCapability!.environmentProfile!;
+          expect(profile.requiresPsi, isFalse, reason: 'Unit $id');
+          expect(profile.requiresCreep, isFalse, reason: 'Unit $id');
+        }
+        expect(
+          metadata
+              .entries[142]
+              .unitCapability!
+              .environmentProfile!
+              .requiresCreep,
+          isTrue,
+        );
+        expect(
+          metadata.entries[142].unitCapability!.environmentProfile!.requiresPsi,
+          isFalse,
+        );
+        expect(
+          metadata.entries[160].unitCapability!.environmentProfile!.requiresPsi,
+          isTrue,
+        );
+        expect(
+          metadata
+              .entries[160]
+              .unitCapability!
+              .environmentProfile!
+              .requiresCreep,
+          isFalse,
+        );
+        final graphics = await gateway.list(
+          StarCraftPlacementCatalogRequest(
+            operationId: 'real-environment-graphics',
+            installationPath: realInstallation,
+            kind: StarCraftPlacementKind.unit,
+            tileset: StarCraftTilesetAssetSet.badlands,
+            offset: 160,
+            limit: 1,
+          ),
+        );
+        expect(graphics.isSuccess, isTrue, reason: '${graphics.diagnostics}');
+        expect(
+          (
+            graphics.storageProduct,
+            graphics.storageBuildNumber,
+            graphics.helperVersion,
+            graphics.cascLibRevision,
+          ),
+          (
+            metadata.storageProduct,
+            metadata.storageBuildNumber,
+            metadata.helperVersion,
+            metadata.cascLibRevision,
+          ),
+        );
+        final cap = graphics.entries.single.unitCapability!.environmentProfile!;
+        final numeric =
+            metadata.entries[160].unitCapability!.environmentProfile!;
+        expect(cap.requiresPsi, numeric.requiresPsi);
+        expect(cap.requiresCreep, numeric.requiresCreep);
+      },
+      skip:
+          !Platform.isWindows || realHelper == null || realInstallation == null,
+    );
     test(
       'local resource roles cover classic DAT and agree across metadata and graphics',
       () async {

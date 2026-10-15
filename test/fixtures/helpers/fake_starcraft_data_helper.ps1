@@ -226,6 +226,26 @@ elseif ($request.operation -eq "listPlacementCatalog") {
                     if ($request.installationPath -like "*resource-$field-missing*") { $entry.capability.resourceProfile.Remove($field) }
                 }
             }
+            if ($request.installationPath -like '*environment-*') {
+                $entry.capability.environmentProfile = [ordered]@{ version = 1; requiresPsi = $false; requiresCreep = $false }
+                if ($request.installationPath -like '*environment-psi*' -or $request.installationPath -like '*environment-both*') { $entry.capability.environmentProfile.requiresPsi = $true }
+                if ($request.installationPath -like '*environment-creep*' -or $request.installationPath -like '*environment-both*') { $entry.capability.environmentProfile.requiresCreep = $true }
+                if ($request.installationPath -like '*environment-building*') { $entry.capability.isBuilding = $true }
+                if ($request.installationPath -like '*environment-old*') { $entry.capability.Remove('environmentProfile') }
+                if ($request.installationPath -like '*environment-null*') { $entry.capability.environmentProfile = $null }
+                if ($request.installationPath -like '*environment-version*') { $entry.capability.environmentProfile.version = 2 }
+                if ($request.installationPath -like '*environment-version-missing*') { $entry.capability.environmentProfile.Remove('version') }
+                if ($request.installationPath -like '*environment-version-type*') { $entry.capability.environmentProfile.version = '1' }
+                if ($request.installationPath -like '*environment-version-fraction*') { $entry.capability.environmentProfile.version = 1.5 }
+                foreach ($field in @('requiresPsi', 'requiresCreep')) {
+                    if ($request.installationPath -like "*environment-$field-type*") { $entry.capability.environmentProfile[$field] = 1 }
+                    if ($request.installationPath -like "*environment-$field-text*") { $entry.capability.environmentProfile[$field] = 'false' }
+                    if ($request.installationPath -like "*environment-$field-null*") { $entry.capability.environmentProfile[$field] = $null }
+                    if ($request.installationPath -like "*environment-$field-missing*") { $entry.capability.environmentProfile.Remove($field) }
+                }
+                if ($request.installationPath -like '*environment-object*') { $entry.capability.environmentProfile = 'invalid' }
+                if ($request.installationPath -like '*environment-array*') { $entry.capability.environmentProfile = @($true, $false) }
+            }
             if ($request.installationPath -like '*collision-null*') {
                 $entry.capability.collisionProfile = $null
             }

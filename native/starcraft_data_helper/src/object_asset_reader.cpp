@@ -174,6 +174,8 @@ constexpr std::uint32_t kUnitFlagFlyingBuilding = 1u << 5;
 constexpr std::uint32_t kUnitFlagCloakable = 1u << 9;
 constexpr std::uint32_t kUnitFlagResourceContainer = 1u << 13;
 constexpr std::uint32_t kUnitFlagResourceDepot = 1u << 12;
+constexpr std::uint32_t kUnitFlagRequiresCreep = 1u << 17;
+constexpr std::uint32_t kUnitFlagRequiresPsi = 1u << 19;
 constexpr std::uint32_t kUnitFlagBurrowable = 1u << 20;
 constexpr std::uint32_t kUnitFlagSpellcaster = 1u << 21;
 constexpr std::uint32_t kUnitFlagInvincible = 1u << 29;
@@ -258,6 +260,9 @@ bool ReadUnitCapability(
   capability->is_resource_container =
       (flags & kUnitFlagResourceContainer) != 0;
   capability->is_resource_depot = (flags & kUnitFlagResourceDepot) != 0;
+  // DAT CreepBuilding/RequiredPsi are requirements, not coverage or producers.
+  capability->requires_creep = (flags & kUnitFlagRequiresCreep) != 0;
+  capability->requires_psi = (flags & kUnitFlagRequiresPsi) != 0;
   capability->is_gas_resource_container =
       capability->is_resource_container && IsGasResourceContainer(unit_id);
   capability->has_hangar = HasHangar(unit_id);

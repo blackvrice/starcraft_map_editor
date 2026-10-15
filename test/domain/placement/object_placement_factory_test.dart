@@ -7,6 +7,7 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.dart';
 
 void main() {
   const unitFactory = UnitPlacementFactory();
@@ -293,6 +294,75 @@ void main() {
   });
 
   group('UnitPlacementCapability', () {
+    for (final building in [false, true]) {
+      for (final psi in [false, true]) {
+        for (final creep in [false, true]) {
+          test(
+            'environment flags preserve UNIT bytes building=$building psi=$psi creep=$creep',
+            () {
+              final profile = UnitEnvironmentProfile(
+                requiresPsi: psi,
+                requiresCreep: creep,
+              );
+              final cap = _capability(
+                unitId: 37,
+                isBuilding: building,
+                environmentProfile: profile,
+              );
+              final legacy = _capability(unitId: 37, isBuilding: building);
+              expect(legacy.environmentProfile, isNull);
+              expect(cap.environmentProfile, same(profile));
+              expect(profile.requiresPsi, psi);
+              expect(profile.requiresCreep, creep);
+              expect(
+                unitFactory
+                    .create(
+                      capability: cap,
+                      unitId: 37,
+                      owner: 0,
+                      x: 64,
+                      y: 64,
+                      classId: 1,
+                    )
+                    .bytes,
+                unitFactory
+                    .create(
+                      capability: legacy,
+                      unitId: 37,
+                      owner: 0,
+                      x: 64,
+                      y: 64,
+                      classId: 1,
+                    )
+                    .bytes,
+              );
+              if (!building) {
+                expect(
+                  spriteFactory
+                      .createSpriteUnit(
+                        capability: cap,
+                        unitId: 37,
+                        owner: 0,
+                        x: 64,
+                        y: 64,
+                      )
+                      .bytes,
+                  spriteFactory
+                      .createSpriteUnit(
+                        capability: legacy,
+                        unitId: 37,
+                        owner: 0,
+                        x: 64,
+                        y: 64,
+                      )
+                      .bytes,
+                );
+              }
+            },
+          );
+        }
+      }
+    }
     test(
       'resource profile consistency is validated without changing record defaults',
       () {
@@ -635,8 +705,10 @@ UnitPlacementCapability _capability({
   bool isBuilding = false,
   bool requiresRelationLink = false,
   UnitResourceProfile? resourceProfile,
+  UnitEnvironmentProfile? environmentProfile,
 }) => UnitPlacementCapability(
   resourceProfile: resourceProfile,
+  environmentProfile: environmentProfile,
   unitId: unitId,
   isSubunit: isSubunit,
   isSpellcaster: isSpellcaster,

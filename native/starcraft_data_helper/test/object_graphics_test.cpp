@@ -547,7 +547,10 @@ int main() {
   for (std::uint16_t id = 0; id < 228; ++id) {
     const auto flags = (id % 2 == 0 ? 4u : 0u) |
         ((id & 1u) != 0 ? (1u << 12) : 0u) |
-        ((id & 2u) != 0 ? (1u << 13) : 0u);
+        ((id & 2u) != 0 ? (1u << 13) : 0u) |
+        ((id & 4u) != 0 ? (1u << 17) : 0u) |
+        ((id & 8u) != 0 ? (1u << 19) : 0u) |
+        (1u << 18);  // The unused neighbor must not become a requirement.
     PutUint32(&units_dat, kFlagsOffset + id * 4, flags);
     PutUint16(&units_dat, 12580 + id * 8, id);
     PutUint16(&units_dat, 12582 + id * 8, id + 256);
@@ -560,8 +563,10 @@ int main() {
         collision.collision_down != (id == 227 ? 65535 : id + 768) ||
         collision.is_flyer != (id % 2 == 0) ||
         collision.is_resource_depot != ((id & 1u) != 0) ||
-        collision.is_resource_container != ((id & 2u) != 0)) {
-      return Fail("Classic collision extents or Flyer bit decoded incorrectly.");
+        collision.is_resource_container != ((id & 2u) != 0) ||
+        collision.requires_creep != ((id & 4u) != 0) ||
+        collision.requires_psi != ((id & 8u) != 0)) {
+      return Fail("Classic collision or placement flags decoded incorrectly.");
     }
   }
   if (ReadUnitCapability(units_dat, 228, &out_of_range)) {

@@ -14,6 +14,9 @@ domain 숫자 snapshot과 application 출처·최종 좌표·공통 안전 검�
 기존 full metadata 요청/무효화 경계를 재사용한다. 후속 [자원 거리 정책](UNIT_RESOURCE_DISTANCE_POLICY.md)은
 같은 object prepare에 preview/Apply를 연결하며 세 checkbox의 실제 조합으로 mode를 파생한다.
 UI는 독립 거리 판정기나 파일/process 접근을 갖지 않는다.
+후속 [전력/크립 요구 자료](UNIT_ENVIRONMENT_REQUIREMENTS.md)는 같은 native flags와
+capability 경로에 optional environmentProfile만 추가한다. 요구 flag는 현재 공급 영역이
+아니며 domain I/O 비의존·기존 factory bytes와 전력/크립 UI 미구현 상태를 유지한다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

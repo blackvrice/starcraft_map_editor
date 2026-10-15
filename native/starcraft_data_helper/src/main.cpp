@@ -429,6 +429,9 @@ void AddUnitCapability(
       {"resourceProfile", {
           {"version", 1}, {"isDepot", capability->is_resource_depot},
           {"isResource", capability->is_resource_container}}},
+      {"environmentProfile", {
+          {"version", 1}, {"requiresPsi", capability->requires_psi},
+          {"requiresCreep", capability->requires_creep}}},
       {"isGasResourceContainer", capability->is_gas_resource_container},
       {"hasHangar", capability->has_hangar},
       {"isFlyingBuilding", capability->is_flying_building},

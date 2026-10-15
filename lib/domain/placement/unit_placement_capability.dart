@@ -3,6 +3,7 @@ import 'doodad_placement_recipe.dart';
 import 'building_placement_box.dart';
 import 'unit_collision_profile.dart';
 import 'unit_resource_profile.dart';
+import 'unit_environment_profile.dart';
 
 /// The minimum verified `units.dat` capability snapshot required to synthesize
 /// a default `UNIT` record for a unit that the current map does not contain.
@@ -22,6 +23,7 @@ final class UnitPlacementCapability {
     this.placementBox,
     this.collisionProfile,
     this.resourceProfile,
+    this.environmentProfile,
     required this.isSpellcaster,
     required this.hasShields,
     required this.isResourceContainer,
@@ -75,6 +77,9 @@ final class UnitPlacementCapability {
 
   /// Optional versioned roles; absent profiles do not imply a non-depot.
   final UnitResourceProfile? resourceProfile;
+
+  /// Local requirement flags only; no live power/creep or runtime overrides.
+  final UnitEnvironmentProfile? environmentProfile;
 
   /// A lifted flying building occupies the air layer. Unknown metadata stays
   /// unknown; the caller must also validate the record's in-transit state.

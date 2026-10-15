@@ -31,6 +31,8 @@ struct UnitCapability {
   bool has_shields = false;
   bool is_resource_container = false;
   bool is_resource_depot = false;
+  bool requires_psi = false;
+  bool requires_creep = false;
   bool is_gas_resource_container = false;
   bool has_hangar = false;
   bool is_flying_building = false;

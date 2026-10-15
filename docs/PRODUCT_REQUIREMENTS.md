@@ -197,6 +197,8 @@ CHK·리소스·EUD 프로젝트·epScript 상태를 별도 앱 데이터에 보
   후속 [자원 거리 배치 정책](UNIT_RESOURCE_DISTANCE_POLICY.md)은 기본 꺼짐 checkbox와
   검사/자유 프리셋, 공통 최종 좌표 preview/Apply 거절·한영 안내를 제공한다.
   전력/크립·런타임 변경·실제 게임 규칙 인수는 계속 별도다.
+  후속 [전력/크립 요구 자료](UNIT_ENVIRONMENT_REQUIREMENTS.md)는 로컬 DAT의 version1
+  요구 flag를 제공한다. 공급/현재 영역·배치 차단은 미구현이며 요구 조회와 구분한다.
 - FR-219: 검증 자료가 있는 높이·건설/이동 가능성·범위/전력/크립 보조 표시를 읽기 전용으로 제공해야 한다. 미확인 자료와 게임 동작 보증 여부를 구분한다.
   2026-10-14 [CV5/VF4 파생 자료와 순수 footprint](TERRAIN_PLACEMENT_SNAPSHOT.md)를 구현했다.
   건설 가능 flag/8px 이동 mask·출처·검증 불가/상한을 제공한다. 실제 배치/보조 표시 UI와 게임 규칙 전체는 미연결이다.

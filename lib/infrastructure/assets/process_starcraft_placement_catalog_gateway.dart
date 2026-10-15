@@ -10,6 +10,7 @@ import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/building_placement_box.dart';
 import '../../domain/placement/unit_collision_profile.dart';
 import '../../domain/placement/unit_resource_profile.dart';
+import '../../domain/placement/unit_environment_profile.dart';
 import 'starcraft_data_helper_protocol.dart';
 import '../../domain/placement/unit_weapon_references.dart';
 
@@ -661,6 +662,7 @@ final class ProcessStarCraftPlacementCatalogGateway
       placementBox: placementBox,
       collisionProfile: _parseCollisionProfile(raw),
       resourceProfile: _parseResourceProfile(raw, isResourceContainer),
+      environmentProfile: _parseEnvironmentProfile(raw),
       isSubunit: raw.containsKey('isSubunit') ? flag('isSubunit') : false,
       weaponReferences: raw['weaponReferences'] == null
           ? null
@@ -682,6 +684,18 @@ final class ProcessStarCraftPlacementCatalogGateway
       isBuilding: isBuilding,
       requiresRelationLink: flag('requiresRelationLink'),
     );
+  }
+
+  UnitEnvironmentProfile? _parseEnvironmentProfile(Map<String, dynamic> raw) {
+    if (raw['environmentProfile'] == null) return null;
+    final profile = _jsonObject(raw, 'environmentProfile');
+    final psi = profile['requiresPsi'], creep = profile['requiresCreep'];
+    if (_jsonInteger(profile, 'version') != UnitEnvironmentProfile.version ||
+        psi is! bool ||
+        creep is! bool) {
+      throw const FormatException('Unit environment profile is invalid.');
+    }
+    return UnitEnvironmentProfile(requiresPsi: psi, requiresCreep: creep);
   }
 
   UnitResourceProfile? _parseResourceProfile(
