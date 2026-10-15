@@ -108,6 +108,7 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _preplacedPowerPolicyTests();
   _preplacedPowerTests();
   _unitPowerInspectionTests();
   for (final alignment in ['point', 'building']) {
@@ -1915,6 +1916,94 @@ void main() {
   final realInstallation = Platform.environment['STARCRAFT_TEST_INSTALLATION'];
   final realHelper = Platform.environment['STARCRAFT_DATA_HELPER_PATH'];
   test(
+    'local DAT Gateway and Pylon use the preplaced policy without a state packet',
+    () async {
+      final gateway = ProcessStarCraftPlacementCatalogGateway(
+        helperExecutablePath: realHelper!,
+      );
+      final metadata = await gateway.list(
+        StarCraftPlacementCatalogRequest(
+          operationId: 'preplaced-power-local-fixture',
+          installationPath: realInstallation!,
+          kind: StarCraftPlacementKind.unit,
+          tileset: StarCraftTilesetAssetSet.jungle,
+          unitMetadataOnly: true,
+          limit: 228,
+        ),
+      );
+      expect(metadata.isSuccess, isTrue, reason: '${metadata.diagnostics}');
+      final pylon = metadata.entries[156].unitCapability!;
+      final f = await _openFixture(
+        catalogGateway: gateway,
+        pageSize: 128,
+        objectAtlasGateway: ProcessStarCraftObjectAtlasGateway(
+          helperExecutablePath: realHelper,
+        ),
+        chkBytesOverride: Uint8List.fromList([
+          ..._chkBytes(mapSize: 64),
+          ..._section('XTRA', [255, 0, 128]),
+          ..._section(
+            'UNIT',
+            const UnitPlacementFactory()
+                .create(
+                  capability: pylon,
+                  unitId: 156,
+                  owner: 0,
+                  x: 1024,
+                  y: 1024,
+                  classId: 1,
+                )
+                .bytes,
+          ),
+        ]),
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(realInstallation);
+      expect(await c.load(StarCraftPlacementKind.unit), isTrue);
+      expect(await c.loadMore(), isTrue);
+      expect(
+        c.confirm(c.state.items.firstWhere((item) => item.key.id == 160).key),
+        isTrue,
+      );
+      c.setCheckPreplacedPower(true);
+      c.setContinuous(true);
+      expect(await c.loadCollisionMetadata(), isTrue);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+        PlacementPolicySupportStatus.enabled,
+      );
+      final before = const RawChkEncoder().encode(
+        f.openMapController.state.session!.rawDocument,
+      );
+      expect(
+        c.previewAt(pixelX: 512, pixelY: 512, tileX: 16, tileY: 16),
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(
+        c.placeAt(pixelX: 512, pixelY: 512, tileX: 16, tileY: 16).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        isNull,
+      );
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).isPlaced,
+        isTrue,
+      );
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(f.objectEditingController.redo(), isTrue);
+      expect(c.lastUnitPowerStateRead, isNull);
+    },
+    skip: !Platform.isWindows || realInstallation == null || realHelper == null,
+  );
+  test(
     'local DAT resource policy rejects near, accepts far and preserves Undo',
     () async {
       final gateway = ProcessStarCraftPlacementCatalogGateway(
@@ -3229,6 +3318,396 @@ final class _InconsistentPagingGateway
   Future<void> cancel(String operationId) async {}
 }
 
+void _preplacedPowerPolicyTests() {
+  for (final locale in ['ko', 'en']) {
+    for (final width in [300.0, 1000.0]) {
+      testWidgets(
+        'layout policy $locale checkbox and separate support at width $width',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = Size(width + 40, 1000);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final f = await _openFixture(
+            catalogGateway: _PowerCatalogGateway(),
+            chkBytesOverride: _layoutChkBytes(),
+          );
+          addTearDown(f.dispose);
+          await _selectPowerUnit(f);
+          await tester.pumpWidget(
+            MaterialApp(
+              locale: Locale(locale),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: SizedBox(
+                    width: width,
+                    child: StreamBuilder(
+                      stream: f.controller.changes,
+                      builder: (_, _) =>
+                          PlacementAlignmentToolbar(controller: f.controller),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          final tile = find.byKey(const Key('placement-check-preplaced-power'));
+          expect(tester.widget<CheckboxListTile>(tile).value, isFalse);
+          await tester.ensureVisible(tile);
+          await tester.tap(tile);
+          await tester.pumpAndSettle();
+          expect(f.controller.state.checkPreplacedPower, isTrue);
+          expect(tester.widget<CheckboxListTile>(tile).value, isTrue);
+          final l10n = AppLocalizations.of(tester.element(tile))!;
+          expect(find.text(l10n.placementPreplacedPowerScope), findsOneWidget);
+          final titleRect = tester.getRect(
+            find.text(l10n.placementCheckPreplacedPower),
+          );
+          final tileRect = tester.getRect(tile);
+          expect(titleRect.left, greaterThanOrEqualTo(tileRect.left));
+          expect(titleRect.right, lessThanOrEqualTo(tileRect.right));
+          expect(
+            find.byTooltip(l10n.placementReloadPreplacedPower),
+            findsOneWidget,
+          );
+          await tester.tap(
+            find.byKey(const Key('placement-reload-preplaced-power')),
+          );
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(
+            find.byKey(const Key('placement-policy-support')),
+          );
+          await tester.tap(find.byKey(const Key('placement-policy-support')));
+          await tester.pumpAndSettle();
+          final projectedRow = find.byKey(
+            const ValueKey('placement-policy-preplacedPower'),
+          );
+          final actualRow = find.byKey(
+            const ValueKey('placement-policy-power'),
+          );
+          expect(
+            find.descendant(
+              of: projectedRow,
+              matching: find.text(l10n.placementPolicyEnabled),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.descendant(
+              of: actualRow,
+              matching: find.text(l10n.placementPolicyNotImplemented),
+            ),
+            findsOneWidget,
+          );
+          await tester.tap(find.text(l10n.editorClose));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(tile);
+          await tester.tap(tile);
+          await tester.pumpAndSettle();
+          expect(f.controller.state.checkPreplacedPower, isFalse);
+          expect(f.objectEditingController.state.undoDepth, 0);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+  for (final alignment in ['point', 'building']) {
+    test(
+      'layout policy blocks final $alignment coordinates and preserves refusal bytes',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          chkBytesOverride: _layoutChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final c = f.controller..setContinuous(true);
+        expect(c.state.checkPreplacedPower, isFalse);
+        c.setCheckPreplacedPower(true);
+        expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+          PlacementPolicySupportStatus.enabled,
+        );
+        expect(
+          c.previewAt(pixelX: 769, pixelY: 1024, tileX: 24, tileY: 32),
+          isNull,
+        );
+        c.setPointSnap(enabled: true, step: 32);
+        c.setBuildingTileAlignment(alignment == 'building');
+        final session = f.openMapController.state.session!;
+        final before = const RawChkEncoder().encode(session.rawDocument);
+        final selection = c.state.selection;
+        expect(
+          c.previewAt(pixelX: 769, pixelY: 1024, tileX: 24, tileY: 32),
+          ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+        );
+        expect(
+          c.placeAt(pixelX: 769, pixelY: 1024, tileX: 24, tileY: 32).issueCode,
+          ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+        );
+        expect(f.openMapController.state.session, same(session));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        expect(c.state.selection, same(selection));
+        c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+        expect(c.state.checkPreplacedPower, isFalse);
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+          PlacementPolicySupportStatus.skipped,
+        );
+        expect(
+          c.placeAt(pixelX: 769, pixelY: 1024, tileX: 24, tileY: 32).isPlaced,
+          isTrue,
+        );
+        expect(f.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        expect(f.objectEditingController.redo(), isTrue);
+      },
+    );
+  }
+  for (final failure in ['source', 'coverage', 'role', 'geometry', 'box']) {
+    test(
+      'layout policy rejects $failure metadata until explicit reload',
+      () async {
+        final catalog = _PowerCatalogGateway(failure: failure);
+        final f = await _openFixture(
+          catalogGateway: catalog,
+          chkBytesOverride: _layoutChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final c = f.controller..setCheckPreplacedPower(true);
+        await c.loadCollisionMetadata();
+        final before = f.openMapController.state.session;
+        expect(
+          c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+          ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable,
+        );
+        expect(
+          c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+          ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable,
+        );
+        expect(
+          c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+          PlacementPolicySupportStatus.unavailable,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        catalog.failure = null;
+        expect(await c.loadCollisionMetadata(reload: true), isTrue);
+        expect(
+          c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).isPlaced,
+          isTrue,
+        );
+      },
+    );
+  }
+  for (final scenario in ['unknown', 'neutral', 'outside', 'customDat']) {
+    test(
+      'layout policy keeps $scenario refusal distinct from missing power',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(
+            failure: scenario == 'customDat' ? 'pylonRole' : null,
+          ),
+          chkBytesOverride: _layoutChkBytes(
+            flags: scenario == 'unknown' ? 8 : 0,
+            owner: scenario == 'neutral' ? 11 : 0,
+            x: scenario == 'outside' ? 0 : 1024,
+          ),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final c = f.controller..setCheckPreplacedPower(true);
+        final expected = scenario == 'unknown'
+            ? ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable
+            : scenario == 'outside'
+            ? ObjectPlacementDiagnosticCodes.outOfBounds
+            : ObjectPlacementDiagnosticCodes.preplacedPowerStateUnsupported;
+        expect(
+          c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+          expected,
+        );
+        expect(
+          c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+          expected,
+        );
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+  test(
+    'layout policy reads current owner and UNITs after hover, delete, Undo and Redo',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        chkBytesOverride: _layoutChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller
+        ..setCheckPreplacedPower(true)
+        ..setContinuous(true);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        isNull,
+      );
+      c.setOwner(1);
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      c.setOwner(0);
+      final session = f.openMapController.state.session!;
+      f.mapLayerController.selectObject(
+        session: session,
+        object: MapLayerObjectRef(
+          layer: MapLayerType.units,
+          sectionIndex: session.objectViews.unitSections.single.sectionIndex,
+          recordIndex: 0,
+        ),
+      );
+      expect(f.objectEditingController.deleteSelection(), isTrue);
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(f.objectEditingController.state.undoDepth, 1);
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        isNull,
+      );
+      expect(f.objectEditingController.redo(), isTrue);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).isPlaced,
+        isTrue,
+      );
+    },
+  );
+  test(
+    'layout policy pending data cannot bypass Apply and never restores policy after free preset',
+    () async {
+      final gateway = _PowerCatalogGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: gateway,
+        chkBytesOverride: _layoutChkBytes(),
+      );
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      await c.load(StarCraftPlacementKind.unit);
+      c.confirm(c.state.items.single.key);
+      c.setCheckPreplacedPower(true);
+      final pending = c.loadCollisionMetadata();
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+        PlacementPolicySupportStatus.loading,
+      );
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable,
+      );
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+      gateway.release.complete();
+      expect(await pending, isTrue);
+      expect(c.state.checkPreplacedPower, isFalse);
+      expect(gateway.metadataRequests, 1);
+      expect(f.objectEditingController.state.undoDepth, 0);
+    },
+  );
+  test('layout policy respects raw/final bounds, locks and history', () async {
+    final f = await _openFixture(
+      catalogGateway: _PowerCatalogGateway(),
+      chkBytesOverride: _layoutChkBytes(),
+    );
+    addTearDown(f.dispose);
+    await _selectPowerUnit(f);
+    final c = f.controller
+      ..setCheckPreplacedPower(true)
+      ..setPointSnap(enabled: true, step: 32);
+    for (final x in [-1, 2047, 2048]) {
+      expect(
+        c.placeAt(pixelX: x, pixelY: 1024, tileX: x ~/ 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.outOfBounds,
+      );
+    }
+    f.mapLayerController.setLocked(MapLayerType.units, true);
+    expect(
+      c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+      ObjectPlacementDiagnosticCodes.layerLocked,
+    );
+    f.mapLayerController.setLocked(MapLayerType.units, false);
+    final owner = Object();
+    f.openMapController.editHistory.beginTransaction(owner);
+    expect(
+      c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+      ObjectPlacementDiagnosticCodes.historyBlocked,
+    );
+    f.openMapController.editHistory.endTransaction(owner);
+    expect(f.objectEditingController.state.undoDepth, 0);
+  });
+  test(
+    'layout policy confirmed no-psi is N/A and presets never enable projection',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresPsi: false),
+        chkBytesOverride: _chkBytes(mapSize: 64),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller..setCheckPreplacedPower(true);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+        PlacementPolicySupportStatus.notApplicable,
+      );
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        isNull,
+      );
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.checked);
+      expect(c.state.checkPreplacedPower, isFalse);
+      c.setCheckPreplacedPower(true);
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+      expect(c.state.checkPreplacedPower, isFalse);
+    },
+  );
+  for (final kind in [
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test('$kind ignores UNIT layout power policy', () async {
+      final f = await _openFixture(unitCapabilityAvailable: true);
+      addTearDown(f.dispose);
+      final c = f.controller
+        ..setInstallationPath(_installationPath)
+        ..setCheckPreplacedPower(true);
+      await c.load(kind);
+      c.confirm(c.state.items.first.key);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.preplacedPower],
+        PlacementPolicySupportStatus.notApplicable,
+      );
+      expect(
+        c.placeAt(pixelX: 64, pixelY: 64, tileX: 2, tileY: 2).isPlaced,
+        isTrue,
+      );
+    });
+  }
+}
+
 void _preplacedPowerTests() {
   const layout = UnitPowerStateModel.preplacedLayout;
   test(
@@ -3506,6 +3985,7 @@ UnitPowerCheck? _layoutPowerAt(_Fixture f) => f.controller
     .check;
 
 Uint8List _layoutChkBytes({
+  int x = 1024,
   int flags = 0,
   int validStates = 0,
   int validFields = 1,
@@ -3522,7 +4002,7 @@ Uint8List _layoutChkBytes({
           capability: _PowerCatalogGateway().capability(unitId),
           unitId: unitId,
           owner: owner,
-          x: 1024,
+          x: x,
           y: 1024,
           classId: 1,
         )
@@ -3924,9 +4404,15 @@ Uint8List _powerChkBytes() => Uint8List.fromList([
 ]);
 
 final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
-  _PowerCatalogGateway({this.failure, this.requiresPsi = true});
+  _PowerCatalogGateway({
+    this.failure,
+    this.requiresPsi = true,
+    this.hold = false,
+  });
   String? failure;
   final bool requiresPsi;
+  final bool hold;
+  final release = Completer<void>();
   int metadataRequests = 0;
   UnitPlacementCapability capability(int id, {bool numeric = false}) =>
       UnitPlacementCapability(
@@ -3937,8 +4423,12 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
                 requiresPsi: id == 0 && requiresPsi,
                 requiresCreep: false,
               ),
-        placementBox: BuildingPlacementBox(width: 64, height: 64),
-        collisionProfile: _terrainProfile,
+        placementBox: numeric && failure == 'box'
+            ? null
+            : BuildingPlacementBox(width: 64, height: 64),
+        collisionProfile: numeric && failure == 'geometry'
+            ? null
+            : _terrainProfile,
         isBuilding: true,
         isFlyingBuilding: id == 156 && failure == 'pylonRole',
         isSpellcaster: false,
@@ -3955,7 +4445,10 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
   Future<StarCraftPlacementCatalogPage> list(
     StarCraftPlacementCatalogRequest request,
   ) async {
-    if (request.unitMetadataOnly) metadataRequests++;
+    if (request.unitMetadataOnly) {
+      metadataRequests++;
+      if (hold) await release.future;
+    }
     final page = await _FakeCatalogGateway(
       doodadTotal: 2,
       unitCapabilityAvailable: true,

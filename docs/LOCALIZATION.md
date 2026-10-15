@@ -1,5 +1,9 @@
 # 한영 번역
 
+2026-10-15 [사전 배치 전력 정책](UNIT_PREPLACED_POWER_POLICY.md)의 checkbox·scope·재조회·
+3개 진단과 실제/설계 전력 지원표를 한영으로 추가했다. 기존 공통 ghost/카탈로그 진단을
+재사용하고300/1000px 위젯 테스트로 확인했다. 실제 Windows 클릭/게임 검증은 별도다.
+
 2026-10-03 남은 번역 개발 완료. 언어 선택·저장·시스템 언어 대체 규칙은
 [ADR-0013](decisions/0013-localized-editor-ui.md)을 따른다.
 

@@ -6,6 +6,20 @@ void main() {
     for (final overlap in [false, true]) {
       for (final resource in [false, true]) {
         test(
+          'explicit layout power makes mode custom $terrain/$overlap/$resource',
+          () {
+            expect(
+              UnitPlacementPolicy(
+                checkTerrain: terrain,
+                allowOverlap: overlap,
+                checkResourceDistance: resource,
+                checkPreplacedPower: true,
+              ).mode,
+              UnitPlacementMode.custom,
+            );
+          },
+        );
+        test(
           'policy derives actual mode terrain=$terrain overlap=$overlap resource=$resource',
           () {
             final policy = UnitPlacementPolicy(
@@ -33,5 +47,7 @@ void main() {
     expect(UnitPlacementPolicy.free.checkTerrain, isFalse);
     expect(UnitPlacementPolicy.free.allowOverlap, isTrue);
     expect(UnitPlacementPolicy.free.checkResourceDistance, isFalse);
+    expect(UnitPlacementPolicy.checked.checkPreplacedPower, isFalse);
+    expect(UnitPlacementPolicy.free.checkPreplacedPower, isFalse);
   });
 }

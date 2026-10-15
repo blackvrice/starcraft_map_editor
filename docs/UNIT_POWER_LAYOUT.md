@@ -1,5 +1,8 @@
 # 사전 배치 전력 설계 모델
 
+후속 [사전 배치 전력 검사 정책](UNIT_PREPLACED_POWER_POLICY.md)에 기본 꺼짐 UI와
+공통 preview/Apply를 연결했다. 아래는 설계 모델 단계의 당시 기록이며 실제 상태 collector는 여전히 미완료다.
+
 2026-10-15. EP1/FR-218의 [앱 계층 조회](UNIT_POWER_INSPECTION.md) 후속 단계다.
 **실제 초기 상태 collector를 완성한 것이 아니다.** CHK만으로 확정할 수 없는 부분을
 조사하고 제작용 `preplacedLayout` 모델과 built-in adapter를 별도로 구현했다.
@@ -119,7 +122,7 @@ Windows 빌드는 기존 CascLib CMake deprecation 경고 외 성공했고 nativ
 
 ## 6. 다음 작업과 미완료 범위
 
-다음 제작용 단위는 기본 꺼짐 ‘사전 배치 전력’ 정책과 한영 지원표·preview/Apply 연결이다.
+후속 제작용 단위에서 기본 꺼짐 ‘사전 배치 전력’ 정책과 한영 지원표·preview/Apply를 연결했다.
 이를 실제 게임 전력 확인으로 부르지 않는다. **실제 initialMap/live collector**, 크립 영역,
 EUD 변경과 게임/외부 에디터 인수는 계속 미완료다. 이전 계획의 ‘실제 초기 상태 adapter’는
 이번 정적 조사로 완료 처리하지 않는다. 사용자 지시에 따라 실제 앱/게임 조작은 하지 않는다.

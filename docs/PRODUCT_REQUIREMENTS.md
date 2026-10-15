@@ -205,6 +205,8 @@ CHK·리소스·EUD 프로젝트·epScript 상태를 별도 앱 데이터에 보
   문서/자료/revision 연결을 제공한다. 실제 adapter 없이 상태를 추측하거나 정책을 켜지 않는다.
   후속 [사전 배치 전력 모델](UNIT_POWER_LAYOUT.md)은 명시적으로 선택한 제작용 가정만
   제공한다. 실제 초기 상태 collector나 게임 전력/배치 보증은 아니며 UI 정책은 미연결이다.
+  후속 [사전 배치 전력 정책](UNIT_PREPLACED_POWER_POLICY.md)은 기본 꺼짐 checkbox와
+  공통 preview/Apply를 연결한다. 제작용 설계 가정과 실제 전력 상태 미구현을 별도 표시한다.
 - FR-219: 검증 자료가 있는 높이·건설/이동 가능성·범위/전력/크립 보조 표시를 읽기 전용으로 제공해야 한다. 미확인 자료와 게임 동작 보증 여부를 구분한다.
   2026-10-14 [CV5/VF4 파생 자료와 순수 footprint](TERRAIN_PLACEMENT_SNAPSHOT.md)를 구현했다.
   건설 가능 flag/8px 이동 mask·출처·검증 불가/상한을 제공한다. 실제 배치/보조 표시 UI와 게임 규칙 전체는 미연결이다.

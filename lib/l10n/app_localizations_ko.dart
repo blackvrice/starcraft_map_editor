@@ -6144,7 +6144,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementPolicyResourceDistance => '자원·기지 거리';
 
   @override
-  String get placementPolicyPower => '전력';
+  String get placementPolicyPower => '실제 전력 상태';
+
+  @override
+  String get placementCheckPreplacedPower => '사전 배치 전력';
+
+  @override
+  String get placementPreplacedPowerScope => '설계 모델 · 게임 상태 미확인';
+
+  @override
+  String get placementReloadPreplacedPower => '사전 배치 전력 자료 다시 읽기';
+
+  @override
+  String get placementPreplacedPowerRequired =>
+      '사전 배치 설계 모델에서 이 위치에 같은 소유자의 파일런 전력이 없습니다.';
+
+  @override
+  String get placementPreplacedPowerUnavailable =>
+      '사전 배치 전력을 확인할 수 없습니다. 유닛 카탈로그와 자료를 다시 읽거나 사전 배치 전력 검사를 해제하세요.';
+
+  @override
+  String get placementPreplacedPowerStateUnsupported =>
+      '이 UNIT 상태는 사전 배치 전력 모델에서 지원하지 않습니다. 이 설계 규칙 없이 배치하려면 검사를 해제하세요.';
 
   @override
   String get placementPolicyCreep => '크립';

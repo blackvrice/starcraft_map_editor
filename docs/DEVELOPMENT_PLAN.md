@@ -1205,6 +1205,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 순수 전력 판정:10x16 psi mask·명시적 공급 상태·classic Pylon/소유자/후보 자료·unknown/경계 검증 (앱 상태 공급/배치 차단 제외)
 - [x] EP1 앱 전력 조회: 명시적 상태 포트·문서/출처/record/revision 결합·최종 좌표·취소/Undo 무효화 (실제 상태 adapter/UI 정책 제외)
 - [x] EP1 전력 설계 모델: 실제 초기 상태 한계 조사·명시적 preplacedLayout adapter·모델별 cache/출처 분리 (실제 collector/UI 정책 제외)
+- [x] EP1 사전 배치 전력 정책: 기본 꺼짐 checkbox·순수 projection 공유·현재 UNIT/최종 좌표 preview/Apply·한영 지원표·Undo/Save As 회귀 (실제 전력/게임 인수 제외)
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
@@ -1271,7 +1272,15 @@ analyze·Windows Debug/native7종을 확인했다. 기준 SDK·기존 format3파
 새28개 포함 집중208통과/9skip·전체 재실행1691통과/58skip·로컬 controller217통과와
 analyze·Windows Debug/native7종을 확인했다. 초기 test loader 오류는 단독4개/전체
 재실행으로 통과했지만 원인은 미확정이며 기준 SDK·기존 format3파일·게임 인수는 남는다.
-다음 제작용 코드 단위는 기본 꺼짐 사전 배치 전력 정책·한영 지원표·preview/Apply 연결이다.
+이어서 [사전 배치 전력 정책](UNIT_PREPLACED_POWER_POLICY.md)을 기본 꺼짐 checkbox와
+공통 preview/Apply에 연결했다. 실제 상태와 별도 지원표를 제공하고 프리셋이 설계 가정을
+자동으로 켜지 않게 했다. 현재 UNIT을 동기 재판정하며 비동기 packet/hover 허가를 재사용하지 않는다.
+검증은 전체1,722통과/59skip·로컬 DAT/graphics/native MPQ 연동245통과·analyze 무이슈·
+Windows Debug 빌드·native7종 통과다. 옵션 증가로 캔버스/도구 접근에 생긴 Shell 회귀2건은
+128px 스크롤 영역으로 수정했고, 기존 정렬 클릭6건은 스크롤 후 조작하도록 보완해 전체를 재실행했다.
+실행 SDK3.47.5/3.13.4는 기준3.44.8/3.12와 다르며 전체 포맷은 기존3파일 차이로 exit1이다.
+이번 Dart18개 포맷은 통과했다. 사용자 지시에 따라 실제 앱·게임·외부 에디터는 조작하지 않았다.
+다음 코드 단위는 초기 크립 영역 자료의 출처·미확인 상태와 읽기 전용 판정 계약이다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

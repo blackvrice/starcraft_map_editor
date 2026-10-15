@@ -40,6 +40,12 @@ abstract final class ObjectPlacementDiagnosticCodes {
       'OBJECT_PLACEMENT_RESOURCE_DISTANCE_UNAVAILABLE';
   static const resourceDistanceStateUnsupported =
       'OBJECT_PLACEMENT_RESOURCE_DISTANCE_STATE_UNSUPPORTED';
+  static const preplacedPowerRequired =
+      'OBJECT_PLACEMENT_PREPLACED_POWER_REQUIRED';
+  static const preplacedPowerUnavailable =
+      'OBJECT_PLACEMENT_PREPLACED_POWER_UNAVAILABLE';
+  static const preplacedPowerStateUnsupported =
+      'OBJECT_PLACEMENT_PREPLACED_POWER_STATE_UNSUPPORTED';
 
   static const all = <String>{
     sessionNotEditable,
@@ -65,6 +71,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     resourceDistanceTooClose,
     resourceDistanceUnavailable,
     resourceDistanceStateUnsupported,
+    preplacedPowerRequired,
+    preplacedPowerUnavailable,
+    preplacedPowerStateUnsupported,
   };
 }
 

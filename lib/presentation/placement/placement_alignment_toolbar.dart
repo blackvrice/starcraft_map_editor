@@ -215,6 +215,48 @@ class PlacementAlignmentToolbar extends StatelessWidget {
           child: Material(
             type: MaterialType.transparency,
             child: CheckboxListTile(
+              key: const Key('placement-check-preplaced-power'),
+              value: state.checkPreplacedPower,
+              onChanged: (value) => controller.setCheckPreplacedPower(value!),
+              title: Text(l10n.placementCheckPreplacedPower),
+              subtitle: Text(l10n.placementPreplacedPowerScope),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              secondary: !state.checkPreplacedPower
+                  ? null
+                  : SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: state.isCollisionMetadataLoading
+                          ? const Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : IconButton(
+                              key: const Key(
+                                'placement-reload-preplaced-power',
+                              ),
+                              tooltip: l10n.placementReloadPreplacedPower,
+                              icon: const Icon(Icons.refresh),
+                              onPressed: () => controller.loadCollisionMetadata(
+                                reload: true,
+                              ),
+                            ),
+                    ),
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 260,
+          child: Material(
+            type: MaterialType.transparency,
+            child: CheckboxListTile(
               key: const Key('placement-building-tile-alignment'),
               value: state.alignBuildingsToTiles,
               onChanged: (value) => controller.setBuildingTileAlignment(value!),

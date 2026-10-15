@@ -2882,8 +2882,17 @@ class _OpenedMapWorkspace extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 9),
-                      PlacementAlignmentToolbar(
-                        controller: placementCatalogController,
+                      // Keep option wrapping/loading from resizing the canvas
+                      // or pushing the common editing tools out of reach.
+                      SizedBox(
+                        height: 128,
+                        child: SingleChildScrollView(
+                          key: const Key('placement-options-scroll'),
+                          primary: false,
+                          child: PlacementAlignmentToolbar(
+                            controller: placementCatalogController,
+                          ),
+                        ),
                       ),
                       Wrap(
                         spacing: 7,

@@ -4,6 +4,7 @@ enum PlacementPolicyRule {
   unitOverlap,
   terrain,
   resourceDistance,
+  preplacedPower,
   power,
   creep,
   eudRuntime,

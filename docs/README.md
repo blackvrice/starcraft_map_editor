@@ -43,6 +43,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [읽기 전용 전력 판정](UNIT_POWER_VALIDATION.md) | 정확한 psi mask·명시적 공급 상태·소유자/자료 일치·unknown/경계·순수 회귀 | 전력 검사의 상태 공급과 앱 연결을 개발할 때 |
 | [앱 계층 전력 조회](UNIT_POWER_INSPECTION.md) | 문서/출처/state revision·명시적 수집 포트·최종 좌표·취소/Undo 회귀 | 실제 상태 adapter와 전력 정책을 개발할 때 |
 | [사전 배치 전력 설계 모델](UNIT_POWER_LAYOUT.md) | 실제 초기 상태의 한계·명시적 projection·모델/출처 분리·built-in adapter | 제작용 전력 정책과 실제 상태 수집을 구분할 때 |
+| [사전 배치 전력 검사 정책](UNIT_PREPLACED_POWER_POLICY.md) | 기본 꺼짐 checkbox·현재 UNIT/최종 좌표·preview/Apply·한영 지원표·Undo/저장 회귀 | 제작용 전력 검사와 실제 상태 미지원 범위를 확인할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

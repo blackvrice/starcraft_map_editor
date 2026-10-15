@@ -2209,6 +2209,28 @@ void main() {
       r'C:\Maps\Arena.scx',
     );
 
+    final canvasSizeBeforeOptions = tester.getSize(
+      find.byKey(const Key('map-canvas')),
+    );
+    final powerOption = find.byKey(
+      const Key('placement-check-preplaced-power'),
+    );
+    await tester.ensureVisible(powerOption);
+    await tester.tap(powerOption);
+    await tester.pumpAndSettle();
+    expect(tester.widget<CheckboxListTile>(powerOption).value, isTrue);
+    expect(
+      tester.getSize(find.byKey(const Key('map-canvas'))),
+      canvasSizeBeforeOptions,
+    );
+    await tester.tap(powerOption);
+    await tester.pumpAndSettle();
+    expect(tester.widget<CheckboxListTile>(powerOption).value, isFalse);
+    expect(
+      tester.getSize(find.byKey(const Key('map-canvas'))),
+      canvasSizeBeforeOptions,
+    );
+
     var canvasPainter =
         tester
                 .widget<CustomPaint>(find.byKey(const Key('map-canvas-paint')))
@@ -2414,9 +2436,13 @@ void main() {
           catalog.setPointSnap(enabled: true, step: 17);
           catalog.setGridVisible(false);
           catalog.setGridSpacing(128);
-          await tester.tap(
-            find.byKey(const Key('placement-building-tile-alignment')),
+          await tester.pumpAndSettle();
+          final buildingAlignment = find.byKey(
+            const Key('placement-building-tile-alignment'),
           );
+          await tester.ensureVisible(buildingAlignment);
+          await tester.pumpAndSettle();
+          await tester.tap(buildingAlignment);
           await tester.pumpAndSettle();
           expect(catalog.state.alignBuildingsToTiles, isTrue);
           final layer = kind == StarCraftPlacementKind.unit

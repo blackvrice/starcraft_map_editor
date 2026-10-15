@@ -125,6 +125,12 @@ String placementFailureText(
     l10n.placementResourceDistanceUnavailable,
   ObjectPlacementDiagnosticCodes.resourceDistanceStateUnsupported =>
     l10n.placementResourceDistanceStateUnsupported,
+  ObjectPlacementDiagnosticCodes.preplacedPowerRequired =>
+    l10n.placementPreplacedPowerRequired,
+  ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable =>
+    l10n.placementPreplacedPowerUnavailable,
+  ObjectPlacementDiagnosticCodes.preplacedPowerStateUnsupported =>
+    l10n.placementPreplacedPowerStateUnsupported,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
     l10n.placementCapabilityMismatch,
   ObjectPlacementFactoryCodes.unitRelationRequired ||

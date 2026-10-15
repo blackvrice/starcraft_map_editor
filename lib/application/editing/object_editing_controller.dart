@@ -21,6 +21,8 @@ import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/unit_resource_distance_catalog.dart';
+import '../../domain/placement/unit_power_catalog.dart';
+import '../../domain/placement/preplaced_unit_power_layout.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../documents/open_map_controller.dart';
 import '../documents/opened_map_session.dart';
@@ -1008,6 +1010,8 @@ class ObjectEditingController {
     TerrainPlacementSnapshot? terrainSnapshot,
     bool checkResourceDistance = false,
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
+    bool checkPreplacedPower = false,
+    UnitPowerCatalog? preplacedPowerCatalog,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1022,6 +1026,8 @@ class ObjectEditingController {
       terrainSnapshot: terrainSnapshot,
       checkResourceDistance: checkResourceDistance,
       resourceDistanceCatalog: resourceDistanceCatalog,
+      checkPreplacedPower: checkPreplacedPower,
+      preplacedPowerCatalog: preplacedPowerCatalog,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1041,6 +1047,8 @@ class ObjectEditingController {
     TerrainPlacementSnapshot? terrainSnapshot,
     bool checkResourceDistance = false,
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
+    bool checkPreplacedPower = false,
+    UnitPowerCatalog? preplacedPowerCatalog,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
@@ -1054,6 +1062,8 @@ class ObjectEditingController {
     terrainSnapshot: terrainSnapshot,
     checkResourceDistance: checkResourceDistance,
     resourceDistanceCatalog: resourceDistanceCatalog,
+    checkPreplacedPower: checkPreplacedPower,
+    preplacedPowerCatalog: preplacedPowerCatalog,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1070,6 +1080,8 @@ class ObjectEditingController {
     TerrainPlacementSnapshot? terrainSnapshot,
     bool checkResourceDistance = false,
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
+    bool checkPreplacedPower = false,
+    UnitPowerCatalog? preplacedPowerCatalog,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1207,6 +1219,38 @@ class ObjectEditingController {
           UnitResourceDistanceCatalogCheck.stateUnsupported =>
             ObjectPlacementDiagnosticCodes.resourceDistanceStateUnsupported,
           UnitResourceDistanceCatalogCheck.outOfBounds =>
+            ObjectPlacementDiagnosticCodes.outOfBounds,
+        };
+        if (issue != null) return ObjectPlacementRecord.rejected(issue);
+      }
+      if (checkPreplacedPower) {
+        final dimensions = _singleDimensions(session)!;
+        // Reproject the exact current UNITs at prepare time. An asynchronous
+        // inspection packet or previous hover is never permission to Apply.
+        final check =
+            preplacedPowerCatalog?.check(
+              candidate: capability,
+              owner: owner,
+              x: point.x,
+              y: point.y,
+              mapWidthTiles: dimensions.width,
+              mapHeightTiles: dimensions.height,
+              existing: PreplacedUnitPowerLayout.project(
+                session.objectViews.unitSections.expand(
+                  (section) => section.units,
+                ),
+              ),
+            ) ??
+            UnitPowerCheck.unavailable;
+        final issue = switch (check) {
+          UnitPowerCheck.powered || UnitPowerCheck.notApplicable => null,
+          UnitPowerCheck.unpowered =>
+            ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+          UnitPowerCheck.unavailable =>
+            ObjectPlacementDiagnosticCodes.preplacedPowerUnavailable,
+          UnitPowerCheck.stateUnsupported =>
+            ObjectPlacementDiagnosticCodes.preplacedPowerStateUnsupported,
+          UnitPowerCheck.outOfBounds =>
             ObjectPlacementDiagnosticCodes.outOfBounds,
         };
         if (issue != null) return ObjectPlacementRecord.rejected(issue);

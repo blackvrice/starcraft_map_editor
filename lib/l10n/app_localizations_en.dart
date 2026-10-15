@@ -6281,7 +6281,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placementPolicyResourceDistance => 'Resource / depot distance';
 
   @override
-  String get placementPolicyPower => 'Power';
+  String get placementPolicyPower => 'Actual power state';
+
+  @override
+  String get placementCheckPreplacedPower => 'Preplaced power';
+
+  @override
+  String get placementPreplacedPowerScope =>
+      'Layout model; game state unverified';
+
+  @override
+  String get placementReloadPreplacedPower => 'Reload preplaced power metadata';
+
+  @override
+  String get placementPreplacedPowerRequired =>
+      'This location has no same-owner Pylon power in the preplaced layout model.';
+
+  @override
+  String get placementPreplacedPowerUnavailable =>
+      'Preplaced power cannot be verified. Reload the unit catalog and metadata, or turn off preplaced power checking.';
+
+  @override
+  String get placementPreplacedPowerStateUnsupported =>
+      'This UNIT state is unsupported by the preplaced power model. Turn off the check to place without this layout rule.';
 
   @override
   String get placementPolicyCreep => 'Creep';

@@ -23,6 +23,8 @@ UNIT aggregate다. 상태 수집/출처 결합은 아직 caller 계약이며 UI/
 record/revision 검증을 추가한다. 기본 adapter는 없으며 hover I/O·배치 정책은 추가하지 않는다.
 후속 [사전 배치 전력 모델](UNIT_POWER_LAYOUT.md)은 명시적 preplacedLayout 요청용 순수
 adapter를 bootstrap에 등록한다. initialMap/live와 모델·cache·결과 출처를 구분하며 UI 정책은 유지한다.
+후속 [사전 배치 전력 정책](UNIT_PREPLACED_POWER_POLICY.md)은 projection을 domain의 순수
+함수로 공유하고 공통 prepare에서 현재 UNIT을 재판정한다. 비동기 상태 packet/hover를 Apply 허가로 쓰지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

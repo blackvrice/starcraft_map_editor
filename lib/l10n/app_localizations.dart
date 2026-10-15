@@ -10428,8 +10428,44 @@ abstract class AppLocalizations {
   /// No description provided for @placementPolicyPower.
   ///
   /// In en, this message translates to:
-  /// **'Power'**
+  /// **'Actual power state'**
   String get placementPolicyPower;
+
+  /// No description provided for @placementCheckPreplacedPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Preplaced power'**
+  String get placementCheckPreplacedPower;
+
+  /// No description provided for @placementPreplacedPowerScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout model; game state unverified'**
+  String get placementPreplacedPowerScope;
+
+  /// No description provided for @placementReloadPreplacedPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload preplaced power metadata'**
+  String get placementReloadPreplacedPower;
+
+  /// No description provided for @placementPreplacedPowerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'This location has no same-owner Pylon power in the preplaced layout model.'**
+  String get placementPreplacedPowerRequired;
+
+  /// No description provided for @placementPreplacedPowerUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Preplaced power cannot be verified. Reload the unit catalog and metadata, or turn off preplaced power checking.'**
+  String get placementPreplacedPowerUnavailable;
+
+  /// No description provided for @placementPreplacedPowerStateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This UNIT state is unsupported by the preplaced power model. Turn off the check to place without this layout rule.'**
+  String get placementPreplacedPowerStateUnsupported;
 
   /// No description provided for @placementPolicyCreep.
   ///

@@ -48,6 +48,8 @@ class PlacementPolicyDialog extends StatelessWidget {
                               l10n.placementPolicyTerrain,
                             PlacementPolicyRule.resourceDistance =>
                               l10n.placementPolicyResourceDistance,
+                            PlacementPolicyRule.preplacedPower =>
+                              l10n.placementCheckPreplacedPower,
                             PlacementPolicyRule.power =>
                               l10n.placementPolicyPower,
                             PlacementPolicyRule.creep =>

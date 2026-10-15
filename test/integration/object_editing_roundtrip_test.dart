@@ -35,6 +35,8 @@ import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dar
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
@@ -902,6 +904,128 @@ void _registerSettingsRoundtrip(bool realArchive) {
 }
 
 void main() {
+  test(
+    'preplaced power checks current UNITs across refusal, Undo and Save As',
+    () async {
+      const source = r'C:\Maps\Power Source.scx';
+      const output = r'C:\Maps\Power Saved.scx';
+      const temporary = r'C:\Maps\.power_test\temporary.scx';
+      final original = _placementSourceChkBytes();
+      final map = _extractedMap(source, original);
+      final archive = _RoundtripArchiveGateway(map);
+      final picker = _RoundtripFilePicker(openPath: source, savePath: output);
+      final fingerprint = _RoundtripFingerprintGateway(
+        sourcePath: source,
+        temporaryPath: temporary,
+        outputPath: output,
+      );
+      final progress = OperationProgressController();
+      final open = OpenMapController(
+        archiveGateway: archive,
+        filePicker: picker,
+        fingerprintGateway: fingerprint,
+        recentProjectsService: RecentProjectsService(InMemorySettingsStore()),
+        operationProgressController: progress,
+      );
+      final layers = MapLayerController();
+      final editing = ObjectEditingController(
+        openMapController: open,
+        mapLayerController: layers,
+      );
+      final save = SaveMapController(
+        archiveGateway: archive,
+        filePicker: picker,
+        fingerprintGateway: fingerprint,
+        saveFileGateway: _RoundtripSaveFileGateway(temporary),
+        openMapController: open,
+        operationProgressController: progress,
+      );
+      addTearDown(progress.dispose);
+      addTearDown(open.dispose);
+      addTearDown(save.dispose);
+      addTearDown(layers.dispose);
+      addTearDown(editing.dispose);
+      final opened = await open.open();
+      expect(opened.status, OpenMapStatus.opened);
+      layers.synchronizeSession(opened.session);
+      final pylon = _powerCapability(156), candidate = _powerCapability(160);
+      final catalog = UnitPowerCatalog({156: pylon, 160: candidate});
+      ObjectPlacementResult place(int id, {int owner = 0}) =>
+          editing.placeCatalogUnit(
+            capability: id == 156 ? pylon : candidate,
+            unitId: id,
+            owner: owner,
+            pixelX: 128,
+            pixelY: 128,
+            checkPreplacedPower: true,
+            preplacedPowerCatalog: catalog,
+          );
+      String? preview() => editing.previewCatalogUnit(
+        capability: candidate,
+        unitId: 160,
+        owner: 0,
+        pixelX: 128,
+        pixelY: 128,
+        checkPreplacedPower: true,
+        preplacedPowerCatalog: catalog,
+      );
+      expect(
+        place(160).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(open.state.session, same(opened.session));
+      expect(editing.state.undoDepth, 0);
+      expect(place(156).isPlaced, isTrue);
+      expect(preview(), isNull);
+      _select(
+        openController: open,
+        layerController: layers,
+        layer: MapLayerType.units,
+        recordIndex: 0,
+      );
+      expect(editing.deleteSelection(), isTrue);
+      expect(
+        place(160).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(editing.undo(), isTrue);
+      expect(
+        place(160, owner: 1).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+      expect(place(160).isPlaced, isTrue);
+      final beforeSave = const RawChkEncoder().encode(
+        open.state.session!.rawDocument,
+      );
+      expect(editing.undo(), isTrue);
+      expect(editing.redo(), isTrue);
+      expect(
+        const RawChkEncoder().encode(open.state.session!.rawDocument),
+        beforeSave,
+      );
+      expect((await save.saveAs()).status, SaveMapStatus.saved);
+      expect(map.scenarioChkBytes, original);
+      final written = archive.writeRequests.single.scenarioChkBytes;
+      expect(written, beforeSave);
+      expect(
+        open.state.session!.objectViews.unitSections.single.units,
+        hasLength(2),
+      );
+      final beforeDoc = const RawChkParser().parse(original).document!;
+      final afterDoc = open.state.session!.rawDocument;
+      for (final name in ['XTRA', 'STR ', 'SPRP', 'DD2 ']) {
+        expect(
+          _sectionNamed(afterDoc, name).payload,
+          _sectionNamed(beforeDoc, name).payload,
+        );
+      }
+      expect(preview(), isNull);
+      expect(
+        place(160, owner: 1).issueCode,
+        ObjectPlacementDiagnosticCodes.preplacedPowerRequired,
+      );
+    },
+  );
   final buildingArchiveHelper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
   test(
     'aligned building UNIT survives native MPQ writing and reopening',
@@ -1276,6 +1400,33 @@ UnitPlacementCapability _placementCapability(
   isCloakable: false,
   isInvincible: false,
   isBuilding: building,
+  requiresRelationLink: false,
+);
+
+UnitPlacementCapability _powerCapability(int id) => UnitPlacementCapability(
+  unitId: id,
+  environmentProfile: UnitEnvironmentProfile(
+    requiresPsi: id == 160,
+    requiresCreep: false,
+  ),
+  placementBox: BuildingPlacementBox(width: 64, height: 64),
+  collisionProfile: UnitCollisionProfile(
+    left: 0,
+    up: 0,
+    right: 0,
+    down: 0,
+    isFlyer: false,
+  ),
+  isBuilding: true,
+  isFlyingBuilding: false,
+  isSpellcaster: false,
+  hasShields: false,
+  isResourceContainer: false,
+  isGasResourceContainer: false,
+  hasHangar: false,
+  isBurrowable: false,
+  isCloakable: false,
+  isInvincible: false,
   requiresRelationLink: false,
 );
 

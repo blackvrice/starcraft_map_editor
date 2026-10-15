@@ -132,6 +132,7 @@ final class PlacementCatalogState {
     this.isCollisionMetadataLoading = false,
     this.checkUnitTerrain = false,
     this.checkResourceDistance = false,
+    this.checkPreplacedPower = false,
     this.isTerrainPlacementLoading = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
@@ -160,11 +161,13 @@ final class PlacementCatalogState {
   final bool isCollisionMetadataLoading;
   final bool checkUnitTerrain;
   final bool checkResourceDistance;
+  final bool checkPreplacedPower;
   final bool isTerrainPlacementLoading;
   late final unitPlacementPolicy = UnitPlacementPolicy(
     checkTerrain: checkUnitTerrain,
     allowOverlap: allowUnitOverlap,
     checkResourceDistance: checkResourceDistance,
+    checkPreplacedPower: checkPreplacedPower,
   );
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
@@ -749,6 +752,7 @@ class PlacementCatalogController {
         allowUnitOverlap: _state.allowUnitOverlap,
         checkUnitTerrain: _state.checkUnitTerrain,
         checkResourceDistance: _state.checkResourceDistance,
+        checkPreplacedPower: _state.checkPreplacedPower,
       ),
     );
   }
@@ -880,7 +884,9 @@ class PlacementCatalogController {
         recentKeys: _recentKeys[item.key.kind] ?? const [],
       ),
     );
-    if ((!_state.allowUnitOverlap || _state.checkResourceDistance) &&
+    if ((!_state.allowUnitOverlap ||
+            _state.checkResourceDistance ||
+            _state.checkPreplacedPower) &&
         item.key.kind == StarCraftPlacementKind.unit) {
       unawaited(loadCollisionMetadata());
     }
@@ -930,12 +936,19 @@ class PlacementCatalogController {
     if (enabled) unawaited(loadCollisionMetadata());
   }
 
+  void setCheckPreplacedPower(bool enabled) {
+    if (_disposed || enabled == _state.checkPreplacedPower) return;
+    _emit(_copy(checkPreplacedPower: enabled));
+    if (enabled) unawaited(loadCollisionMetadata());
+  }
+
   /// Apply all preferences atomically; never paint or normalize existing UNITs.
   void setUnitPlacementPolicy(UnitPlacementPolicy policy) {
     if (_disposed ||
         (policy.checkTerrain == _state.checkUnitTerrain &&
             policy.allowOverlap == _state.allowUnitOverlap &&
-            policy.checkResourceDistance == _state.checkResourceDistance)) {
+            policy.checkResourceDistance == _state.checkResourceDistance &&
+            policy.checkPreplacedPower == _state.checkPreplacedPower)) {
       return;
     }
     _emit(
@@ -943,10 +956,13 @@ class PlacementCatalogController {
         checkUnitTerrain: policy.checkTerrain,
         allowUnitOverlap: policy.allowOverlap,
         checkResourceDistance: policy.checkResourceDistance,
+        checkPreplacedPower: policy.checkPreplacedPower,
       ),
     );
     if (policy.checkTerrain) unawaited(loadTerrainPlacement());
-    if (!policy.allowOverlap || policy.checkResourceDistance) {
+    if (!policy.allowOverlap ||
+        policy.checkResourceDistance ||
+        policy.checkPreplacedPower) {
       unawaited(loadCollisionMetadata());
     }
   }
@@ -1010,6 +1026,47 @@ class PlacementCatalogController {
           : PlacementPolicySupportStatus.enabled;
     }
 
+    PlacementPolicySupportStatus preplacedPowerStatus() {
+      if (!isUnit) return PlacementPolicySupportStatus.notApplicable;
+      if (!_state.checkPreplacedPower) {
+        return PlacementPolicySupportStatus.skipped;
+      }
+      if (_state.isCollisionMetadataLoading) {
+        return PlacementPolicySupportStatus.loading;
+      }
+      final catalog = _currentPreplacedPowerCatalog;
+      final source = catalog?.units[cap?.unitId];
+      final role = cap?.environmentProfile;
+      final sourceRole = source?.environmentProfile;
+      if (cap == null ||
+          source == null ||
+          role == null ||
+          sourceRole == null ||
+          role.requiresPsi != sourceRole.requiresPsi ||
+          role.requiresCreep != sourceRole.requiresCreep ||
+          cap.isBuilding != source.isBuilding ||
+          cap.isSubunit != source.isSubunit ||
+          cap.isFlyingBuilding != source.isFlyingBuilding ||
+          cap.requiresRelationLink != source.requiresRelationLink) {
+        return PlacementPolicySupportStatus.unavailable;
+      }
+      if (!role.requiresPsi) return PlacementPolicySupportStatus.notApplicable;
+      final box = cap.placementBox, sourceBox = source.placementBox;
+      return !cap.isBuilding ||
+              cap.isSubunit ||
+              cap.isFlyingBuilding ||
+              cap.requiresRelationLink ||
+              profile == null ||
+              profile.isFlyer ||
+              source.collisionProfile?.isFlyer != profile.isFlyer ||
+              box == null ||
+              sourceBox == null ||
+              box.width != sourceBox.width ||
+              box.height != sourceBox.height
+          ? PlacementPolicySupportStatus.unavailable
+          : PlacementPolicySupportStatus.enabled;
+    }
+
     // Report configured support, not a cached preview verdict. Existing UNIT
     // metadata, map structure and exact footprints are rechecked at placement.
     return Map.unmodifiable({
@@ -1024,6 +1081,7 @@ class PlacementCatalogController {
       PlacementPolicyRule.unitOverlap: overlapStatus(),
       PlacementPolicyRule.terrain: terrainStatus(),
       PlacementPolicyRule.resourceDistance: resourceStatus(),
+      PlacementPolicyRule.preplacedPower: preplacedPowerStatus(),
       PlacementPolicyRule.power: building
           ? PlacementPolicySupportStatus.notImplemented
           : PlacementPolicySupportStatus.notApplicable,
@@ -1249,6 +1307,9 @@ class PlacementCatalogController {
     }
     return (source.$1!, source.$2!, source.$3!, source.$4!);
   }
+
+  UnitPowerCatalog? get _currentPreplacedPowerCatalog =>
+      _currentPowerIdentity == null ? null : _powerCatalog;
 
   void _invalidatePowerState() {
     _powerDocumentRevision++;
@@ -1550,6 +1611,9 @@ class PlacementCatalogController {
                 checkResourceDistance:
                     checkPolicies && _state.checkResourceDistance,
                 resourceDistanceCatalog: _currentResourceDistanceCatalog,
+                checkPreplacedPower:
+                    checkPolicies && _state.checkPreplacedPower,
+                preplacedPowerCatalog: _currentPreplacedPowerCatalog,
               )
             : objectEditingController.previewCatalogSpriteUnit(
                 capability: capability,
@@ -1676,6 +1740,8 @@ class PlacementCatalogController {
       terrainSnapshot: _currentTerrainPlacement,
       checkResourceDistance: _state.checkResourceDistance,
       resourceDistanceCatalog: _currentResourceDistanceCatalog,
+      checkPreplacedPower: _state.checkPreplacedPower,
+      preplacedPowerCatalog: _currentPreplacedPowerCatalog,
     );
   }
 
@@ -1993,6 +2059,7 @@ class PlacementCatalogController {
     bool? isCollisionMetadataLoading,
     bool? checkUnitTerrain,
     bool? checkResourceDistance,
+    bool? checkPreplacedPower,
     bool? isTerrainPlacementLoading,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
@@ -2021,6 +2088,7 @@ class PlacementCatalogController {
     checkUnitTerrain: checkUnitTerrain ?? _state.checkUnitTerrain,
     checkResourceDistance:
         checkResourceDistance ?? _state.checkResourceDistance,
+    checkPreplacedPower: checkPreplacedPower ?? _state.checkPreplacedPower,
     isTerrainPlacementLoading:
         isTerrainPlacementLoading ?? _state.isTerrainPlacementLoading,
     gridVisible: gridVisible ?? _state.gridVisible,
