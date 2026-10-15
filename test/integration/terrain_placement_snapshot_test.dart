@@ -30,6 +30,11 @@ void main() {
         final snapshot = source.snapshot;
         expect(source.assets, hasLength(2));
         expect(source.assets.last.path, endsWith('.vf4'));
+        expect(snapshot.creepCandidateProfile, isNotNull);
+        expect(
+          snapshot.creepCandidateProfile!.groupFlags,
+          hasLength(snapshot.groupBuildable.length),
+        );
         expect(
           snapshot.groupBuildable.length,
           source.assets.first.byteLength ~/ 52,
@@ -45,10 +50,18 @@ void main() {
         );
         expect(connections.isSuccess, isTrue, reason: connections.errorCode);
         expect(
+          connections.snapshot!.groups,
+          hasLength(snapshot.groupBuildable.length),
+        );
+        expect(
           source.assets.first.sha256,
           connections.snapshot!.assets.first.sha256,
         );
         for (final group in connections.snapshot!.groups) {
+          expect(
+            snapshot.creepCandidateProfile!.flagsForGroup(group.group),
+            group.flagsWord & 0x5040,
+          );
           expect(
             snapshot.groupBuildable[group.group],
             (group.flagsWord & 0x80) == 0,

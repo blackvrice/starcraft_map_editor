@@ -23,8 +23,11 @@ TerrainPlacementSnapshot ReadTerrainPlacement(
     result.asset_sha256[i] = TerrainAssetSha256(assets[i]);
   }
   for (std::size_t group = 0; group < cv5.size() / 52; ++group) {
+    const auto flags = U16(cv5, group * 52 + 2);
     // CV5 Unbuildable=bit7. Walkable bits in CV5 cannot replace VF4.
-    result.group_buildable.push_back((U16(cv5, group * 52 + 2) & 0x80U) == 0);
+    result.group_buildable.push_back((flags & 0x80U) == 0);
+    // Independent source bits, not a has-creep boolean or tile coverage.
+    result.creep_candidate_flags.push_back(flags & 0x5040U);
     std::array<std::uint16_t, 16> references{};
     for (std::size_t member = 0; member < 16; ++member) {
       // Preserve missing references; consumers must report unknown, not pass.

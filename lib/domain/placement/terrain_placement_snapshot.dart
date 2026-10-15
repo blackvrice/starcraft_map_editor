@@ -1,4 +1,5 @@
 import '../chk/typed/chk_terrain_views.dart';
+import 'cv5_creep_candidate_profile.dart';
 import 'unit_collision_profile.dart';
 
 enum TerrainFootprintCheck {
@@ -9,15 +10,16 @@ enum TerrainFootprintCheck {
   outOfBounds,
 }
 
-/// Derived local CV5/VF4 facts, not graphics, creep, power or runtime DAT state.
-/// Only buildability/walkability projections cross this boundary. Successful
-/// reads do not prove creep presence or absence, even on an empty UNIT map.
+/// Derived local CV5/VF4 facts, not graphics, power or observed creep state.
+/// Optional static CV5 candidate flags do not prove creep presence or absence,
+/// even on an empty UNIT map. Footprint checks use buildability/walkability only.
 final class TerrainPlacementSnapshot {
   TerrainPlacementSnapshot({
     required this.tileset,
     required List<bool> groupBuildable,
     required List<List<int>> megaTileReferences,
     required List<int> walkableMasks,
+    this.creepCandidateProfile,
   }) : groupBuildable = List.unmodifiable(groupBuildable),
        megaTileReferences = List.unmodifiable(
          megaTileReferences.map((row) => List<int>.unmodifiable(row)),
@@ -28,6 +30,9 @@ final class TerrainPlacementSnapshot {
         groupBuildable.isEmpty ||
         groupBuildable.length > 4096 ||
         megaTileReferences.length != groupBuildable.length ||
+        (creepCandidateProfile != null &&
+            creepCandidateProfile!.groupFlags.length !=
+                groupBuildable.length) ||
         walkableMasks.isEmpty ||
         walkableMasks.length > 65536 ||
         walkableMasks.any((mask) => mask < 0 || mask > 65535) ||
@@ -48,6 +53,9 @@ final class TerrainPlacementSnapshot {
 
   /// VF4 bit0 projected to bit (row*4+column), for sixteen 8px mini-tiles.
   final List<int> walkableMasks;
+
+  /// Missing on legacy helpers. Shares this snapshot's CV5 source identity.
+  final Cv5CreepCandidateProfile? creepCandidateProfile;
 
   /// Invalid references stay unknown; do not substitute mega-tile zero.
   ({bool buildable, int walkableMask})? tile(int rawValue) {

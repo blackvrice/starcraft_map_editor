@@ -240,6 +240,8 @@ int ReadTerrainPlacementSnapshot(
   response["groupBuildable"] = snapshot.group_buildable;
   response["megaTileReferences"] = snapshot.mega_tile_references;
   response["walkableMasks"] = snapshot.walkable_masks;
+  response["creepCandidateProfile"] = {
+      {"version", 1}, {"groupFlags", snapshot.creep_candidate_flags}};
   std::cout << response.dump() << '\n';
   return 0;
 }

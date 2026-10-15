@@ -18,6 +18,22 @@ void main() {
   );
 
   for (var tileset = 0; tileset < 8; tileset++) {
+    test('optional CV5 profile is source-bound for tileset $tileset', () {
+      final json = terrainPlacementJson(tileset: tileset);
+      json['creepCandidateProfile'] = {
+        'version': 1,
+        'groupFlags': [0, 0x5040],
+      };
+      final source = decode(json, tileset: tileset);
+      expect(source.snapshot.creepCandidateProfile!.groupFlags, [0, 0x5040]);
+      expect(source.assets.first.path, endsWith('.cv5'));
+      json['creepCandidateProfile']['groupFlags'][0] = 0x40;
+      expect(source.snapshot.creepCandidateProfile!.groupFlags, [0, 0x5040]);
+      expect(
+        () => source.snapshot.creepCandidateProfile!.groupFlags.clear(),
+        throwsUnsupportedError,
+      );
+    });
     test('reads derived facts and source identity for tileset $tileset', () {
       final source = decode(
         terrainPlacementJson(tileset: tileset),
@@ -28,6 +44,105 @@ void main() {
       expect(source.assets.length, 2);
       expect(source.revision, startsWith('terrain-placement-v1:'));
     });
+  }
+  test(
+    'missing and null profiles preserve legacy unknown state and revision',
+    () {
+      final missing = decode(terrainPlacementJson());
+      final json = terrainPlacementJson()..['creepCandidateProfile'] = null;
+      final explicitNull = decode(json);
+      expect(missing.snapshot.creepCandidateProfile, isNull);
+      expect(explicitNull.snapshot.creepCandidateProfile, isNull);
+      expect(explicitNull.revision, missing.revision);
+    },
+  );
+  test(
+    'profile presence and every independent bit participate in revision',
+    () {
+      final missing = decode(terrainPlacementJson()).revision;
+      final revisions = <String>{missing};
+      for (final flags in [
+        0,
+        0x40,
+        0x1000,
+        0x1040,
+        0x4000,
+        0x4040,
+        0x5000,
+        0x5040,
+      ]) {
+        final json = terrainPlacementJson()
+          ..['creepCandidateProfile'] = {
+            'version': 1,
+            'groupFlags': [flags, 0],
+          };
+        final source = decode(json);
+        expect(source.snapshot.creepCandidateProfile!.flagsForGroup(0), flags);
+        expect(revisions.add(source.revision), isTrue);
+        expect(decode(json).revision, source.revision);
+        json['requestId'] = 'moved';
+        json['installation']['path'] = r'C:\Other';
+        expect(
+          decode(json, operation: 'moved', path: r'C:\Other').revision,
+          source.revision,
+        );
+        json['assets'][0]['sha256'] = 'c' * 64;
+        expect(
+          decode(json, operation: 'moved', path: r'C:\Other').revision,
+          isNot(source.revision),
+        );
+      }
+    },
+  );
+  final invalidProfiles = <String, Object?>{
+    'non-object': [],
+    'missing version': {
+      'groupFlags': [0, 0],
+    },
+    'unknown version': {
+      'version': 2,
+      'groupFlags': [0, 0],
+    },
+    'floating version': {
+      'version': 1.0,
+      'groupFlags': [0, 0],
+    },
+    'missing flags': {'version': 1},
+    'null flags': {'version': 1, 'groupFlags': null},
+    'short flags': {
+      'version': 1,
+      'groupFlags': [0],
+    },
+    'extra flags': {
+      'version': 1,
+      'groupFlags': [0, 0, 0],
+    },
+    for (final flag in [
+      -1,
+      1,
+      0x80,
+      0x8000,
+      0x5041,
+      65536,
+      1.0,
+      '0',
+      false,
+      null,
+    ])
+      'flag $flag': {
+        'version': 1,
+        'groupFlags': [0, flag],
+      },
+  };
+  for (final entry in invalidProfiles.entries) {
+    test(
+      'rejects malformed CV5 profile ${entry.key}, not silent legacy fallback',
+      () {
+        final json = terrainPlacementJson()
+          ..['creepCandidateProfile'] = entry.value;
+        expect(() => decode(json), throwsFormatException);
+      },
+    );
   }
   test(
     'canonical revision ignores transport location but tracks facts and sources',

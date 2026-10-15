@@ -2,6 +2,9 @@
 
 후속으로 [UNIT 지형 검사 연결](UNIT_TERRAIN_PLACEMENT_POLICY.md)을 구현했다.
 아래는 자료·순수 판정 단계의 당시 범위와 검증 기록이며 현행 UI/정책은 후속 문서를 따른다.
+2026-10-15 후속 [CV5 크립 후보 플래그](CV5_CREEP_CANDIDATE_PROFILE.md)는 같은 응답에
+선택적 `creepCandidateProfile` v1을 추가했다. 정적 bit6/12/14이며 실제 coverage와
+기존 footprint 판정은 변경하지 않는다. 아래는 최초 구현 당시의 검증 기록이다.
 
 2026-10-14. FR-218/219, EP1의 지형 자료·순수 footprint 판정 단위다.
 **읽기 전용 조회와 판정만 구현**했다. 실제 카탈로그 배치/ghost/정상·자유 설정에

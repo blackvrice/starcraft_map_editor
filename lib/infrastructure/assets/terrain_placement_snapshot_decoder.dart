@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../../application/ports/terrain_connection_snapshot_gateway.dart';
 import '../../application/ports/terrain_placement_snapshot_gateway.dart';
+import '../../domain/placement/cv5_creep_candidate_profile.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import 'starcraft_data_helper_protocol.dart';
 
@@ -84,11 +85,29 @@ final class TerrainPlacementSnapshotDecoder {
       json['walkableMasks'],
       assets[1].byteLength ~/ 32,
     ).map((mask) => _int(mask, 65535)).toList();
+    Cv5CreepCandidateProfile? creepProfile;
+    final rawProfile = json['creepCandidateProfile'];
+    if (rawProfile != null) {
+      final profile = _object(rawProfile);
+      if (profile['version'] is! int ||
+          profile['version'] != Cv5CreepCandidateProfile.version) {
+        throw const FormatException('Unsupported CV5 creep candidate version.');
+      }
+      final flags = _list(profile['groupFlags'], groups).map((value) {
+        final flag = _int(value, 65535);
+        if ((flag & ~Cv5CreepCandidateProfile.mask) != 0) {
+          throw const FormatException('Unexpected CV5 creep candidate bits.');
+        }
+        return flag;
+      }).toList();
+      creepProfile = Cv5CreepCandidateProfile(groupFlags: flags);
+    }
     final snapshot = TerrainPlacementSnapshot(
       tileset: tileset,
       groupBuildable: buildable,
       megaTileReferences: references,
       walkableMasks: masks,
+      creepCandidateProfile: creepProfile,
     );
     // Canonical identity excludes request IDs and installation directory.
     final identity = [
@@ -102,6 +121,9 @@ final class TerrainPlacementSnapshotDecoder {
       buildable,
       references,
       masks,
+      // Preserve legacy identities; known zero flags differ from missing data.
+      if (creepProfile != null)
+        [Cv5CreepCandidateProfile.version, creepProfile.groupFlags],
     ];
     return TerrainPlacementSource(
       snapshot: snapshot,

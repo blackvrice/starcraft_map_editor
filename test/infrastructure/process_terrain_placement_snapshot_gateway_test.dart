@@ -37,10 +37,30 @@ void main() {
       final snapshot = result.source!.snapshot;
       expect(snapshot.groupBuildable, hasLength(4096));
       expect(snapshot.walkableMasks, hasLength(65536));
+      expect(snapshot.creepCandidateProfile!.groupFlags, hasLength(4096));
+      expect(snapshot.creepCandidateProfile!.flagsForGroup(4095), 0x5040);
       expect(snapshot.tile(65535), (buildable: false, walkableMask: 65535));
       expect(result.stdout.length, greaterThan(256 * 1024));
       expect(result.stderr, contains('synthetic placement snapshot log'));
       expect(result.exitCode, 0);
+    },
+    skip: !Platform.isWindows,
+  );
+
+  test(
+    'legacy helper response stays usable without candidate metadata',
+    () async {
+      final result = await gateway().readPlacement(
+        operationId: 'placement',
+        installationPath: r'C:\legacy',
+        tileset: 0,
+      );
+      expect(result.isSuccess, isTrue, reason: result.errorCode);
+      expect(result.source!.snapshot.creepCandidateProfile, isNull);
+      expect(result.source!.snapshot.tile(0), (
+        buildable: true,
+        walkableMask: 0,
+      ));
     },
     skip: !Platform.isWindows,
   );
@@ -50,6 +70,7 @@ void main() {
     ('failure', 'SC_TERRAIN_HELPER_FAILED', 1024),
     ('overflow', 'SC_TERRAIN_OUTPUT_LIMIT', 1024),
     ('mismatch', 'SC_TERRAIN_RESPONSE_INVALID', 2 * 1024 * 1024),
+    ('bad-profile', 'SC_TERRAIN_RESPONSE_INVALID', 2 * 1024 * 1024),
   ]) {
     test('placement transport rejects $path without a usable source', () async {
       final result = await gateway(limit: limit).readPlacement(

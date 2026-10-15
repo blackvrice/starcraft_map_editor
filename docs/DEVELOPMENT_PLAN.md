@@ -1209,7 +1209,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 초기 크립 자료 계약: 3상태 tile coverage·양의 요구 footprint·문서/출처/revision 수집 포트 계약 (실제 collector/앱 조회/UI 정책 제외)
 - [x] EP1 앱 크립 조회: 문서/자료/revision 수명·명시적 snapshot 검증·최종 좌표 read-only inspection (collector/UI 정책 별도)
 - [x] EP1 초기 크립 수집 feasibility: 자료/시점/권한·미확인 영역과 실제 adapter/설계 모델 지원 범위 확정 (실제 collector 완료 아님)
-- [ ] EP1 CV5 크립 후보 플래그 자료: optional 숫자 profile·독립 bit6/12/14·출처/strict decode·합성/native/8타일셋 회귀 (실제 coverage 제외)
+- [x] EP1 CV5 크립 후보 플래그 자료: optional 숫자 profile·독립 bit6/12/14·출처/strict decode·합성/native/8타일셋 회귀 (실제 coverage 제외)
 - [ ] 실제 initialMap/live 크립 collector·관찰 시점/권한·SC:R 비교 인수 검증
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
@@ -1305,7 +1305,14 @@ Windows Debug/native7종을 확인했다. 초기 analyze의 테스트 중괄호3
 새 추론 방지15개·전체1,869통과/59skip·analyze 무이슈·Windows Debug/native7종을 확인했다.
 이번 Dart3파일 포맷은 통과, 전체 포맷은 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4로
 검증했으며 기준 SDK·실제 collector·로컬 CV5 플래그 분포와 게임/외부 인수는 별도다.
-다음 단위는 CV5 bit6/12/14의 독립 optional 숫자 자료·출처·엄격한 응답/로컬 회귀다.
+이어서 [CV5 크립 후보 플래그 자료](CV5_CREEP_CANDIDATE_PROFILE.md)를 구현했다.
+동일 CV5 읽기의 optional version1 profile로 bit6/12/14를 독립 숫자로 유지하고
+부모 출처/revision에 결합한다. 이전 helper missing/null은 미확인이며 잘못된 profile은 거절한다.
+실제 로컬8타일셋14,886그룹을 기존 CV5 flags/SHA와 대조했고 actual coverage로 승격하지 않는다.
+새50개·전체1,919통과/59skip·로컬 연동316통과·analyze 무이슈·Windows Debug/native7종을 확인했다.
+변경 Dart8파일 포맷은 통과, 전체 포맷은 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
+기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 별도다. 다음 단위는 실제 초기/live
+collector의 관찰 시점/권한/지원 버전과 unknown 입력 검증이며 게임 인수는 별도다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

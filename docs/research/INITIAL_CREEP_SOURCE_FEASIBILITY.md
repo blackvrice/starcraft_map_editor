@@ -140,3 +140,7 @@ read result가 없는 unavailable임을 검사한다. 게임 재현이나 수집
 다음 구현은 로컬 CV5의 크립 관련 bit6/12/14를 독립적인 파생 숫자 자료로 읽고,
 기존 helper optional 응답·출처·strict decode·합성/native/8타일셋 회귀를 검증하는 단위다.
 그 자료만으로 initialMap/live coverage를 만드는 기능까지 완료 처리하지 않는다.
+
+후속 [CV5 크립 후보 플래그 자료](../CV5_CREEP_CANDIDATE_PROFILE.md)에서 해당 정적
+조회와 로컬8타일셋 대조를 구현했다. 위 실행 기록은 조사 당시의 증거로 유지하며,
+후속 숫자 조회도 실제 크립 관찰이나 초기/live collector 완료로 계산하지 않는다.

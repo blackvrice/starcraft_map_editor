@@ -43,6 +43,7 @@ import 'package:starcraft_map_editor/application/ports/unit_power_state_gateway.
 import 'package:starcraft_map_editor/application/ports/unit_creep_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_creep_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_creep_coverage.dart';
+import 'package:starcraft_map_editor/domain/placement/cv5_creep_candidate_profile.dart';
 import 'package:starcraft_map_editor/infrastructure/placement/preplaced_unit_power_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
@@ -69,10 +70,12 @@ final class _TerrainPlacementGateway
     this.failure,
     this.hold = false,
     this.mask = 65535,
+    this.cv5Flags,
   });
   String? failure;
   final bool hold;
   final int mask;
+  final int? cv5Flags;
   int calls = 0;
   final release = Completer<void>();
   final cancelled = <String>[];
@@ -94,6 +97,9 @@ final class _TerrainPlacementGateway
             groupBuildable: [true],
             megaTileReferences: [List.filled(16, 0)],
             walkableMasks: [failure == 'walk' ? 0 : mask],
+            creepCandidateProfile: cv5Flags == null
+                ? null
+                : Cv5CreepCandidateProfile(groupFlags: [cv5Flags!]),
           ),
           revision: 'synthetic-v1',
           helperVersion: '0.7.0',
@@ -4031,10 +4037,13 @@ void _unitCreepInspectionTests() {
   Future<void> verifyUnobservedSource(
     Uint8List bytes, {
     bool loadTerrain = false,
+    int? cv5Flags,
   }) async {
     final f = await _openFixture(
       catalogGateway: _PowerCatalogGateway(requiresCreep: true),
-      terrainPlacementGateway: loadTerrain ? _TerrainPlacementGateway() : null,
+      terrainPlacementGateway: loadTerrain
+          ? _TerrainPlacementGateway(cv5Flags: cv5Flags)
+          : null,
       chkBytesOverride: bytes,
     );
     addTearDown(f.dispose);
@@ -4046,6 +4055,11 @@ void _unitCreepInspectionTests() {
         buildable: true,
         walkableMask: 65535,
       ));
+      expect(
+        c.lastTerrainPlacementRead!.source!.snapshot.creepCandidateProfile
+            ?.flagsForGroup(0),
+        cv5Flags,
+      );
     }
     final state = c.state;
     final session = f.openMapController.state.session!;
@@ -4142,6 +4156,27 @@ void _unitCreepInspectionTests() {
       await verifyUnobservedSource(_chkBytes(mapSize: 64), loadTerrain: true);
     },
   );
+  for (final flags in [
+    0,
+    0x40,
+    0x1000,
+    0x1040,
+    0x4000,
+    0x4040,
+    0x5000,
+    0x5040,
+  ]) {
+    test(
+      'creep source boundary: CV5 candidate flags $flags are not coverage',
+      () async {
+        await verifyUnobservedSource(
+          _chkBytes(mapSize: 64),
+          loadTerrain: true,
+          cv5Flags: flags,
+        );
+      },
+    );
+  }
   test(
     'creep requires an explicit collector and never guesses current UNITs',
     () async {

@@ -34,6 +34,19 @@ int main() {
   assert(projected.mega_tile_references[0][15] == 1);
   assert(projected.mega_tile_references[1][15] == 65535);
   assert(placement == placement_original);
+  // All independent combinations survive unrelated header bits unchanged.
+  auto candidates = placement_original;
+  candidates[0].resize(8 * 52);
+  const std::vector<std::uint16_t> candidate_flags{
+      0, 0x40, 0x1000, 0x1040, 0x4000, 0x4040, 0x5000, 0x5040};
+  for (std::size_t group = 0; group < 8; ++group) {
+    Put(candidates[0], group * 52 + 2, candidate_flags[group] | 0xafbfU);
+  }
+  const auto candidates_original = candidates;
+  const auto candidate_projection = sc::ReadTerrainPlacement(candidates);
+  assert(candidate_projection.success);
+  assert(candidate_projection.creep_candidate_flags == candidate_flags);
+  assert(candidates == candidates_original);
   for (std::size_t i = 0; i < 2; ++i) {
     auto bad = placement_original;
     bad[i].pop_back();
@@ -50,8 +63,11 @@ int main() {
   limits[0].resize(4096 * 52);
   limits[1].resize(65536 * 32);
   Put(limits[1], 65535 * 32 + 30, 1);
+  Put(limits[0], 4095 * 52 + 2, 0xffff);
   const auto largest = sc::ReadTerrainPlacement(limits);
   assert(largest.success && largest.walkable_masks.back() == 0x8000);
+  assert(largest.creep_candidate_flags.size() == 4096);
+  assert(largest.creep_candidate_flags.back() == 0x5040);
   limits[0].resize(4097 * 52);
   assert(!sc::ReadTerrainPlacement(limits).success);
   limits[0].resize(4096 * 52);

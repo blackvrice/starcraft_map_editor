@@ -20,7 +20,10 @@ if ($request.operation -eq 'readTerrainPlacement') {
     groupBuildable=@(for ($i=0; $i -lt 4096; $i++) { $i % 2 -eq 0 })
     megaTileReferences=$references
     walkableMasks=@(for ($i=0; $i -lt 65536; $i++) { $i })
+    creepCandidateProfile=@{version=1; groupFlags=@(for ($i=0; $i -lt 4096; $i++) { 20544 })}
   }
+  if ($request.installationPath -like '*legacy*') { $response.Remove('creepCandidateProfile') }
+  if ($request.installationPath -like '*bad-profile*') { $response.creepCandidateProfile.groupFlags[4095]=128 }
   if ($request.installationPath -like '*mismatch*') { $response.snapshotVersion=2 }
   [Console]::Error.WriteLine('synthetic placement snapshot log')
   [Console]::Out.WriteLine(($response | ConvertTo-Json -Depth 8 -Compress))

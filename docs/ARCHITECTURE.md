@@ -34,6 +34,10 @@ full metadata를 공유하되 수집 요청·취소·packet/log는 전력과 분
 후속 [크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md)와 [ADR-0016](decisions/0016-creep-source-boundaries.md)은
 CV5 정적 후보 자료와 실제 초기/live 관찰을 분리한다. collector 미지원·unknown을 유지하며
 raw MTXM/THG2 비트나 생성 유닛에서 자동 coverage를 만들지 않는다.
+후속 [CV5 크립 후보 플래그](CV5_CREEP_CANDIDATE_PROFILE.md)는 같은 지형 읽기에
+optional version1 `creepCandidateProfile`을 추가한다. 기존 helper 응답은 null profile로
+유지하고 출처/revision은 부모 snapshot에 결합한다. bit6/12/14의 숫자 자료이지
+실제 coverage나 배치 정책 입력이 아니며 UI/수집기·의존성은 추가하지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
