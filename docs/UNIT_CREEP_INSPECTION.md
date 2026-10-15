@@ -1,5 +1,8 @@
 # 앱 계층 읽기 전용 크립 조회
 
+후속 [초기 크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md)에서 실제 collector
+미지원과 정적 후보 자료의 지원 경계를 확정했다. 아래는 앱 API 연결 단계의 기록이다.
+
 2026-10-15. EP1/FR-218의 [초기 크립 자료와 순수 판정](UNIT_CREEP_VALIDATION.md)을
 application에 연결했다. 이번 결과는 **개발용 API와 문서/자료 수명 관리**다.
 실제 초기 크립 collector·UI·배치 차단·게임 인수를 구현한 것은 아니다.

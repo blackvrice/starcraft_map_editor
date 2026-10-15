@@ -6,6 +6,8 @@ typedef UnitCreepDataIdentity = (String, int, String, String);
 
 /// Explicit trusted observation only. No UNIT radius, terrain-image inference
 /// or implicit initial-map/live fallback. No built-in collector exists yet.
+/// Static CV5/MTXM/THG2 hints are not complete initial-game observations;
+/// see docs/decisions/0016-creep-source-boundaries.md before adding an adapter.
 abstract interface class UnitCreepStateGateway {
   Future<UnitCreepStateReadResult> read(UnitCreepStateRequest request);
   Future<void> cancel(String operationId);

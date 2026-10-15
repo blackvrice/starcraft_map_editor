@@ -31,6 +31,9 @@ adapter를 bootstrap에 등록한다. initialMap/live와 모델·cache·결과 �
 후속 [앱 계층 크립 조회](UNIT_CREEP_INSPECTION.md)는 기존 session/history 구독과
 full metadata를 공유하되 수집 요청·취소·packet/log는 전력과 분리한다. 명시적 load와
 최종 좌표 read-only inspection만 제공하고 collector/UI/배치 정책은 자동 등록하지 않는다.
+후속 [크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md)와 [ADR-0016](decisions/0016-creep-source-boundaries.md)은
+CV5 정적 후보 자료와 실제 초기/live 관찰을 분리한다. collector 미지원·unknown을 유지하며
+raw MTXM/THG2 비트나 생성 유닛에서 자동 coverage를 만들지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

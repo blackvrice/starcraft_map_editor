@@ -4028,6 +4028,120 @@ Uint8List _layoutChkBytes({
 }
 
 void _unitCreepInspectionTests() {
+  Future<void> verifyUnobservedSource(
+    Uint8List bytes, {
+    bool loadTerrain = false,
+  }) async {
+    final f = await _openFixture(
+      catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+      terrainPlacementGateway: loadTerrain ? _TerrainPlacementGateway() : null,
+      chkBytesOverride: bytes,
+    );
+    addTearDown(f.dispose);
+    await _selectPowerUnit(f);
+    final c = f.controller;
+    if (loadTerrain) {
+      expect(await c.loadTerrainPlacement(), isTrue);
+      expect(c.lastTerrainPlacementRead!.source!.snapshot.tile(0), (
+        buildable: true,
+        walkableMask: 65535,
+      ));
+    }
+    final state = c.state;
+    final session = f.openMapController.state.session!;
+    expect(await c.loadUnitCreepState(), isFalse);
+    expect(
+      await c.loadUnitCreepState(model: UnitCreepStateModel.live),
+      isFalse,
+    );
+    final result = c.inspectUnitCreepAt(pixelX: 1024, pixelY: 1024);
+    expect(result.check, UnitCreepCheck.unavailable);
+    expect(result.providerId, isNull);
+    expect(result.stateRevision, isNull);
+    expect(c.lastUnitCreepStateRead, isNull);
+    expect(c.state, same(state));
+    expect(f.openMapController.state.session, same(session));
+    expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+    expect(f.objectEditingController.state.undoDepth, 0);
+    expect(f.openMapController.editHistory.redoDepth, 0);
+    expect(
+      c.placementPolicySupport[PlacementPolicyRule.creep],
+      PlacementPolicySupportStatus.notImplemented,
+    );
+  }
+
+  for (final raw in [0, 0x0040, 0x4000, 0x8000, 0xffff]) {
+    test(
+      'creep source boundary: raw MTXM $raw is not an observation',
+      () async {
+        final terrain = ByteData(64 * 64 * 2);
+        for (var i = 0; i < 64 * 64; i++) {
+          terrain.setUint16(i * 2, raw, Endian.little);
+        }
+        await verifyUnobservedSource(
+          _chkBytes(mapSize: 64, terrainBytes: terrain.buffer.asUint8List()),
+        );
+      },
+    );
+  }
+  for (final flags in [0x1000, 0x4000, 0x5000]) {
+    test(
+      'creep source boundary: THG2 flags $flags are not tile coverage',
+      () async {
+        final sprite = ByteData(ChkSpritePlacement.recordLength)
+          ..setUint16(0, 131, Endian.little)
+          ..setUint16(2, 1024, Endian.little)
+          ..setUint16(4, 1024, Endian.little)
+          ..setUint16(8, flags, Endian.little);
+        await verifyUnobservedSource(
+          Uint8List.fromList([
+            ..._chkBytes(mapSize: 64),
+            ..._section('THG2', sprite.buffer.asUint8List()),
+          ]),
+        );
+      },
+    );
+  }
+  for (final id in [131, 132, 133, 143]) {
+    test(
+      'creep source boundary: preplaced producer ID $id is not observed spread',
+      () async {
+        final record = const UnitPlacementFactory().create(
+          capability: _PowerCatalogGateway().capability(id),
+          unitId: id,
+          owner: 0,
+          x: 1024,
+          y: 1024,
+          classId: 1,
+        );
+        await verifyUnobservedSource(
+          Uint8List.fromList([
+            ..._chkBytes(mapSize: 64),
+            ..._section('UNIT', record.bytes),
+          ]),
+        );
+      },
+    );
+  }
+  for (final fog in [0, 255]) {
+    test(
+      'creep source boundary: initial MASK $fog is not observer visibility',
+      () async {
+        await verifyUnobservedSource(
+          Uint8List.fromList([
+            ..._chkBytes(mapSize: 64),
+            ..._section('MASK', List.filled(64 * 64, fog)),
+          ]),
+        );
+      },
+    );
+  }
+  test(
+    'creep source boundary: buildable walkable terrain and empty UNIT remain unknown',
+    () async {
+      await verifyUnobservedSource(_chkBytes(mapSize: 64), loadTerrain: true);
+    },
+  );
   test(
     'creep requires an explicit collector and never guesses current UNITs',
     () async {

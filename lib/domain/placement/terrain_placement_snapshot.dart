@@ -10,6 +10,8 @@ enum TerrainFootprintCheck {
 }
 
 /// Derived local CV5/VF4 facts, not graphics, creep, power or runtime DAT state.
+/// Only buildability/walkability projections cross this boundary. Successful
+/// reads do not prove creep presence or absence, even on an empty UNIT map.
 final class TerrainPlacementSnapshot {
   TerrainPlacementSnapshot({
     required this.tileset,

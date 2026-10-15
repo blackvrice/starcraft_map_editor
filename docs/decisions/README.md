@@ -28,6 +28,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0013](0013-localized-editor-ui.md) | Accepted | 시스템 언어를 따르는 한국어·영어 UI |
 | [0014](0014-autosave-recovery-checkpoints.md) | Accepted | 원본과 분리된 미저장 문서 체크포인트·명시적 복구 |
 | [0015](0015-power-state-models.md) | Accepted | 실제 전력 상태와 명시적인 사전 배치 설계 모델 분리 |
+| [0016](0016-creep-source-boundaries.md) | Accepted | 크립 정적 후보 자료·설계 모델과 실제 관찰 분리, 미확인 유지 |
 
 ## 새 ADR 형식
 

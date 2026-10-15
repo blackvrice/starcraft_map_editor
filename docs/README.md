@@ -46,6 +46,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [사전 배치 전력 검사 정책](UNIT_PREPLACED_POWER_POLICY.md) | 기본 꺼짐 checkbox·현재 UNIT/최종 좌표·preview/Apply·한영 지원표·Undo/저장 회귀 | 제작용 전력 검사와 실제 상태 미지원 범위를 확인할 때 |
 | [초기 크립 자료와 순수 판정](UNIT_CREEP_VALIDATION.md) | 3상태 타일 coverage·양의 요구 footprint·문서/출처/revision 포트 계약·미지원 경계 | 크립 조회와 실제 상태 수집을 개발할 때 |
 | [앱 계층 크립 조회](UNIT_CREEP_INSPECTION.md) | 문서/자료 수명·명시적 수집·최종 좌표 read-only 판정·취소/Undo 회귀 | 크립 collector와 UI 정책을 연결할 때 |
+| [초기 크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md) | CV5/MTXM/THG2·생성/확장·관찰 권한의 근거/모순·ADR-0016·지원표 | 크립 자료 수집과 설계 모델 범위를 확정할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |
