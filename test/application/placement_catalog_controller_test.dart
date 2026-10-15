@@ -40,6 +40,9 @@ import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.d
 import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_power_unit_state.dart';
 import 'package:starcraft_map_editor/application/ports/unit_power_state_gateway.dart';
+import 'package:starcraft_map_editor/application/ports/unit_creep_state_gateway.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_creep_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_creep_coverage.dart';
 import 'package:starcraft_map_editor/infrastructure/placement/preplaced_unit_power_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
@@ -108,6 +111,7 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _unitCreepInspectionTests();
   _preplacedPowerPolicyTests();
   _preplacedPowerTests();
   _unitPowerInspectionTests();
@@ -4023,6 +4027,643 @@ Uint8List _layoutChkBytes({
   ]);
 }
 
+void _unitCreepInspectionTests() {
+  test(
+    'creep requires an explicit collector and never guesses current UNITs',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(await f.controller.loadUnitCreepState(), isFalse);
+      final inspection = f.controller.inspectUnitCreepAt(
+        pixelX: 1024,
+        pixelY: 1024,
+      );
+      expect(inspection.check, UnitCreepCheck.unavailable);
+      expect(inspection.point, (x: 1024, y: 1024));
+      expect(inspection.providerId, isNull);
+      expect(inspection.stateRevision, isNull);
+      expect(f.controller.lastUnitCreepStateRead, isNull);
+    },
+  );
+  test(
+    'creep explicit reads coalesce; inspection is read-only and owner independent',
+    () async {
+      final gateway = _CreepStateGateway(hold: true);
+      final catalog = _PowerCatalogGateway(requiresCreep: true);
+      final f = await _openFixture(
+        catalogGateway: catalog,
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(_creepAt(f), UnitCreepCheck.unavailable);
+      expect(gateway.requests, isEmpty);
+      final pending = c.loadUnitCreepState();
+      expect(c.loadUnitCreepState(), same(pending));
+      expect(_creepAt(f), UnitCreepCheck.unavailable);
+      gateway.release(gateway.requests.single);
+      expect(await pending, isTrue);
+      final session = f.openMapController.state.session!;
+      final bytes = const RawChkEncoder().encode(session.rawDocument);
+      final state = c.state;
+      final dirty = session.isDirty;
+      for (var i = 0; i < 10; i++) {
+        expect(_creepAt(f), UnitCreepCheck.covered);
+        expect(_creepAt(f, x: 1023), UnitCreepCheck.missing);
+      }
+      expect(c.state, same(state));
+      expect(f.openMapController.state.session, same(session));
+      expect(session.isDirty, dirty);
+      expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+      expect(f.objectEditingController.state.undoDepth, 0);
+      expect(f.openMapController.editHistory.redoDepth, 0);
+      expect(catalog.metadataRequests, 1);
+      expect(await c.loadUnitCreepState(), isTrue);
+      expect(gateway.requests, hasLength(1));
+      c.setOwner(1);
+      expect(_creepAt(f), UnitCreepCheck.covered);
+      final inspection = c.inspectUnitCreepAt(pixelX: 1024, pixelY: 1024);
+      expect(inspection.model, UnitCreepStateModel.initialMap);
+      expect(inspection.providerId, 'synthetic-creep');
+      expect(inspection.stateRevision, contains('unit-creep-'));
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.creep],
+        PlacementPolicySupportStatus.notImplemented,
+      );
+      expect(
+        c.previewAt(pixelX: 1023, pixelY: 1024, tileX: 31, tileY: 32),
+        isNull,
+      );
+      expect(
+        () => c.lastUnitCreepStateRead!.snapshot!.coverage.tiles.clear(),
+        throwsUnsupportedError,
+      );
+    },
+  );
+  for (final alignment in ['point', 'building']) {
+    test(
+      'creep inspection uses final $alignment footprint, not raw hover',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: _CreepStateGateway(),
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitCreepState(), isTrue);
+        expect(_creepAt(f, x: 1023), UnitCreepCheck.missing);
+        f.controller.setPointSnap(enabled: alignment == 'point', step: 32);
+        f.controller.setBuildingTileAlignment(alignment == 'building');
+        final result = f.controller.inspectUnitCreepAt(
+          pixelX: 1023,
+          pixelY: 1024,
+        );
+        expect(result.point, (x: 1024, y: 1024));
+        expect(result.check, UnitCreepCheck.covered);
+      },
+    );
+  }
+  test(
+    'creep retains common safety guards and ignores optional placement policies',
+    () async {
+      final gateway = _CreepStateGateway();
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitCreepState(), isTrue);
+      c.setPointSnap(enabled: true, step: 32);
+      for (final x in [-1, 2047, 2048, 0x7fffffffffffffff]) {
+        final result = c.inspectUnitCreepAt(pixelX: x, pixelY: 1024);
+        expect(result.issueCode, ObjectPlacementDiagnosticCodes.outOfBounds);
+        expect(result.check, isNull);
+        expect(result.point, isNull);
+        expect(result.model, isNull);
+      }
+      for (final hidden in [false, true]) {
+        f.mapLayerController.setLocked(MapLayerType.units, !hidden);
+        f.mapLayerController.setVisible(MapLayerType.units, !hidden);
+        expect(
+          c.inspectUnitCreepAt(pixelX: 1024, pixelY: 1024).issueCode,
+          ObjectPlacementDiagnosticCodes.layerLocked,
+        );
+      }
+      f.mapLayerController.setVisible(MapLayerType.units, true);
+      final owner = Object();
+      f.openMapController.editHistory.beginTransaction(owner);
+      expect(
+        c.inspectUnitCreepAt(pixelX: 1024, pixelY: 1024).issueCode,
+        ObjectPlacementDiagnosticCodes.historyBlocked,
+      );
+      expect(await c.loadUnitCreepState(), isFalse);
+      f.openMapController.editHistory.endTransaction(owner);
+      expect(await c.loadUnitCreepState(), isTrue);
+      c.setCheckUnitTerrain(true);
+      c.setAllowUnitOverlap(false);
+      c.setCheckResourceDistance(true);
+      c.setCheckPreplacedPower(true);
+      await c.loadCollisionMetadata();
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.unitTerrainUnavailable,
+      );
+      expect(_creepAt(f), UnitCreepCheck.covered);
+      expect(gateway.requests, hasLength(2));
+    },
+  );
+  test(
+    'creep failed reload never revives an older successful observation',
+    () async {
+      final gateway = _CreepStateGateway();
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitCreepState(), isTrue);
+      gateway.failure = 'error';
+      expect(await c.loadUnitCreepState(reload: true), isFalse);
+      expect(_creepAt(f), UnitCreepCheck.unavailable);
+      expect(c.lastUnitCreepStateRead!.errorCode, 'SYNTHETIC_FAILURE');
+      expect(
+        c.inspectUnitCreepAt(pixelX: 1024, pixelY: 1024).providerId,
+        isNull,
+      );
+      gateway.failure = null;
+      expect(await c.loadUnitCreepState(), isTrue);
+      expect(_creepAt(f), UnitCreepCheck.covered);
+      expect(gateway.requests, hasLength(3));
+    },
+  );
+  test(
+    'creep whole-box result is distinct from point preflight refusal',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: _CreepStateGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(await f.controller.loadUnitCreepState(), isTrue);
+      final result = f.controller.inspectUnitCreepAt(pixelX: 16, pixelY: 1024);
+      expect(result.point, (x: 16, y: 1024));
+      expect(result.issueCode, isNull);
+      expect(result.check, UnitCreepCheck.outOfBounds);
+    },
+  );
+  for (final failure in [
+    'sync',
+    'throw',
+    'error',
+    'nonzeroExit',
+    'empty',
+    'request',
+    'provider',
+    'revision',
+    'model',
+    'rules',
+    'width',
+    'height',
+  ]) {
+    test(
+      'creep rejects $failure response and explicit retry recovers',
+      () async {
+        final gateway = _CreepStateGateway(failure: failure);
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: gateway,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitCreepState(), isFalse);
+        expect(_creepAt(f), UnitCreepCheck.unavailable);
+        final rejected = f.controller.lastUnitCreepStateRead;
+        if (failure != 'sync' && failure != 'throw') {
+          expect(rejected!.stdout, contains('not game evidence'));
+          expect(rejected.stderr, 'synthetic raw diagnostic');
+        }
+        gateway.failure = null;
+        expect(await f.controller.loadUnitCreepState(), isTrue);
+        expect(_creepAt(f), UnitCreepCheck.covered);
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+  for (final fill in [UnitCreepTile.absent, UnitCreepTile.unknown]) {
+    test(
+      'creep successful collection preserves explicit $fill observation',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: _CreepStateGateway(fill: fill),
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitCreepState(), isTrue);
+        final result = f.controller.inspectUnitCreepAt(
+          pixelX: 1024,
+          pixelY: 1024,
+        );
+        expect(
+          result.check,
+          fill == UnitCreepTile.absent
+              ? UnitCreepCheck.missing
+              : UnitCreepCheck.unavailable,
+        );
+        expect(result.providerId, 'synthetic-creep');
+        expect(result.stateRevision, isNotEmpty);
+      },
+    );
+  }
+  for (final failure in ['source', 'coverage', 'role', 'geometry', 'box']) {
+    test(
+      'creep rejects $failure DAT metadata; explicit reload recovers',
+      () async {
+        final catalog = _PowerCatalogGateway(
+          requiresCreep: true,
+          failure: failure,
+        );
+        final f = await _openFixture(
+          catalogGateway: catalog,
+          unitCreepStateGateway: _CreepStateGateway(),
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        await f.controller.loadUnitCreepState();
+        expect(_creepAt(f), UnitCreepCheck.unavailable);
+        catalog.failure = null;
+        expect(await f.controller.loadCollisionMetadata(reload: true), isTrue);
+        expect(await f.controller.loadUnitCreepState(), isTrue);
+        expect(_creepAt(f), UnitCreepCheck.covered);
+      },
+    );
+  }
+  test(
+    'creep known no-requirement is N/A without collection; legacy stays unknown',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(_creepAt(f), UnitCreepCheck.notApplicable);
+      final legacy = await _openFixture(
+        catalogGateway: _CollisionGateway(),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(legacy.dispose);
+      await _selectPowerUnit(legacy);
+      expect(_creepAt(legacy), UnitCreepCheck.unavailable);
+    },
+  );
+  for (final pending in [false, true]) {
+    for (final change in [
+      'editUndo',
+      'terrainUndo',
+      'history',
+      'installation',
+      'session',
+      'metadata',
+      'reopen',
+      'dispose',
+    ]) {
+      test(
+        'creep ${pending ? 'pending' : 'cached'} packet is invalidated by $change',
+        () async {
+          final gateway = _CreepStateGateway(hold: pending);
+          final f = await _openFixture(
+            catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+            unitCreepStateGateway: gateway,
+            chkBytesOverride: _powerChkBytes(),
+          );
+          addTearDown(f.dispose);
+          await _selectPowerUnit(f);
+          final c = f.controller;
+          final read = c.loadUnitCreepState();
+          if (!pending) expect(await read, isTrue);
+          switch (change) {
+            case 'editUndo':
+              expect(
+                f.objectEditingController
+                    .placeCatalogUnit(
+                      capability: _PowerCatalogGateway().capability(0),
+                      unitId: 0,
+                      owner: 0,
+                      pixelX: 1800,
+                      pixelY: 1800,
+                    )
+                    .isPlaced,
+                isTrue,
+              );
+              expect(_creepAt(f), UnitCreepCheck.unavailable);
+              expect(f.objectEditingController.undo(), isTrue);
+            case 'terrainUndo':
+              final terrain = f.terrainEditingController;
+              expect(terrain.selectCatalogTile(16), isTrue);
+              expect(terrain.beginBrushStroke(), isTrue);
+              expect(
+                terrain.paintTiles([const TerrainTileCoordinate(x: 2, y: 2)]),
+                isTrue,
+              );
+              expect(terrain.commitBrushStroke(), isTrue);
+              expect(_creepAt(f), UnitCreepCheck.unavailable);
+              expect(terrain.undo(), isTrue);
+            case 'history':
+              final owner = Object();
+              f.openMapController.editHistory.beginTransaction(owner);
+              f.openMapController.editHistory.endTransaction(owner);
+            case 'installation':
+              c.setInstallationPath(r'C:\Other');
+              c.setInstallationPath(_installationPath);
+            case 'session':
+              c.synchronizeSession(null);
+            case 'metadata':
+              expect(await c.loadCollisionMetadata(reload: true), isTrue);
+            case 'reopen':
+              await f.openMapController.open(
+                sourcePath: r'C:\Maps\Catalog.scx',
+              );
+            case 'dispose':
+              await f.dispose();
+          }
+          if (pending) {
+            expect(
+              gateway.cancelled,
+              contains(gateway.requests.single.operationId),
+            );
+            gateway.release(gateway.requests.single);
+            expect(await read, isFalse);
+          }
+          expect(c.lastUnitCreepStateRead, isNull);
+          if (change != 'dispose') {
+            await _selectPowerUnit(f);
+            expect(_creepAt(f), UnitCreepCheck.unavailable);
+            gateway.hold = false;
+            expect(await c.loadUnitCreepState(), isTrue);
+            expect(_creepAt(f), UnitCreepCheck.covered);
+          } else {
+            expect(await c.loadUnitCreepState(), isFalse);
+          }
+        },
+      );
+    }
+  }
+  for (final failCancel in ['sync', 'async']) {
+    test(
+      'creep late reply cannot overwrite reload when $failCancel cancel fails',
+      () async {
+        final gateway = _CreepStateGateway(hold: true, failCancel: failCancel);
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: gateway,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final c = f.controller;
+        final first = c.loadUnitCreepState();
+        final second = c.loadUnitCreepState(reload: true);
+        gateway.release(gateway.requests.last);
+        expect(await second, isTrue);
+        final latest = c.lastUnitCreepStateRead;
+        gateway.failure = 'error';
+        gateway.release(gateway.requests.first);
+        expect(await first, isFalse);
+        expect(c.lastUnitCreepStateRead, same(latest));
+        expect(_creepAt(f), UnitCreepCheck.covered);
+      },
+    );
+  }
+  test(
+    'creep live requests are refused without fallback or retaining initial cache',
+    () async {
+      final gateway = _CreepStateGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      final read = c.loadUnitCreepState();
+      expect(
+        await c.loadUnitCreepState(model: UnitCreepStateModel.live),
+        isFalse,
+      );
+      expect(gateway.requests, hasLength(1));
+      expect(gateway.cancelled, contains(gateway.requests.single.operationId));
+      gateway.release(gateway.requests.single);
+      expect(await read, isFalse);
+      gateway.hold = false;
+      expect(await c.loadUnitCreepState(), isTrue);
+      expect(
+        c
+            .inspectUnitCreepAt(
+              pixelX: 1024,
+              pixelY: 1024,
+              model: UnitCreepStateModel.live,
+            )
+            .check,
+        UnitCreepCheck.unavailable,
+      );
+      expect(
+        await c.loadUnitCreepState(model: UnitCreepStateModel.live),
+        isFalse,
+      );
+      expect(_creepAt(f), UnitCreepCheck.unavailable);
+      expect(c.lastUnitCreepStateRead, isNull);
+    },
+  );
+  test(
+    'creep and power collection remain separate on explicit reload',
+    () async {
+      final power = _PowerStateGateway();
+      final creep = _CreepStateGateway();
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: creep,
+        unitPowerStateGateway: power,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitPowerState(), isTrue);
+      expect(await c.loadUnitCreepState(), isTrue);
+      final powerRead = c.lastUnitPowerStateRead;
+      expect(await c.loadUnitCreepState(reload: true), isTrue);
+      expect(c.lastUnitPowerStateRead, same(powerRead));
+      expect(power.requests, hasLength(1));
+      expect(creep.requests, hasLength(2));
+      expect(power.cancelled, isEmpty);
+    },
+  );
+  test(
+    'creep reload cancels only its pending operation, not pending power',
+    () async {
+      final power = _PowerStateGateway(hold: true);
+      final creep = _CreepStateGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: creep,
+        unitPowerStateGateway: power,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      final powerRead = c.loadUnitPowerState();
+      final oldCreep = c.loadUnitCreepState();
+      final newCreep = c.loadUnitCreepState(reload: true);
+      expect(c.loadUnitPowerState(), same(powerRead));
+      expect(power.cancelled, isEmpty);
+      expect(creep.cancelled, [creep.requests.first.operationId]);
+      power.release(power.requests.single);
+      creep.release(creep.requests.last);
+      expect(await powerRead, isTrue);
+      expect(await newCreep, isTrue);
+      final latestPower = c.lastUnitPowerStateRead;
+      final latestCreep = c.lastUnitCreepStateRead;
+      creep.release(creep.requests.first);
+      expect(await oldCreep, isFalse);
+      expect(c.lastUnitPowerStateRead, same(latestPower));
+      expect(c.lastUnitCreepStateRead, same(latestCreep));
+    },
+  );
+  for (final kind in [
+    StarCraftPlacementKind.tile,
+    StarCraftPlacementKind.pureSprite,
+    StarCraftPlacementKind.spriteUnit,
+    StarCraftPlacementKind.doodad,
+  ]) {
+    test(
+      'creep $kind inspection is not applicable and never collects',
+      () async {
+        final gateway = _CreepStateGateway();
+        final f = await _openFixture(
+          unitCapabilityAvailable: true,
+          unitCreepStateGateway: gateway,
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(kind);
+        c.confirm(c.state.items.first.key);
+        final result = c.inspectUnitCreepAt(pixelX: 64, pixelY: 64);
+        expect(result.check, UnitCreepCheck.notApplicable);
+        expect(result.point, isNull);
+        expect(result.model, isNull);
+        expect(await c.loadUnitCreepState(), isFalse);
+        expect(gateway.requests, isEmpty);
+      },
+    );
+  }
+}
+
+UnitCreepCheck? _creepAt(_Fixture f, {int x = 1024}) =>
+    f.controller.inspectUnitCreepAt(pixelX: x, pixelY: 1024).check;
+
+final class _CreepStateGateway implements UnitCreepStateGateway {
+  _CreepStateGateway({
+    this.failure,
+    this.hold = false,
+    this.failCancel,
+    this.fill = UnitCreepTile.present,
+  });
+  String? failure;
+  bool hold;
+  final String? failCancel;
+  final UnitCreepTile fill;
+  final requests = <UnitCreepStateRequest>[];
+  final cancelled = <String>[];
+  final _pending = <String, Completer<void>>{};
+  void release(UnitCreepStateRequest request) =>
+      _pending[request.operationId]!.complete();
+  @override
+  Future<UnitCreepStateReadResult> read(UnitCreepStateRequest request) {
+    requests.add(request);
+    if (failure == 'sync') throw StateError('Synthetic synchronous failure');
+    return () async {
+      if (hold) {
+        await (_pending[request.operationId] = Completer<void>()).future;
+      }
+      if (failure == 'throw') {
+        throw StateError('Synthetic asynchronous failure');
+      }
+      final dim = request.session.metadataViews.dimensions.single;
+      final width = failure == 'width' ? dim.width - 1 : dim.width;
+      final height = failure == 'height' ? dim.height - 1 : dim.height;
+      final tiles = List.filled(width * height, fill);
+      tiles[32 * width + 30] = UnitCreepTile.absent;
+      return UnitCreepStateReadResult(
+        snapshot: failure == 'empty'
+            ? null
+            : UnitCreepStateSnapshot(
+                request: failure == 'request'
+                    ? UnitCreepStateRequest(
+                        operationId: request.operationId,
+                        session: request.session,
+                        documentRevision: request.documentRevision,
+                        installationPath: request.installationPath,
+                        dataIdentity: request.dataIdentity,
+                        model: request.model,
+                      )
+                    : request,
+                providerId: failure == 'provider' ? ' ' : 'synthetic-creep',
+                revision: failure == 'revision'
+                    ? ''
+                    : 'synthetic-${request.operationId}',
+                model: failure == 'model'
+                    ? UnitCreepStateModel.live
+                    : request.model,
+                creepModelRevision: failure == 'rules'
+                    ? 'other'
+                    : UnitCreepCatalog.revision,
+                coverage: UnitCreepCoverage(
+                  width: width,
+                  height: height,
+                  tiles: tiles,
+                ),
+              ),
+        errorCode: failure == 'error' ? 'SYNTHETIC_FAILURE' : null,
+        exitCode: failure == 'nonzeroExit' ? 1 : 0,
+        stdout: 'synthetic observation, not game evidence',
+        stderr: 'synthetic raw diagnostic',
+      );
+    }();
+  }
+
+  @override
+  Future<void> cancel(String operationId) {
+    cancelled.add(operationId);
+    if (failCancel == 'sync') {
+      throw StateError('Synthetic synchronous cancel failure');
+    }
+    return failCancel == 'async'
+        ? Future.error(StateError('Synthetic asynchronous cancel failure'))
+        : Future.value();
+  }
+}
+
 void _unitPowerInspectionTests() {
   test(
     'power without a state adapter stays unknown and never guesses CHK',
@@ -4407,10 +5048,12 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
   _PowerCatalogGateway({
     this.failure,
     this.requiresPsi = true,
+    this.requiresCreep = false,
     this.hold = false,
   });
   String? failure;
   final bool requiresPsi;
+  final bool requiresCreep;
   final bool hold;
   final release = Completer<void>();
   int metadataRequests = 0;
@@ -4421,7 +5064,7 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
             ? null
             : UnitEnvironmentProfile(
                 requiresPsi: id == 0 && requiresPsi,
-                requiresCreep: false,
+                requiresCreep: id == 0 && requiresCreep,
               ),
         placementBox: numeric && failure == 'box'
             ? null
@@ -4593,6 +5236,7 @@ Future<_Fixture> _openFixture({
   StarCraftTileAtlasGateway? tileAtlasGateway,
   TerrainPlacementSnapshotGateway? terrainPlacementGateway,
   UnitPowerStateGateway? unitPowerStateGateway,
+  UnitCreepStateGateway? unitCreepStateGateway,
   Uint8List? chkBytesOverride,
   int pageSize = 2,
   int tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -4646,6 +5290,7 @@ Future<_Fixture> _openFixture({
   );
   final controller = PlacementCatalogController(
     unitPowerStateGateway: unitPowerStateGateway,
+    unitCreepStateGateway: unitCreepStateGateway,
     terrainPlacementGateway: terrainPlacementGateway,
     openMapController: openMapController,
     objectEditingController: objectEditingController,

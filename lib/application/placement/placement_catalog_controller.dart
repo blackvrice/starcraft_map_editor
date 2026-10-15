@@ -15,6 +15,9 @@ import 'unit_resource_distance_inspection.dart';
 import '../../domain/placement/unit_power_catalog.dart';
 import '../ports/unit_power_state_gateway.dart';
 import 'unit_power_inspection.dart';
+import '../../domain/placement/unit_creep_catalog.dart';
+import '../ports/unit_creep_state_gateway.dart';
+import 'unit_creep_inspection.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../../domain/placement/unit_placement_policy.dart';
 import 'placement_policy_support.dart';
@@ -219,6 +222,7 @@ class PlacementCatalogController {
     this.objectAtlasGateway,
     this.terrainPlacementGateway,
     this.unitPowerStateGateway,
+    this.unitCreepStateGateway,
     this.pageSize = StarCraftPlacementCatalogRequest.defaultLimit,
     this.recentLimit = 12,
     this.tileThumbnailBudgetBytes = 16 * 1024 * 1024,
@@ -229,18 +233,23 @@ class PlacementCatalogController {
         'tileThumbnailBudgetBytes',
       );
     }
+    // Both inspections share document events, not packets or cancellation.
     _powerSession = openMapController.state.session;
     _powerSessionSubscription = openMapController.changes.listen((state) {
       if (!identical(_powerSession, state.session)) {
         _powerSession = state.session;
         _invalidatePowerState();
+        _invalidateCreepState();
       }
     });
     // History notifications also invalidate an edit/Undo cycle that returns to
     // an earlier snapshot. Never revive a previously collected state packet.
-    _powerHistorySubscription = openMapController.editHistory.changes.listen(
-      (_) => _invalidatePowerState(),
-    );
+    _powerHistorySubscription = openMapController.editHistory.changes.listen((
+      _,
+    ) {
+      _invalidatePowerState();
+      _invalidateCreepState();
+    });
   }
 
   static const maximumRecentPerKind = 12;
@@ -253,6 +262,7 @@ class PlacementCatalogController {
   final StarCraftObjectAtlasGateway? objectAtlasGateway;
   final TerrainPlacementSnapshotGateway? terrainPlacementGateway;
   final UnitPowerStateGateway? unitPowerStateGateway;
+  final UnitCreepStateGateway? unitCreepStateGateway;
   final int pageSize;
   final int recentLimit;
   final int tileThumbnailBudgetBytes;
@@ -422,6 +432,12 @@ class PlacementCatalogController {
   UnitPowerStateRequest? _powerStateRequest;
   UnitPowerStateSnapshot? _powerStateSnapshot;
   UnitPowerStateReadResult? lastUnitPowerStateRead;
+  UnitCreepCatalog? _creepCatalog;
+  int _creepDocumentRevision = 0;
+  Future<bool>? _creepStatePending;
+  UnitCreepStateRequest? _creepStateRequest;
+  UnitCreepStateSnapshot? _creepStateSnapshot;
+  UnitCreepStateReadResult? lastUnitCreepStateRead;
   (String?, int?, String?, String?)? _collisionIdentity;
   (String?, int?, String?, String?)? _unitCatalogIdentity;
   Future<bool>? _collisionPending;
@@ -571,6 +587,7 @@ class PlacementCatalogController {
     if (!identical(_powerSession, session)) {
       _powerSession = session;
       _invalidatePowerState();
+      _invalidateCreepState();
     }
     final snapshot = session?.extractedMap;
     final tileset = mapTileset;
@@ -1189,6 +1206,7 @@ class PlacementCatalogController {
 
   void _invalidateCollisionMetadata() {
     _invalidatePowerState();
+    _invalidateCreepState();
     _collisionEpoch++;
     final operation = _collisionOperation;
     if (operation != null) unawaited(catalogGateway?.cancel(operation));
@@ -1197,6 +1215,7 @@ class PlacementCatalogController {
     _collisionCatalog = null;
     _resourceDistanceCatalog = null;
     _powerCatalog = null;
+    _creepCatalog = null;
     _collisionIdentity = null;
     lastCollisionMetadataPage = null;
     _state = _copy(isCollisionMetadataLoading: false);
@@ -1265,6 +1284,7 @@ class PlacementCatalogController {
         _collisionCatalog = UnitCollisionCatalog(units);
         _resourceDistanceCatalog = UnitResourceDistanceCatalog(units);
         _powerCatalog = UnitPowerCatalog(units);
+        _creepCatalog = UnitCreepCatalog(units);
         _collisionIdentity = source;
         return true;
       } catch (_) {
@@ -1291,7 +1311,8 @@ class PlacementCatalogController {
   UnitResourceDistanceCatalog? get _currentResourceDistanceCatalog =>
       _currentCollisionCatalog == null ? null : _resourceDistanceCatalog;
 
-  UnitPowerDataIdentity? get _currentPowerIdentity {
+  // Power and creep bind to the same source-matched numeric DAT snapshot.
+  UnitPowerDataIdentity? get _currentUnitDataIdentity {
     final source = _collisionIdentity;
     if (_currentCollisionCatalog == null ||
         source == null ||
@@ -1309,7 +1330,7 @@ class PlacementCatalogController {
   }
 
   UnitPowerCatalog? get _currentPreplacedPowerCatalog =>
-      _currentPowerIdentity == null ? null : _powerCatalog;
+      _currentUnitDataIdentity == null ? null : _powerCatalog;
 
   void _invalidatePowerState() {
     _powerDocumentRevision++;
@@ -1332,7 +1353,7 @@ class PlacementCatalogController {
       request.documentRevision == _powerDocumentRevision &&
       identical(request.session, openMapController.state.session) &&
       request.installationPath == _installationPath &&
-      request.dataIdentity == _currentPowerIdentity;
+      request.dataIdentity == _currentUnitDataIdentity;
 
   /// Explicit collection/projection only; never called by hover/preview/Apply.
   /// An adapter must not substitute a layout model for actual initial state.
@@ -1353,7 +1374,7 @@ class PlacementCatalogController {
     }
     if (_powerStatePending != null) return _powerStatePending!;
     final session = openMapController.state.session;
-    final source = _currentPowerIdentity;
+    final source = _currentUnitDataIdentity;
     final gateway = unitPowerStateGateway;
     if (session == null ||
         source == null ||
@@ -1436,7 +1457,7 @@ class PlacementCatalogController {
     final dimensions = session.metadataViews.dimensions.single;
     final snapshot = _powerStateSnapshot;
     final candidate = _state.selection!.unitCapability!;
-    final catalog = _currentPowerIdentity == null ? null : _powerCatalog;
+    final catalog = _currentUnitDataIdentity == null ? null : _powerCatalog;
     final statesCurrent =
         model != UnitPowerStateModel.live &&
         snapshot != null &&
@@ -1464,6 +1485,151 @@ class PlacementCatalogController {
       model: model,
       providerId: statesCurrent ? snapshot.providerId : null,
       stateRevision: statesCurrent ? snapshot.revision : null,
+    );
+  }
+
+  void _invalidateCreepState() {
+    _creepDocumentRevision++;
+    final request = _creepStateRequest;
+    _creepStateRequest = null;
+    _creepStateSnapshot = null;
+    _creepStatePending = null;
+    lastUnitCreepStateRead = null;
+    if (request != null) {
+      unawaited(
+        Future.sync(
+          () => unitCreepStateGateway?.cancel(request.operationId),
+        ).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      );
+    }
+  }
+
+  bool _isCreepRequestCurrent(UnitCreepStateRequest request) =>
+      !_disposed &&
+      !openMapController.editHistory.isTransactionActive &&
+      request.isCurrentFor(
+        session: openMapController.state.session,
+        documentRevision: _creepDocumentRevision,
+        installationPath: _installationPath,
+        dataIdentity: _currentUnitDataIdentity,
+      );
+
+  /// Explicit trusted collection only. No default collector is registered;
+  /// hover/preview/Apply never starts this request or invents coverage.
+  Future<bool> loadUnitCreepState({
+    bool reload = false,
+    UnitCreepStateModel model = UnitCreepStateModel.initialMap,
+  }) {
+    if (_disposed) return Future.value(false);
+    final previousModel =
+        _creepStateSnapshot?.model ?? _creepStateRequest?.model;
+    if (reload || (previousModel != null && previousModel != model)) {
+      _invalidateCreepState();
+    }
+    final session = openMapController.state.session;
+    final source = _currentUnitDataIdentity;
+    final gateway = unitCreepStateGateway;
+    if (model != UnitCreepStateModel.initialMap ||
+        _state.selection?.kind != StarCraftPlacementKind.unit ||
+        session == null ||
+        source == null ||
+        gateway == null ||
+        openMapController.editHistory.isTransactionActive ||
+        session.requiresRestrictedEditing) {
+      return Future.value(false);
+    }
+    final cached = _creepStateSnapshot;
+    if (cached != null && _isCreepRequestCurrent(cached.request)) {
+      return Future.value(true);
+    }
+    if (_creepStatePending != null) return _creepStatePending!;
+    final request = UnitCreepStateRequest(
+      operationId: 'unit-creep-${++_weaponRequest}',
+      session: session,
+      documentRevision: _creepDocumentRevision,
+      installationPath: _installationPath!,
+      dataIdentity: source,
+      model: model,
+    );
+    _creepStateRequest = request;
+    final future = () async {
+      try {
+        final result = await Future.sync(() => gateway.read(request));
+        // Cancellation is advisory. Identity/revision checks discard a late
+        // reply before it can replace a newer packet or its raw diagnostics.
+        if (!_isCreepRequestCurrent(request) ||
+            !identical(_creepStateRequest, request)) {
+          return false;
+        }
+        lastUnitCreepStateRead = result;
+        final snapshot = result.snapshot;
+        if (!result.isSuccess ||
+            snapshot == null ||
+            snapshot.coverageFor(request) == null) {
+          return false;
+        }
+        _creepStateSnapshot = snapshot;
+        return true;
+      } catch (_) {
+        return false;
+      } finally {
+        if (identical(_creepStateRequest, request)) {
+          _creepStateRequest = null;
+          _creepStatePending = null;
+        }
+      }
+    }();
+    _creepStatePending = future;
+    return future;
+  }
+
+  UnitCreepInspection inspectUnitCreepAt({
+    required int pixelX,
+    required int pixelY,
+    UnitCreepStateModel model = UnitCreepStateModel.initialMap,
+  }) {
+    if (_state.selection?.kind != StarCraftPlacementKind.unit) {
+      return const UnitCreepInspection.notApplicable();
+    }
+    String? preflight(int x, int y) => _previewAt(
+      pixelX: x,
+      pixelY: y,
+      tileX: x ~/ 32,
+      tileY: y ~/ 32,
+      checkPolicies: false,
+    );
+    final issue = preflight(pixelX, pixelY);
+    if (issue != null) return UnitCreepInspection.refused(issue);
+    final point = resolvePoint(pixelX, pixelY);
+    if (point != (x: pixelX, y: pixelY)) {
+      final finalIssue = preflight(point.x, point.y);
+      if (finalIssue != null) return UnitCreepInspection.refused(finalIssue);
+    }
+    final session = openMapController.state.session!;
+    final dimensions = session.metadataViews.dimensions.single;
+    final snapshot = _creepStateSnapshot;
+    final coverage =
+        model == UnitCreepStateModel.initialMap &&
+            snapshot != null &&
+            snapshot.model == model &&
+            _isCreepRequestCurrent(snapshot.request)
+        ? snapshot.coverageFor(snapshot.request)
+        : null;
+    final catalog = _currentUnitDataIdentity == null ? null : _creepCatalog;
+    return UnitCreepInspection.checked(
+      catalog?.checkRequirement(
+            candidate: _state.selection!.unitCapability!,
+            x: point.x,
+            y: point.y,
+            mapWidthTiles: dimensions.width,
+            mapHeightTiles: dimensions.height,
+            coverage: coverage,
+          ) ??
+          UnitCreepCheck.unavailable,
+      point: point,
+      model: model,
+      providerId: coverage == null ? null : snapshot!.providerId,
+      stateRevision: coverage == null ? null : snapshot!.revision,
     );
   }
 

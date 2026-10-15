@@ -28,6 +28,9 @@ adapter를 bootstrap에 등록한다. initialMap/live와 모델·cache·결과 �
 후속 [초기 크립 자료와 순수 판정](UNIT_CREEP_VALIDATION.md)은 3상태 타일 coverage와
 양의 요구 footprint 검사, 명시적 수집 포트의 문서/출처/revision 검증 계약을 추가한다.
 실제 collector·controller/UI/배치 경로와 live 상태는 아직 연결하지 않는다.
+후속 [앱 계층 크립 조회](UNIT_CREEP_INSPECTION.md)는 기존 session/history 구독과
+full metadata를 공유하되 수집 요청·취소·packet/log는 전력과 분리한다. 명시적 load와
+최종 좌표 read-only inspection만 제공하고 collector/UI/배치 정책은 자동 등록하지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
