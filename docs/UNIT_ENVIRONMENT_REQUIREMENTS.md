@@ -1,6 +1,8 @@
 # 전력·크립 요구 자료와 지원 계약
 
 후속 [순수 전력 mask와 공급 상태 판정](UNIT_POWER_VALIDATION.md)을 구현했다.
+후속 [초기 크립 자료와 양의 요구 판정](UNIT_CREEP_VALIDATION.md)은 3상태 coverage와
+출처 계약·순수 footprint만 구현한다. 실제 collector·앱 조회·배치 정책은 별도다.
 아래는 요구 flag 기반 단계의 당시 기록이며 앱 상태 공급·배치 차단은 계속 별도다.
 
 2026-10-15. EP1/FR-218의 다음 제한 구현이다. 로컬 classic DAT의 전력/크립

@@ -25,6 +25,9 @@ record/revision 검증을 추가한다. 기본 adapter는 없으며 hover I/O·�
 adapter를 bootstrap에 등록한다. initialMap/live와 모델·cache·결과 출처를 구분하며 UI 정책은 유지한다.
 후속 [사전 배치 전력 정책](UNIT_PREPLACED_POWER_POLICY.md)은 projection을 domain의 순수
 함수로 공유하고 공통 prepare에서 현재 UNIT을 재판정한다. 비동기 상태 packet/hover를 Apply 허가로 쓰지 않는다.
+후속 [초기 크립 자료와 순수 판정](UNIT_CREEP_VALIDATION.md)은 3상태 타일 coverage와
+양의 요구 footprint 검사, 명시적 수집 포트의 문서/출처/revision 검증 계약을 추가한다.
+실제 collector·controller/UI/배치 경로와 live 상태는 아직 연결하지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
