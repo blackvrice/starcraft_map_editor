@@ -16,6 +16,7 @@ import '../application/documents/save_map_controller.dart';
 import '../application/editing/object_editing_controller.dart';
 import '../application/editing/object_palette_controller.dart';
 import '../application/placement/placement_catalog_controller.dart';
+import '../infrastructure/placement/preplaced_unit_power_state_gateway.dart';
 import '../application/eud/eud_build_controller.dart';
 import '../application/eud/safe_eud_build_pipeline.dart';
 import '../application/eud/eud_source_controller.dart';
@@ -133,6 +134,7 @@ void bootstrap() {
   final tileAtlasGateway = ProcessStarCraftTileAtlasGateway.bundled();
   final objectAtlasGateway = ProcessStarCraftObjectAtlasGateway.bundled();
   final placementCatalogController = PlacementCatalogController(
+    unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
     terrainPlacementGateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
     openMapController: openMapController,
     objectEditingController: objectEditingController,

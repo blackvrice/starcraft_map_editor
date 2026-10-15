@@ -1273,11 +1273,19 @@ class PlacementCatalogController {
       request.installationPath == _installationPath &&
       request.dataIdentity == _currentPowerIdentity;
 
-  /// Explicit collection only; never called by hover/preview/Apply. There is
-  /// deliberately no default adapter that guesses state from raw CHK/DAT.
-  Future<bool> loadUnitPowerState({bool reload = false}) {
+  /// Explicit collection/projection only; never called by hover/preview/Apply.
+  /// An adapter must not substitute a layout model for actual initial state.
+  Future<bool> loadUnitPowerState({
+    bool reload = false,
+    UnitPowerStateModel model = UnitPowerStateModel.initialMap,
+  }) {
     if (_disposed) return Future.value(false);
-    if (reload) _invalidatePowerState();
+    final previousModel =
+        _powerStateSnapshot?.model ?? _powerStateRequest?.model;
+    if (reload || (previousModel != null && previousModel != model)) {
+      _invalidatePowerState();
+    }
+    if (model == UnitPowerStateModel.live) return Future.value(false);
     final cached = _powerStateSnapshot;
     if (cached != null && _isPowerRequestCurrent(cached.request)) {
       return Future.value(true);
@@ -1299,6 +1307,7 @@ class PlacementCatalogController {
       documentRevision: _powerDocumentRevision,
       installationPath: _installationPath!,
       dataIdentity: source,
+      model: model,
     );
     _powerStateRequest = request;
     final future = () async {
@@ -1315,7 +1324,7 @@ class PlacementCatalogController {
             !identical(snapshot.request, request) ||
             snapshot.providerId.trim().isEmpty ||
             snapshot.revision.trim().isEmpty ||
-            snapshot.model != UnitPowerStateModel.initialMap ||
+            snapshot.model != request.model ||
             snapshot.powerModelRevision != UnitPowerCatalog.revision ||
             snapshot.units.length != request.units.length) {
           return false;
@@ -1343,6 +1352,7 @@ class PlacementCatalogController {
   UnitPowerInspection inspectUnitPowerAt({
     required int pixelX,
     required int pixelY,
+    UnitPowerStateModel model = UnitPowerStateModel.initialMap,
   }) {
     if (_state.selection?.kind != StarCraftPlacementKind.unit) {
       return const UnitPowerInspection.notApplicable();
@@ -1367,7 +1377,10 @@ class PlacementCatalogController {
     final candidate = _state.selection!.unitCapability!;
     final catalog = _currentPowerIdentity == null ? null : _powerCatalog;
     final statesCurrent =
-        snapshot != null && _isPowerRequestCurrent(snapshot.request);
+        model != UnitPowerStateModel.live &&
+        snapshot != null &&
+        snapshot.model == model &&
+        _isPowerRequestCurrent(snapshot.request);
     // A confirmed no-psi candidate needs no supplier facts. All other cases
     // require a current packet, including a verified empty UNIT collection.
     final check =
@@ -1384,7 +1397,13 @@ class PlacementCatalogController {
             mapHeightTiles: dimensions.height,
             existing: statesCurrent ? snapshot.units : const [],
           );
-    return UnitPowerInspection.checked(check, point: point);
+    return UnitPowerInspection.checked(
+      check,
+      point: point,
+      model: model,
+      providerId: statesCurrent ? snapshot.providerId : null,
+      stateRevision: statesCurrent ? snapshot.revision : null,
+    );
   }
 
   /// Uses the current UNIT document and source-matched numeric metadata only.

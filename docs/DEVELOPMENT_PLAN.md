@@ -1204,6 +1204,8 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 전력/크립 요구 자료: optional version1 DAT bit17/19·strict decode·생성/공급과 요구 구분·후속 판정 계약 (coverage/배치 차단 제외)
 - [x] EP1 순수 전력 판정:10x16 psi mask·명시적 공급 상태·classic Pylon/소유자/후보 자료·unknown/경계 검증 (앱 상태 공급/배치 차단 제외)
 - [x] EP1 앱 전력 조회: 명시적 상태 포트·문서/출처/record/revision 결합·최종 좌표·취소/Undo 무효화 (실제 상태 adapter/UI 정책 제외)
+- [x] EP1 전력 설계 모델: 실제 초기 상태 한계 조사·명시적 preplacedLayout adapter·모델별 cache/출처 분리 (실제 collector/UI 정책 제외)
+- [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1262,7 +1264,14 @@ Flutter3.47.5/Dart3.13.4로 실행했으며 기준 SDK·기존 format3파일·�
 전력 checkbox/배치 차단은 추가하지 않았다.
 새 전력43개 포함 집중180통과/9skip·전체1663통과/58skip·로컬 controller189통과와
 analyze·Windows Debug/native7종을 확인했다. 기준 SDK·기존 format3파일·앱/게임 인수는 별도다.
-다음 코드 단위는 초기 맵 공급 상태의 근거/지원 범위와 검증된 상태 adapter다.
+이어서 [사전 배치 전력 모델](UNIT_POWER_LAYOUT.md)과 [ADR-0015](decisions/0015-power-state-models.md)를
+추가했다. 정적 CHK만으로 실제 초기 상태는 확정할 수 없어 collector를 완료 처리하지 않고,
+제작용 preplacedLayout을 명시적으로 요청한 경우만 지원하는 adapter를 별도로 구현했다.
+실제 상태 요청으로 fallback하지 않으며 결과 모델/출처·cache를 분리한다.
+새28개 포함 집중208통과/9skip·전체 재실행1691통과/58skip·로컬 controller217통과와
+analyze·Windows Debug/native7종을 확인했다. 초기 test loader 오류는 단독4개/전체
+재실행으로 통과했지만 원인은 미확정이며 기준 SDK·기존 format3파일·게임 인수는 남는다.
+다음 제작용 코드 단위는 기본 꺼짐 사전 배치 전력 정책·한영 지원표·preview/Apply 연결이다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

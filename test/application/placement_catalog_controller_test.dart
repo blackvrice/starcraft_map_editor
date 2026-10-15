@@ -40,6 +40,7 @@ import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.d
 import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_power_unit_state.dart';
 import 'package:starcraft_map_editor/application/ports/unit_power_state_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/placement/preplaced_unit_power_state_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_placement_policy.dart';
 import 'package:starcraft_map_editor/application/placement/placement_policy_support.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
@@ -107,6 +108,7 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _preplacedPowerTests();
   _unitPowerInspectionTests();
   for (final alignment in ['point', 'building']) {
     test(
@@ -3227,6 +3229,320 @@ final class _InconsistentPagingGateway
   Future<void> cancel(String operationId) async {}
 }
 
+void _preplacedPowerTests() {
+  const layout = UnitPowerStateModel.preplacedLayout;
+  test(
+    'layout adapter requires explicit model and preserves actual-state unknown',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+        chkBytesOverride: _layoutChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitPowerState(), isFalse);
+      expect(
+        c.lastUnitPowerStateRead!.errorCode,
+        PreplacedUnitPowerStateGateway.modelUnavailable,
+      );
+      expect(_powerAt(f), UnitPowerCheck.unavailable);
+      expect(await c.loadUnitPowerState(model: layout), isTrue);
+      final session = f.openMapController.state.session!;
+      final bytes = const RawChkEncoder().encode(session.rawDocument);
+      final state = c.state;
+      for (var i = 0; i < 5; i++) {
+        final result = c.inspectUnitPowerAt(
+          pixelX: 1024,
+          pixelY: 1024,
+          model: layout,
+        );
+        expect(result.check, UnitPowerCheck.powered);
+        expect(result.model, layout);
+        expect(result.providerId, PreplacedUnitPowerStateGateway.providerId);
+        expect(result.stateRevision, PreplacedUnitPowerStateGateway.revision);
+        final actual = c.inspectUnitPowerAt(pixelX: 1024, pixelY: 1024);
+        expect(actual.check, UnitPowerCheck.unavailable);
+        expect(actual.model, UnitPowerStateModel.initialMap);
+        expect(actual.providerId, isNull);
+        expect(actual.stateRevision, isNull);
+      }
+      expect(c.state, same(state));
+      expect(f.openMapController.state.session, same(session));
+      expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+      expect(f.objectEditingController.state.undoDepth, 0);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.power],
+        PlacementPolicySupportStatus.notImplemented,
+      );
+      expect(
+        await c.loadUnitPowerState(model: UnitPowerStateModel.live),
+        isFalse,
+      );
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+      expect(await c.loadUnitPowerState(model: layout), isTrue);
+      expect(await c.loadUnitPowerState(), isFalse);
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+    },
+  );
+  for (final model in [
+    UnitPowerStateModel.initialMap,
+    UnitPowerStateModel.live,
+  ]) {
+    test('layout adapter does not provide actual $model facts', () async {
+      final f = await _openFixture();
+      addTearDown(f.dispose);
+      final result = await const PreplacedUnitPowerStateGateway().read(
+        UnitPowerStateRequest(
+          operationId: 'unsupported-model',
+          session: f.openMapController.state.session!,
+          documentRevision: 0,
+          installationPath: _installationPath,
+          dataIdentity: ('s1', 13515, '0.7.0', 'abc'),
+          model: model,
+        ),
+      );
+      expect(result.isSuccess, isFalse);
+      expect(result.snapshot, isNull);
+      expect(result.errorCode, PreplacedUnitPowerStateGateway.modelUnavailable);
+    });
+  }
+  for (final value in [0, 1, 100, 255]) {
+    test(
+      'layout completion is a declared convention, not HP $value inference',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+          chkBytesOverride: _layoutChkBytes(hp: value, validFields: 3),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(model: layout), isTrue);
+        expect(_layoutPowerAt(f), UnitPowerCheck.powered);
+        expect(_powerAt(f), UnitPowerCheck.unavailable);
+      },
+    );
+  }
+  final unknownCases = <String, Uint8List>{
+    for (final flag in [1, 2, 4, 8, 32])
+      'state-$flag': _layoutChkBytes(flags: flag),
+    'valid-state': _layoutChkBytes(validStates: 32),
+    'valid-fields': _layoutChkBytes(validFields: 65),
+    'owner-valid': _layoutChkBytes(validFields: 0),
+    'neutral-owner': _layoutChkBytes(owner: 11),
+    'relation': _layoutChkBytes(relation: 1),
+    'relation-id': _layoutChkBytes(relationId: 1),
+    'unused': _layoutChkBytes(unused: 1),
+    'invincible-without-valid': _layoutChkBytes(flags: 16),
+  };
+  for (final entry in unknownCases.entries) {
+    test(
+      'layout leaves ${entry.key} facts unknown, never assumes absence',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+          chkBytesOverride: entry.value,
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(model: layout), isTrue);
+        final facts =
+            f.controller.lastUnitPowerStateRead!.snapshot!.units.single;
+        expect(facts.exists, isNull);
+        expect(facts.isCompleted, isNull);
+        expect(facts.isEnabled, isNull);
+        expect(
+          _layoutPowerAt(f),
+          entry.key == 'owner-valid' || entry.key == 'neutral-owner'
+              ? UnitPowerCheck.stateUnsupported
+              : UnitPowerCheck.unavailable,
+        );
+      },
+    );
+  }
+  test(
+    'layout supports valid invincibility and preserves record identity',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+        chkBytesOverride: _layoutChkBytes(flags: 16, validStates: 16),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      expect(await f.controller.loadUnitPowerState(model: layout), isTrue);
+      expect(_layoutPowerAt(f), UnitPowerCheck.powered);
+      final packet = f.controller.lastUnitPowerStateRead!.snapshot!;
+      expect(packet.units.single.unit, same(packet.request.units.single));
+      expect(() => packet.units.clear(), throwsUnsupportedError);
+    },
+  );
+  for (final unitId in [null, 0]) {
+    test(
+      'layout without a Pylon $unitId is unpowered only in layout model',
+      () async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+          chkBytesOverride: unitId == null
+              ? _chkBytes(mapSize: 64)
+              : _layoutChkBytes(unitId: unitId),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(model: layout), isTrue);
+        expect(_layoutPowerAt(f), UnitPowerCheck.unpowered);
+        expect(_powerAt(f), UnitPowerCheck.unavailable);
+      },
+    );
+  }
+  test(
+    'layout invalidation survives Undo and Redo and requires explicit reload',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+        chkBytesOverride: _layoutChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(await c.loadUnitPowerState(model: layout), isTrue);
+      expect(
+        f.objectEditingController
+            .placeCatalogUnit(
+              capability: _PowerCatalogGateway().capability(0),
+              unitId: 0,
+              owner: 0,
+              pixelX: 1800,
+              pixelY: 1800,
+            )
+            .isPlaced,
+        isTrue,
+      );
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+      expect(await c.loadUnitPowerState(model: layout), isTrue);
+      expect(_layoutPowerAt(f), UnitPowerCheck.powered);
+      expect(f.objectEditingController.redo(), isTrue);
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+    },
+  );
+  test('layout cannot authorize a modified Pylon DAT role', () async {
+    final f = await _openFixture(
+      catalogGateway: _PowerCatalogGateway(failure: 'pylonRole'),
+      unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+      chkBytesOverride: _layoutChkBytes(),
+    );
+    addTearDown(f.dispose);
+    await _selectPowerUnit(f);
+    expect(await f.controller.loadUnitPowerState(model: layout), isTrue);
+    expect(_layoutPowerAt(f), UnitPowerCheck.stateUnsupported);
+  });
+  for (final model in [UnitPowerStateModel.initialMap, layout]) {
+    test(
+      'power response must match explicitly requested $model model',
+      () async {
+        final gateway = _PowerStateGateway(
+          modelOverride: model == layout
+              ? UnitPowerStateModel.initialMap
+              : layout,
+        );
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(),
+          unitPowerStateGateway: gateway,
+          chkBytesOverride: _layoutChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(await f.controller.loadUnitPowerState(model: model), isFalse);
+        expect(
+          f.controller
+              .inspectUnitPowerAt(pixelX: 1024, pixelY: 1024, model: model)
+              .check,
+          UnitPowerCheck.unavailable,
+        );
+      },
+    );
+  }
+  test(
+    'pending layout state cannot overwrite a newer actual-model request',
+    () async {
+      final gateway = _PowerStateGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(),
+        unitPowerStateGateway: gateway,
+        chkBytesOverride: _layoutChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final first = f.controller.loadUnitPowerState(model: layout);
+      final second = f.controller.loadUnitPowerState();
+      expect(gateway.cancelled, contains(gateway.requests.first.operationId));
+      gateway.release(gateway.requests.last);
+      expect(await second, isTrue);
+      gateway.release(gateway.requests.first);
+      expect(await first, isFalse);
+      expect(_layoutPowerAt(f), UnitPowerCheck.unavailable);
+      expect(_powerAt(f), UnitPowerCheck.powered);
+      expect(
+        f.controller.lastUnitPowerStateRead!.snapshot!.model,
+        UnitPowerStateModel.initialMap,
+      );
+    },
+  );
+}
+
+UnitPowerCheck? _layoutPowerAt(_Fixture f) => f.controller
+    .inspectUnitPowerAt(
+      pixelX: 1024,
+      pixelY: 1024,
+      model: UnitPowerStateModel.preplacedLayout,
+    )
+    .check;
+
+Uint8List _layoutChkBytes({
+  int flags = 0,
+  int validStates = 0,
+  int validFields = 1,
+  int owner = 0,
+  int hp = 100,
+  int relation = 0,
+  int relationId = 0,
+  int unused = 0,
+  int unitId = 156,
+}) {
+  final record = Uint8List.fromList(
+    const UnitPlacementFactory()
+        .create(
+          capability: _PowerCatalogGateway().capability(unitId),
+          unitId: unitId,
+          owner: owner,
+          x: 1024,
+          y: 1024,
+          classId: 1,
+        )
+        .bytes,
+  );
+  ByteData.sublistView(record)
+    ..setUint16(10, relation, Endian.little)
+    ..setUint16(12, validStates, Endian.little)
+    ..setUint16(14, validFields, Endian.little)
+    ..setUint8(17, hp)
+    ..setUint16(26, flags, Endian.little)
+    ..setUint32(28, unused, Endian.little)
+    ..setUint32(32, relationId, Endian.little);
+  return Uint8List.fromList([
+    ..._chkBytes(mapSize: 64),
+    ..._section('XTRA', [255, 0, 128]),
+    ..._section('UNIT', record),
+  ]);
+}
+
 void _unitPowerInspectionTests() {
   test(
     'power without a state adapter stays unknown and never guesses CHK',
@@ -3624,7 +3940,7 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
         placementBox: BuildingPlacementBox(width: 64, height: 64),
         collisionProfile: _terrainProfile,
         isBuilding: true,
-        isFlyingBuilding: false,
+        isFlyingBuilding: id == 156 && failure == 'pylonRole',
         isSpellcaster: false,
         hasShields: false,
         isResourceContainer: false,
@@ -3670,10 +3986,12 @@ final class _PowerStateGateway implements UnitPowerStateGateway {
     this.failure,
     this.hold = false,
     this.failCancel = false,
+    this.modelOverride,
   });
   String? failure;
   bool hold;
   final bool failCancel;
+  final UnitPowerStateModel? modelOverride;
   final requests = <UnitPowerStateRequest>[];
   final cancelled = <String>[];
   final _pending = <String, Completer<void>>{};
@@ -3714,9 +4032,9 @@ final class _PowerStateGateway implements UnitPowerStateGateway {
           revision: failure == 'revision'
               ? ''
               : 'synthetic-${request.operationId}',
-          model: failure == 'model'
-              ? UnitPowerStateModel.live
-              : UnitPowerStateModel.initialMap,
+          model:
+              modelOverride ??
+              (failure == 'model' ? UnitPowerStateModel.live : request.model),
           powerModelRevision: failure == 'powerModel'
               ? 'unsupported'
               : UnitPowerCatalog.revision,

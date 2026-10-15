@@ -4,9 +4,9 @@ import '../documents/opened_map_session.dart';
 
 typedef UnitPowerDataIdentity = (String, int, String, String);
 
-/// Explicit, trusted state collection only. Hover must never call this port.
-/// Initial-map facts must remain valid for the exact immutable request;
-/// CHK presence/HP/DAT alone does not establish completion or activation.
+/// Explicit state collection/projection only. Hover never calls this port.
+/// Actual initial-map facts need a trusted collector; an editor projection
+/// must be explicitly requested and must never be relabelled as actual state.
 abstract interface class UnitPowerStateGateway {
   Future<UnitPowerStateReadResult> read(UnitPowerStateRequest request);
   Future<void> cancel(String operationId);
@@ -19,6 +19,7 @@ final class UnitPowerStateRequest {
     required this.documentRevision,
     required this.installationPath,
     required this.dataIdentity,
+    this.model = UnitPowerStateModel.initialMap,
   }) : units = List.unmodifiable(
          session.objectViews.unitSections.expand((section) => section.units),
        );
@@ -28,10 +29,11 @@ final class UnitPowerStateRequest {
   final int documentRevision;
   final String installationPath;
   final UnitPowerDataIdentity dataIdentity;
+  final UnitPowerStateModel model;
   final List<ChkUnitPlacement> units;
 }
 
-enum UnitPowerStateModel { initialMap, live }
+enum UnitPowerStateModel { initialMap, live, preplacedLayout }
 
 final class UnitPowerStateSnapshot {
   UnitPowerStateSnapshot({

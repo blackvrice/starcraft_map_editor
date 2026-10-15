@@ -1,7 +1,8 @@
 import '../chk/typed/chk_object_views.dart';
 
-/// Caller-verified state tied to one immutable UNIT record. These facts are
-/// not inferred from CHK presence, HP percentages, valid flags or sprites.
+/// State tied to one immutable UNIT record and qualified by the caller's model.
+/// Actual completion/activation is not inferred from CHK, HP or valid flags.
+/// Explicit layout projections must remain labelled as projections by callers.
 final class UnitPowerUnitState {
   const UnitPowerUnitState(
     this.unit, {
