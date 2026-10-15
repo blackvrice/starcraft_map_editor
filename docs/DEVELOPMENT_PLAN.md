@@ -1202,6 +1202,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 자원 거리 aggregate: source 일치·현재 UNIT 역할/geometry·flight 지원 상태·최종 좌표 read-only 검사·문서/Undo 무변경 회귀 (배치 차단/UI 연결 제외)
 - [x] EP1 자원 거리 정책: 기본 꺼짐 checkbox·검사/자유/custom·지원표·한영 진단·최종 preview/Apply 거절·Undo/Save As 회귀 (게임/외부 인수 제외)
 - [x] EP1 전력/크립 요구 자료: optional version1 DAT bit17/19·strict decode·생성/공급과 요구 구분·후속 판정 계약 (coverage/배치 차단 제외)
+- [x] EP1 순수 전력 판정:10x16 psi mask·명시적 공급 상태·classic Pylon/소유자/후보 자료·unknown/경계 검증 (앱 상태 공급/배치 차단 제외)
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
 
 EP1 인계(2026-10-13): [unit-sprite 계약·실행 기록](UNIT_SPRITE_PLACEMENT.md)을 추가했다.
@@ -1251,7 +1252,11 @@ DAT bit12/13 역할과 collision 영역의3tile 사각형 pair 검사를 추가�
 optional version1 profile과 strict decoder를 추가하고 실제 공급·생성·동적 상태와 분리했다.
 전체1554통과/58skip, 로컬 process84통과, analyze·Windows Debug/native7종을 확인했다.
 기존 format3파일·기준 SDK 재검증과 실제 공급 판정/앱/게임/외부 인수는 별도다.
-다음 코드 단위는 순수 power mask 판정과 공급자 역할/지원 상태 계약이다.
+이어서 [순수 전력 판정](UNIT_POWER_VALIDATION.md)을 구현했다. 정확한 mask와 명시적
+공급 상태·자료 일치·소유자/지원 상태를 검사하며 CHK에서 완공/활성을 추측하지 않는다.
+집중66·전체1620통과/58skip, 로컬 process84·analyze·Windows Debug/native7종을 확인했다.
+Flutter3.47.5/Dart3.13.4로 실행했으며 기준 SDK·기존 format3파일·앱/게임/외부 인수는 남는다.
+다음 코드 단위는 source/document/state revision이 일치하는 application 읽기 전용 조회다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

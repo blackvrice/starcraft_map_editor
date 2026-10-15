@@ -8,6 +8,8 @@ import 'package:starcraft_map_editor/domain/placement/unit_resource_distance.dar
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_resource_distance_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_power_unit_state.dart';
 import 'package:starcraft_map_editor/infrastructure/assets/process_starcraft_placement_catalog_gateway.dart';
 
 void main() {
@@ -354,6 +356,66 @@ void main() {
             metadata.entries[160].unitCapability!.environmentProfile!;
         expect(cap.requiresPsi, numeric.requiresPsi);
         expect(cap.requiresCreep, numeric.requiresCreep);
+        final pylon = metadata.entries[156].unitCapability!;
+        final record = const UnitPlacementFactory()
+            .create(
+              capability: pylon,
+              unitId: 156,
+              owner: 0,
+              x: 1024,
+              y: 1024,
+              classId: 1,
+            )
+            .bytes;
+        final bytes = Uint8List(8 + record.length)
+          ..setRange(0, 4, 'UNIT'.codeUnits)
+          ..setRange(8, 8 + record.length, record);
+        ByteData.sublistView(bytes).setUint32(4, record.length, Endian.little);
+        final before = Uint8List.fromList(bytes);
+        final unit = const ChkObjectViewDecoder()
+            .decode(const RawChkParser().parse(bytes).document!)
+            .unitSections
+            .single
+            .units
+            .single;
+        final power = UnitPowerCatalog({
+          for (final entry in metadata.entries)
+            entry.key.id: entry.unitCapability!,
+        });
+        // State facts are self-authored inputs, not inferred from local DAT/CHK.
+        final active = UnitPowerUnitState(
+          unit,
+          exists: true,
+          isCompleted: true,
+          isEnabled: true,
+        );
+        for (final x in [1024, 1600]) {
+          expect(
+            power.check(
+              candidate: graphics.entries.single.unitCapability!,
+              owner: 0,
+              x: x,
+              y: 1024,
+              mapWidthTiles: 64,
+              mapHeightTiles: 64,
+              existing: [active],
+            ),
+            x == 1024 ? UnitPowerCheck.powered : UnitPowerCheck.unpowered,
+          );
+        }
+        expect(
+          power.check(
+            candidate: graphics.entries.single.unitCapability!,
+            owner: 0,
+            x: 1024,
+            y: 1024,
+            mapWidthTiles: 64,
+            mapHeightTiles: 64,
+            existing: [UnitPowerUnitState(unit)],
+          ),
+          UnitPowerCheck.unavailable,
+        );
+        expect(bytes, orderedEquals(before));
       },
       skip:
           !Platform.isWindows || realHelper == null || realInstallation == null,

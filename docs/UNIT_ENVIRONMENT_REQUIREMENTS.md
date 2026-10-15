@@ -1,5 +1,8 @@
 # 전력·크립 요구 자료와 지원 계약
 
+후속 [순수 전력 mask와 공급 상태 판정](UNIT_POWER_VALIDATION.md)을 구현했다.
+아래는 요구 flag 기반 단계의 당시 기록이며 앱 상태 공급·배치 차단은 계속 별도다.
+
 2026-10-15. EP1/FR-218의 다음 제한 구현이다. 로컬 classic DAT의 전력/크립
 **요구 flag 조회**를 구현했다. 실제 공급 영역/현재 크립 판정, 체크박스·배치 차단은
 연결하지 않았다. 기존 자원/지형/겹침 정책·UNIT bytes·UI의 전력/크립 미구현 표시는 유지한다.
@@ -57,7 +60,7 @@ metadata-only와 graphics 양쪽은 같은 `AddUnitCapability`로 profile을 전
 | --- | --- |
 | 요구 여부 | 구현: 로컬 DAT의 두 독립 flag. 이 결과는 좌표 통과/거절이 아님 |
 | power/creep UI | 기존 미구현 유지; 새 requirement 조회만으로 검사 사용/좌표 통과로 승격하지 않음 |
-| 전력 mask | 미구현: 정확한 mask·좌표 단위/anchor·경계와 공급자 목록/상태 지원 계약 필요 |
+| 전력 mask | 후속 순수 판정 구현. 명시적 상태 입력이 필요하며 앱/배치 연결은 별도 |
 | 크립 영역 | 미구현: 믿을 수 있는 초기/동적 tile mask와 source/revision/크기 계약 필요 |
 | 기존 지형 snapshot | CV5/VF4 건설/이동 자료이며 현재 크립 공급 증거가 아님 |
 | EUD/동적 변경 | 미지원: runtime revision 없이 로컬 flags를 변경된 게임 상태로 표시하지 않음 |
@@ -138,4 +141,5 @@ Flutter **3.47.5 stable / Dart3.13.4**, 기준은 **3.44.8 / Dart3.12**다.
 
 사용자의 자동 테스트/빌드만 진행 지시를 유지해 실제 앱 조작·SC:R·외부 에디터는
 실행하지 않는다. 이번 자료 단위만 완료 처리하고 전력/크립 정책이나 EP1 전체를
-닫지 않는다. 다음은 위 계약에 따른 순수 power mask 판정과 공급자 지원 범위다.
+닫지 않는다. 후속 순수 power mask/공급자 판정을 구현했으며 다음은 application의
+source/document/state revision 연결과 읽기 전용 조회다.

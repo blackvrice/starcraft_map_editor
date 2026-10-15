@@ -17,6 +17,8 @@ UI는 독립 거리 판정기나 파일/process 접근을 갖지 않는다.
 후속 [전력/크립 요구 자료](UNIT_ENVIRONMENT_REQUIREMENTS.md)는 같은 native flags와
 capability 경로에 optional environmentProfile만 추가한다. 요구 flag는 현재 공급 영역이
 아니며 domain I/O 비의존·기존 factory bytes와 전력/크립 UI 미구현 상태를 유지한다.
+후속 [순수 전력 판정](UNIT_POWER_VALIDATION.md)은 psi geometry와 명시적 상태를 가진
+UNIT aggregate다. 상태 수집/출처 결합은 아직 caller 계약이며 UI/실제 배치에는 미연결이다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는
