@@ -15,6 +15,7 @@ import '../../domain/chk/typed/chk_unit_settings_editor.dart';
 import '../../domain/chk/typed/chk_force_settings_editor.dart';
 import '../../domain/chk/typed/chk_scenario_text_editor.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
+import '../../domain/chk/typed/chk_player_colors.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
@@ -591,6 +592,7 @@ class ObjectEditingController {
   void applyPlayerSettings({
     required RawChkDocument expectedDocument,
     required Iterable<ChkPlayerChange> changes,
+    Map<int, ChkPlayerColor> colorChanges = const {},
   }) {
     final session = openMapController.state.session;
     if (session == null ||
@@ -604,15 +606,29 @@ class ObjectEditingController {
       session.rawDocument,
       changes,
     );
-    if (replacements.isEmpty) return;
+    var updated = session.rawDocument;
+    for (final e in replacements.entries) {
+      updated = updated.replaceSection(e.key, e.value);
+    }
+    updated = ChkPlayerColors.edit(updated, colorChanges);
+    final after = <int, RawChkSection>{
+      for (var i = 0; i < session.rawDocument.sections.length; i++)
+        if (!identical(updated.sections[i], session.rawDocument.sections[i]))
+          i: updated.sections[i],
+    };
+    final appended = updated.sections
+        .skip(session.rawDocument.sections.length)
+        .toList();
+    if (after.isEmpty && appended.isEmpty) return;
     _applyAndRecord(
       _ObjectEditCommand(
         label: 'Edit player settings',
         beforeSections: {
-          for (final index in replacements.keys)
+          for (final index in after.keys)
             index: session.rawDocument.sections[index],
         },
-        afterSections: replacements,
+        afterSections: after,
+        appendedSections: appended,
       ),
       clearSelection: false,
     );

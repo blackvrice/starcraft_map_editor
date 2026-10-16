@@ -1,5 +1,7 @@
 import '../localization/editor_message_localization.dart';
 import '../localization/l10n.dart';
+import '../../domain/chk/typed/chk_settings_defaults.dart';
+import 'settings_defaults_panel.dart';
 import 'default_settings_names.dart';
 import 'default_unit_names.dart';
 import 'settings_surface.dart';
@@ -295,10 +297,31 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                           }
                         }),
                 ),
-              Text(
-                context
-                    .l10n
-                    .editorFieldsShowStoredCustomValuesGameDefaultNumbersAre,
+              SettingsDefaultsPanel(
+                controller: widget.catalogController,
+                mode: mode,
+                rows: (dat) => [
+                  for (final field in ChkSettingsDefaults.unitKeys.keys)
+                    (
+                      label: context.localizeEditorText(field.label),
+                      baseline: switch (ChkSettingsDefaults.unit(
+                        dat,
+                        _unit,
+                        field,
+                      )) {
+                        final value? => field.display(value),
+                        _ => null,
+                      },
+                      stored: checkedSettingsPreview(
+                        _values[(_unit, field)] ??
+                            (settings == null
+                                ? null
+                                : field.display(settings.value(_unit, field))),
+                        field.parse,
+                        display: field.display,
+                      ),
+                    ),
+                ],
               ),
               TextButton(
                 key: const Key('unit-settings-restore'),
@@ -433,6 +456,29 @@ class _UnitSettingsDialogState extends State<UnitSettingsDialog> {
                     }
                   }),
                 ),
+              SettingsDefaultsPanel(
+                controller: widget.catalogController,
+                mode: mode,
+                rows: (dat) => [
+                  for (final bonus in [false, true])
+                    (
+                      label: bonus
+                          ? context.l10n.editorDamagePerUpgrade
+                          : context.l10n.editorBaseDamage,
+                      baseline: dat
+                          ?.raw(
+                            bonus ? 'weapon.bonusDamage' : 'weapon.baseDamage',
+                            _weapon,
+                          )
+                          ?.toString(),
+                      stored: checkedSettingsPreview(
+                        _damage[(_weapon, bonus)] ??
+                            settings?.damage(_weapon, bonus: bonus).toString(),
+                        ChkUnitSettingField.shields.parse,
+                      ),
+                    ),
+                ],
+              ),
               Text(
                 context.l10n.editorApplyUpdatesAllEditedUnitTypesAndWeaponsSave,
               ),

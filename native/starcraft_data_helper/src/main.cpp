@@ -94,7 +94,7 @@ int ReadEudDat(const std::string& request_id, const std::filesystem::path& path)
   auto response = BaseResponse(request_id, kEudDatOperation);
   response["status"] = "success";
   response["snapshotVersion"] = 1;
-  response["revision"] = "classic-dat-v1-pyms-bfc5d3a-eudplib-0.80.6";
+  response["revision"] = "classic-dat-v2-pyms-bfc5d3a-eudplib-0.80.6";
   response["installation"] = {
       {"path", assets.installation_path},
       {"storageProduct", assets.storage_product},

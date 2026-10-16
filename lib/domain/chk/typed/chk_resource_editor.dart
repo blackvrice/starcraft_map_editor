@@ -238,6 +238,29 @@ abstract final class ChkResourceEditor {
     String text, {
     StringUse? onlyUse,
     bool clear = false,
+  }) => editRaw(doc, id, utf8.encode(text), onlyUse: onlyUse, clear: clear);
+
+  static RawChkDocument addRaw(RawChkDocument doc, List<int> raw) {
+    _validateRaw(raw);
+    final view = table(doc);
+    return doc.replaceSection(
+      view.sectionIndex,
+      view.withAddedRawString(rawBytes: raw).section,
+    );
+  }
+
+  static void _validateRaw(List<int> raw) {
+    if (raw.any((b) => b <= 0 || b > 255)) {
+      throw const FormatException('String bytes must be in 1..255.');
+    }
+  }
+
+  static RawChkDocument editRaw(
+    RawChkDocument doc,
+    int id,
+    List<int> rawBytes, {
+    StringUse? onlyUse,
+    bool clear = false,
   }) {
     final view = table(doc);
     if (view.entryForId(id)?.isStructurallyValid != true) {
@@ -256,11 +279,17 @@ abstract final class ChkResourceEditor {
         'Referenced or incompletely traced strings cannot be cleared.',
       );
     }
-    if (text.contains('\u0000')) {
-      throw const FormatException('NUL is not allowed.');
-    }
-    final raw = utf8.encode(clear ? '' : text);
+    _validateRaw(rawBytes);
+    final raw = clear ? <int>[] : rawBytes;
     if (onlyUse == null) {
+      final original = view.entryForId(id)!.rawBytes!;
+      if (original.length == raw.length &&
+          List.generate(
+            raw.length,
+            (i) => i,
+          ).every((i) => original[i] == raw[i])) {
+        return doc;
+      }
       return doc.replaceSection(
         view.sectionIndex,
         view.withAppendedRawString(stringId: id, rawBytes: raw),

@@ -4,6 +4,13 @@ if ($request.installationPath -like '*hang*') { Start-Sleep -Seconds 30; exit 0 
 if ($request.installationPath -like '*invalid*') { [Console]::Out.WriteLine('{bad'); exit 0 }
 if ($request.installationPath -like '*failure*') { [Console]::Error.WriteLine('SC_EUD_DAT_MISSING'); exit 3 }
 $columns = @{
+  'unit.hitpoints' = @(for ($i=0; $i -lt 228; $i++) { 10240 })
+  'unit.armor' = @(for ($i=0; $i -lt 228; $i++) { 0 })
+  'unit.minerals' = @(for ($i=0; $i -lt 228; $i++) { 50 })
+  'unit.gas' = @(for ($i=0; $i -lt 228; $i++) { 0 })
+  'unit.buildTime' = @(for ($i=0; $i -lt 228; $i++) { 360 })
+  'weapon.baseDamage' = @(for ($i=0; $i -lt 130; $i++) { 6 })
+  'weapon.bonusDamage' = @(for ($i=0; $i -lt 130; $i++) { 1 })
   'unit.groundWeapon' = @(for ($i=0; $i -lt 228; $i++) { 0 })
   'unit.airWeapon' = @(for ($i=0; $i -lt 228; $i++) { 0 })
   'unit.flingy' = @(for ($i=0; $i -lt 228; $i++) { 0 })
@@ -69,7 +76,7 @@ $columns = @{
 $response = @{
   protocolVersion=3; helperVersion='0.13.0'; cascLibRevision='4971d363e665551ac4142f541e5f2d71f1cda653'
   requestId=$request.requestId; operation=$request.operation; status='success'; snapshotVersion=1
-  revision='classic-dat-v1-pyms-bfc5d3a-eudplib-0.80.6'
+  revision='classic-dat-v2-pyms-bfc5d3a-eudplib-0.80.6'
   installation=@{ path=$request.installationPath; storageProduct='synthetic'; storageBuildNumber=1 }
   assets=@(
     @{path='arr\units.dat'; bytes=19876; sha256=('a'*64)},

@@ -4,7 +4,7 @@
 namespace starcraft_map_editor::starcraft_data {
 // Fixed classic DAT layout, audited against PyMS bfc5d3a and pinned eudplib 0.80.6.
 struct EudDatColumn { const char* key; std::size_t asset, offset, width, count; };
-inline constexpr std::array<EudDatColumn, 61> kEudDatColumns = {{
+inline constexpr std::array<EudDatColumn, 68> kEudDatColumns = {{
   {"unit.groundWeapon", 0, 5892, 1, 228},
   {"unit.airWeapon", 0, 6348, 1, 228},
   {"unit.flingy", 0, 0, 1, 228},
@@ -66,6 +66,13 @@ inline constexpr std::array<EudDatColumn, 61> kEudDatColumns = {{
   {"unit.subunit1", 0, 228, 2, 228},
   {"unit.subunit2", 0, 684, 2, 228},
   {"unit.construction_animation", 0, 1332, 4, 228},
+  {"unit.hitpoints", 0, 3156, 4, 228},
+  {"unit.armor", 0, 8856, 1, 228},
+  {"unit.minerals", 0, 14860, 2, 228},
+  {"unit.gas", 0, 15316, 2, 228},
+  {"unit.buildTime", 0, 15772, 2, 228},
+  {"weapon.baseDamage", 1, 3640, 2, 130},
+  {"weapon.bonusDamage", 1, 3900, 2, 130},
 }};
 inline constexpr std::array<std::size_t, 7> kEudDatSizes = {19876, 5460, 3135, 1281, 836, 3229, 37962};
 }  // namespace starcraft_map_editor::starcraft_data

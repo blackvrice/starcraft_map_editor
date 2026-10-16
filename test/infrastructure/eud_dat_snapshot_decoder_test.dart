@@ -10,7 +10,7 @@ void main() {
       (response['columns'] as Map)['image.drawingFunction'][0] = 255;
       final data = decodeEudDat(response, 'test', r'C:\fixture');
       expect(data.hashes, hasLength(7));
-      expect(data.snapshot.columns, hasLength(61));
+      expect(data.snapshot.columns, hasLength(68));
       expect(data.snapshot.value('image.drawingFunction', 0), isNull);
       expect(data.snapshot.raw('image.drawingFunction', 0), 255);
     },

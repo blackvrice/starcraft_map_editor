@@ -9,6 +9,130 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get settingsDatDefaults => 'Local DAT defaults';
+
+  @override
+  String get settingsExpectedValue => 'Expected map value';
+
+  @override
+  String get settingsDatLoad => 'Load local defaults';
+
+  @override
+  String get settingsValueUnavailable => 'Unavailable';
+
+  @override
+  String get settingsMapOverride => 'Map override';
+
+  @override
+  String get settingsDefaultInherited => 'Inherited DAT value';
+
+  @override
+  String get settingsNoRuntimePreview =>
+      'Map/DAT preview only. Runtime and EUD changes are not included.';
+
+  @override
+  String get stringTokenMode => 'Byte tokens';
+
+  @override
+  String get stringInsertToken => 'Insert control byte';
+
+  @override
+  String get settingsPreviewBytes => 'Changed bytes';
+
+  @override
+  String get settingsVersionUpgrade =>
+      'Applying Remastered colors changes VER to 206 and preserves legacy COLR.';
+
+  @override
+  String get stringTokenPreview => 'Text preview (approximate colors)';
+
+  @override
+  String get triggerSearch => 'Search triggers';
+
+  @override
+  String get triggerFilterOwner => 'Owner';
+
+  @override
+  String get triggerFilterState => 'State';
+
+  @override
+  String get triggerAll => 'All';
+
+  @override
+  String get triggerDisabled => 'Disabled';
+
+  @override
+  String get triggerOpcodeId => 'Opcode ID';
+
+  @override
+  String get triggerRefLocation => 'Location';
+
+  @override
+  String get triggerRefString => 'String / sound path';
+
+  @override
+  String get triggerRefUnit => 'Unit';
+
+  @override
+  String get triggerRefUnitGroup => 'Unit / unit group';
+
+  @override
+  String get triggerRefSwitch => 'Switch';
+
+  @override
+  String get triggerRefProperty => 'Unit property slot';
+
+  @override
+  String get triggerReference => 'Reference type';
+
+  @override
+  String get triggerReferenceId => 'Reference ID';
+
+  @override
+  String get triggerAllReferences => 'All references';
+
+  @override
+  String get triggerReplaceReferences => 'Replace references';
+
+  @override
+  String get triggerReplaceFrom => 'Find ID';
+
+  @override
+  String get triggerReplaceTo => 'Replace with ID';
+
+  @override
+  String get triggerPreviewChanges => 'Preview changes';
+
+  @override
+  String get triggerPreviewSummary =>
+      'References / triggers / read-only references skipped';
+
+  @override
+  String get triggerSelectVisible => 'Select visible';
+
+  @override
+  String get playerAdvancedColor => 'Remastered color';
+
+  @override
+  String get playerColorMode => 'Color mode';
+
+  @override
+  String get playerColorRandom => 'Random predefined';
+
+  @override
+  String get playerColorChoice => 'Player choice';
+
+  @override
+  String get playerColorRgb => 'Custom RGB';
+
+  @override
+  String get playerColorId => 'Palette ID';
+
+  @override
+  String get playerColorPreviewLimit =>
+      'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
+
+  @override
   String get recoveryTitle => 'Recover Unsaved Work';
 
   @override

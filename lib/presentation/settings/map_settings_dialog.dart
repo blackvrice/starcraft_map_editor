@@ -99,8 +99,14 @@ class _MapSettingsDialogState extends State<MapSettingsDialog> {
       selectedUnit: _selectedUnit,
       onUnitSelected: _selectUnit,
     ),
-    5 => UpgradeSettingsDialog(controller: widget.controller),
-    _ => TechSettingsDialog(controller: widget.controller),
+    5 => UpgradeSettingsDialog(
+      controller: widget.controller,
+      catalogController: widget.catalogController,
+    ),
+    _ => TechSettingsDialog(
+      controller: widget.controller,
+      catalogController: widget.catalogController,
+    ),
   };
   @override
   Widget build(BuildContext context) => widget.embedded

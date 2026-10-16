@@ -1357,17 +1357,25 @@ analyze 무이슈·Windows Debug/native7종을 확인했다. 알림의 snapshot 
 변경 Dart14파일 포맷은 통과, 전체는 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
 기준3.44.8/3.12 차이·실제 앱/게임/외부 인수는 남는다. 이 단위의 에디터 연결은 완료했으며
 실제 collector/live·EUD runtime·관계 예외 확대·EP1 게임 인수는 전체 완료로 표시하지 않는다.
-다음 에디터 코드 후보는 EP2의 일반 DAT 기본 수치/상속·예상값 조회다. 실제 수집 지원은
+이후 EP2 에디터 보완은 아래에서 완료했다. 다음 코드 후보는 EP3a 혼합 clipboard다. 실제 수집 지원은
 사용자 선택에 따라 별도 collector/지원 build·관찰 자료가 마련된 뒤 다시 진행한다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성
 
-- [ ] 일반 DAT 기본 수치 출처/단위·상속/override·예상값 조회
-- [ ] CRGB modes/COLR 우선순위 ADR·순수 편집·캔버스 색상·게임 왕복
-- [ ] 문자열 제어 token/색상 미리보기와 원시/공유 참조 보존
-- [ ] 트리거 검색/참조 탐색/지원 범위 일괄 변경·미리보기·Undo
+- [x] 일반 DAT 기본 수치 출처/단위·상속/override·예상값 조회
+- [x] CRGB modes/COLR 에디터 우선순위 ADR·순수 편집·캔버스 소유자 색상 표식
+- [x] 문자열 제어 token/색상 미리보기와 원시/공유 참조 보존
+- [x] 트리거 검색/참조 탐색/지원 범위 일괄 변경·미리보기·Undo
+- [ ] CRGB 게임 왕복·sprite 팔레트 재색상/확장 ID의 별도 지원 검증
 - [ ] PAR-04~07과 기본 설정 M6.3/트리거 M7의 게임 인수 기록
+
+2026-10-16 [설정·트리거 보완](SETTINGS_TRIGGER_EDITING.md),
+[ADR-0021](decisions/0021-settings-trigger-editing.md). DAT revision v2/68열,
+출처/단위·상속/초안 예상값, CRGB 4모드·변경 바이트·명시 VER 전환/Undo,
+가역 token·색상 preview, TRIG/MBRF 검색·참조 치환 preview/원자 Apply를 연결했다.
+캔버스는 소유자 색상 표식만 표시한다. runtime EUD·게임 렌더·실제 앱/외부
+에디터 인수는 완료로 세지 않는다. 자동 검증 결과는 연결 문서에 기록한다.
 
 ### EP3. 복사·여러 맵
 

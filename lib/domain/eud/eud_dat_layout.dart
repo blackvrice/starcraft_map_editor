@@ -2,7 +2,7 @@ import 'eud_field_manifest.dart';
 
 /// Audited classic DAT projection. Player supply limits are runtime state, not DAT.
 abstract final class EudDatLayout {
-  static const revision = 'classic-dat-v1-pyms-bfc5d3a-eudplib-0.80.6';
+  static const revision = 'classic-dat-v2-pyms-bfc5d3a-eudplib-0.80.6';
   static const assets = <String, int>{
     "arr\\units.dat": 19876,
     "arr\\weapons.dat": 5460,
@@ -13,6 +13,13 @@ abstract final class EudDatLayout {
     "arr\\images.dat": 37962,
   };
   static const counts = <String, int>{
+    'unit.hitpoints': 228,
+    'unit.armor': 228,
+    'unit.buildTime': 228,
+    'unit.minerals': 228,
+    'unit.gas': 228,
+    'weapon.baseDamage': 130,
+    'weapon.bonusDamage': 130,
     'unit.groundWeapon': 228,
     'unit.airWeapon': 228,
     'unit.flingy': 228,
@@ -76,6 +83,13 @@ abstract final class EudDatLayout {
     'unit.construction_animation': 228,
   };
   static const widths = <String, int>{
+    'unit.hitpoints': 4,
+    'unit.armor': 1,
+    'unit.buildTime': 2,
+    'unit.minerals': 2,
+    'unit.gas': 2,
+    'weapon.baseDamage': 2,
+    'weapon.bonusDamage': 2,
     'unit.groundWeapon': 1,
     'unit.airWeapon': 1,
     'unit.flingy': 1,

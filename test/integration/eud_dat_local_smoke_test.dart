@@ -18,7 +18,12 @@ void main() {
       );
       final data = result.source!;
       expect(data.hashes, hasLength(7));
-      expect(data.snapshot.columns, hasLength(61));
+      expect(data.snapshot.columns, hasLength(68));
+      expect(data.snapshot.raw('unit.hitpoints', 0), greaterThan(0));
+      expect(data.snapshot.raw('unit.minerals', 0), greaterThan(0));
+      expect(data.snapshot.raw('unit.buildTime', 0), greaterThan(0));
+      expect(data.snapshot.raw('weapon.baseDamage', 0), greaterThan(0));
+      expect(data.snapshot.raw('weapon.bonusDamage', 0), isA<int>());
       expect(data.snapshot.weaponIndex().units, hasLength(228));
       expect(data.snapshot.graph().unresolved, isEmpty);
       expect(data.snapshot.value('weapon.cooldown', 0), isA<int>());

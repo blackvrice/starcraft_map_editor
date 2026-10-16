@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../documents/opened_map_session.dart';
 import '../ports/starcraft_object_atlas_gateway.dart';
+import '../../domain/chk/typed/chk_player_colors.dart';
 
 enum MapLayerType { terrain, locations, doodads, sprites, units }
 
@@ -83,12 +84,14 @@ final class MapLayerPointObject {
     required this.pixelX,
     required this.pixelY,
     this.graphicKey,
+    this.ownerArgb,
   });
 
   final MapLayerObjectRef object;
   final int pixelX;
   final int pixelY;
   final StarCraftObjectGraphicKey? graphicKey;
+  final int? ownerArgb;
 }
 
 final class MapLayerRegionObject {
@@ -354,6 +357,15 @@ class MapLayerController {
       for (final layer in MapLayerType.values) layer: 0,
     };
     final objects = session.objectViews;
+    List<ChkPlayerColor>? ownerColors;
+    try {
+      ownerColors = ChkPlayerColors.read(session.rawDocument);
+    } on FormatException {
+      /* Ambiguous colors remain unavailable, not guessed. */
+    }
+    int? ownerArgb(int owner) => owner >= 0 && owner < 8 && ownerColors != null
+        ? ownerColors[owner].argb
+        : null;
 
     for (final section in objects.unitSections) {
       counts[MapLayerType.units] =
@@ -371,6 +383,7 @@ class MapLayerController {
             ),
             pixelX: unit.x,
             pixelY: unit.y,
+            ownerArgb: ownerArgb(unit.owner),
             graphicKey: StarCraftObjectGraphicKey(
               kind: StarCraftObjectGraphicKind.unit,
               id: unit.unitType,
@@ -398,6 +411,7 @@ class MapLayerController {
             ),
             pixelX: sprite.x,
             pixelY: sprite.y,
+            ownerArgb: ownerArgb(sprite.owner),
             graphicKey: StarCraftObjectGraphicKey(
               kind: sprite.drawsAsSprite
                   ? StarCraftObjectGraphicKind.sprite

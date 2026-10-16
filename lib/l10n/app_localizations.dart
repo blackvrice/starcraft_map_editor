@@ -98,6 +98,246 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @settingsDatDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Local DAT defaults'**
+  String get settingsDatDefaults;
+
+  /// No description provided for @settingsExpectedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected map value'**
+  String get settingsExpectedValue;
+
+  /// No description provided for @settingsDatLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load local defaults'**
+  String get settingsDatLoad;
+
+  /// No description provided for @settingsValueUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get settingsValueUnavailable;
+
+  /// No description provided for @settingsMapOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Map override'**
+  String get settingsMapOverride;
+
+  /// No description provided for @settingsDefaultInherited.
+  ///
+  /// In en, this message translates to:
+  /// **'Inherited DAT value'**
+  String get settingsDefaultInherited;
+
+  /// No description provided for @settingsNoRuntimePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Map/DAT preview only. Runtime and EUD changes are not included.'**
+  String get settingsNoRuntimePreview;
+
+  /// No description provided for @stringTokenMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Byte tokens'**
+  String get stringTokenMode;
+
+  /// No description provided for @stringInsertToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert control byte'**
+  String get stringInsertToken;
+
+  /// No description provided for @settingsPreviewBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed bytes'**
+  String get settingsPreviewBytes;
+
+  /// No description provided for @settingsVersionUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying Remastered colors changes VER to 206 and preserves legacy COLR.'**
+  String get settingsVersionUpgrade;
+
+  /// No description provided for @stringTokenPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Text preview (approximate colors)'**
+  String get stringTokenPreview;
+
+  /// No description provided for @triggerSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search triggers'**
+  String get triggerSearch;
+
+  /// No description provided for @triggerFilterOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get triggerFilterOwner;
+
+  /// No description provided for @triggerFilterState.
+  ///
+  /// In en, this message translates to:
+  /// **'State'**
+  String get triggerFilterState;
+
+  /// No description provided for @triggerAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get triggerAll;
+
+  /// No description provided for @triggerDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get triggerDisabled;
+
+  /// No description provided for @triggerOpcodeId.
+  ///
+  /// In en, this message translates to:
+  /// **'Opcode ID'**
+  String get triggerOpcodeId;
+
+  /// No description provided for @triggerRefLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get triggerRefLocation;
+
+  /// No description provided for @triggerRefString.
+  ///
+  /// In en, this message translates to:
+  /// **'String / sound path'**
+  String get triggerRefString;
+
+  /// No description provided for @triggerRefUnit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get triggerRefUnit;
+
+  /// No description provided for @triggerRefUnitGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit / unit group'**
+  String get triggerRefUnitGroup;
+
+  /// No description provided for @triggerRefSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get triggerRefSwitch;
+
+  /// No description provided for @triggerRefProperty.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit property slot'**
+  String get triggerRefProperty;
+
+  /// No description provided for @triggerReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference type'**
+  String get triggerReference;
+
+  /// No description provided for @triggerReferenceId.
+  ///
+  /// In en, this message translates to:
+  /// **'Reference ID'**
+  String get triggerReferenceId;
+
+  /// No description provided for @triggerAllReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'All references'**
+  String get triggerAllReferences;
+
+  /// No description provided for @triggerReplaceReferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace references'**
+  String get triggerReplaceReferences;
+
+  /// No description provided for @triggerReplaceFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Find ID'**
+  String get triggerReplaceFrom;
+
+  /// No description provided for @triggerReplaceTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace with ID'**
+  String get triggerReplaceTo;
+
+  /// No description provided for @triggerPreviewChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview changes'**
+  String get triggerPreviewChanges;
+
+  /// No description provided for @triggerPreviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'References / triggers / read-only references skipped'**
+  String get triggerPreviewSummary;
+
+  /// No description provided for @triggerSelectVisible.
+  ///
+  /// In en, this message translates to:
+  /// **'Select visible'**
+  String get triggerSelectVisible;
+
+  /// No description provided for @playerAdvancedColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Remastered color'**
+  String get playerAdvancedColor;
+
+  /// No description provided for @playerColorMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Color mode'**
+  String get playerColorMode;
+
+  /// No description provided for @playerColorRandom.
+  ///
+  /// In en, this message translates to:
+  /// **'Random predefined'**
+  String get playerColorRandom;
+
+  /// No description provided for @playerColorChoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Player choice'**
+  String get playerColorChoice;
+
+  /// No description provided for @playerColorRgb.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom RGB'**
+  String get playerColorRgb;
+
+  /// No description provided for @playerColorId.
+  ///
+  /// In en, this message translates to:
+  /// **'Palette ID'**
+  String get playerColorId;
+
+  /// No description provided for @playerColorPreviewLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
+  String get playerColorPreviewLimit;
+
   /// No description provided for @recoveryTitle.
   ///
   /// In en, this message translates to:

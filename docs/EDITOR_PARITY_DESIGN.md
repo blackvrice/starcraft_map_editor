@@ -117,8 +117,9 @@ height/buildability/walkability/range/power/creep overlay는 독립적인 읽기
 수치 단위를 기록한다. 이름 조회, CHK override, 기본값 상속과 예상 최종값을
 분리하며 기본값 조회 실패 시 0을 표시하지 않는다. 조회만으로 CHK를 변경하지 않는다.
 
-CRGB는 고정 CHK 레이아웃·모드와 COLR 우선순위를 자료/게임으로 확정한 뒤
-pure domain editor를 추가한다. 기본/로비 선택/무작위/사용자 RGB 등 검증된
+CRGB의 고정 CHK 레이아웃·모드와 에디터 COLR 우선순위는
+[ADR-0021](decisions/0021-settings-trigger-editing.md)로 구현했다. 게임 인수와 실제
+sprite 재색상은 별도다. 기본/로비 선택/무작위/사용자 RGB 등 확인된
 모드만 노출하고 색상 swatch와 수치 입력을 사용한다. 모드 전환은 바이트 차이를
 미리보기하며 알 수 없는 모드/중복/손상은 보존·거절한다. 캔버스 색상 캐시를
 설정 revision으로 무효화하고 '게임과 동일' 여부는 게임 검증 상태를 따른다.

@@ -1822,6 +1822,13 @@ class MapCanvasPainter extends CustomPainter {
     if (texture != null) {
       if (_paintObjectTexture(canvas, texture, center, selected: selected)) {
         counters?.objectTextureCount++;
+        if (point.ownerArgb != null) {
+          canvas.drawCircle(
+            center + const Offset(7, 7),
+            3,
+            Paint()..color = Color(point.ownerArgb!),
+          );
+        }
       } else {
         counters?.culledObjectCount++;
       }
@@ -1834,12 +1841,14 @@ class MapCanvasPainter extends CustomPainter {
     counters?.objectMarkerCount++;
     final radius = (layout.tileExtent * 0.32).clamp(3.5, 9.0).toDouble();
     final fill = Paint()
-      ..color = switch (point.object.layer) {
-        MapLayerType.units => const Color(0xFF70A1FF),
-        MapLayerType.sprites => const Color(0xFFFF8BCB),
-        MapLayerType.doodads => const Color(0xFFFFB454),
-        _ => const Color(0xFFD2D9E6),
-      };
+      ..color = point.ownerArgb != null
+          ? Color(point.ownerArgb!)
+          : switch (point.object.layer) {
+              MapLayerType.units => const Color(0xFF70A1FF),
+              MapLayerType.sprites => const Color(0xFFFF8BCB),
+              MapLayerType.doodads => const Color(0xFFFFB454),
+              _ => const Color(0xFFD2D9E6),
+            };
     final outline = Paint()
       ..color = selected ? const Color(0xFFF6C85F) : const Color(0xFFE8EDF6)
       ..style = PaintingStyle.stroke

@@ -1028,12 +1028,12 @@ void main() {
     await tester.tap(find.text('Redo: Edit tech settings'));
     await tester.pumpAndSettle();
     await choose('selection', 'Stim Packs (Tech #0)');
-    expect(find.text('100'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '100'), findsOneWidget);
     await choose('useDefault', 'Use game defaults');
     expect(tester.widget<TextField>(field('Mineral cost')).enabled, isFalse);
     await tester.tap(find.byKey(const Key('tech-apply')));
     await tester.pumpAndSettle();
-    expect(find.text('100'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '100'), findsOneWidget);
     await choose('selection', 'EMP Shockwave (Tech #2)');
     expect(
       find.text('Effective state: unknown (stored flag preserved)'),
@@ -1150,7 +1150,7 @@ void main() {
       await tester.tap(find.text('Redo: Edit upgrade settings'));
       await tester.pumpAndSettle();
       await choose('selection', 'Terran Infantry Armor (Upgrade #0)');
-      expect(find.text('100'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, '100'), findsOneWidget);
       await choose('useDefault', 'Use game defaults');
       expect(
         tester.widget<TextField>(field('Base mineral cost')).enabled,
@@ -1158,7 +1158,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('upgrade-apply')));
       await tester.pumpAndSettle();
-      expect(find.text('100'), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, '100'), findsOneWidget);
       await choose('player', 'Player 9 (read-only)');
       expect(
         tester
@@ -1359,7 +1359,7 @@ void main() {
     await tester.tap(find.text('Redo: Edit unit settings'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(field('Shields'));
-    expect(find.text('300'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, '300'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('unit-settings-restore')));
     await tester.tap(find.byKey(const Key('unit-settings-restore')));
     await tester.pumpAndSettle();

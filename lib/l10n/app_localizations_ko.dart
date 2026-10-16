@@ -9,6 +9,129 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get settingsDatDefaults => '로컬 DAT 기본값';
+
+  @override
+  String get settingsExpectedValue => '맵 적용 예상값';
+
+  @override
+  String get settingsDatLoad => '로컬 기본값 읽기';
+
+  @override
+  String get settingsValueUnavailable => '확인 불가';
+
+  @override
+  String get settingsMapOverride => '맵 사용자 지정값';
+
+  @override
+  String get settingsDefaultInherited => 'DAT 기본값 상속';
+
+  @override
+  String get settingsNoRuntimePreview =>
+      '맵/DAT 기준 예상값입니다. 실행 중 변경과 EUD 변경은 포함하지 않습니다.';
+
+  @override
+  String get stringTokenMode => '바이트 제어 코드';
+
+  @override
+  String get stringInsertToken => '제어 코드 삽입';
+
+  @override
+  String get settingsPreviewBytes => '변경 바이트';
+
+  @override
+  String get settingsVersionUpgrade =>
+      '리마스터 색상 적용 시 VER를 206으로 변경하며 기존 COLR는 보존합니다.';
+
+  @override
+  String get stringTokenPreview => '문자열 미리보기 (근사 색상)';
+
+  @override
+  String get triggerSearch => '트리거 검색';
+
+  @override
+  String get triggerFilterOwner => '소유자';
+
+  @override
+  String get triggerFilterState => '활성 상태';
+
+  @override
+  String get triggerAll => '전체';
+
+  @override
+  String get triggerDisabled => '비활성';
+
+  @override
+  String get triggerOpcodeId => '조건·액션 ID';
+
+  @override
+  String get triggerRefLocation => '로케이션';
+
+  @override
+  String get triggerRefString => '문자열·사운드 경로';
+
+  @override
+  String get triggerRefUnit => '유닛';
+
+  @override
+  String get triggerRefUnitGroup => '유닛·유닛 그룹';
+
+  @override
+  String get triggerRefSwitch => '스위치';
+
+  @override
+  String get triggerRefProperty => '유닛 속성 슬롯';
+
+  @override
+  String get triggerReference => '참조 종류';
+
+  @override
+  String get triggerReferenceId => '참조 ID';
+
+  @override
+  String get triggerAllReferences => '모든 참조';
+
+  @override
+  String get triggerReplaceReferences => '참조 일괄 치환';
+
+  @override
+  String get triggerReplaceFrom => '찾을 ID';
+
+  @override
+  String get triggerReplaceTo => '변경할 ID';
+
+  @override
+  String get triggerPreviewChanges => '변경 미리보기';
+
+  @override
+  String get triggerPreviewSummary => '참조 수 / 트리거 수 / 건너뛴 읽기 전용 참조 수';
+
+  @override
+  String get triggerSelectVisible => '검색 결과 선택';
+
+  @override
+  String get playerAdvancedColor => '리마스터 색상';
+
+  @override
+  String get playerColorMode => '색상 모드';
+
+  @override
+  String get playerColorRandom => '기본 색상 중 무작위';
+
+  @override
+  String get playerColorChoice => '플레이어 선택';
+
+  @override
+  String get playerColorRgb => '사용자 지정 RGB';
+
+  @override
+  String get playerColorId => '팔레트 ID';
+
+  @override
+  String get playerColorPreviewLimit =>
+      '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
+
+  @override
   String get recoveryTitle => '미저장 작업 복구';
 
   @override

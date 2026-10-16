@@ -4,14 +4,22 @@ import 'default_settings_names.dart';
 import 'settings_surface.dart';
 import '../../application/editing/settings_id_selection.dart';
 import 'settings_selection.dart';
+import 'settings_defaults_panel.dart';
+import '../../domain/chk/typed/chk_settings_defaults.dart';
+import '../../application/placement/placement_catalog_controller.dart';
 import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_upgrade_settings_editor.dart';
 
 class UpgradeSettingsDialog extends StatefulWidget {
-  const UpgradeSettingsDialog({required this.controller, super.key});
+  const UpgradeSettingsDialog({
+    required this.controller,
+    this.catalogController,
+    super.key,
+  });
   final ObjectEditingController controller;
+  final PlacementCatalogController? catalogController;
   @override
   State<UpgradeSettingsDialog> createState() => _UpgradeSettingsDialogState();
 }
@@ -236,6 +244,25 @@ class _UpgradeSettingsDialogState extends State<UpgradeSettingsDialog> {
                     ChkUpgradeField.useDefault,
                     context.l10n.editorUseCustomCosts,
                     context.l10n.editorUseGameDefaults,
+                  ),
+                  SettingsDefaultsPanel(
+                    controller: widget.catalogController,
+                    mode: costEnabled
+                        ? int.tryParse(
+                            _text((_upgrade, null, ChkUpgradeField.useDefault)),
+                          )
+                        : null,
+                    rows: (dat) => [
+                      for (final e in ChkSettingsDefaults.upgradeKeys.entries)
+                        (
+                          label: context.localizeEditorText(e.key.label),
+                          baseline: dat?.raw(e.value, _upgrade)?.toString(),
+                          stored: checkedSettingsPreview(
+                            costEnabled ? _text((_upgrade, null, e.key)) : null,
+                            e.key.parse,
+                          ),
+                        ),
+                    ],
                   ),
                   for (final field in ChkUpgradeField.values.where(
                     (f) => f.isCost && !f.isFlag,

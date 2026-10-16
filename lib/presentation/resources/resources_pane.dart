@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_resource_editor.dart';
-import '../../domain/chk/typed/chk_trigger_resources.dart';
+import '../../domain/chk/typed/chk_string_tokens.dart';
+import 'string_token_preview.dart';
 
 class ResourcesPane extends StatefulWidget {
   const ResourcesPane({
@@ -59,6 +60,10 @@ class _ResourcesPaneState extends State<ResourcesPane> {
   }
 
   Future<void> _edit(RawChkDocument doc, int? id) async {
+    final table = ChkResourceEditor.table(doc);
+    if (id != null && table.entryForId(id)?.isStructurallyValid != true) {
+      throw const FormatException('Invalid string ID.');
+    }
     final result = await showDialog<RawChkDocument>(
       context: context,
       barrierDismissible: false,
@@ -435,22 +440,25 @@ class _StringDialogState extends State<_StringDialog> {
   late final TextEditingController _text;
   late final AppLifecycleListener _lifecycle;
   int _target = -1;
+  bool _tokens = false;
   String? _error;
   @override
   void initState() {
     super.initState();
     var text = '';
     if (widget.id != null) {
+      final raw = ChkResourceEditor.table(
+        widget.document,
+      ).entryForId(widget.id!)!.rawBytes!;
       try {
-        text = utf8.decode(
-          ChkResourceEditor.table(
-            widget.document,
-          ).entryForId(widget.id!)!.rawBytes!,
-          allowMalformed: false,
-        );
-      } catch (_) {
-        _error =
-            'Invalid UTF-8. Enter explicit replacement text; original bytes remain until Apply.';
+        text = utf8.decode(raw, allowMalformed: false);
+        if (raw.any((b) => b < 32 && b != 9 && b != 10)) {
+          _tokens = true;
+          text = ChkStringTokens.encode(raw);
+        }
+      } on FormatException {
+        _tokens = true;
+        text = ChkStringTokens.encode(raw);
       }
     }
     _text = TextEditingController(text: text);
@@ -518,7 +526,84 @@ class _StringDialogState extends State<_StringDialog> {
                 minLines: 4,
                 maxLines: 10,
                 decoration: InputDecoration(
-                  labelText: context.l10n.editorUTF8Text,
+                  labelText: _tokens
+                      ? context.l10n.stringTokenMode
+                      : context.l10n.editorUTF8Text,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              CheckboxListTile(
+                key: const Key('resource-string-tokens'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(context.l10n.stringTokenMode),
+                value: _tokens,
+                onChanged: (value) {
+                  try {
+                    final raw = _tokens
+                        ? ChkStringTokens.decode(_text.text)
+                        : utf8.encode(_text.text);
+                    final text = value == true
+                        ? ChkStringTokens.encode(raw)
+                        : utf8.decode(raw);
+                    setState(() {
+                      _tokens = value!;
+                      _text.text = text;
+                      _error = null;
+                    });
+                  } catch (e) {
+                    setState(() => _error = e.toString());
+                  }
+                },
+              ),
+              StringTokenPreview(text: _text.text, tokens: _tokens),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: PopupMenuButton<int>(
+                  key: const Key('resource-string-insert-token'),
+                  tooltip: context.l10n.stringInsertToken,
+                  icon: const Icon(Icons.palette_outlined),
+                  itemBuilder: (_) => [
+                    for (var code = 1; code <= 31; code++)
+                      PopupMenuItem(
+                        value: code,
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              color:
+                                  StringTokenPreview.colors[code] ??
+                                  Colors.transparent,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '<${code.toRadixString(16).padLeft(2, '0').toUpperCase()}>',
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                  onSelected: (code) => setState(() {
+                    final token =
+                        '<${code.toRadixString(16).padLeft(2, '0').toUpperCase()}>';
+                    if (!_tokens) {
+                      _text.text = ChkStringTokens.encode(
+                        utf8.encode(_text.text),
+                      );
+                      _tokens = true;
+                    }
+                    final selection = _text.selection;
+                    final start = selection.isValid
+                        ? selection.start
+                        : _text.text.length;
+                    final end = selection.isValid ? selection.end : start;
+                    _text.value = TextEditingValue(
+                      text: _text.text.replaceRange(start, end, token),
+                      selection: TextSelection.collapsed(
+                        offset: start + token.length,
+                      ),
+                    );
+                  }),
                 ),
               ),
               if (uses.isNotEmpty)
@@ -548,12 +633,15 @@ class _StringDialogState extends State<_StringDialog> {
           key: const Key('resource-string-apply'),
           onPressed: () {
             try {
+              final raw = _tokens
+                  ? ChkStringTokens.decode(_text.text)
+                  : utf8.encode(_text.text);
               final doc = widget.id == null
-                  ? ChkTriggerResources.addText(widget.document, _text.text).$1
-                  : ChkResourceEditor.edit(
+                  ? ChkResourceEditor.addRaw(widget.document, raw)
+                  : ChkResourceEditor.editRaw(
                       widget.document,
                       widget.id!,
-                      _text.text,
+                      raw,
                       onlyUse: _target < 0 ? null : uses[_target],
                     );
               Navigator.pop(context, doc);

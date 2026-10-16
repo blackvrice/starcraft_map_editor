@@ -23,8 +23,9 @@ MTXM/DD2/optional THG2 원자 명령이며 preview는 바이트 불변이다. sp
   다른 맵에 같은 숫자 ID를 복사하지 않는다. 다수 DD2/THG2/지형은 한 원자 명령이다.
 - raw stamp와 의미 ISOM 브러시는 다른 포맷이며 catalog revision/상한을 검증한다.
   ISOM 경계/대칭을 raw ID 뒤집기로 대신하거나 TILE을 무조건 재생성하지 않는다.
-- CRGB/COLR 모드/우선순위는 고정 자료와 게임 확인 후 확정한다. 모호한 값은
-  기존 읽기 전용·원시 보존을 유지한다.
+- CRGB/COLR의 에디터 우선순위·32바이트 layout·명시 VER 전환은
+  [ADR-0021](decisions/0021-settings-trigger-editing.md)을 따른다. 모호한 값은
+  원시 보존하며 게임 우선순위/렌더 인수는 별도다.
 - 일반 스크립트 모델은 지원 TRIG의 정확한 소유자·flags·슬롯·순서와 원시
   미지원 기록을 보존한다. 문자열 token 편집도 알 수 없는 바이트를 유지한다.
 
@@ -628,7 +629,10 @@ recipe·명시적 overlay를 검증한다. 새 문자열을 정규화하지 않�
 
 ## EUD 로컬 DAT 조회 (2026-10-01)
 
-helper 0.11.0/wire 3의 readEudDat는 고정 classic DAT 7개만 읽고 61개 수치 열·크기·SHA256·제품/빌드를 반환한다. 원시 자산은 저장/배포하지 않는다. 보존·검증 계약은 [EUD 보완](EUD_COMPLETION.md)을 따른다.
+최초 helper 0.11.0/wire 3의 readEudDat는 고정 classic DAT 7개·61열이었다.
+2026-10-16 DAT revision v2는 일반 설정 7열을 추가한 68열·크기·SHA256·제품/빌드를
+반환하며 이전 revision은 거절한다. 원시 자산은 저장/배포하지 않는다.
+[설정 계약](SETTINGS_TRIGGER_EDITING.md)과 [EUD 보완](EUD_COMPLETION.md)을 따른다.
 
 ## ISOM 전환·수직 적층 재계산 (2026-10-01)
 

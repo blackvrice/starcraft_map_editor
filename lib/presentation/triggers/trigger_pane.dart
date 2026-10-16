@@ -4,6 +4,9 @@ import '../../application/editing/object_editing_controller.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/chk/typed/chk_trigger_editor.dart';
 import '../../domain/chk/typed/chk_trigger_resources.dart';
+import '../../domain/chk/typed/chk_trigger_search.dart';
+import 'trigger_replace_dialog.dart';
+import 'trigger_reference_labels.dart';
 import '../localization/l10n.dart';
 import 'trigger_labels.dart';
 import 'trigger_resource_dialog.dart';
@@ -38,6 +41,32 @@ class _TriggerPaneState extends State<TriggerPane> {
   String? _error;
   final _selected = <int>{};
   RawChkDocument? _selectionDocument;
+  ChkTriggerSearch? _searchIndex;
+  String? _searchLocale;
+  String _query = '';
+  String? _reference;
+  String _referenceId = '';
+  int? _owner;
+  bool? _enabled;
+  bool? _action;
+  String _opcode = '';
+
+  Future<void> _replace(ChkTriggerSearch search) async {
+    final result = await showDialog<TriggerReplacementPreview>(
+      context: context,
+      builder: (_) =>
+          TriggerReplaceDialog(search: search, selected: Set.of(_selected)),
+    );
+    if (result == null || !mounted) return;
+    _run(
+      () => widget.controller.applyTriggers(
+        expectedDocument: search.document,
+        briefing: widget.briefing,
+        records: result.records,
+      ),
+    );
+  }
+
   Future<void> _owners(ChkTriggers data, RawChkDocument snapshot) async {
     final l10n = context.l10n;
     final localeName = l10n.localeName;
@@ -220,7 +249,37 @@ class _TriggerPaneState extends State<TriggerPane> {
       if (!identical(snapshot, _selectionDocument)) {
         _selected.clear();
         _selectionDocument = snapshot;
+        _searchIndex = null;
       }
+      if (data != null &&
+          snapshot != null &&
+          (_searchIndex == null || _searchLocale != l10n.localeName)) {
+        _searchIndex = ChkTriggerSearch(
+          snapshot,
+          briefing: widget.briefing,
+          opcodeLabel: (action, id) => TriggerLabels.opcodeName(
+            l10n.localeName,
+            TriggerOpcodes.find(action, id, briefing: widget.briefing)!,
+            action: action,
+            briefing: widget.briefing,
+          ),
+        );
+        _searchLocale = l10n.localeName;
+      }
+      final visible = data == null
+          ? <int>[]
+          : _searchIndex!.find(
+              _query,
+              reference: _reference,
+              id: int.tryParse(_referenceId),
+              owner: _owner,
+              enabled: _enabled,
+              action: _action,
+              opcode: int.tryParse(_opcode),
+            );
+      final validId =
+          (_referenceId.trim().isEmpty || int.tryParse(_referenceId) != null) &&
+          (_opcode.trim().isEmpty || int.tryParse(_opcode) != null);
       void apply(List<ChkTrigger> records) => _run(
         () => widget.controller.applyTriggers(
           briefing: widget.briefing,
@@ -233,7 +292,10 @@ class _TriggerPaneState extends State<TriggerPane> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
                   widget.briefing ? l10n.trigBriefingTitle : l10n.trigTitle,
@@ -246,7 +308,6 @@ class _TriggerPaneState extends State<TriggerPane> {
                   const SizedBox(width: 10),
                   _Pill(text: l10n.trigCount(data.records.length)),
                 ],
-                const Spacer(),
                 OutlinedButton.icon(
                   onPressed: widget.controller.canUndo
                       ? () => _run(widget.controller.undo)
@@ -293,15 +354,24 @@ class _TriggerPaneState extends State<TriggerPane> {
                     label: Text(l10n.trigValidate),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(
-                      () => _selected.length == data.records.length
-                          ? _selected.clear()
-                          : _selected.addAll(
-                              List.generate(data.records.length, (i) => i),
-                            ),
-                    ),
+                    onPressed: !validId
+                        ? null
+                        : () => setState(
+                            () => visible.every(_selected.contains)
+                                ? _selected.removeAll(visible)
+                                : _selected.addAll(visible),
+                          ),
                     icon: const Icon(Icons.select_all_rounded, size: 18),
-                    label: Text(l10n.trigSelectAll),
+                    label: Text(
+                      _query.isEmpty &&
+                              _reference == null &&
+                              _owner == null &&
+                              _enabled == null &&
+                              _action == null &&
+                              _opcode.isEmpty
+                          ? l10n.trigSelectAll
+                          : l10n.triggerSelectVisible,
+                    ),
                   ),
                   for (final kind
                       in widget.briefing
@@ -334,6 +404,14 @@ class _TriggerPaneState extends State<TriggerPane> {
                         : () => _owners(data, snapshot!),
                     child: Text(l10n.trigOwners),
                   ),
+                  TextButton.icon(
+                    key: const Key('trigger-replace'),
+                    onPressed: _selected.isEmpty
+                        ? null
+                        : () => _replace(_searchIndex!),
+                    icon: const Icon(Icons.find_replace, size: 18),
+                    label: Text(l10n.triggerReplaceReferences),
+                  ),
                   for (final enabled in [true, false])
                     TextButton(
                       onPressed: _selected.isEmpty
@@ -350,6 +428,181 @@ class _TriggerPaneState extends State<TriggerPane> {
                             : l10n.trigDisableSelected,
                       ),
                     ),
+                ],
+              ),
+            ),
+          if (data != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: 300,
+                    child: TextField(
+                      key: const Key('trigger-search'),
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerSearch,
+                        prefixIcon: const Icon(Icons.search),
+                      ),
+                      onChanged: (v) => setState(() {
+                        _query = v;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 180,
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      key: const Key('trigger-reference-filter'),
+                      initialValue: _reference ?? '',
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerReference,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: '',
+                          child: Text(l10n.triggerAllReferences),
+                        ),
+                        for (final kind in ChkTriggerSearch.replaceable)
+                          DropdownMenuItem(
+                            value: kind,
+                            child: Text(triggerReferenceLabel(context, kind)),
+                          ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _reference = v == '' ? null : v;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: TextField(
+                      key: const Key('trigger-reference-id'),
+                      enabled: _reference != null,
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerReferenceId,
+                        errorText: validId
+                            ? null
+                            : l10n.settingsValueUnavailable,
+                      ),
+                      onChanged: (v) => setState(() {
+                        _referenceId = v;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (data != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: 180,
+                    child: DropdownButtonFormField<int>(
+                      key: const Key('trigger-owner-filter'),
+                      isExpanded: true,
+                      initialValue: -1,
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerFilterOwner,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: -1,
+                          child: Text(l10n.triggerAll),
+                        ),
+                        for (final e in TriggerOpcodes.owners.entries)
+                          DropdownMenuItem(
+                            value: e.key,
+                            child: Text(
+                              TriggerLabels.value(l10n.localeName, e.value),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _owner = v == -1 ? null : v;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: DropdownButtonFormField<int>(
+                      key: const Key('trigger-state-filter'),
+                      isExpanded: true,
+                      initialValue: -1,
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerFilterState,
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: -1,
+                          child: Text(l10n.triggerAll),
+                        ),
+                        DropdownMenuItem(
+                          value: 1,
+                          child: Text(l10n.editorEnabled),
+                        ),
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Text(l10n.triggerDisabled),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _enabled = v == -1 ? null : v == 1;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: DropdownButtonFormField<int>(
+                      key: const Key('trigger-slot-filter'),
+                      isExpanded: true,
+                      initialValue: -1,
+                      items: [
+                        DropdownMenuItem(
+                          value: -1,
+                          child: Text(l10n.triggerAll),
+                        ),
+                        if (!widget.briefing)
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text(l10n.trigSlotCondition),
+                          ),
+                        DropdownMenuItem(
+                          value: 1,
+                          child: Text(l10n.trigSlotAction),
+                        ),
+                      ],
+                      onChanged: (v) => setState(() {
+                        _action = v == -1 ? null : v == 1;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 160,
+                    child: TextField(
+                      key: const Key('trigger-opcode-filter'),
+                      decoration: InputDecoration(
+                        labelText: l10n.triggerOpcodeId,
+                      ),
+                      onChanged: (v) => setState(() {
+                        _opcode = v;
+                        _selected.clear();
+                      }),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -376,60 +629,63 @@ class _TriggerPaneState extends State<TriggerPane> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                itemCount: data.records.length,
-                itemBuilder: (context, index) => _TriggerCard(
-                  key: ValueKey(('trigger', index)),
-                  record: data.records[index],
-                  index: index,
-                  count: data.records.length,
-                  briefing: widget.briefing,
-                  selected: _selected.contains(index),
-                  onSelected: (v) => setState(
-                    () => v ? _selected.add(index) : _selected.remove(index),
-                  ),
-                  onOpen: () => _edit(data, index, snapshot!),
-                  onMove: (delta) {
-                    final next = [...data.records];
-                    final record = next[index];
-                    next[index] = next[index + delta];
-                    next[index + delta] = record;
-                    apply(next);
-                  },
-                  onDuplicate: () => apply(
-                    [...data.records]..insert(
-                      index + 1,
-                      ChkTrigger(
-                        data.records[index].bytes,
-                        briefing: widget.briefing,
+                itemCount: validId ? visible.length : 0,
+                itemBuilder: (context, position) {
+                  final index = visible[position];
+                  return _TriggerCard(
+                    key: ValueKey(('trigger', index)),
+                    record: data.records[index],
+                    index: index,
+                    count: data.records.length,
+                    briefing: widget.briefing,
+                    selected: _selected.contains(index),
+                    onSelected: (v) => setState(
+                      () => v ? _selected.add(index) : _selected.remove(index),
+                    ),
+                    onOpen: () => _edit(data, index, snapshot!),
+                    onMove: (delta) {
+                      final next = [...data.records];
+                      final record = next[index];
+                      next[index] = next[index + delta];
+                      next[index + delta] = record;
+                      apply(next);
+                    },
+                    onDuplicate: () => apply(
+                      [...data.records]..insert(
+                        index + 1,
+                        ChkTrigger(
+                          data.records[index].bytes,
+                          briefing: widget.briefing,
+                        ),
                       ),
                     ),
-                  ),
-                  onDelete: () async {
-                    final name = widget.briefing
-                        ? l10n.trigBriefingItemTitle(index + 1)
-                        : l10n.trigItemTitle(index + 1);
-                    final accepted = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(l10n.trigDeleteTitle(name)),
-                        content: Text(l10n.trigDeleteBody),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: Text(l10n.trigCancel),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: Text(l10n.trigDeleteConfirm),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (accepted == true && mounted) {
-                      apply([...data.records]..removeAt(index));
-                    }
-                  },
-                ),
+                    onDelete: () async {
+                      final name = widget.briefing
+                          ? l10n.trigBriefingItemTitle(index + 1)
+                          : l10n.trigItemTitle(index + 1);
+                      final accepted = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(l10n.trigDeleteTitle(name)),
+                          content: Text(l10n.trigDeleteBody),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.trigCancel),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.trigDeleteConfirm),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (accepted == true && mounted) {
+                        apply([...data.records]..removeAt(index));
+                      }
+                    },
+                  );
+                },
               ),
             ),
         ],
