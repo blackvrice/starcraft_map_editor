@@ -1212,6 +1212,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 CV5 크립 후보 플래그 자료: optional 숫자 profile·독립 bit6/12/14·출처/strict decode·합성/native/8타일셋 회귀 (실제 coverage 제외)
 - [x] EP1 초기 크립 관찰 증거: phase/frame·게임/수집기/세션/setup 기록·권한/mask·미관찰 unknown·legacy 거절 (실제 collector/지원 build 승인 제외)
 - [x] EP1 크립 수집 입력 결합: 현재 CHK/base/resource/setup 지문·명시적 typed capture 포트·버전/응답/취소 adapter (실제 collector/IPC/게임 실행 제외)
+- [x] EP1 크립 수집용 임시 맵 준비: 원본 지문/baseline 재검증·소유 임시 MPQ·CHK/WAV exact 검증·취소/정리/재검증 (실제 collector/게임 실행 제외)
 - [ ] 실제 initialMap/live 크립 collector·관찰 시점/권한·SC:R 비교 인수 검증
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
@@ -1334,6 +1335,16 @@ collector의 관찰 시점/권한/지원 버전과 unknown 입력 검증이며 �
 변경 Dart7파일 포맷은 통과, 전체 포맷은 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
 기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 남는다.
 다음은 실제 수집 경로·신뢰/실행 승인·원본 재검증/temporary materialization·SC:R 비교 인수다.
+이어서 [수집용 임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md)와 [ADR-0019](decisions/0019-owned-creep-capture-map-preparation.md)을 구현했다.
+원본 지문·baseline을 확인하고 현재 raw CHK와 WAV overlay를 소유 임시 MPQ에 쓰고 재열기 검증한다.
+검증 불가능한 extra asset/locale·이름 모호성은 거절하며 사용자 원본·session/Undo를 변경하지 않는다.
+취소는 helper 완료 뒤 정리하고 cleanup 실패는 명시적 retry용 소유권을 유지한다.
+새64개+native선택2개·전체2,127통과/61skip·실제 MPQ집중66통과·analyze 무이슈·Windows Debug/native7종을 확인했다.
+실제 MPQ 검증에서 기존 writer의 WAV 경로 교체 거절을 확인해 지원표와 회귀를 보완했다.
+초기 PowerShell exit0이 Flutter 실패를 가린 것을 정정하고 종료 코드 보존·원시 진단·최종 통과를 기록했다.
+변경 Dart6파일 포맷은 통과, 전체는 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
+기준3.44.8/3.12 차이·실제 collector/IPC·setup 실행·앱/게임/외부 인수는 남는다.
+다음은 실제 수집 경로·지원 build·신뢰/실행 승인과 transport의 설계/검증·SC:R 비교 인수다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

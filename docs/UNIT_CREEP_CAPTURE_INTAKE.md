@@ -5,6 +5,10 @@
 [관찰 증거](UNIT_CREEP_OBSERVATION.md), [앱 조회](UNIT_CREEP_INSPECTION.md)를 따른다.
 실제 engine collector/IPC·게임 자동 실행/주입·SC:R 호환 인수·UI/배치 차단은 구현하지 않았다.
 
+후속 [임시 맵 준비·재검증](UNIT_CREEP_MAP_PREPARATION.md)에서 원본 재검증과 temporary
+materialization을 별도 구현했다. 아래 날짜가 있는 실행 기록의 다음 작업은 당시 기준이며,
+입력 adapter 자체가 실제 파일을 읽거나 게임을 실행하지 않는 경계는 유지한다.
+
 ## 1. 실행 계획·소스 분석
 
 1. 기존 raw CHK encoder·immutable pending resources·source fingerprint와 상태 포트를 확인한다.

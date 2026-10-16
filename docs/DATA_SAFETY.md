@@ -1,5 +1,13 @@
 # 데이터 안전과 보안
 
+## 크립 수집용 임시 입력 (2026-10-16, 구현)
+
+[임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md)는 현재 입력·원본 지문·출력 bytes를 검증하며
+사용자 경로로 승격/덮어쓰기하거나 게임을 실행하지 않는다. 소유 token의 known file/빈 directory만
+비재귀 정리하고 예상 밖 파일/경로 유형 변경은 남겨 오류로 처리한다. 취소 시 in-flight helper를
+기다리며 cleanup 실패는 재시도용 소유권을 유지한다. receipt는 OS 잠금/sandbox가 아니므로
+외부 변경 경쟁·실제 collector 승인/게임 관찰은 별도다. 원본 보존 규칙을 완화하지 않는다.
+
 ## 후속 작업 공간 안전 경계 (2026-10-04, 계획)
 
 [보완 설계](EDITOR_PARITY_DESIGN.md)의 다중 문서/언어/clipboard도 아래

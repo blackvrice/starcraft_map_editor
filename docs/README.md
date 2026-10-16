@@ -50,6 +50,7 @@ M0~M6.1 완료는 당시 범위의 완료이며 기본 설정과 EUD 확장 탭�
 | [CV5 크립 후보 플래그](CV5_CREEP_CANDIDATE_PROFILE.md) | optional 숫자 bit6/12/14·출처/revision·strict decode·로컬8타일셋 회귀·실제 coverage 제외 | 정적 크립 후보 자료의 지원 범위를 확인할 때 |
 | [초기 크립 관찰 증거](UNIT_CREEP_OBSERVATION.md) | phase/frame·버전/권한 기록·미관찰 unknown·수신 정규화·legacy 거절·실제 collector 제외 | 실제 크립 관찰 입력을 검증할 때 |
 | [크립 수집 입력·검증 어댑터](UNIT_CREEP_CAPTURE_INTAKE.md) | 현재 CHK/base/resource/setup 지문·typed capture 포트·버전/응답 결합·취소/상한·실제 collector 제외 | 수집 입력 일치와 adapter를 검증할 때 |
+| [크립 수집용 임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md) | 원본 재검증·소유 임시 MPQ·CHK/WAV exact 검증·취소/정리·실제 collector 제외 | 수집용 실제 입력과 파일 안전성을 검증할 때 |
 | [아키텍처](ARCHITECTURE.md) | 계층, 컴포넌트, 데이터 흐름, 의존성 규칙 | 구조나 경계가 바뀔 때 |
 | [파일 포맷과 무손실 정책](FILE_FORMATS.md) | MPQ/CHK 처리 원칙과 지원 단계 | 파서·저장 동작이 바뀔 때 |
 | [EUD 확장 설정 설계](EUD_EXTENSIONS.md) | 유닛·무기 및 설정별 확장 탭, 런타임 실행의 계획과 지원 기준 | 확장 범위·필드 검증 기준이 바뀔 때 |

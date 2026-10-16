@@ -1,5 +1,10 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-16 [수집용 임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md)는 기존 MPQ helper를
+재사용해 현재 raw CHK·WAV overlay를 임시 출력/재열기 검증한다. locale0·완전 이름 목록·
+canonical WAV만 지원하고 signed/non-WAV 자산 등 검증 불가능한 archive는 거절한다.
+unknown/중복 CHK bytes는 그대로 비교하며 일반 Open/Save As의 지원 정책을 바꾸지 않는다.
+
 2026-10-13: standalone unit-sprite는 새 THG2 10바이트에 unit ID·좌표·owner,
 unused=0·IsUnit(0x2000)을 쓴다. pure sprite와 Doodad overlay는 별도이며 기존
 섹션/flags를 변환하지 않는다. [제한 지원과 저장 왕복](UNIT_SPRITE_PLACEMENT.md)을 따른다.
