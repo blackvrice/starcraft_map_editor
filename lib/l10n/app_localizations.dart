@@ -4946,6 +4946,132 @@ abstract class AppLocalizations {
   /// **'Sprites / Doodads'**
   String get basicSpritesDoodads;
 
+  /// No description provided for @mixedClipboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed region clipboard'**
+  String get mixedClipboardTitle;
+
+  /// No description provided for @mixedRaw.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw tiles'**
+  String get mixedRaw;
+
+  /// No description provided for @mixedIsom.
+  ///
+  /// In en, this message translates to:
+  /// **'ISOM terrain'**
+  String get mixedIsom;
+
+  /// No description provided for @mixedLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load local terrain / doodads'**
+  String get mixedLoad;
+
+  /// No description provided for @mixedDataReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Local data ready'**
+  String get mixedDataReady;
+
+  /// No description provided for @mixedDataAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Local data not loaded'**
+  String get mixedDataAbsent;
+
+  /// No description provided for @mixedScan.
+  ///
+  /// In en, this message translates to:
+  /// **'Inspect region doodads'**
+  String get mixedScan;
+
+  /// No description provided for @mixedOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed overlay record'**
+  String get mixedOverlay;
+
+  /// No description provided for @mixedFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Cut fill terrain'**
+  String get mixedFill;
+
+  /// No description provided for @mixedPreviewPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview paste'**
+  String get mixedPreviewPaste;
+
+  /// No description provided for @mixedPreviewCut.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview cut'**
+  String get mixedPreviewCut;
+
+  /// No description provided for @mixedApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply preview'**
+  String get mixedApply;
+
+  /// No description provided for @mixedPartialDoodad.
+  ///
+  /// In en, this message translates to:
+  /// **'Include each entire doodad footprint and enable doodads.'**
+  String get mixedPartialDoodad;
+
+  /// No description provided for @mixedPartialLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'A location crosses the region boundary.'**
+  String get mixedPartialLocation;
+
+  /// No description provided for @mixedOverlayError.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm a unique matching doodad overlay. Ambiguous graphics cannot be copied.'**
+  String get mixedOverlayError;
+
+  /// No description provided for @mixedProfileError.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the map\'s terrain profile. ISOM regions and destinations require 4 x 2 tile alignment.'**
+  String get mixedProfileError;
+
+  /// No description provided for @mixedLayerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Show and unlock every affected layer.'**
+  String get mixedLayerError;
+
+  /// No description provided for @mixedStale.
+  ///
+  /// In en, this message translates to:
+  /// **'The map or local data changed. Copy and preview again.'**
+  String get mixedStale;
+
+  /// No description provided for @mixedRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The region cannot be copied or applied safely with the current data.'**
+  String get mixedRejected;
+
+  /// No description provided for @mixedSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{width} x {height} tiles · {count} objects · {skipped} reserved records skipped'**
+  String mixedSummary(int width, int height, int count, int skipped);
+
+  /// No description provided for @mixedPreviewSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview: {count} changed sections'**
+  String mixedPreviewSummary(int count);
+
   /// No description provided for @basicClipboard.
   ///
   /// In en, this message translates to:

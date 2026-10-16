@@ -2688,6 +2688,75 @@ class AppLocalizationsKo extends AppLocalizations {
   String get basicSpritesDoodads => 'Sprite / Doodad';
 
   @override
+  String get mixedClipboardTitle => '혼합 영역 복사';
+
+  @override
+  String get mixedRaw => '원시 타일';
+
+  @override
+  String get mixedIsom => 'ISOM 지형';
+
+  @override
+  String get mixedLoad => '로컬 지형·두다드 불러오기';
+
+  @override
+  String get mixedDataReady => '로컬 데이터 준비됨';
+
+  @override
+  String get mixedDataAbsent => '로컬 데이터 미로드';
+
+  @override
+  String get mixedScan => '영역 두다드 확인';
+
+  @override
+  String get mixedOverlay => '확인한 연결 그래픽 레코드';
+
+  @override
+  String get mixedFill => '잘라낸 자리의 지형';
+
+  @override
+  String get mixedPreviewPaste => '붙여넣기 미리보기';
+
+  @override
+  String get mixedPreviewCut => '잘라내기 미리보기';
+
+  @override
+  String get mixedApply => '미리보기 적용';
+
+  @override
+  String get mixedPartialDoodad => '두다드 전체 영역을 포함하고 두다드 항목을 켜주세요.';
+
+  @override
+  String get mixedPartialLocation => '로케이션이 선택 영역 경계에 걸쳐 있습니다.';
+
+  @override
+  String get mixedOverlayError =>
+      '두다드와 일치하는 연결 그래픽 하나를 확인해 주세요. 모호한 그래픽은 복사할 수 없습니다.';
+
+  @override
+  String get mixedProfileError =>
+      '맵의 지형 형식을 선택해 주세요. ISOM 영역과 목적지는 4 × 2 타일 정렬이 필요합니다.';
+
+  @override
+  String get mixedLayerError => '영향받는 모든 레이어를 표시하고 잠금을 해제해 주세요.';
+
+  @override
+  String get mixedStale => '맵 또는 로컬 데이터가 변경되었습니다. 다시 복사하고 미리보기를 만드세요.';
+
+  @override
+  String get mixedRejected => '현재 데이터로는 영역을 안전하게 복사하거나 적용할 수 없습니다.';
+
+  @override
+  String mixedSummary(int width, int height, int count, int skipped) {
+    return '$width × $height 타일 · 개체 $count개 · 예약 레코드 $skipped개 제외';
+  }
+
+  @override
+  String mixedPreviewSummary(int count) {
+    return '미리보기: 변경 섹션 $count개';
+  }
+
+  @override
   String get basicClipboard => '복사·붙여넣기';
 
   @override

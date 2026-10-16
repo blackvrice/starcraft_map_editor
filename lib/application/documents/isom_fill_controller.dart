@@ -37,6 +37,16 @@ class IsomFillController {
   OpenedMapSession? _source;
   StarCraftDataAssetSettingsState? _assets;
   SolidIsomCatalog? _catalog;
+
+  /// Catalogs survive edits in the same document, but never asset/map changes.
+  bool isClipboardCatalogCurrent(SolidIsomCatalog catalog) =>
+      identical(_catalog, catalog) &&
+      identical(_assets, assets()) &&
+      _operation == null &&
+      _source != null &&
+      identical(_source!.extractedMap, maps.state.session?.extractedMap) &&
+      maps.state.session?.metadataViews.tilesets.singleOrNull?.rawValue ==
+          catalog.catalog.tileset;
   IsomFillPreview? _preview;
   TerrainSnapshotReadResult? lastRead;
 

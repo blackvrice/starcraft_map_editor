@@ -1,4 +1,6 @@
 import 'dart:async';
+import '../../application/documents/isom_fill_controller.dart';
+import 'mixed_clipboard_pane.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../application/documents/opened_map_session.dart';
@@ -16,12 +18,14 @@ class BasicEditingToolsDialog extends StatefulWidget {
     required this.controller,
     this.textures = const TerrainTileTextureState.idle(),
     this.catalog,
+    this.isomController,
     this.initialTab = 0,
     super.key,
   });
   final BasicEditingController controller;
   final TerrainTileTextureState textures;
   final PlacementCatalogController? catalog;
+  final IsomFillController? isomController;
   final int initialTab;
   @override
   State<BasicEditingToolsDialog> createState() =>
@@ -159,7 +163,7 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
         width: 960,
         height: 660,
         child: DefaultTabController(
-          length: 7,
+          length: 8,
           initialIndex: widget.initialTab,
           child: Column(
             children: [
@@ -192,6 +196,7 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
                   Tab(text: l.basicSpritesDoodads),
                   Tab(text: l.basicClipboard),
                   Tab(text: l.basicRawTerrain),
+                  Tab(text: l.mixedClipboardTitle),
                 ],
               ),
               if (_error != null)
@@ -221,6 +226,11 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
                       _spritesDoodads(s),
                       _clipboard(s),
                       _rawTerrain(s),
+                      MixedClipboardPane(
+                        controller: widget.controller,
+                        loader: widget.isomController,
+                        textures: widget.textures,
+                      ),
                     ],
                   ),
                 ),

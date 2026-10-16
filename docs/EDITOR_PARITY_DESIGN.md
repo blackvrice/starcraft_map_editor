@@ -66,6 +66,10 @@ collision extent·지형·전력/크립·EUD 변경·게임 정상/자유 정책
 
 ## 3. 여러 맵과 clipboard
 
+2026-10-16 EP3a의 같은 문서 혼합 영역 복사는
+[지원표·실행 기록](MIXED_REGION_CLIPBOARD.md)으로 구현했다. 아래 다중 문서와
+참조 closure/리소스 이식은 EP3b 제안이며 완료된 기능과 구분한다.
+
 ### 문서 수명
 
 `WorkspaceController`(제안)가 안정적인 document ID로 여러 세션을 관리한다.

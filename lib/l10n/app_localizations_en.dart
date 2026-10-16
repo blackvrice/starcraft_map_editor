@@ -2750,6 +2750,78 @@ class AppLocalizationsEn extends AppLocalizations {
   String get basicSpritesDoodads => 'Sprites / Doodads';
 
   @override
+  String get mixedClipboardTitle => 'Mixed region clipboard';
+
+  @override
+  String get mixedRaw => 'Raw tiles';
+
+  @override
+  String get mixedIsom => 'ISOM terrain';
+
+  @override
+  String get mixedLoad => 'Load local terrain / doodads';
+
+  @override
+  String get mixedDataReady => 'Local data ready';
+
+  @override
+  String get mixedDataAbsent => 'Local data not loaded';
+
+  @override
+  String get mixedScan => 'Inspect region doodads';
+
+  @override
+  String get mixedOverlay => 'Confirmed overlay record';
+
+  @override
+  String get mixedFill => 'Cut fill terrain';
+
+  @override
+  String get mixedPreviewPaste => 'Preview paste';
+
+  @override
+  String get mixedPreviewCut => 'Preview cut';
+
+  @override
+  String get mixedApply => 'Apply preview';
+
+  @override
+  String get mixedPartialDoodad =>
+      'Include each entire doodad footprint and enable doodads.';
+
+  @override
+  String get mixedPartialLocation => 'A location crosses the region boundary.';
+
+  @override
+  String get mixedOverlayError =>
+      'Confirm a unique matching doodad overlay. Ambiguous graphics cannot be copied.';
+
+  @override
+  String get mixedProfileError =>
+      'Select the map\'s terrain profile. ISOM regions and destinations require 4 x 2 tile alignment.';
+
+  @override
+  String get mixedLayerError => 'Show and unlock every affected layer.';
+
+  @override
+  String get mixedStale =>
+      'The map or local data changed. Copy and preview again.';
+
+  @override
+  String get mixedRejected =>
+      'The region cannot be copied or applied safely with the current data.';
+
+  @override
+  String mixedSummary(int width, int height, int count, int skipped) {
+    return '$width x $height tiles · $count objects · $skipped reserved records skipped';
+  }
+
+  @override
+  String mixedPreviewSummary(int count) {
+    return 'Preview: $count changed sections';
+  }
+
+  @override
   String get basicClipboard => 'Clipboard';
 
   @override

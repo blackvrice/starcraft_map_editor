@@ -212,6 +212,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
         controller: _basicEditing,
         initialTab: initialTab,
         catalog: widget.placementCatalogController,
+        isomController: widget.isomFillController,
         textures: widget.terrainTileTextureController.state,
       ),
     );

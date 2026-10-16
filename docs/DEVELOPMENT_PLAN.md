@@ -1379,10 +1379,16 @@ analyze 무이슈·Windows Debug/native7종을 확인했다. 알림의 snapshot 
 
 ### EP3. 복사·여러 맵
 
-- [ ] EP3a: 다수 두다드+객체+raw/ISOM 혼합 clipboard의 지원표·참조/경계 검증
-- [ ] EP3a: 부분 footprint/overlay 거절·원자 적용/Undo·PAR-08
+- [x] EP3a: 다수 두다드+객체+raw/ISOM 혼합 clipboard의 지원표·참조/경계 검증
+- [x] EP3a: 부분 footprint/overlay 거절·원자 적용/Undo·PAR-08 자동 회귀 범위
 - [ ] EP3b: workspace/중복 열기/저장·복구 경로 ADR와 문서별 상태·요청 수명 분리
 - [ ] EP3b: 참조 closure·ID/리소스 재매핑 preview와 target revision 재검증·PAR-09/10
+
+2026-10-16 EP3a는 [혼합 영역 복사](MIXED_REGION_CLIPBOARD.md)로 구현했다.
+raw MTXM/TILE 독립 복사와 ISOM 내부의 완전한 diamond+경계 재계산을 구분한다.
+두다드 연결 그래픽은 명시 확인하며 UNIT pair 새 ID·MRGN 빈 슬롯/이름 참조를
+검증한다. Copy/Preview는 무변경, Apply는 한 Undo다. 실제 앱·외부 에디터 왕복·
+SC:R PAR-08 인수는 미실행이며 자동 테스트 통과와 구분한다. EP3b는 남는다.
 
 ### EP4. 지형·보조 표시
 

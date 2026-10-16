@@ -18,6 +18,7 @@
 | 객체 clipboard | 같은 문서의 유닛·Sprite·로케이션 복사/자르기/붙여넣기. 유닛 관계 쌍을 함께 복사하면 새 ID와 상대 참조를 재매핑한다. 로케이션은 빈 슬롯을 사용하고 문자열 ID·고도를 보존한다. Anywhere·시작 위치·불명확한 overlay는 거부한다. |
 | Raw 지형 clipboard | 사각형 타일 좌표 선택, MTXM 복사/자르기/붙여넣기. 자르기 채움은 현재 맵에 존재하는 raw 타일만 허용한다. TILE/ISOM을 변경하거나 지형 경계를 계산하지 않으며 Doodad가 있는 맵은 거부한다. |
 | Doodad clipboard | 별도 복합 탭에서 recipe·overlay를 지정한 단일 객체를 복사/자른다. 대상의 아래 지형과 타일셋·배치 조건을 검증하고 MTXM/DD2/THG2를 한 번에 적용한다. 자르기는 TILE 아래 지형을 복원하고 overlay를 제거한다. 불명확한 인접 footprint·상태 불일치는 거부한다. |
+| 혼합 영역 clipboard | 2026-10-16 EP3a: 여러 두다드·연결 overlay·유닛·Sprite·로케이션과 raw/ISOM 지형을 같은 문서에서 복사한다. 읽기 전용 미리보기·전체 적용/Undo와 정렬/참조/부분 footprint 거부 범위는 [혼합 영역 복사](MIXED_REGION_CLIPBOARD.md)를 따른다. |
 | 탐색 | 미니맵 클릭/드래그로 화면 이동, viewport 표시. Alt 클릭은 현재 표시/잠금 상태에 맞는 겹친 객체를 순환 선택한다. 캔버스 초점에서 V/B/R은 선택/브러시/사각형, Esc는 진행 중 브러시·사각형 취소다. |
 
 Ctrl+C/X는 Map 화면에서 선택 객체 복사/자르기, Ctrl+V는 위치를 지정하는 clipboard
@@ -54,7 +55,8 @@ helper 0.10.1, wire protocol 3으로 기록하며 이전 맵을 열 때 자동 �
 
 등각 지형의 경계·적층·경사로 solver/선택 브러시와 ISOM·Doodad resize는
 [등각 지형 계약](ISOMETRIC_TERRAIN.md), [크기 변경](MAP_RESIZE.md)의 후속 작업이다.
-다수 Doodad를 섞은 복합 선택과 미지원 Sprite 의미 변환은 제공하지 않는다.
+다수 Doodad의 혼합 영역 복사는 위 별도 경로로 제공한다. 문서 간 복사와
+미지원 Sprite 의미 변환은 제공하지 않는다.
 불명확한 footprint/overlay를 복구하거나 추측하지 않는다.
 실제 SC:R과 외부 에디터에서 상태·연결·안개·Doodad를 확인하는 인수는 별도다.
 

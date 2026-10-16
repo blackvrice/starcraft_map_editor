@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'mixed_clipboard_controller.dart';
 import '../../domain/chk/chk.dart';
 import '../../domain/chk/chk_basic_editing.dart';
 import '../documents/open_map_controller.dart';
@@ -16,6 +17,11 @@ class BasicEditingController {
   BasicEditingController({required this.maps, required this.layers});
   final OpenMapController maps;
   final MapLayerController layers;
+  late final mixedClipboard = MixedClipboardController(
+    maps: maps,
+    layers: layers,
+    apply: apply,
+  );
   final editor = const ChkBasicEditing();
   final _changes = StreamController<void>.broadcast(sync: true);
   Stream<void> get changes => _changes.stream;

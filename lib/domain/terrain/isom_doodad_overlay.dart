@@ -20,16 +20,20 @@ final class IsomDoodadOverlay {
     this._cells,
     this._protected,
     List<IsomDoodadBounds> bounds,
-  ) : bounds = List.unmodifiable(bounds);
+    List<IsomDoodadInstance> instances,
+  ) : bounds = List.unmodifiable(bounds),
+      instances = List.unmodifiable(instances);
   final RawChkDocument source, base;
   final Map<int, (int, int)> _cells; // index -> (raw overlay, required group)
   final Map<int, int> _protected;
   final List<IsomDoodadBounds> bounds;
+  final List<IsomDoodadInstance> instances;
 
   static IsomDoodadOverlay read(
     RawChkDocument source,
     List<DoodadPlacementRecipe> recipes, {
     bool allowDisabled = false,
+    bool allowRawOverrides = false,
   }) {
     final report = const ChkEditorTerrainDecoder().decode(source);
     if (report.width == null ||
@@ -61,17 +65,29 @@ final class IsomDoodadOverlay {
     final cells = <int, (int, int)>{};
     final protected = <int, int>{};
     final bounds = <IsomDoodadBounds>[];
+    final instances = <IsomDoodadInstance>[];
+    final byType = <int, List<DoodadPlacementRecipe>>{};
+    for (final recipe in recipes) {
+      byType.putIfAbsent(recipe.doodadType, () => []).add(recipe);
+    }
     for (final section in objects.doodadSections) {
       for (final d in section.doodads) {
         final candidates =
-            <(Map<int, (int, int)>, Map<int, int>, IsomDoodadBounds)>[];
-        for (final r in recipes.where(
-          (r) =>
-              r.doodadType == d.doodadType &&
-              r.tileset.rawValue == metadata.tilesets.single.rawValue &&
-              (r.enabledValue == d.enabledValue ||
-                  (allowDisabled && d.enabledValue == 1)),
-        )) {
+            <
+              (
+                Map<int, (int, int)>,
+                Map<int, int>,
+                IsomDoodadBounds,
+                DoodadPlacementRecipe,
+              )
+            >[];
+        for (final r
+            in (byType[d.doodadType] ?? <DoodadPlacementRecipe>[]).where(
+              (r) =>
+                  r.tileset.rawValue == metadata.tilesets.single.rawValue &&
+                  (r.enabledValue == d.enabledValue ||
+                      (allowDisabled && d.enabledValue == 1)),
+            )) {
           final dx = d.x - r.centerOffsetX, dy = d.y - r.centerOffsetY;
           if (dx < 0 || dy < 0 || dx % 32 != 0 || dy % 32 != 0) continue;
           final x = dx ~/ 32, y = dy ~/ 32;
@@ -100,6 +116,7 @@ final class IsomDoodadOverlay {
               footprint,
               required,
               IsomDoodadBounds(x, y, r.width, r.height),
+              r,
             ));
           }
         }
@@ -107,6 +124,13 @@ final class IsomDoodadOverlay {
           throw StateError('Unknown or ambiguous doodad footprint.');
         }
         bounds.add(candidates.single.$3);
+        instances.add(
+          IsomDoodadInstance(
+            d.recordIndex,
+            candidates.single.$4,
+            candidates.single.$3,
+          ),
+        );
         for (final e in candidates.single.$2.entries) {
           if (protected.containsKey(e.key)) {
             throw StateError('Overlapping doodad footprints.');
@@ -119,7 +143,8 @@ final class IsomDoodadOverlay {
       }
     }
     for (var i = 0; i < terrain.tileCount; i++) {
-      if (!cells.containsKey(i) &&
+      if (!allowRawOverrides &&
+          !cells.containsKey(i) &&
           terrain.rawTileValues[i] != tile.getUint16(i * 2, Endian.little)) {
         throw StateError('Raw MTXM override outside verified doodads.');
       }
@@ -134,7 +159,14 @@ final class IsomDoodadOverlay {
         source.sections[section.sectionIndex].withPayload([]),
       );
     }
-    return IsomDoodadOverlay._(source, base, cells, protected, bounds);
+    return IsomDoodadOverlay._(
+      source,
+      base,
+      cells,
+      protected,
+      bounds,
+      instances,
+    );
   }
 
   /// Coordinates and sprite records are translated by the resize editor.
@@ -280,4 +312,12 @@ final class IsomDoodadOverlay {
     read(result, recipes);
     return result;
   }
+}
+
+/// Verified terrain ownership only; THG2 ownership still needs confirmation.
+final class IsomDoodadInstance {
+  const IsomDoodadInstance(this.recordIndex, this.recipe, this.bounds);
+  final int recordIndex;
+  final DoodadPlacementRecipe recipe;
+  final IsomDoodadBounds bounds;
 }
