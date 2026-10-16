@@ -1211,6 +1211,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 초기 크립 수집 feasibility: 자료/시점/권한·미확인 영역과 실제 adapter/설계 모델 지원 범위 확정 (실제 collector 완료 아님)
 - [x] EP1 CV5 크립 후보 플래그 자료: optional 숫자 profile·독립 bit6/12/14·출처/strict decode·합성/native/8타일셋 회귀 (실제 coverage 제외)
 - [x] EP1 초기 크립 관찰 증거: phase/frame·게임/수집기/세션/setup 기록·권한/mask·미관찰 unknown·legacy 거절 (실제 collector/지원 build 승인 제외)
+- [x] EP1 크립 수집 입력 결합: 현재 CHK/base/resource/setup 지문·명시적 typed capture 포트·버전/응답/취소 adapter (실제 collector/IPC/게임 실행 제외)
 - [ ] 실제 initialMap/live 크립 collector·관찰 시점/권한·SC:R 비교 인수 검증
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
@@ -1323,6 +1324,16 @@ collector의 관찰 시점/권한/지원 버전과 unknown 입력 검증이며 �
 기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 남는다.
 다음은 현재 실행 입력/리소스/setup fingerprint와 검증된 collector transport/지원 버전의 결합,
 명시적 수집·SC:R 비교 인수다. 실제 collector/live·UI/배치 정책은 계속 미완료다.
+2026-10-16 [크립 수집 입력·검증 adapter](UNIT_CREEP_CAPTURE_INTAKE.md)와 [ADR-0018](decisions/0018-creep-capture-input-binding.md)을 구현했다.
+현재 raw CHK·source archive 지문·pending resource 삭제/bytes·setup schema/bytes·DAT 출처를
+결합하며 선택 provider/collector/game version·게임 세션·setup·captured input 일치를 검사한다.
+같은 ID의 취소/timeout/늦은 응답은 request 객체로 분리하고 기본 collector는 등록하지 않는다.
+지문은 의도한 base+overlay이며 실제 prepared MPQ/engine 실행의 증명은 아니다.
+새70개·최종 전체2,063통과/59skip·로컬 연결395통과·analyze 무이슈·Windows Debug/native7종을 확인했다.
+버퍼 변경 중 import 위치 오류로 format/테스트 로딩이 실패한 뒤 수정·최종 게이트를 재실행했다.
+변경 Dart7파일 포맷은 통과, 전체 포맷은 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
+기준3.44.8/3.12의 차이·실제 앱/게임/외부 인수는 남는다.
+다음은 실제 수집 경로·신뢰/실행 승인·원본 재검증/temporary materialization·SC:R 비교 인수다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

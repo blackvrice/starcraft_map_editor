@@ -41,6 +41,9 @@ optional version1 `creepCandidateProfile`을 추가한다. 기존 helper 응답�
 후속 [초기 크립 관찰 증거](UNIT_CREEP_OBSERVATION.md)는 domain의 불변 관찰 정보와
 수신 시 unknown 정규화를 추가한다. snapshot은 phase/frame·권한·mask/DIM이 맞을 때만
 현재 request에 coverage를 반환한다. legacy는 unavailable이며 실제 collector·live는 여전히 없다.
+2026-10-16 [수집 입력 결합](UNIT_CREEP_CAPTURE_INTAKE.md)은 현재 CHK/base/resource/setup 지문과
+`UnitCreepCaptureGateway`·선택적 `ValidatedUnitCreepStateGateway`를 추가한다. 입력/버전/세션/
+setup·기존 관찰을 검증하며 기본 bootstrap/실제 collector/게임 실행은 추가하지 않는다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

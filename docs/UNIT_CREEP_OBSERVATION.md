@@ -4,6 +4,9 @@
 실제 collector·게임 실행/주입·SC:R 비교·UI/배치 차단을 완료한 것이 아니다.
 [ADR-0017](decisions/0017-creep-observation-evidence.md)과
 [기존 앱 조회](UNIT_CREEP_INSPECTION.md)를 함께 따른다.
+2026-10-16 후속 [수집 입력 결합·검증 adapter](UNIT_CREEP_CAPTURE_INTAKE.md)는 현재
+CHK/base/resource/setup 지문과 명시적 typed capture 포트를 추가했다. 아래는 관찰 증거 단계의
+당시 계약/검증 기록이며 실제 collector/IPC·게임 인수는 후속에서도 완료하지 않았다.
 
 ## 1. 실행 계획·소스 분석
 

@@ -55,6 +55,8 @@ import 'package:starcraft_map_editor/presentation/placement/placement_alignment_
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import '../fixtures/creep_observation_fixture.dart';
+import '../fixtures/creep_capture_fixture.dart';
+import 'package:starcraft_map_editor/infrastructure/placement/validated_unit_creep_state_gateway.dart';
 
 const _installationPath = r'C:\StarCraft';
 
@@ -4036,6 +4038,41 @@ Uint8List _layoutChkBytes({
 }
 
 void _unitCreepInspectionTests() {
+  for (final failure in [null, 'input', 'setup']) {
+    test(
+      'creep validated intake $failure binds current CHK without editing',
+      () async {
+        final capture = SyntheticCreepCaptureGateway()..failure = failure;
+        final gateway = ValidatedUnitCreepStateGateway(
+          captureGateway: capture,
+          configuration: syntheticCaptureConfiguration(),
+        );
+        final bytes = _powerChkBytes();
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: gateway,
+          chkBytesOverride: bytes,
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final session = f.openMapController.state.session!;
+        expect(await f.controller.loadUnitCreepState(), failure == null);
+        expect(
+          _creepAt(f),
+          failure == null ? UnitCreepCheck.covered : UnitCreepCheck.unavailable,
+        );
+        expect(capture.requests.single.scenarioChkBytes, bytes);
+        expect(const RawChkEncoder().encode(session.rawDocument), bytes);
+        expect(f.openMapController.state.session, same(session));
+        expect(f.objectEditingController.state.undoDepth, 0);
+        if (failure != null) {
+          capture.failure = null;
+          expect(await f.controller.loadUnitCreepState(), isTrue);
+          expect(_creepAt(f), UnitCreepCheck.covered);
+        }
+      },
+    );
+  }
   Future<void> verifyUnobservedSource(
     Uint8List bytes, {
     bool loadTerrain = false,
