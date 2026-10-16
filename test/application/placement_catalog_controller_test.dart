@@ -52,6 +52,7 @@ import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot
 import 'package:starcraft_map_editor/application/ports/terrain_placement_snapshot_gateway.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
 import 'package:starcraft_map_editor/presentation/placement/placement_alignment_toolbar.dart';
+import 'package:starcraft_map_editor/presentation/placement/placement_environment_dialog.dart';
 import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
 import '../fixtures/creep_observation_fixture.dart';
@@ -121,6 +122,8 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _creepPlacementPolicyTests();
+  _environmentInspectionTests();
   _unitCreepInspectionTests();
   _preplacedPowerPolicyTests();
   _preplacedPowerTests();
@@ -799,7 +802,9 @@ void main() {
         );
         expect(
           support[PlacementPolicyRule.creep],
-          support[PlacementPolicyRule.power],
+          notUnit
+              ? PlacementPolicySupportStatus.notApplicable
+              : PlacementPolicySupportStatus.skipped,
         );
         expect(
           support[PlacementPolicyRule.eudRuntime],
@@ -3332,6 +3337,597 @@ final class _InconsistentPagingGateway
   Future<void> cancel(String operationId) async {}
 }
 
+void _creepPlacementPolicyTests() {
+  for (final fill in UnitCreepTile.values) {
+    test('observed creep policy preview and Apply agree for $fill', () async {
+      final gateway = _CreepStateGateway(fill: fill);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller;
+      expect(c.state.checkCreep, isFalse);
+      c.setCheckCreep(true);
+      expect(gateway.requests, isEmpty);
+      expect(c.state.unitPlacementPolicy.mode, UnitPlacementMode.custom);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.creep],
+        PlacementPolicySupportStatus.unavailable,
+      );
+      expect(await c.loadUnitCreepState(), isTrue);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.creep],
+        PlacementPolicySupportStatus.enabled,
+      );
+      final before = f.openMapController.state.session!;
+      final bytes = const RawChkEncoder().encode(before.rawDocument);
+      final expected = switch (fill) {
+        UnitCreepTile.present => null,
+        UnitCreepTile.absent => ObjectPlacementDiagnosticCodes.creepRequired,
+        UnitCreepTile.unknown =>
+          ObjectPlacementDiagnosticCodes.creepUnavailable,
+      };
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        expected,
+      );
+      final result = c.placeAt(
+        pixelX: 1024,
+        pixelY: 1024,
+        tileX: 32,
+        tileY: 32,
+      );
+      expect(result.issueCode, expected);
+      expect(result.isPlaced, fill == UnitCreepTile.present);
+      if (result.isPlaced) {
+        expect(f.objectEditingController.state.undoDepth, 1);
+        expect(f.objectEditingController.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          bytes,
+        );
+      } else {
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+      }
+      expect(gateway.requests, hasLength(1));
+    });
+  }
+
+  test(
+    'creep policy without collector fails closed; free preset explicitly skips it',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller..setCheckCreep(true);
+      final before = f.openMapController.state.session;
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+        ObjectPlacementDiagnosticCodes.creepUnavailable,
+      );
+      expect(f.openMapController.state.session, same(before));
+      c.setUnitPlacementPolicy(UnitPlacementPolicy.free);
+      expect(c.state.checkCreep, isFalse);
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).isPlaced,
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'no-creep requirement is N/A, never inferred creep prohibition',
+    () async {
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: false),
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller..setCheckCreep(true);
+      expect(
+        c.placementPolicySupport[PlacementPolicyRule.creep],
+        PlacementPolicySupportStatus.notApplicable,
+      );
+      expect(
+        c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).isPlaced,
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'creep policy checks final snap and never resurrects coverage after Apply or Undo',
+    () async {
+      final gateway = _CreepStateGateway();
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final c = f.controller
+        ..setCheckCreep(true)
+        ..setContinuous(true);
+      await c.loadUnitCreepState();
+      expect(
+        c.previewAt(pixelX: 1023, pixelY: 1024, tileX: 31, tileY: 32),
+        ObjectPlacementDiagnosticCodes.creepRequired,
+      );
+      c.setPointSnap(enabled: true, step: 128);
+      expect(
+        c.previewAt(pixelX: 1023, pixelY: 1024, tileX: 31, tileY: 32),
+        isNull,
+      );
+      expect(
+        c.placeAt(pixelX: 1023, pixelY: 1024, tileX: 31, tileY: 32).isPlaced,
+        isTrue,
+      );
+      expect(
+        f
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .unitSections
+            .single
+            .units
+            .last
+            .x,
+        1024,
+      );
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.creepUnavailable,
+      );
+      expect(f.objectEditingController.undo(), isTrue);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        ObjectPlacementDiagnosticCodes.creepUnavailable,
+      );
+      expect(gateway.requests, hasLength(1));
+      expect(await c.loadUnitCreepState(), isTrue);
+      expect(
+        c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+        isNull,
+      );
+    },
+  );
+
+  for (final failure in ['source', 'role', 'box', 'geometry', 'coverage']) {
+    test(
+      'creep policy rejects inconsistent numeric $failure without editing',
+      () async {
+        final catalog = _PowerCatalogGateway(
+          requiresCreep: true,
+          failure: failure,
+        );
+        final f = await _openFixture(
+          catalogGateway: catalog,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        final c = f.controller..setCheckCreep(true);
+        final before = f.openMapController.state.session;
+        expect(
+          c.previewAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32),
+          ObjectPlacementDiagnosticCodes.creepUnavailable,
+        );
+        expect(
+          c.placeAt(pixelX: 1024, pixelY: 1024, tileX: 32, tileY: 32).issueCode,
+          ObjectPlacementDiagnosticCodes.creepUnavailable,
+        );
+        expect(f.openMapController.state.session, same(before));
+        expect(f.objectEditingController.state.undoDepth, 0);
+      },
+    );
+  }
+
+  testWidgets('creep checkbox and environment toolbar open are read-only', (
+    tester,
+  ) async {
+    final f = await _openFixture();
+    addTearDown(f.dispose);
+    final c = f.controller;
+    final before = f.openMapController.state.session;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: StreamBuilder(
+              stream: c.changes,
+              builder: (context, _) => PlacementAlignmentToolbar(controller: c),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('placement-environment-inspect')),
+    );
+    await tester.tap(find.byKey(const Key('placement-environment-inspect')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('placement-environment-dialog')),
+      findsOneWidget,
+    );
+    await tester.ensureVisible(find.byKey(const Key('placement-check-creep')));
+    await tester.tap(find.byKey(const Key('placement-check-creep')));
+    await tester.pumpAndSettle();
+    expect(c.state.checkCreep, isTrue);
+    expect(f.openMapController.state.session, same(before));
+    expect(f.objectEditingController.state.undoDepth, 0);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+void _environmentInspectionTests() {
+  for (final locale in ['en', 'ko']) {
+    testWidgets(
+      'bundled environment modes explicitly mark game collection unsupported $locale',
+      (tester) async {
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        expect(
+          f.controller.supportsUnitPowerStateModel(
+            UnitPowerStateModel.preplacedLayout,
+          ),
+          isTrue,
+        );
+        expect(
+          f.controller.supportsUnitPowerStateModel(
+            UnitPowerStateModel.initialMap,
+          ),
+          isFalse,
+        );
+        expect(
+          f.controller.supportsUnitPowerStateModel(UnitPowerStateModel.live),
+          isFalse,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: Locale(locale),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: PlacementEnvironmentDialog(controller: f.controller),
+            ),
+          ),
+        );
+        await tester.tap(
+          find.text(locale == 'en' ? 'Initial observation' : '초기 관찰'),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('environment-power-collector-unavailable')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('environment-collector-unavailable')),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<IconButton>(
+                find.byKey(const Key('environment-load-power')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(
+          tester
+              .widget<IconButton>(
+                find.byKey(const Key('environment-load-creep')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(f.controller.lastUnitPowerStateRead, isNull);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final change in ['close', 'selection']) {
+    testWidgets(
+      'environment metadata load never starts collection after $change',
+      (tester) async {
+        final catalog = _PowerCatalogGateway(hold: true);
+        final power = _PowerStateGateway();
+        final f = await _openFixture(
+          catalogGateway: catalog,
+          unitPowerStateGateway: power,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        await c.load(StarCraftPlacementKind.unit);
+        c.confirm(c.state.items.single.key);
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: PlacementEnvironmentDialog(controller: c)),
+          ),
+        );
+        await tester.tap(find.byKey(const Key('environment-load-power')));
+        await tester.pump();
+        expect(catalog.metadataRequests, 1);
+        if (change == 'close') {
+          await tester.pumpWidget(const SizedBox());
+        } else {
+          c.cancelSelection();
+        }
+        catalog.release.complete();
+        await tester.pumpAndSettle();
+        expect(power.requests, isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final locale in ['en', 'ko']) {
+    for (final width in [300.0, 1000.0]) {
+      testWidgets(
+        'environment dialog $locale $width separates models and never autoloads',
+        (tester) async {
+          tester.view.physicalSize = Size(width, 800);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final power = _PowerStateGateway();
+          final f = await _openFixture(
+            catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+            unitPowerStateGateway: power,
+            chkBytesOverride: _powerChkBytes(),
+          );
+          addTearDown(f.dispose);
+          await _selectPowerUnit(f);
+          final before = f.openMapController.state.session;
+          final depth = f.openMapController.editHistory.undoDepth;
+          await tester.pumpWidget(
+            MaterialApp(
+              locale: Locale(locale),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: Scaffold(
+                body: PlacementEnvironmentDialog(controller: f.controller),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          await tester.enterText(
+            find.byKey(const Key('environment-x')),
+            '1024',
+          );
+          await tester.enterText(
+            find.byKey(const Key('environment-y')),
+            '1024',
+          );
+          await tester.pumpAndSettle();
+          expect(power.requests, isEmpty);
+          expect(
+            find.byKey(const Key('environment-collector-unavailable')),
+            findsOneWidget,
+          );
+          expect(
+            tester
+                .widget<IconButton>(
+                  find.byKey(const Key('environment-load-creep')),
+                )
+                .onPressed,
+            isNull,
+          );
+          await tester.ensureVisible(
+            find.byKey(const Key('environment-load-power')),
+          );
+          await tester.tap(find.byKey(const Key('environment-load-power')));
+          await tester.pumpAndSettle();
+          expect(
+            power.requests.single.model,
+            UnitPowerStateModel.preplacedLayout,
+          );
+          expect(
+            find.byKey(const Key('environment-provider-power')),
+            findsOneWidget,
+          );
+          await tester.ensureVisible(
+            find.byKey(const Key('environment-power-model')),
+          );
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find.text(locale == 'en' ? 'Initial observation' : '초기 관찰'),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('environment-provider-power')),
+            findsNothing,
+          );
+          expect(power.requests, hasLength(1));
+          expect(f.openMapController.state.session, same(before));
+          expect(f.openMapController.editHistory.undoDepth, depth);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  for (final fill in UnitCreepTile.values) {
+    testWidgets(
+      'environment dialog distinguishes creep $fill and rejects stale state',
+      (tester) async {
+        final gateway = _CreepStateGateway(fill: fill);
+        final f = await _openFixture(
+          catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+          unitCreepStateGateway: gateway,
+          chkBytesOverride: _powerChkBytes(),
+        );
+        addTearDown(f.dispose);
+        await _selectPowerUnit(f);
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: PlacementEnvironmentDialog(controller: f.controller),
+            ),
+          ),
+        );
+        await tester.enterText(find.byKey(const Key('environment-x')), '1024');
+        await tester.enterText(find.byKey(const Key('environment-y')), '1024');
+        await tester.tap(find.byKey(const Key('environment-load-creep')));
+        await tester.pumpAndSettle();
+        expect(gateway.requests, hasLength(1));
+        final l10n = AppLocalizations.of(
+          tester.element(find.byKey(const Key('placement-environment-dialog'))),
+        )!;
+        expect(
+          tester
+              .widget<Text>(find.byKey(const Key('environment-result-creep')))
+              .data,
+          switch (fill) {
+            UnitCreepTile.present => l10n.placementEnvironmentCreepPresent,
+            UnitCreepTile.absent => l10n.placementEnvironmentCreepMissing,
+            UnitCreepTile.unknown => l10n.placementPolicyUnavailable,
+          },
+        );
+        expect(
+          find.byKey(const Key('environment-provider-creep')),
+          findsOneWidget,
+        );
+        final owner = Object();
+        f.openMapController.editHistory.beginTransaction(owner);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('environment-provider-creep')),
+          findsNothing,
+        );
+        f.openMapController.editHistory.endTransaction(owner);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('environment-provider-creep')),
+          findsNothing,
+        );
+        expect(gateway.requests, hasLength(1));
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  testWidgets(
+    'environment loading reflects external requests and no stale reply revives a result',
+    (tester) async {
+      final gateway = _CreepStateGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitCreepStateGateway: gateway,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PlacementEnvironmentDialog(controller: f.controller),
+          ),
+        ),
+      );
+      final read = f.controller.loadUnitCreepState();
+      await tester.pump();
+      expect(find.byKey(const Key('environment-load-creep')), findsNothing);
+      expect(f.controller.isUnitCreepStateLoading, isTrue);
+      f.controller.setInstallationPath(r'C:\Other');
+      gateway.release(gateway.requests.single);
+      expect(await read, isFalse);
+      await tester.pumpAndSettle();
+      expect(f.controller.isUnitCreepStateLoading, isFalse);
+      expect(find.byKey(const Key('environment-provider-creep')), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'environment input validation and unselected target stay read-only',
+    (tester) async {
+      final f = await _openFixture();
+      addTearDown(f.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: PlacementEnvironmentDialog(controller: f.controller),
+          ),
+        ),
+      );
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const Key('environment-load-power')))
+            .onPressed,
+        isNull,
+      );
+      await tester.enterText(find.byKey(const Key('environment-x')), '99999');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('environment-point-power')), findsNothing);
+      expect(find.byKey(const Key('environment-issue-power')), findsNothing);
+      expect(f.openMapController.editHistory.undoDepth, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  test(
+    'environment state notifications expose loading then completion',
+    () async {
+      final power = _PowerStateGateway(hold: true);
+      final creep = _CreepStateGateway(hold: true);
+      final f = await _openFixture(
+        catalogGateway: _PowerCatalogGateway(requiresCreep: true),
+        unitPowerStateGateway: power,
+        unitCreepStateGateway: creep,
+        chkBytesOverride: _powerChkBytes(),
+      );
+      addTearDown(f.dispose);
+      await _selectPowerUnit(f);
+      final seen = <(bool, bool)>[];
+      final sub = f.controller.changes.listen(
+        (_) => seen.add((
+          f.controller.isUnitPowerStateLoading,
+          f.controller.isUnitCreepStateLoading,
+        )),
+      );
+      addTearDown(sub.cancel);
+      final p = f.controller.loadUnitPowerState();
+      final c = f.controller.loadUnitCreepState();
+      power.release(power.requests.single);
+      creep.release(creep.requests.single);
+      await p;
+      await c;
+      await Future<void>.delayed(Duration.zero);
+      expect(seen, contains((true, true)));
+      expect(seen.last, (false, false));
+    },
+  );
+}
+
 void _preplacedPowerPolicyTests() {
   for (final locale in ['ko', 'en']) {
     for (final width in [300.0, 1000.0]) {
@@ -4119,7 +4715,7 @@ void _unitCreepInspectionTests() {
     expect(f.openMapController.editHistory.redoDepth, 0);
     expect(
       c.placementPolicySupport[PlacementPolicyRule.creep],
-      PlacementPolicySupportStatus.notImplemented,
+      PlacementPolicySupportStatus.skipped,
     );
   }
 
@@ -4282,7 +4878,7 @@ void _unitCreepInspectionTests() {
       expect(inspection.stateRevision, contains('unit-creep-'));
       expect(
         c.placementPolicySupport[PlacementPolicyRule.creep],
-        PlacementPolicySupportStatus.notImplemented,
+        PlacementPolicySupportStatus.skipped,
       );
       expect(
         c.previewAt(pixelX: 1023, pixelY: 1024, tileX: 31, tileY: 32),
@@ -5396,7 +5992,13 @@ final class _PowerCatalogGateway implements StarCraftPlacementCatalogGateway {
   Future<void> cancel(String operationId) async {}
 }
 
-final class _PowerStateGateway implements UnitPowerStateGateway {
+final class _PowerStateGateway
+    implements UnitPowerStateGateway, UnitPowerStateModelSupport {
+  @override
+  Set<UnitPowerStateModel> get supportedPowerModels => const {
+    UnitPowerStateModel.initialMap,
+    UnitPowerStateModel.preplacedLayout,
+  };
   _PowerStateGateway({
     this.failure,
     this.hold = false,

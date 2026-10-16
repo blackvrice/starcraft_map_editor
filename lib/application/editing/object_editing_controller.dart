@@ -22,6 +22,8 @@ import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/unit_resource_distance_catalog.dart';
 import '../../domain/placement/unit_power_catalog.dart';
+import '../../domain/placement/unit_creep_catalog.dart';
+import '../../domain/placement/unit_creep_coverage.dart';
 import '../../domain/placement/preplaced_unit_power_layout.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
 import '../documents/open_map_controller.dart';
@@ -1012,6 +1014,9 @@ class ObjectEditingController {
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
     bool checkPreplacedPower = false,
     UnitPowerCatalog? preplacedPowerCatalog,
+    bool checkCreep = false,
+    UnitCreepCatalog? creepCatalog,
+    UnitCreepCoverage? creepCoverage,
   }) => _applyCatalogPoint(
     check: _prepareCatalogUnit(
       capability: capability,
@@ -1028,6 +1033,9 @@ class ObjectEditingController {
       resourceDistanceCatalog: resourceDistanceCatalog,
       checkPreplacedPower: checkPreplacedPower,
       preplacedPowerCatalog: preplacedPowerCatalog,
+      checkCreep: checkCreep,
+      creepCatalog: creepCatalog,
+      creepCoverage: creepCoverage,
     ),
     layer: MapLayerType.units,
     nameBytes: ChkSectionNames.unitPlacements,
@@ -1049,6 +1057,9 @@ class ObjectEditingController {
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
     bool checkPreplacedPower = false,
     UnitPowerCatalog? preplacedPowerCatalog,
+    bool checkCreep = false,
+    UnitCreepCatalog? creepCatalog,
+    UnitCreepCoverage? creepCoverage,
   }) => _prepareCatalogUnit(
     capability: capability,
     unitId: unitId,
@@ -1064,6 +1075,9 @@ class ObjectEditingController {
     resourceDistanceCatalog: resourceDistanceCatalog,
     checkPreplacedPower: checkPreplacedPower,
     preplacedPowerCatalog: preplacedPowerCatalog,
+    checkCreep: checkCreep,
+    creepCatalog: creepCatalog,
+    creepCoverage: creepCoverage,
   ).issueCode;
 
   _CatalogPointCheck _prepareCatalogUnit({
@@ -1082,6 +1096,9 @@ class ObjectEditingController {
     UnitResourceDistanceCatalog? resourceDistanceCatalog,
     bool checkPreplacedPower = false,
     UnitPowerCatalog? preplacedPowerCatalog,
+    bool checkCreep = false,
+    UnitCreepCatalog? creepCatalog,
+    UnitCreepCoverage? creepCoverage,
   }) => _prepareCatalogPoint(
     layer: spriteUnit ? MapLayerType.sprites : MapLayerType.units,
     nameBytes: spriteUnit
@@ -1251,6 +1268,33 @@ class ObjectEditingController {
           UnitPowerCheck.stateUnsupported =>
             ObjectPlacementDiagnosticCodes.preplacedPowerStateUnsupported,
           UnitPowerCheck.outOfBounds =>
+            ObjectPlacementDiagnosticCodes.outOfBounds,
+        };
+        if (issue != null) return ObjectPlacementRecord.rejected(issue);
+      }
+      if (checkCreep) {
+        final dimensions = _singleDimensions(session)!;
+        // The caller supplies only current, source-bound observed coverage.
+        // Inspect the final StarEdit footprint again; never reuse a hover result.
+        final check =
+            creepCatalog?.checkRequirement(
+              candidate: capability,
+              x: point.x,
+              y: point.y,
+              mapWidthTiles: dimensions.width,
+              mapHeightTiles: dimensions.height,
+              coverage: creepCoverage,
+            ) ??
+            UnitCreepCheck.unavailable;
+        final issue = switch (check) {
+          UnitCreepCheck.covered || UnitCreepCheck.notApplicable => null,
+          UnitCreepCheck.missing =>
+            ObjectPlacementDiagnosticCodes.creepRequired,
+          UnitCreepCheck.unavailable =>
+            ObjectPlacementDiagnosticCodes.creepUnavailable,
+          UnitCreepCheck.stateUnsupported =>
+            ObjectPlacementDiagnosticCodes.creepStateUnsupported,
+          UnitCreepCheck.outOfBounds =>
             ObjectPlacementDiagnosticCodes.outOfBounds,
         };
         if (issue != null) return ObjectPlacementRecord.rejected(issue);

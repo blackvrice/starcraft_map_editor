@@ -1213,6 +1213,7 @@ FR-217/PAR-02의 두다드 사전 검증을 첫 코드 단위로 구현했다.
 - [x] EP1 초기 크립 관찰 증거: phase/frame·게임/수집기/세션/setup 기록·권한/mask·미관찰 unknown·legacy 거절 (실제 collector/지원 build 승인 제외)
 - [x] EP1 크립 수집 입력 결합: 현재 CHK/base/resource/setup 지문·명시적 typed capture 포트·버전/응답/취소 adapter (실제 collector/IPC/게임 실행 제외)
 - [x] EP1 크립 수집용 임시 맵 준비: 원본 지문/baseline 재검증·소유 임시 MPQ·CHK/WAV exact 검증·취소/정리/재검증 (실제 collector/게임 실행 제외)
+- [x] EP1 에디터 전력·크립 검사: 좌표별 명시적 조회·모델/출처/로딩·실제 수집 미지원 표시·현재 초기 크립의 opt-in 양의 요구 preview/Apply/Undo (실제 collector/게임 인수 제외)
 - [ ] 실제 initialMap/live 크립 collector·관찰 시점/권한·SC:R 비교 인수 검증
 - [ ] 실제 initialMap/live 전력 상태 collector·관찰 근거·게임/EUD 지원 범위 검증
 - [ ] PAR-01~03 자동/실제 앱·Save As/Undo 회귀와 게임/외부 확인 범위 기록
@@ -1345,6 +1346,19 @@ collector의 관찰 시점/권한/지원 버전과 unknown 입력 검증이며 �
 변경 Dart6파일 포맷은 통과, 전체는 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
 기준3.44.8/3.12 차이·실제 collector/IPC·setup 실행·앱/게임/외부 인수는 남는다.
 다음은 실제 수집 경로·지원 build·신뢰/실행 승인과 transport의 설계/검증·SC:R 비교 인수다.
+2026-10-16 사용자가 **에디터 기능 우선, 실제 수집은 미지원 표시**를 선택했다.
+[에디터 전력·크립 검사](PLACEMENT_ENVIRONMENT_EDITOR.md)와 [ADR-0020](decisions/0020-observed-creep-placement-policy.md)으로
+기존 inspection을 좌표별 UI·독립 조회/로딩/출처에 연결했다. 전력 설계 모델만 기본 지원하고 실제
+게임 수집은 미지원 표시한다. 크립 요구 옵션은 기본 off이며 현재 검증된 초기 coverage만 최종
+공통 prepare에 사용한다. unknown/부재를 구분하고 편집/Undo 뒤 관찰을 자동으로 되살리지 않는다.
+새42개·집중456통과/10skip·전체2,169통과/61skip·로컬 DAT/graphics/MPQ473통과와
+analyze 무이슈·Windows Debug/native7종을 확인했다. 알림의 snapshot 복제·좁은 toolbar 접근
+회귀와 optional interface 타입 오류를 수정하고 최종 게이트를 재실행했다.
+변경 Dart14파일 포맷은 통과, 전체는 기존3파일 차이로 exit1이다. SDK3.47.5/3.13.4와
+기준3.44.8/3.12 차이·실제 앱/게임/외부 인수는 남는다. 이 단위의 에디터 연결은 완료했으며
+실제 collector/live·EUD runtime·관계 예외 확대·EP1 게임 인수는 전체 완료로 표시하지 않는다.
+다음 에디터 코드 후보는 EP2의 일반 DAT 기본 수치/상속·예상값 조회다. 실제 수집 지원은
+사용자 선택에 따라 별도 collector/지원 build·관찰 자료가 마련된 뒤 다시 진행한다.
 대규모 profile·전력/크립·EUD 변경·PAR-01~03 게임/외부 인수는 별도다.
 
 ### EP2. 설정·트리거 작성

@@ -47,6 +47,9 @@ setup·기존 관찰을 검증하며 기본 bootstrap/실제 collector/게임 �
 후속 [수집용 임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md)는 별도 preparation/workspace 포트로
 원본 지문·baseline 재검증, 임시 MPQ의 CHK/WAV exact 검증·소유권/release를 제공한다.
 기존 archive/resource/fingerprint를 재사용하며 실제 collector/게임 실행이나 UI에 등록하지 않는다.
+후속 [에디터 환경 검사](PLACEMENT_ENVIRONMENT_EDITOR.md)는 기존 inspection API와 source/수명을
+좌표별 UI에 연결하고 현재 관찰 coverage만 공통 UNIT prepare의 opt-in 크립 요구 검사에 전달한다.
+실제 수집은 기본 미지원이며 전력 설계/초기 관찰과 배치 허가·게임 인수를 구분한다.
 
 2026-09-29 현행 경계: 맵의 공통 `MapEditHistory`, CHK 설정/트리거/브리핑/
 리소스 편집, EUD 프로젝트와 생성 테스트 빌드가 연결되어 있다. 아래 개념도는

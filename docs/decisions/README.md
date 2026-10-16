@@ -32,6 +32,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0017](0017-creep-observation-evidence.md) | Accepted | 초기 크립 관찰 시점/권한 증거와 미관찰 타일 unknown·legacy 거절 |
 | [0018](0018-creep-capture-input-binding.md) | Accepted | 현재 CHK/리소스/setup 지문과 명시적 typed 수집 포트·결과/취소 결합 |
 | [0019](0019-owned-creep-capture-map-preparation.md) | Accepted | 원본 재검증·소유 임시 MPQ의 CHK/WAV 검증과 실제 수집 실행 분리 |
+| [0020](0020-observed-creep-placement-policy.md) | Accepted | 명시적 전력/크립 조회 UI·실제 수집 미지원·현재 초기 크립의 opt-in 요구 배치 검사 |
 
 ## 새 ADR 형식
 

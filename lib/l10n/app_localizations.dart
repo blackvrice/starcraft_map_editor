@@ -10425,6 +10425,114 @@ abstract class AppLocalizations {
   /// **'Resource / depot distance'**
   String get placementPolicyResourceDistance;
 
+  /// No description provided for @placementEnvironmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Power and creep inspection'**
+  String get placementEnvironmentTitle;
+
+  /// No description provided for @placementCheckCreep.
+  ///
+  /// In en, this message translates to:
+  /// **'Check observed creep requirement'**
+  String get placementCheckCreep;
+
+  /// No description provided for @placementCreepRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Observed creep does not cover the unit footprint.'**
+  String get placementCreepRequired;
+
+  /// No description provided for @placementCreepUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Current creep cannot be verified. Read a trusted initial observation, or turn off creep checking.'**
+  String get placementCreepUnavailable;
+
+  /// No description provided for @placementCreepStateUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This unit state is unsupported by the creep requirement check.'**
+  String get placementCreepStateUnsupported;
+
+  /// No description provided for @placementEnvironmentPowered.
+  ///
+  /// In en, this message translates to:
+  /// **'Power requirement met'**
+  String get placementEnvironmentPowered;
+
+  /// No description provided for @placementEnvironmentUnpowered.
+  ///
+  /// In en, this message translates to:
+  /// **'Power requirement not met'**
+  String get placementEnvironmentUnpowered;
+
+  /// No description provided for @placementEnvironmentCreepPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Creep requirement met'**
+  String get placementEnvironmentCreepPresent;
+
+  /// No description provided for @placementEnvironmentCreepMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Creep requirement not met'**
+  String get placementEnvironmentCreepMissing;
+
+  /// No description provided for @placementEnvironmentUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported unit state'**
+  String get placementEnvironmentUnsupported;
+
+  /// No description provided for @placementEnvironmentOutside.
+  ///
+  /// In en, this message translates to:
+  /// **'Footprint outside map'**
+  String get placementEnvironmentOutside;
+
+  /// No description provided for @placementEnvironmentCoordinateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates: 0 to 65535 px'**
+  String get placementEnvironmentCoordinateRange;
+
+  /// No description provided for @placementEnvironmentLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Layout model'**
+  String get placementEnvironmentLayout;
+
+  /// No description provided for @placementEnvironmentInitial.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial observation'**
+  String get placementEnvironmentInitial;
+
+  /// No description provided for @placementEnvironmentInitialCreep.
+  ///
+  /// In en, this message translates to:
+  /// **'Initial creep observation'**
+  String get placementEnvironmentInitialCreep;
+
+  /// No description provided for @placementEnvironmentCollectorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual game creep collection unsupported'**
+  String get placementEnvironmentCollectorUnavailable;
+
+  /// No description provided for @placementEnvironmentPowerCollectorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual game power collection unsupported'**
+  String get placementEnvironmentPowerCollectorUnavailable;
+
+  /// No description provided for @placementEnvironmentRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Read current state'**
+  String get placementEnvironmentRefresh;
+
   /// No description provided for @placementPolicyPower.
   ///
   /// In en, this message translates to:

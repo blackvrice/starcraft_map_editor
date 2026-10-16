@@ -4,12 +4,18 @@ import '../../domain/placement/preplaced_unit_power_layout.dart';
 
 /// An explicit design-time projection, not a simulation or game observation.
 /// Only regular preplaced Pylons are treated as present/completed/enabled.
-final class PreplacedUnitPowerStateGateway implements UnitPowerStateGateway {
+final class PreplacedUnitPowerStateGateway
+    implements UnitPowerStateGateway, UnitPowerStateModelSupport {
   const PreplacedUnitPowerStateGateway();
 
   static const providerId = 'editor-preplaced-layout';
   static const revision = PreplacedUnitPowerLayout.revision;
   static const modelUnavailable = 'UNIT_POWER_STATE_MODEL_UNAVAILABLE';
+
+  @override
+  Set<UnitPowerStateModel> get supportedPowerModels => const {
+    UnitPowerStateModel.preplacedLayout,
+  };
 
   @override
   Future<UnitPowerStateReadResult> read(UnitPowerStateRequest request) async {

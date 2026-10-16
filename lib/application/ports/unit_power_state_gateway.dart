@@ -12,6 +12,11 @@ abstract interface class UnitPowerStateGateway {
   Future<void> cancel(String operationId);
 }
 
+/// Advertised query modes, not evidence of game compatibility or authority.
+abstract interface class UnitPowerStateModelSupport {
+  Set<UnitPowerStateModel> get supportedPowerModels;
+}
+
 final class UnitPowerStateRequest {
   UnitPowerStateRequest({
     required this.operationId,

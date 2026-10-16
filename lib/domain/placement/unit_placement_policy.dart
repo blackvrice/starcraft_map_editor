@@ -7,6 +7,7 @@ final class UnitPlacementPolicy {
     required this.allowOverlap,
     this.checkResourceDistance = false,
     this.checkPreplacedPower = false,
+    this.checkCreep = false,
   });
 
   static const checked = UnitPlacementPolicy(
@@ -23,16 +24,19 @@ final class UnitPlacementPolicy {
   final bool allowOverlap;
   final bool checkResourceDistance;
   final bool checkPreplacedPower;
+  final bool checkCreep;
 
   // Derive the mode from actual checks so individual toggles cannot leave a
   // stale preset label. Building alignment and coordinate safety are separate.
   UnitPlacementMode get mode =>
-      !checkPreplacedPower &&
+      !checkCreep &&
+          !checkPreplacedPower &&
           checkTerrain &&
           !allowOverlap &&
           checkResourceDistance
       ? UnitPlacementMode.checked
-      : !checkPreplacedPower &&
+      : !checkCreep &&
+            !checkPreplacedPower &&
             !checkTerrain &&
             allowOverlap &&
             !checkResourceDistance

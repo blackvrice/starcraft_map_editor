@@ -46,6 +46,10 @@ abstract final class ObjectPlacementDiagnosticCodes {
       'OBJECT_PLACEMENT_PREPLACED_POWER_UNAVAILABLE';
   static const preplacedPowerStateUnsupported =
       'OBJECT_PLACEMENT_PREPLACED_POWER_STATE_UNSUPPORTED';
+  static const creepRequired = 'OBJECT_PLACEMENT_CREEP_REQUIRED';
+  static const creepUnavailable = 'OBJECT_PLACEMENT_CREEP_UNAVAILABLE';
+  static const creepStateUnsupported =
+      'OBJECT_PLACEMENT_CREEP_STATE_UNSUPPORTED';
 
   static const all = <String>{
     sessionNotEditable,
@@ -74,6 +78,9 @@ abstract final class ObjectPlacementDiagnosticCodes {
     preplacedPowerRequired,
     preplacedPowerUnavailable,
     preplacedPowerStateUnsupported,
+    creepRequired,
+    creepUnavailable,
+    creepStateUnsupported,
   };
 }
 

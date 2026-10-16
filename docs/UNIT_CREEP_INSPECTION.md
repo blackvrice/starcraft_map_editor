@@ -1,5 +1,8 @@
 # 앱 계층 읽기 전용 크립 조회
 
+후속 [에디터 전력·크립 검사](PLACEMENT_ENVIRONMENT_EDITOR.md)에서 조회 UI와 opt-in 배치 검사를
+연결했다. 아래는 API 도입 당시 기록이며 실제 수집 미지원·현재 요청/초기 관찰 결합은 유지한다.
+
 후속 [초기 크립 출처 조사](research/INITIAL_CREEP_SOURCE_FEASIBILITY.md)에서 실제 collector
 미지원과 정적 후보 자료의 지원 경계를 확정했다. 아래는 앱 API 연결 단계의 기록이다.
 후속 [초기 관찰 증거 검증](UNIT_CREEP_OBSERVATION.md)은 snapshot에 명시적 관찰 정보를

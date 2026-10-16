@@ -131,6 +131,11 @@ String placementFailureText(
     l10n.placementPreplacedPowerUnavailable,
   ObjectPlacementDiagnosticCodes.preplacedPowerStateUnsupported =>
     l10n.placementPreplacedPowerStateUnsupported,
+  ObjectPlacementDiagnosticCodes.creepRequired => l10n.placementCreepRequired,
+  ObjectPlacementDiagnosticCodes.creepUnavailable =>
+    l10n.placementCreepUnavailable,
+  ObjectPlacementDiagnosticCodes.creepStateUnsupported =>
+    l10n.placementCreepStateUnsupported,
   ObjectPlacementFactoryCodes.unitCapabilityMismatch =>
     l10n.placementCapabilityMismatch,
   ObjectPlacementFactoryCodes.unitRelationRequired ||

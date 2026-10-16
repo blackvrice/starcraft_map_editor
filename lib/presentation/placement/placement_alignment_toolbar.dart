@@ -6,6 +6,7 @@ import '../../domain/placement/point_placement_snap.dart';
 import '../../domain/placement/unit_placement_policy.dart';
 import '../localization/l10n.dart';
 import 'placement_policy_dialog.dart';
+import 'placement_environment_dialog.dart';
 
 class PlacementAlignmentToolbar extends StatelessWidget {
   const PlacementAlignmentToolbar({required this.controller, super.key});
@@ -47,6 +48,31 @@ class PlacementAlignmentToolbar extends StatelessWidget {
                   ),
                 ),
               ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: const Key('placement-policy-support'),
+                    tooltip: l10n.placementPolicySupport,
+                    icon: const Icon(Icons.rule),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          PlacementPolicyDialog(controller: controller),
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('placement-environment-inspect'),
+                    tooltip: l10n.placementEnvironmentTitle,
+                    icon: const Icon(Icons.electric_bolt_outlined),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) =>
+                          PlacementEnvironmentDialog(controller: controller),
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(
                 width: 226,
                 height: 40,
@@ -78,15 +104,6 @@ class PlacementAlignmentToolbar extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 12)),
                   ),
-                ),
-              ),
-              IconButton(
-                key: const Key('placement-policy-support'),
-                tooltip: l10n.placementPolicySupport,
-                icon: const Icon(Icons.rule),
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => PlacementPolicyDialog(controller: controller),
                 ),
               ),
             ],

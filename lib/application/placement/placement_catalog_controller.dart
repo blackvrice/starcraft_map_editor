@@ -16,6 +16,7 @@ import '../../domain/placement/unit_power_catalog.dart';
 import '../ports/unit_power_state_gateway.dart';
 import 'unit_power_inspection.dart';
 import '../../domain/placement/unit_creep_catalog.dart';
+import '../../domain/placement/unit_creep_coverage.dart';
 import '../ports/unit_creep_state_gateway.dart';
 import 'unit_creep_inspection.dart';
 import '../../domain/placement/terrain_placement_snapshot.dart';
@@ -136,6 +137,7 @@ final class PlacementCatalogState {
     this.checkUnitTerrain = false,
     this.checkResourceDistance = false,
     this.checkPreplacedPower = false,
+    this.checkCreep = false,
     this.isTerrainPlacementLoading = false,
     this.lastPlacementIssueCode,
     Iterable<EditorDiagnostic> diagnostics = const [],
@@ -165,12 +167,14 @@ final class PlacementCatalogState {
   final bool checkUnitTerrain;
   final bool checkResourceDistance;
   final bool checkPreplacedPower;
+  final bool checkCreep;
   final bool isTerrainPlacementLoading;
   late final unitPlacementPolicy = UnitPlacementPolicy(
     checkTerrain: checkUnitTerrain,
     allowOverlap: allowUnitOverlap,
     checkResourceDistance: checkResourceDistance,
     checkPreplacedPower: checkPreplacedPower,
+    checkCreep: checkCreep,
   );
   final String? lastPlacementIssueCode;
   final List<EditorDiagnostic> diagnostics;
@@ -240,6 +244,7 @@ class PlacementCatalogController {
         _powerSession = state.session;
         _invalidatePowerState();
         _invalidateCreepState();
+        _notifyEnvironment();
       }
     });
     // History notifications also invalidate an edit/Undo cycle that returns to
@@ -249,6 +254,7 @@ class PlacementCatalogController {
     ) {
       _invalidatePowerState();
       _invalidateCreepState();
+      _notifyEnvironment();
     });
   }
 
@@ -770,6 +776,7 @@ class PlacementCatalogController {
         checkUnitTerrain: _state.checkUnitTerrain,
         checkResourceDistance: _state.checkResourceDistance,
         checkPreplacedPower: _state.checkPreplacedPower,
+        checkCreep: _state.checkCreep,
       ),
     );
   }
@@ -903,7 +910,8 @@ class PlacementCatalogController {
     );
     if ((!_state.allowUnitOverlap ||
             _state.checkResourceDistance ||
-            _state.checkPreplacedPower) &&
+            _state.checkPreplacedPower ||
+            _state.checkCreep) &&
         item.key.kind == StarCraftPlacementKind.unit) {
       unawaited(loadCollisionMetadata());
     }
@@ -959,13 +967,21 @@ class PlacementCatalogController {
     if (enabled) unawaited(loadCollisionMetadata());
   }
 
+  void setCheckCreep(bool enabled) {
+    if (_disposed || enabled == _state.checkCreep) return;
+    _emit(_copy(checkCreep: enabled));
+    // Metadata may load automatically, but engine collection always stays explicit.
+    if (enabled) unawaited(loadCollisionMetadata());
+  }
+
   /// Apply all preferences atomically; never paint or normalize existing UNITs.
   void setUnitPlacementPolicy(UnitPlacementPolicy policy) {
     if (_disposed ||
         (policy.checkTerrain == _state.checkUnitTerrain &&
             policy.allowOverlap == _state.allowUnitOverlap &&
             policy.checkResourceDistance == _state.checkResourceDistance &&
-            policy.checkPreplacedPower == _state.checkPreplacedPower)) {
+            policy.checkPreplacedPower == _state.checkPreplacedPower &&
+            policy.checkCreep == _state.checkCreep)) {
       return;
     }
     _emit(
@@ -974,12 +990,14 @@ class PlacementCatalogController {
         allowUnitOverlap: policy.allowOverlap,
         checkResourceDistance: policy.checkResourceDistance,
         checkPreplacedPower: policy.checkPreplacedPower,
+        checkCreep: policy.checkCreep,
       ),
     );
     if (policy.checkTerrain) unawaited(loadTerrainPlacement());
     if (!policy.allowOverlap ||
         policy.checkResourceDistance ||
-        policy.checkPreplacedPower) {
+        policy.checkPreplacedPower ||
+        policy.checkCreep) {
       unawaited(loadCollisionMetadata());
     }
   }
@@ -1084,6 +1102,49 @@ class PlacementCatalogController {
           : PlacementPolicySupportStatus.enabled;
     }
 
+    PlacementPolicySupportStatus creepStatus() {
+      if (!isUnit) return PlacementPolicySupportStatus.notApplicable;
+      if (!_state.checkCreep) return PlacementPolicySupportStatus.skipped;
+      if (_state.isCollisionMetadataLoading || isUnitCreepStateLoading) {
+        return PlacementPolicySupportStatus.loading;
+      }
+      final source = _currentCreepCatalog?.units[cap?.unitId];
+      final role = cap?.environmentProfile,
+          verified = source?.environmentProfile;
+      if (cap == null ||
+          source == null ||
+          role == null ||
+          verified == null ||
+          role.requiresCreep != verified.requiresCreep ||
+          role.requiresPsi != verified.requiresPsi ||
+          cap.isBuilding != source.isBuilding ||
+          cap.isSubunit != source.isSubunit ||
+          cap.isFlyingBuilding != source.isFlyingBuilding ||
+          cap.requiresRelationLink != source.requiresRelationLink ||
+          cap.isGasResourceContainer != source.isGasResourceContainer) {
+        return PlacementPolicySupportStatus.unavailable;
+      }
+      if (!role.requiresCreep) {
+        return PlacementPolicySupportStatus.notApplicable;
+      }
+      final box = cap.placementBox, sourceBox = source.placementBox;
+      return !cap.isBuilding ||
+              cap.isSubunit ||
+              cap.isFlyingBuilding ||
+              cap.requiresRelationLink ||
+              cap.isGasResourceContainer ||
+              profile == null ||
+              profile.isFlyer ||
+              source.collisionProfile?.isFlyer != profile.isFlyer ||
+              box == null ||
+              sourceBox == null ||
+              box.width != sourceBox.width ||
+              box.height != sourceBox.height ||
+              _currentCreepCoverage == null
+          ? PlacementPolicySupportStatus.unavailable
+          : PlacementPolicySupportStatus.enabled;
+    }
+
     // Report configured support, not a cached preview verdict. Existing UNIT
     // metadata, map structure and exact footprints are rechecked at placement.
     return Map.unmodifiable({
@@ -1102,9 +1163,7 @@ class PlacementCatalogController {
       PlacementPolicyRule.power: building
           ? PlacementPolicySupportStatus.notImplemented
           : PlacementPolicySupportStatus.notApplicable,
-      PlacementPolicyRule.creep: building
-          ? PlacementPolicySupportStatus.notImplemented
-          : PlacementPolicySupportStatus.notApplicable,
+      PlacementPolicyRule.creep: creepStatus(),
       PlacementPolicyRule.eudRuntime: isUnit
           ? PlacementPolicySupportStatus.notImplemented
           : PlacementPolicySupportStatus.notApplicable,
@@ -1332,6 +1391,16 @@ class PlacementCatalogController {
   UnitPowerCatalog? get _currentPreplacedPowerCatalog =>
       _currentUnitDataIdentity == null ? null : _powerCatalog;
 
+  UnitCreepCatalog? get _currentCreepCatalog =>
+      _currentUnitDataIdentity == null ? null : _creepCatalog;
+
+  UnitCreepCoverage? get _currentCreepCoverage {
+    final snapshot = _creepStateSnapshot;
+    return snapshot != null && _isCreepRequestCurrent(snapshot.request)
+        ? snapshot.coverageFor(snapshot.request)
+        : null;
+  }
+
   void _invalidatePowerState() {
     _powerDocumentRevision++;
     final request = _powerStateRequest;
@@ -1350,10 +1419,28 @@ class PlacementCatalogController {
 
   bool _isPowerRequestCurrent(UnitPowerStateRequest request) =>
       !_disposed &&
+      !openMapController.editHistory.isTransactionActive &&
       request.documentRevision == _powerDocumentRevision &&
       identical(request.session, openMapController.state.session) &&
       request.installationPath == _installationPath &&
       request.dataIdentity == _currentUnitDataIdentity;
+
+  bool get isUnitPowerStateLoading => _powerStatePending != null;
+  bool get isUnitCreepStateLoading => _creepStatePending != null;
+
+  bool supportsUnitPowerStateModel(UnitPowerStateModel model) {
+    if (unitPowerStateGateway case UnitPowerStateModelSupport(
+      :final supportedPowerModels,
+    )) {
+      return !_disposed &&
+          model != UnitPowerStateModel.live &&
+          supportedPowerModels.contains(model);
+    }
+    return false;
+  }
+
+  // Inspection data lives outside the immutable preferences snapshot.
+  void _notifyEnvironment() => _emit(_state);
 
   /// Explicit collection/projection only; never called by hover/preview/Apply.
   /// An adapter must not substitute a layout model for actual initial state.
@@ -1424,10 +1511,12 @@ class PlacementCatalogController {
         if (identical(_powerStateRequest, request)) {
           _powerStateRequest = null;
           _powerStatePending = null;
+          _notifyEnvironment();
         }
       }
     }();
     _powerStatePending = future;
+    _notifyEnvironment();
     return future;
   }
 
@@ -1576,10 +1665,12 @@ class PlacementCatalogController {
         if (identical(_creepStateRequest, request)) {
           _creepStateRequest = null;
           _creepStatePending = null;
+          _notifyEnvironment();
         }
       }
     }();
     _creepStatePending = future;
+    _notifyEnvironment();
     return future;
   }
 
@@ -1780,6 +1871,9 @@ class PlacementCatalogController {
                 checkPreplacedPower:
                     checkPolicies && _state.checkPreplacedPower,
                 preplacedPowerCatalog: _currentPreplacedPowerCatalog,
+                checkCreep: checkPolicies && _state.checkCreep,
+                creepCatalog: _currentCreepCatalog,
+                creepCoverage: _currentCreepCoverage,
               )
             : objectEditingController.previewCatalogSpriteUnit(
                 capability: capability,
@@ -1908,6 +2002,9 @@ class PlacementCatalogController {
       resourceDistanceCatalog: _currentResourceDistanceCatalog,
       checkPreplacedPower: _state.checkPreplacedPower,
       preplacedPowerCatalog: _currentPreplacedPowerCatalog,
+      checkCreep: _state.checkCreep,
+      creepCatalog: _currentCreepCatalog,
+      creepCoverage: _currentCreepCoverage,
     );
   }
 
@@ -2226,6 +2323,7 @@ class PlacementCatalogController {
     bool? checkUnitTerrain,
     bool? checkResourceDistance,
     bool? checkPreplacedPower,
+    bool? checkCreep,
     bool? isTerrainPlacementLoading,
     String? lastPlacementIssueCode,
     List<EditorDiagnostic>? diagnostics,
@@ -2255,6 +2353,7 @@ class PlacementCatalogController {
     checkResourceDistance:
         checkResourceDistance ?? _state.checkResourceDistance,
     checkPreplacedPower: checkPreplacedPower ?? _state.checkPreplacedPower,
+    checkCreep: checkCreep ?? _state.checkCreep,
     isTerrainPlacementLoading:
         isTerrainPlacementLoading ?? _state.isTerrainPlacementLoading,
     gridVisible: gridVisible ?? _state.gridVisible,

@@ -6144,6 +6144,61 @@ class AppLocalizationsKo extends AppLocalizations {
   String get placementPolicyResourceDistance => '자원·기지 거리';
 
   @override
+  String get placementEnvironmentTitle => '전력·크립 검사';
+
+  @override
+  String get placementCheckCreep => '관찰된 크립 요구 검사';
+
+  @override
+  String get placementCreepRequired => '관찰된 크립이 유닛의 배치 영역을 덮지 않습니다.';
+
+  @override
+  String get placementCreepUnavailable =>
+      '현재 크립을 확인할 수 없습니다. 신뢰된 초기 관찰값을 읽거나 크립 검사를 해제하세요.';
+
+  @override
+  String get placementCreepStateUnsupported => '이 유닛 상태는 크립 요구 검사에서 지원하지 않습니다.';
+
+  @override
+  String get placementEnvironmentPowered => '전력 요구 충족';
+
+  @override
+  String get placementEnvironmentUnpowered => '전력 요구 미충족';
+
+  @override
+  String get placementEnvironmentCreepPresent => '크립 요구 충족';
+
+  @override
+  String get placementEnvironmentCreepMissing => '크립 요구 미충족';
+
+  @override
+  String get placementEnvironmentUnsupported => '미지원 유닛 상태';
+
+  @override
+  String get placementEnvironmentOutside => '유닛 영역이 맵 경계 밖';
+
+  @override
+  String get placementEnvironmentCoordinateRange => '좌표 범위: 0~65535 px';
+
+  @override
+  String get placementEnvironmentLayout => '설계 모델';
+
+  @override
+  String get placementEnvironmentInitial => '초기 관찰';
+
+  @override
+  String get placementEnvironmentInitialCreep => '초기 크립 관찰';
+
+  @override
+  String get placementEnvironmentCollectorUnavailable => '실제 게임 크립 수집 미지원';
+
+  @override
+  String get placementEnvironmentPowerCollectorUnavailable => '실제 게임 전력 수집 미지원';
+
+  @override
+  String get placementEnvironmentRefresh => '현재 상태 읽기';
+
+  @override
   String get placementPolicyPower => '실제 전력 상태';
 
   @override

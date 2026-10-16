@@ -5,6 +5,23 @@ void main() {
   for (final terrain in [false, true]) {
     for (final overlap in [false, true]) {
       for (final resource in [false, true]) {
+        for (final power in [false, true]) {
+          test(
+            'creep opt-in makes mode custom $terrain/$overlap/$resource/$power',
+            () {
+              expect(
+                UnitPlacementPolicy(
+                  checkTerrain: terrain,
+                  allowOverlap: overlap,
+                  checkResourceDistance: resource,
+                  checkPreplacedPower: power,
+                  checkCreep: true,
+                ).mode,
+                UnitPlacementMode.custom,
+              );
+            },
+          );
+        }
         test(
           'explicit layout power makes mode custom $terrain/$overlap/$resource',
           () {
@@ -49,5 +66,7 @@ void main() {
     expect(UnitPlacementPolicy.free.checkResourceDistance, isFalse);
     expect(UnitPlacementPolicy.checked.checkPreplacedPower, isFalse);
     expect(UnitPlacementPolicy.free.checkPreplacedPower, isFalse);
+    expect(UnitPlacementPolicy.checked.checkCreep, isFalse);
+    expect(UnitPlacementPolicy.free.checkCreep, isFalse);
   });
 }

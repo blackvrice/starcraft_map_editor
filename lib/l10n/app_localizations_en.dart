@@ -6281,6 +6281,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get placementPolicyResourceDistance => 'Resource / depot distance';
 
   @override
+  String get placementEnvironmentTitle => 'Power and creep inspection';
+
+  @override
+  String get placementCheckCreep => 'Check observed creep requirement';
+
+  @override
+  String get placementCreepRequired =>
+      'Observed creep does not cover the unit footprint.';
+
+  @override
+  String get placementCreepUnavailable =>
+      'Current creep cannot be verified. Read a trusted initial observation, or turn off creep checking.';
+
+  @override
+  String get placementCreepStateUnsupported =>
+      'This unit state is unsupported by the creep requirement check.';
+
+  @override
+  String get placementEnvironmentPowered => 'Power requirement met';
+
+  @override
+  String get placementEnvironmentUnpowered => 'Power requirement not met';
+
+  @override
+  String get placementEnvironmentCreepPresent => 'Creep requirement met';
+
+  @override
+  String get placementEnvironmentCreepMissing => 'Creep requirement not met';
+
+  @override
+  String get placementEnvironmentUnsupported => 'Unsupported unit state';
+
+  @override
+  String get placementEnvironmentOutside => 'Footprint outside map';
+
+  @override
+  String get placementEnvironmentCoordinateRange =>
+      'Coordinates: 0 to 65535 px';
+
+  @override
+  String get placementEnvironmentLayout => 'Layout model';
+
+  @override
+  String get placementEnvironmentInitial => 'Initial observation';
+
+  @override
+  String get placementEnvironmentInitialCreep => 'Initial creep observation';
+
+  @override
+  String get placementEnvironmentCollectorUnavailable =>
+      'Actual game creep collection unsupported';
+
+  @override
+  String get placementEnvironmentPowerCollectorUnavailable =>
+      'Actual game power collection unsupported';
+
+  @override
+  String get placementEnvironmentRefresh => 'Read current state';
+
+  @override
   String get placementPolicyPower => 'Actual power state';
 
   @override
