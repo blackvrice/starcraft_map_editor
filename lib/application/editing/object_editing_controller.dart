@@ -86,14 +86,30 @@ class ObjectEditingController {
   final OpenMapController openMapController;
   final MapResourceGateway? resourceGateway;
 
-  Future<void> importSound() async {
+  bool _disposed = false;
+  int _pendingResources = 0;
+  bool get isBusy => _pendingResources != 0;
+  Future<T> _resourceTask<T>(Future<T> Function() task) async {
+    if (_disposed) throw StateError('The document is closed.');
+    _pendingResources++;
+    _emit();
+    try {
+      return await task();
+    } finally {
+      _pendingResources--;
+      _emit();
+    }
+  }
+
+  Future<void> importSound() => _resourceTask(_importSound);
+  Future<void> _importSound() async {
     final session = openMapController.state.session;
     if (session == null || resourceGateway == null) {
       throw StateError('Open a map first.');
     }
     final imported = await resourceGateway!.importSound();
     if (imported == null) return;
-    if (!identical(session, openMapController.state.session)) {
+    if (_disposed || !identical(session, openMapController.state.session)) {
       throw StateError('Map changed during import.');
     }
     final path = MapSound.path('staredit\\wav\\${imported.name}');
@@ -174,7 +190,9 @@ class ObjectEditingController {
     );
   }
 
-  Future<List<int>> soundBytes(String path) async {
+  Future<List<int>> soundBytes(String path) =>
+      _resourceTask(() => _soundBytes(path));
+  Future<List<int>> _soundBytes(String path) async {
     final session = openMapController.state.session!;
     path = MapSound.path(path);
     path =
@@ -200,7 +218,8 @@ class ObjectEditingController {
     final after = await openMapController.fingerprintGateway.fingerprint(
       session.sourcePath!,
     );
-    if (!identical(session, openMapController.state.session) ||
+    if (_disposed ||
+        !identical(session, openMapController.state.session) ||
         before.sha256Digest != after.sha256Digest) {
       throw StateError('Map changed during sound read.');
     }
@@ -2838,6 +2857,7 @@ class ObjectEditingController {
       !_containsProtectionMarker(session.rawDocument);
 
   void _emit() {
+    if (_disposed) return;
     _state = ObjectEditingState(
       undoDepth: openMapController.editHistory.undoDepth,
       redoDepth: openMapController.editHistory.redoDepth,
@@ -2848,6 +2868,8 @@ class ObjectEditingController {
   }
 
   Future<void> dispose() async {
+    if (_disposed) return;
+    _disposed = true;
     _classIdDocument = null;
     _cachedNextUnitClassId = null;
     await _sessionSubscription.cancel();

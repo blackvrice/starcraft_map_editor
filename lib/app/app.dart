@@ -26,6 +26,8 @@ import '../presentation/map_canvas/terrain_tile_texture_controller.dart';
 import '../presentation/map_canvas/object_sprite_texture_controller.dart';
 import '../presentation/localization/l10n.dart';
 import '../presentation/shell/editor_shell.dart';
+import '../application/documents/document_workspace_controller.dart';
+import 'document_workspace_host.dart';
 
 class EditorAppDependencies {
   const EditorAppDependencies({
@@ -82,9 +84,14 @@ class EditorAppDependencies {
 }
 
 class StarCraftMapEditorApp extends StatefulWidget {
-  const StarCraftMapEditorApp({required this.dependencies, super.key});
+  const StarCraftMapEditorApp({
+    required this.dependencies,
+    this.workspace,
+    super.key,
+  });
 
   final EditorAppDependencies dependencies;
+  final DocumentWorkspaceController<EditorAppDependencies>? workspace;
 
   @override
   State<StarCraftMapEditorApp> createState() => _StarCraftMapEditorAppState();
@@ -163,32 +170,40 @@ class _StarCraftMapEditorAppState extends State<StarCraftMapEditorApp> {
         scaffoldBackgroundColor: const Color(0xFF11141A),
         useMaterial3: true,
       ),
-      home: EditorShell(
-        autosaveController: dependencies.autosaveController,
-        isomFillController: dependencies.isomFillController,
-        commandDispatcher: dependencies.commandDispatcher,
-        openMapController: dependencies.openMapController,
-        saveMapController: dependencies.saveMapController,
-        eudBuildController: dependencies.eudBuildController,
-        eudSourceController: dependencies.eudSourceController,
-        eudProjectWorkspace: dependencies.eudProjectWorkspace,
-        eudToolSettingsController: dependencies.eudToolSettingsController,
-        eudBuildPreparationController:
-            dependencies.eudBuildPreparationController,
-        operationProgressController: dependencies.operationProgressController,
-        recentProjectsService: dependencies.recentProjectsService,
-        starCraftDataAssetSettingsController:
-            dependencies.starCraftDataAssetSettingsController,
-        terrainEditingController: dependencies.terrainEditingController,
-        mapLayerController: dependencies.mapLayerController,
-        objectEditingController: dependencies.objectEditingController,
-        objectPaletteController: dependencies.objectPaletteController,
-        placementCatalogController: dependencies.placementCatalogController,
-        terrainTileTextureController: dependencies.terrainTileTextureController,
-        objectSpriteTextureController:
-            dependencies.objectSpriteTextureController,
-        languageController: _languageController,
-      ),
+      home: widget.workspace != null
+          ? DocumentWorkspaceHost(
+              workspace: widget.workspace!,
+              language: _languageController,
+            )
+          : EditorShell(
+              autosaveController: dependencies.autosaveController,
+              isomFillController: dependencies.isomFillController,
+              commandDispatcher: dependencies.commandDispatcher,
+              openMapController: dependencies.openMapController,
+              saveMapController: dependencies.saveMapController,
+              eudBuildController: dependencies.eudBuildController,
+              eudSourceController: dependencies.eudSourceController,
+              eudProjectWorkspace: dependencies.eudProjectWorkspace,
+              eudToolSettingsController: dependencies.eudToolSettingsController,
+              eudBuildPreparationController:
+                  dependencies.eudBuildPreparationController,
+              operationProgressController:
+                  dependencies.operationProgressController,
+              recentProjectsService: dependencies.recentProjectsService,
+              starCraftDataAssetSettingsController:
+                  dependencies.starCraftDataAssetSettingsController,
+              terrainEditingController: dependencies.terrainEditingController,
+              mapLayerController: dependencies.mapLayerController,
+              objectEditingController: dependencies.objectEditingController,
+              objectPaletteController: dependencies.objectPaletteController,
+              placementCatalogController:
+                  dependencies.placementCatalogController,
+              terrainTileTextureController:
+                  dependencies.terrainTileTextureController,
+              objectSpriteTextureController:
+                  dependencies.objectSpriteTextureController,
+              languageController: _languageController,
+            ),
     );
   }
 }

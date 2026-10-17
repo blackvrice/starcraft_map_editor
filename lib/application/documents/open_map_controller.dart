@@ -107,6 +107,7 @@ class OpenMapController {
   int _operationSequence = 0;
 
   OpenMapState get state => _state;
+  bool get isOpening => _isOpening;
 
   Stream<OpenMapState> get changes => _changes.stream;
 

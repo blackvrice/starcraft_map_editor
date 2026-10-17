@@ -1,5 +1,11 @@
 # 아키텍처
 
+2026-10-16 [여러 맵](MULTI_MAP_WORKSPACE.md)은 `DocumentWorkspaceController`가
+stable ID와 문서별 controller 묶음을 소유한다. bootstrap은 맵마다 controller를
+생성하고 keyed Stack/Offstage로 초안/카메라 State를 유지한다. 저장/EUD 출력과
+복구는 같은 workspace path lease를 사용하며 경로 비교는 기존 FS 포트 뒤에 둔다.
+단일 문서 controller API에는 optional guard만 더했다. [ADR-0022](decisions/0022-multi-map-document-lifetime.md).
+
 2026-10-14: `TerrainPlacementSnapshotGateway`와 `readTerrainPlacement` v1은 CV5/VF4
 2종만 읽고 파생 숫자·출처를 반환한다. 순수 domain footprint와 기존 ISOM 포트의
 공통 bounded 프로세스 경계는 [계약](TERRAIN_PLACEMENT_SNAPSHOT.md)을 따른다.

@@ -43,6 +43,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
     required this.archiveGateway,
     required this.fingerprintGateway,
     required this.buildFileGateway,
+    this.validateOutput,
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
     this.archiveTimeout = const Duration(seconds: 30),
@@ -61,6 +62,7 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
   final MapArchiveGateway archiveGateway;
   final MapFileFingerprintGateway fingerprintGateway;
   final EudBuildFileGateway buildFileGateway;
+  final Future<void> Function(String path)? validateOutput;
   final RawChkParser rawChkParser;
   final ChkMetadataViewDecoder metadataViewDecoder;
   final Duration archiveTimeout;
@@ -453,6 +455,8 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
         late final EudBuildPromotionResult promotion;
         _requireCurrentContext(plan);
         try {
+          await validateOutput?.call(plan.configuration.outputMapPath);
+          _requireCurrentContext(plan);
           promotion = await buildFileGateway.promote(
             workspace: workspace,
             destinationPath: plan.configuration.outputMapPath,

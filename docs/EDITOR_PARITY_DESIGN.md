@@ -72,6 +72,11 @@ collision extent·지형·전력/크립·EUD 변경·게임 정상/자유 정책
 
 ### 문서 수명
 
+2026-10-16 아래 문서 분리는 [여러 맵 편집](MULTI_MAP_WORKSPACE.md)과
+[ADR-0022](decisions/0022-multi-map-document-lifetime.md)로 구현했다.
+`DocumentWorkspaceController`와 문서별 묶음을 사용하며 실제 앱/RSS 인수 및
+아래 FR-222 참조 closure 이식은 별도로 남는다.
+
 `WorkspaceController`(제안)가 안정적인 document ID로 여러 세션을 관리한다.
 각 세션은 현재 컨트롤러 묶음, 변경 상태, 시간순 기록, 폼 초안, 카메라,
 레이어/선택, 리소스 변경과 EUD/소스 연결을 소유한다. 앱 전역 설정과 검증된

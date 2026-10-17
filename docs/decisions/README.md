@@ -34,6 +34,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0019](0019-owned-creep-capture-map-preparation.md) | Accepted | 원본 재검증·소유 임시 MPQ의 CHK/WAV 검증과 실제 수집 실행 분리 |
 | [0020](0020-observed-creep-placement-policy.md) | Accepted | 명시적 전력/크립 조회 UI·실제 수집 미지원·현재 초기 크립의 opt-in 요구 배치 검사 |
 | [0021](0021-settings-trigger-editing.md) | Accepted | 일반 DAT 예상값·CRGB·가역 byte token·snapshot 기반 트리거 참조 치환 |
+| [0022](0022-multi-map-document-lifetime.md) | Accepted | 문서별 controller/화면 수명·물리 경로 점유·복구/닫기/종료 격리 |
 
 ## 새 ADR 형식
 

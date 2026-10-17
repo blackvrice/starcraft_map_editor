@@ -49,6 +49,8 @@ import '../infrastructure/settings/json_file_settings_store.dart';
 import '../presentation/map_canvas/terrain_tile_texture_controller.dart';
 import '../presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'app.dart';
+import '../application/documents/document_workspace_controller.dart';
+import '../application/eud/reserved_eud_build_gateway.dart';
 
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,8 +64,6 @@ void bootstrap() {
     bundledPath: BundledEudTool.installationPath,
     directoryPicker: const MethodChannelDirectoryPicker(),
   );
-  final commandDispatcher = EditorCommandDispatcher();
-  final operationProgressController = OperationProgressController();
   final recentProjectsService = RecentProjectsService(settingsStore);
   final starCraftDataAssetSettingsController =
       StarCraftDataAssetSettingsController(
@@ -71,160 +71,250 @@ void bootstrap() {
         directoryPicker: const MethodChannelDirectoryPicker(),
         inspector: ProcessStarCraftDataAssetInspector.bundled(),
       );
-  final archiveGateway = ProcessMapArchiveGateway.bundled();
-  final fingerprintGateway = LocalMapFileFingerprintGateway();
-  final eudBuildController = EudBuildController(
-    buildGateway: SafeEudBuildPipeline(
-      toolInspector: eudToolInspector,
-      compilerGateway: ProcessEudCompilerGateway(),
-      archiveGateway: archiveGateway,
-      fingerprintGateway: fingerprintGateway,
-      buildFileGateway: LocalEudBuildFileGateway(),
-    ),
-    diagnosticParser: const EuddraftDiagnosticParser(),
-    operationProgressController: operationProgressController,
-  );
-  final eudSourceController = EudSourceController();
   const filePicker = MethodChannelMapFilePicker();
-  final openMapController = OpenMapController(
-    archiveGateway: archiveGateway,
-    filePicker: filePicker,
-    fingerprintGateway: fingerprintGateway,
-    recentProjectsService: recentProjectsService,
-    operationProgressController: operationProgressController,
-  );
-  final terrainEditingController = TerrainEditingController(
-    openMapController: openMapController,
-  );
-  final eudProjectWorkspace = EudProjectWorkspace(
-    projects: EudProjectController(LocalEudProjectStore()),
-    maps: openMapController,
-    picker: const MethodChannelEudProjectPicker(),
-  );
-  final mapLayerController = MapLayerController();
-  String? buildBlockReason() {
-    if (openMapController.state.session?.isDirty ?? false) {
-      return 'Save the edited map before building.';
+  final saveFiles = LocalMapSaveFileGateway();
+  final recoveryStore = LocalRecoveryStore.forCurrentUser();
+  late final DocumentWorkspaceController<EditorAppDependencies> workspace;
+
+  WorkspaceDocument<EditorAppDependencies> createDocument(String id) {
+    final commandDispatcher = EditorCommandDispatcher();
+    final operationProgressController = OperationProgressController();
+    final archiveGateway = ProcessMapArchiveGateway.bundled();
+    final fingerprintGateway = LocalMapFileFingerprintGateway();
+    final eudBuildController = EudBuildController(
+      buildGateway: ReservedEudBuildGateway(
+        reserve: (path) => workspace.reserve(
+          id,
+          path,
+          purpose: WorkspacePathPurpose.buildOutput,
+        ),
+        delegate: SafeEudBuildPipeline(
+          validateOutput: (path) => workspace.validatePath(
+            id,
+            path,
+            purpose: WorkspacePathPurpose.buildOutput,
+          ),
+          toolInspector: eudToolInspector,
+          compilerGateway: ProcessEudCompilerGateway(),
+          archiveGateway: archiveGateway,
+          fingerprintGateway: fingerprintGateway,
+          buildFileGateway: LocalEudBuildFileGateway(),
+        ),
+      ),
+      diagnosticParser: const EuddraftDiagnosticParser(),
+      operationProgressController: operationProgressController,
+    );
+    final eudSourceController = EudSourceController();
+    final openMapController = OpenMapController(
+      archiveGateway: archiveGateway,
+      filePicker: filePicker,
+      fingerprintGateway: fingerprintGateway,
+      recentProjectsService: recentProjectsService,
+      operationProgressController: operationProgressController,
+    );
+    final terrainEditingController = TerrainEditingController(
+      openMapController: openMapController,
+    );
+    final eudProjectWorkspace = EudProjectWorkspace(
+      projects: EudProjectController(
+        LocalEudProjectStore(),
+        reserveDestination: (path) => workspace.reserve(
+          id,
+          path,
+          purpose: WorkspacePathPurpose.projectOutput,
+        ),
+      ),
+      maps: openMapController,
+      picker: const MethodChannelEudProjectPicker(),
+    );
+    final mapLayerController = MapLayerController();
+    String? buildBlockReason() {
+      if (openMapController.state.session?.isDirty ?? false) {
+        return 'Save the edited map before building.';
+      }
+      if (eudSourceController.state.document?.isDirty ?? false) {
+        return 'Save or discard source edits before building.';
+      }
+      if (eudSourceController.state.document?.isUntitled ?? false) {
+        return 'Use a saved epScript file before building.';
+      }
+      return null;
     }
-    if (eudSourceController.state.document?.isDirty ?? false) {
-      return 'Save or discard source edits before building.';
-    }
-    if (eudSourceController.state.document?.isUntitled ?? false) {
-      return 'Use a saved epScript file before building.';
-    }
-    return null;
+
+    final eudBuildPreparationController = EudBuildPreparationController(
+      tools: eudToolSettingsController,
+      builds: eudBuildController,
+      files: LocalEudBuildFileGateway(),
+      blockReason: buildBlockReason,
+      projects: eudProjectWorkspace,
+    );
+    final objectEditingController = ObjectEditingController(
+      resourceGateway: LocalMapResourceGateway(archiveGateway),
+      openMapController: openMapController,
+      mapLayerController: mapLayerController,
+    );
+    final objectPaletteController = ObjectPaletteController(
+      objectEditingController: objectEditingController,
+      mapLayerController: mapLayerController,
+    );
+    final tileAtlasGateway = ProcessStarCraftTileAtlasGateway.bundled();
+    final objectAtlasGateway = ProcessStarCraftObjectAtlasGateway.bundled();
+    final placementCatalogController = PlacementCatalogController(
+      unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
+      terrainPlacementGateway:
+          ProcessTerrainConnectionSnapshotGateway.bundled(),
+      openMapController: openMapController,
+      objectEditingController: objectEditingController,
+      terrainEditingController: terrainEditingController,
+      catalogGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
+      eudDatGateway: ProcessEudDatGateway.bundled(),
+      tileAtlasGateway: tileAtlasGateway,
+      objectAtlasGateway: objectAtlasGateway,
+    );
+    placementCatalogController.setInstallationPath(
+      starCraftDataAssetSettingsController.state.configuredPath,
+    );
+    final assetSubscription = starCraftDataAssetSettingsController.changes
+        .listen((state) {
+          placementCatalogController.setInstallationPath(state.configuredPath);
+        });
+    final terrainTileTextureController = TerrainTileTextureController(
+      loader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
+    );
+    final objectSpriteTextureController = ObjectSpriteTextureController(
+      loader: ObjectSpriteAtlasLoader(gateway: objectAtlasGateway),
+    );
+    final saveMapController = SaveMapController(
+      archiveGateway: archiveGateway,
+      filePicker: filePicker,
+      fingerprintGateway: fingerprintGateway,
+      saveFileGateway: saveFiles,
+      reserveDestination: (path) =>
+          workspace.reserve(id, path, purpose: WorkspacePathPurpose.mapOutput),
+      openMapController: openMapController,
+      operationProgressController: operationProgressController,
+    );
+    commandDispatcher.register(EditorCommandId.openMap, (argument) async {
+      await workspace.open(path: argument is String ? argument : null);
+    });
+    commandDispatcher.register(EditorCommandId.saveAs, (_) async {
+      await saveMapController.saveAs();
+    });
+    commandDispatcher.register(EditorCommandId.newEudSource, (_) {
+      eudSourceController.createUntitled();
+    });
+    commandDispatcher.register(EditorCommandId.buildEud, (_) async {
+      if (eudBuildPreparationController.busy || buildBlockReason() != null) {
+        return;
+      }
+      await eudBuildController.start();
+    });
+    commandDispatcher.register(EditorCommandId.cancelEudBuild, (_) async {
+      await eudBuildController.cancel();
+    });
+
+    final dependencies = EditorAppDependencies(
+      autosaveController: AutosaveController(
+        maps: openMapController,
+        sources: eudSourceController,
+        projects: eudProjectWorkspace.projects,
+        store: recoveryStore,
+        settings: settingsStore,
+        reserveRestoreInput: (path) => workspace.reserve(
+          id,
+          path,
+          purpose: WorkspacePathPurpose.restoreInput,
+        ),
+        canAccessCheckpoint: (checkpoint) =>
+            workspace.canAccessCheckpoint(id, checkpoint),
+      ),
+      eudBuildPreparationController: eudBuildPreparationController,
+      eudToolSettingsController: eudToolSettingsController,
+      commandDispatcher: commandDispatcher,
+      openMapController: openMapController,
+      saveMapController: saveMapController,
+      eudBuildController: eudBuildController,
+      eudSourceController: eudSourceController,
+      eudProjectWorkspace: eudProjectWorkspace,
+      operationProgressController: operationProgressController,
+      recentProjectsService: recentProjectsService,
+      settingsStore: settingsStore,
+      starCraftDataAssetSettingsController:
+          starCraftDataAssetSettingsController,
+      isomFillController: IsomFillController(
+        maps: openMapController,
+        assets: () => starCraftDataAssetSettingsController.state,
+        gateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
+        placementGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
+        atlasLoader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
+      ),
+      terrainEditingController: terrainEditingController,
+      mapLayerController: mapLayerController,
+      objectEditingController: objectEditingController,
+      objectPaletteController: objectPaletteController,
+      placementCatalogController: placementCatalogController,
+      terrainTileTextureController: terrainTileTextureController,
+      objectSpriteTextureController: objectSpriteTextureController,
+      languageController: languageController,
+    );
+
+    return WorkspaceDocument(
+      id: id,
+      value: dependencies,
+      maps: openMapController,
+      saves: saveMapController,
+      sources: eudSourceController,
+      builds: eudBuildController,
+      projects: eudProjectWorkspace,
+      autosave: dependencies.autosaveController,
+      additionalBusy: () =>
+          eudBuildPreparationController.busy || objectEditingController.isBusy,
+      additionalChanges: objectEditingController.changes,
+      disposeOwned: () async {
+        // The keyed editor must unmount before its texture controllers are freed.
+        final detached = Completer<void>();
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => detached.complete(),
+        );
+        WidgetsBinding.instance.scheduleFrame();
+        await detached.future;
+        await assetSubscription.cancel();
+        await dependencies.autosaveController?.dispose();
+        eudBuildPreparationController.cancel();
+        dependencies.isomFillController?.invalidate();
+        await placementCatalogController.dispose();
+        await objectPaletteController.dispose();
+        await objectEditingController.dispose();
+        await terrainEditingController.dispose();
+        terrainTileTextureController.dispose();
+        objectSpriteTextureController.dispose();
+        eudProjectWorkspace.dispose();
+        eudProjectWorkspace.projects.dispose();
+        eudSourceController.dispose();
+        await eudBuildController.dispose();
+        await saveMapController.dispose();
+        await mapLayerController.dispose();
+        await openMapController.dispose();
+        await operationProgressController.dispose();
+      },
+    );
   }
 
-  final eudBuildPreparationController = EudBuildPreparationController(
-    tools: eudToolSettingsController,
-    builds: eudBuildController,
-    files: LocalEudBuildFileGateway(),
-    blockReason: buildBlockReason,
-    projects: eudProjectWorkspace,
-  );
-  final objectEditingController = ObjectEditingController(
-    resourceGateway: LocalMapResourceGateway(archiveGateway),
-    openMapController: openMapController,
-    mapLayerController: mapLayerController,
-  );
-  final objectPaletteController = ObjectPaletteController(
-    objectEditingController: objectEditingController,
-    mapLayerController: mapLayerController,
-  );
-  final tileAtlasGateway = ProcessStarCraftTileAtlasGateway.bundled();
-  final objectAtlasGateway = ProcessStarCraftObjectAtlasGateway.bundled();
-  final placementCatalogController = PlacementCatalogController(
-    unitPowerStateGateway: const PreplacedUnitPowerStateGateway(),
-    terrainPlacementGateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
-    openMapController: openMapController,
-    objectEditingController: objectEditingController,
-    terrainEditingController: terrainEditingController,
-    catalogGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
-    eudDatGateway: ProcessEudDatGateway.bundled(),
-    tileAtlasGateway: tileAtlasGateway,
-    objectAtlasGateway: objectAtlasGateway,
-  );
-  starCraftDataAssetSettingsController.changes.listen((state) {
-    placementCatalogController.setInstallationPath(state.configuredPath);
-  });
-  final terrainTileTextureController = TerrainTileTextureController(
-    loader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
-  );
-  final objectSpriteTextureController = ObjectSpriteTextureController(
-    loader: ObjectSpriteAtlasLoader(gateway: objectAtlasGateway),
-  );
-  final saveMapController = SaveMapController(
-    archiveGateway: archiveGateway,
+  workspace = DocumentWorkspaceController(
+    createDocument: createDocument,
     filePicker: filePicker,
-    fingerprintGateway: fingerprintGateway,
-    saveFileGateway: LocalMapSaveFileGateway(),
-    openMapController: openMapController,
-    operationProgressController: operationProgressController,
+    paths: saveFiles,
   );
-  commandDispatcher.register(EditorCommandId.openMap, (argument) async {
-    await openMapController.open(
-      sourcePath: argument is String ? argument : null,
-    );
-  });
-  commandDispatcher.register(EditorCommandId.saveAs, (_) async {
-    await saveMapController.saveAs();
-  });
-  commandDispatcher.register(EditorCommandId.newEudSource, (_) {
-    eudSourceController.createUntitled();
-  });
-  commandDispatcher.register(EditorCommandId.buildEud, (_) async {
-    if (eudBuildPreparationController.busy || buildBlockReason() != null) {
-      return;
-    }
-    await eudBuildController.start();
-  });
-  commandDispatcher.register(EditorCommandId.cancelEudBuild, (_) async {
-    await eudBuildController.cancel();
-  });
-
-  final dependencies = EditorAppDependencies(
-    autosaveController: AutosaveController(
-      maps: openMapController,
-      sources: eudSourceController,
-      projects: eudProjectWorkspace.projects,
-      store: LocalRecoveryStore.forCurrentUser(),
-      settings: settingsStore,
-    ),
-    eudBuildPreparationController: eudBuildPreparationController,
-    eudToolSettingsController: eudToolSettingsController,
-    commandDispatcher: commandDispatcher,
-    openMapController: openMapController,
-    saveMapController: saveMapController,
-    eudBuildController: eudBuildController,
-    eudSourceController: eudSourceController,
-    eudProjectWorkspace: eudProjectWorkspace,
-    operationProgressController: operationProgressController,
-    recentProjectsService: recentProjectsService,
-    settingsStore: settingsStore,
-    starCraftDataAssetSettingsController: starCraftDataAssetSettingsController,
-    isomFillController: IsomFillController(
-      maps: openMapController,
-      assets: () => starCraftDataAssetSettingsController.state,
-      gateway: ProcessTerrainConnectionSnapshotGateway.bundled(),
-      placementGateway: ProcessStarCraftPlacementCatalogGateway.bundled(),
-      atlasLoader: TerrainTileAtlasLoader(gateway: tileAtlasGateway),
-    ),
-    terrainEditingController: terrainEditingController,
-    mapLayerController: mapLayerController,
-    objectEditingController: objectEditingController,
-    objectPaletteController: objectPaletteController,
-    placementCatalogController: placementCatalogController,
-    terrainTileTextureController: terrainTileTextureController,
-    objectSpriteTextureController: objectSpriteTextureController,
-    languageController: languageController,
-  );
+  final dependencies = workspace.addEmpty().value;
 
   // Read the saved display language first so the first frame is already in
   // the chosen language. Load never throws; unreadable settings mean
   // "follow the system language".
   unawaited(
     languageController.load().then(
-      (_) => runApp(StarCraftMapEditorApp(dependencies: dependencies)),
+      (_) => runApp(
+        StarCraftMapEditorApp(dependencies: dependencies, workspace: workspace),
+      ),
     ),
   );
 }

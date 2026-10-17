@@ -82,6 +82,11 @@ enum _WorkspaceView {
 
 class EditorShell extends StatefulWidget {
   const EditorShell({
+    this.onNewMap,
+    this.onRecovery,
+    this.showStartupRecovery = true,
+    this.loadGlobalSettings = true,
+    this.isDocumentActive = true,
     this.autosaveController,
     required this.commandDispatcher,
     required this.openMapController,
@@ -107,6 +112,9 @@ class EditorShell extends StatefulWidget {
   });
 
   final EditorCommandDispatcher commandDispatcher;
+  final Future<void> Function()? onNewMap, onRecovery;
+  final bool showStartupRecovery;
+  final bool loadGlobalSettings, isDocumentActive;
   final OpenMapController openMapController;
   final AutosaveController? autosaveController;
   final SaveMapController saveMapController;
@@ -253,6 +261,10 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   }
 
   Future<void> _newMap() async {
+    if (widget.onNewMap != null) {
+      await widget.onNewMap!();
+      return;
+    }
     final catalog = widget.placementCatalogController;
     final controller = NewMapController(
       maps: widget.openMapController,
@@ -358,7 +370,13 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
     _synchronizeTerrainTextures();
     _synchronizeObjectTextures();
     _languageSubscription = _listenForLanguage(widget.languageController);
-    unawaited(widget.starCraftDataAssetSettingsController.load());
+    if (widget.loadGlobalSettings) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(widget.starCraftDataAssetSettingsController.load());
+        }
+      });
+    }
     final autosave = widget.autosaveController;
     if (autosave != null) {
       _autosaveSubscription = autosave.changes.listen((_) {
@@ -366,7 +384,9 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
       });
       unawaited(
         autosave.initialize().then((_) {
-          if (mounted && autosave.candidates.isNotEmpty) {
+          if (mounted &&
+              widget.showStartupRecovery &&
+              autosave.candidates.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) unawaited(_showRecovery());
             });
@@ -388,6 +408,10 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   }
 
   Future<void> _showRecovery() async {
+    if (widget.onRecovery != null) {
+      await widget.onRecovery!();
+      return;
+    }
     final controller = widget.autosaveController;
     if (controller == null) return;
     await controller.refresh();
@@ -427,6 +451,9 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(EditorShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isDocumentActive && widget.isDocumentActive) {
+      _recentProjects = widget.recentProjectsService.load();
+    }
     if (oldWidget.openMapController != widget.openMapController ||
         oldWidget.mapLayerController != widget.mapLayerController) {
       unawaited(_basicEditing.dispose());
@@ -750,7 +777,19 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
       return null;
     }
 
-    return () => unawaited(widget.commandDispatcher.dispatch(command));
+    return () => unawaited(_dispatch(command));
+  }
+
+  Future<void> _dispatch(EditorCommandId command, {Object? argument}) async {
+    try {
+      await widget.commandDispatcher.dispatch(command, argument: argument);
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${context.l10n.workspaceRequestFailed}\n$e')),
+        );
+      }
+    }
   }
 
   void _newEudSource() {
@@ -786,12 +825,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   }
 
   void _openRecentProject(RecentProject project) {
-    unawaited(
-      widget.commandDispatcher.dispatch(
-        EditorCommandId.openMap,
-        argument: project.path,
-      ),
-    );
+    unawaited(_dispatch(EditorCommandId.openMap, argument: project.path));
   }
 
   void _removeRecentProject(RecentProject project) {

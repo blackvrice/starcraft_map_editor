@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'document_path_lease.dart';
 
 import '../../domain/chk/chk.dart';
 import '../../domain/chk/typed/chk_trigger_editor.dart';
@@ -94,6 +95,7 @@ class SaveMapController {
     required this.saveFileGateway,
     required this.openMapController,
     required this.operationProgressController,
+    this.reserveDestination,
     this.rawChkEncoder = const RawChkEncoder(),
     this.rawChkParser = const RawChkParser(),
     this.metadataViewDecoder = const ChkMetadataViewDecoder(),
@@ -114,6 +116,7 @@ class SaveMapController {
   }
 
   final MapArchiveGateway archiveGateway;
+  final DocumentPathReserver? reserveDestination;
   final MapFilePicker filePicker;
   final MapFileFingerprintGateway fingerprintGateway;
   final MapSaveFileGateway saveFileGateway;
@@ -136,6 +139,7 @@ class SaveMapController {
   int _operationSequence = 0;
 
   SaveMapState get state => _state;
+  bool get isSaving => _isSaving;
 
   Stream<SaveMapState> get changes => _changes.stream;
 
@@ -174,6 +178,7 @@ class SaveMapController {
     _isSaving = true;
 
     MapSaveWorkspace? workspace;
+    DocumentPathLease? pathLease;
     String? operationId;
     try {
       for (final briefing in [false, true]) {
@@ -269,6 +274,7 @@ class SaveMapController {
           ),
         );
       }
+      pathLease = await reserveDestination?.call(normalizedPath);
       final destinationExistedAtSaveStart = await saveFileGateway
           .destinationExists(normalizedPath);
       final replacementConfirmed = selectedFromPicker || replaceExisting;
@@ -665,6 +671,12 @@ class SaveMapController {
         fraction: 0.9,
       );
       late final MapSavePromotionResult promotionResult;
+      await pathLease?.validate();
+      if (!identical(sourceSession, openMapController.state.session)) {
+        throw StateError(
+          'The document changed during Save As. Retry to include the latest edits.',
+        );
+      }
       try {
         promotionResult = await saveFileGateway.promote(
           workspace: workspace,
@@ -800,6 +812,7 @@ class SaveMapController {
         }
       }
       _isSaving = false;
+      pathLease?.release();
     }
   }
 

@@ -2750,6 +2750,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get basicSpritesDoodads => 'Sprites / Doodads';
 
   @override
+  String get workspaceStart => 'Start';
+
+  @override
+  String workspaceUntitled(String id) {
+    return 'Untitled map $id';
+  }
+
+  @override
+  String get workspaceRequestFailed =>
+      'The document operation could not be completed.';
+
+  @override
+  String get workspaceBusy =>
+      'A document operation is still running. Finish or cancel it before closing or switching.';
+
+  @override
+  String get workspaceChanged =>
+      'The document changed during confirmation. Review it again.';
+
+  @override
+  String get workspaceClose => 'Close map';
+
+  @override
+  String workspaceCloseTitle(String name) {
+    return 'Close $name?';
+  }
+
+  @override
+  String get workspaceCloseWarning =>
+      'Closing discards unsaved map, source and project changes, including unapplied form drafts. Save As saves only the map; confirm closing again afterward.';
+
+  @override
+  String get workspaceDiscardClose => 'Discard and close';
+
+  @override
+  String get workspaceSaveIncomplete =>
+      'Save As did not complete. The document remains open.';
+
+  @override
   String get mixedClipboardTitle => 'Mixed region clipboard';
 
   @override

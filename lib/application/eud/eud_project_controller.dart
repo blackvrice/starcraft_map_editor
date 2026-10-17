@@ -1,11 +1,13 @@
 import 'dart:async';
+import '../documents/document_path_lease.dart';
 
 import '../../domain/eud/eud_project.dart';
 import '../../domain/eud/eud_execution_rule.dart';
 import '../ports/eud_project_store.dart';
 
 final class EudProjectController {
-  EudProjectController(this._store);
+  EudProjectController(this._store, {this.reserveDestination});
+  final DocumentPathReserver? reserveDestination;
   final EudProjectStore _store;
   final _changes = StreamController<void>.broadcast(sync: true);
   final _undo = <EudProject>[];
@@ -145,7 +147,9 @@ final class EudProjectController {
     }
     _busy = true;
     _notify();
+    DocumentPathLease? lease;
     try {
+      lease = await reserveDestination?.call(path);
       final result = replaceExisting
           ? await _store.save(path, snapshot, expectedRevision: _savedRevision!)
           : await _store.saveAs(path, snapshot);
@@ -157,6 +161,7 @@ final class EudProjectController {
         _path = path;
       }
     } finally {
+      lease?.release();
       _busy = false;
       _notify();
     }

@@ -4946,6 +4946,66 @@ abstract class AppLocalizations {
   /// **'Sprites / Doodads'**
   String get basicSpritesDoodads;
 
+  /// No description provided for @workspaceStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get workspaceStart;
+
+  /// No description provided for @workspaceUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled map {id}'**
+  String workspaceUntitled(String id);
+
+  /// No description provided for @workspaceRequestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The document operation could not be completed.'**
+  String get workspaceRequestFailed;
+
+  /// No description provided for @workspaceBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'A document operation is still running. Finish or cancel it before closing or switching.'**
+  String get workspaceBusy;
+
+  /// No description provided for @workspaceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The document changed during confirmation. Review it again.'**
+  String get workspaceChanged;
+
+  /// No description provided for @workspaceClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close map'**
+  String get workspaceClose;
+
+  /// No description provided for @workspaceCloseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close {name}?'**
+  String workspaceCloseTitle(String name);
+
+  /// No description provided for @workspaceCloseWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing discards unsaved map, source and project changes, including unapplied form drafts. Save As saves only the map; confirm closing again afterward.'**
+  String get workspaceCloseWarning;
+
+  /// No description provided for @workspaceDiscardClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and close'**
+  String get workspaceDiscardClose;
+
+  /// No description provided for @workspaceSaveIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As did not complete. The document remains open.'**
+  String get workspaceSaveIncomplete;
+
   /// No description provided for @mixedClipboardTitle.
   ///
   /// In en, this message translates to:

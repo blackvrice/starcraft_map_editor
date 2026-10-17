@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 import 'dart:math';
+import 'document_path_lease.dart';
 
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
 import '../eud/eud_project_controller.dart';
@@ -25,6 +26,8 @@ final class AutosaveController {
     required this.projects,
     required this.store,
     required this.settings,
+    this.reserveRestoreInput,
+    this.canAccessCheckpoint,
     String? ownerId,
     DateTime Function()? clock,
   }) : _ownerId =
@@ -44,6 +47,10 @@ final class AutosaveController {
   final EudProjectController projects;
   final RecoveryStore store;
   final SettingsStore settings;
+  final DocumentPathReserver? reserveRestoreInput;
+  final bool Function(String id)? canAccessCheckpoint;
+  bool ownsCheckpoint(String id) => _owned.contains(id);
+  Future<void>? _initialization;
   final String _ownerId;
   final DateTime Function() _clock;
   final _changes = StreamController<void>.broadcast(sync: true);
@@ -84,7 +91,8 @@ final class AutosaveController {
     _revision++;
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize() => _initialization ??= _initialize();
+  Future<void> _initialize() async {
     String? settingsError;
     try {
       final value = await settings.readString('autosaveIntervalSeconds');
@@ -231,6 +239,9 @@ final class AutosaveController {
   }
 
   Future<void> remove(String id) async {
+    if (canAccessCheckpoint?.call(id) == false) {
+      throw StateError('RECOVERY_DOCUMENT_BUSY');
+    }
     if (busy) throw StateError('Recovery is busy.');
     await store.remove(id);
     _owned.remove(id);
@@ -238,6 +249,9 @@ final class AutosaveController {
   }
 
   Future<void> restore(String id) async {
+    if (canAccessCheckpoint?.call(id) == false) {
+      throw StateError('RECOVERY_DOCUMENT_BUSY');
+    }
     if (busy ||
         _hasUnsaved ||
         maps.editHistory.isTransactionActive ||
@@ -259,6 +273,7 @@ final class AutosaveController {
       canCancel: false,
     );
     _notify();
+    DocumentPathLease? pathLease;
     try {
       final entry = (await store.list()).singleWhere((entry) => entry.id == id);
       final content = entry.content;
@@ -272,6 +287,7 @@ final class AutosaveController {
         if (map.sourcePath == null) {
           extracted = ExtractedMap.inMemory(scenarioChkBytes: map.baseline);
         } else {
+          pathLease = await reserveRestoreInput?.call(map.sourcePath!);
           final before = await maps.fingerprintGateway.fingerprint(
             map.sourcePath!,
           );
@@ -328,6 +344,7 @@ final class AutosaveController {
           throw StateError('RECOVERY_INVALID_DOCUMENT');
         }
       }
+      await pathLease?.validate();
       if (_disposed ||
           !identical(oldMap, maps.state.session) ||
           !identical(oldSource, sources.state.document) ||
@@ -352,6 +369,7 @@ final class AutosaveController {
       progress.fail(operationId: operationId, message: lastError!);
       rethrow;
     } finally {
+      pathLease?.release();
       _restoring = false;
       _notify();
     }
