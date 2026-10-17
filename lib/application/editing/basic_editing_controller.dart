@@ -14,14 +14,17 @@ import '../../domain/placement/doodad_composite_clipboard.dart';
 import '../../domain/chk/typed/chk_player_settings_editor.dart';
 
 class BasicEditingController {
-  BasicEditingController({required this.maps, required this.layers});
+  BasicEditingController({
+    required this.maps,
+    required this.layers,
+    MixedClipboardController? mixedClipboard,
+  }) : _providedMixed = mixedClipboard;
+  final MixedClipboardController? _providedMixed;
   final OpenMapController maps;
   final MapLayerController layers;
-  late final mixedClipboard = MixedClipboardController(
-    maps: maps,
-    layers: layers,
-    apply: apply,
-  );
+  late final mixedClipboard =
+      _providedMixed ??
+      MixedClipboardController(maps: maps, layers: layers, apply: apply);
   final editor = const ChkBasicEditing();
   final _changes = StreamController<void>.broadcast(sync: true);
   Stream<void> get changes => _changes.stream;
@@ -518,6 +521,7 @@ class BasicEditingController {
 
   Future<void> dispose() async {
     cancelFogStroke();
+    mixedClipboard.dispose();
     await _changes.close();
   }
 }

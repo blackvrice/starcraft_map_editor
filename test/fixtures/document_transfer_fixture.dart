@@ -9,6 +9,39 @@ import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_resources.dart';
 import 'basic_editing_fixture.dart';
 import 'multi_map_fixture.dart';
+import 'package:starcraft_map_editor/application/documents/document_workspace_controller.dart';
+import 'package:starcraft_map_editor/application/editing/basic_editing_controller.dart';
+import 'package:starcraft_map_editor/application/editing/mixed_clipboard_controller.dart';
+
+BasicEditingController mixedTransferController(
+  MultiMapFixture f,
+  WorkspaceDocument<EditorAppDependencies> source,
+  WorkspaceDocument<EditorAppDependencies> target,
+) => BasicEditingController(
+  maps: source.maps,
+  layers: source.value.mapLayerController,
+  mixedClipboard: MixedClipboardController.betweenDocuments(
+    maps: source.maps,
+    layers: source.value.mapLayerController,
+    targetMaps: target.maps,
+    targetLayers: target.value.mapLayerController,
+    isAvailable: () =>
+        f.workspace.contains(source) &&
+        f.workspace.contains(target) &&
+        !source.busy &&
+        !target.busy,
+    apply: (expected, result, label) {
+      if (identical(expected, result)) return false;
+      target.value.objectEditingController.applyDocumentTransfer(
+        expectedDocument: expected,
+        updatedDocument: result,
+        resourceEdits: target.maps.state.session!.resourceEdits,
+        includeTerrain: true,
+      );
+      return true;
+    },
+  ),
+);
 
 DocumentTransferController<EditorAppDependencies> transferController(
   MultiMapFixture f,

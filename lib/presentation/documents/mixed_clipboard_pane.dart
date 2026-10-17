@@ -43,6 +43,7 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
   List<IsomDoodadInstance> _doodads = [];
   MixedClipboardProfile _profile = MixedClipboardProfile.raw;
   StreamSubscription<Object?>? _changes;
+  StreamSubscription<Object?>? _targetChanges;
   bool _loading = false;
   int? _fillShape;
   String? _error;
@@ -74,11 +75,15 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
         });
       }
     });
+    _targetChanges = _mixed.targetMaps?.changes.listen((_) {
+      if (mounted) setState(_mixed.invalidatePreview);
+    });
   }
 
   @override
   void dispose() {
     unawaited(_changes?.cancel());
+    unawaited(_targetChanges?.cancel());
     for (final f in _fields.values) {
       f.dispose();
     }
@@ -173,13 +178,13 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
     final l = context.l10n, session = widget.controller.maps.state.session;
     if (session == null) return const SizedBox.shrink();
     final clipboard = _mixed.clipboard, preview = _mixed.preview;
-    final current =
-        identical(preview?.source, session.rawDocument) && clipboard != null;
+    final current = _mixed.isPreviewCurrent;
     final terrain = widget.controller.maps.terrainViewDecoder
         .decode(current ? preview!.result : session.rawDocument)
         .tileMaps
         .single;
-    final dims = session.metadataViews.dimensions.single;
+    final dims =
+        (current ? preview!.session : session).metadataViews.dimensions.single;
     final sprites = widget.controller.editor
         .section(session.rawDocument, 'THG2', stride: 10)
         ?.payload;
@@ -337,9 +342,10 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
           children: [
             _field('x', l.basicTileX),
             _field('y', l.basicTileY),
-            if (_profile == MixedClipboardProfile.raw)
+            if (!_mixed.isCrossDocument &&
+                _profile == MixedClipboardProfile.raw)
               _field('fill', l.basicCutReplacement)
-            else
+            else if (!_mixed.isCrossDocument)
               SizedBox(
                 width: 220,
                 child: DropdownButtonFormField<int>(
@@ -382,21 +388,22 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
               icon: const Icon(Icons.content_paste),
               label: Text(l.mixedPreviewPaste),
             ),
-            OutlinedButton.icon(
-              key: const Key('mixed-preview-cut'),
-              onPressed: clipboard == null
-                  ? null
-                  : () => _run(
-                      () => _mixed.previewCut(
-                        rawReplacement: _profile == MixedClipboardProfile.raw
-                            ? _number('fill')
-                            : null,
-                        fillShape: _fillShape,
+            if (!_mixed.isCrossDocument)
+              OutlinedButton.icon(
+                key: const Key('mixed-preview-cut'),
+                onPressed: clipboard == null
+                    ? null
+                    : () => _run(
+                        () => _mixed.previewCut(
+                          rawReplacement: _profile == MixedClipboardProfile.raw
+                              ? _number('fill')
+                              : null,
+                          fillShape: _fillShape,
+                        ),
                       ),
-                    ),
-              icon: const Icon(Icons.content_cut),
-              label: Text(l.mixedPreviewCut),
-            ),
+                icon: const Icon(Icons.content_cut),
+                label: Text(l.mixedPreviewCut),
+              ),
             FilledButton.icon(
               key: const Key('mixed-apply'),
               onPressed: !current || preview == null
@@ -405,24 +412,39 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
               icon: const Icon(Icons.check),
               label: Text(l.mixedApply),
             ),
-            IconButton(
-              tooltip: l.menuUndo,
-              onPressed: widget.controller.maps.editHistory.canUndo
-                  ? () => _run(() => widget.controller.maps.editHistory.undo())
-                  : null,
-              icon: const Icon(Icons.undo),
-            ),
-            IconButton(
-              tooltip: l.menuRedo,
-              onPressed: widget.controller.maps.editHistory.canRedo
-                  ? () => _run(() => widget.controller.maps.editHistory.redo())
-                  : null,
-              icon: const Icon(Icons.redo),
-            ),
+            if (!_mixed.isCrossDocument)
+              IconButton(
+                tooltip: l.menuUndo,
+                onPressed: widget.controller.maps.editHistory.canUndo
+                    ? () =>
+                          _run(() => widget.controller.maps.editHistory.undo())
+                    : null,
+                icon: const Icon(Icons.undo),
+              ),
+            if (!_mixed.isCrossDocument)
+              IconButton(
+                tooltip: l.menuRedo,
+                onPressed: widget.controller.maps.editHistory.canRedo
+                    ? () =>
+                          _run(() => widget.controller.maps.editHistory.redo())
+                    : null,
+                icon: const Icon(Icons.redo),
+              ),
           ],
         ),
         if (current && preview != null)
           Text(l.mixedPreviewSummary(preview.changedSections)),
+        if (preview?.transfer case final transfer? when current) ...[
+          for (final (name, ids) in [
+            (l.layerUnits, transfer.units),
+            (l.layerLocations, transfer.references?.locations ?? <int, int>{}),
+            (l.transferStrings, transfer.references?.strings ?? <int, int>{}),
+          ])
+            if (ids.isNotEmpty)
+              SelectableText(
+                '$name: ${ids.entries.map((e) => '${e.key} -> ${e.value}').join(', ')}',
+              ),
+        ],
         if (_error != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -443,18 +465,22 @@ class _MixedClipboardPaneState extends State<MixedClipboardPane> {
             layerScene: widget.controller.layers.sceneFor(
               current ? preview!.session : session,
             ),
-            editingTool: TerrainEditingTool.rectangle,
-            onRectangleFilled: (r) {
-              for (final (name, value) in [
-                ('left', r.left),
-                ('top', r.top),
-                ('right', r.right),
-                ('bottom', r.bottom),
-              ]) {
-                _fields[name]!.text = '$value';
-              }
-              _sourceChanged();
-            },
+            editingTool: _mixed.isCrossDocument && current
+                ? TerrainEditingTool.select
+                : TerrainEditingTool.rectangle,
+            onRectangleFilled: _mixed.isCrossDocument && current
+                ? null
+                : (r) {
+                    for (final (name, value) in [
+                      ('left', r.left),
+                      ('top', r.top),
+                      ('right', r.right),
+                      ('bottom', r.bottom),
+                    ]) {
+                      _fields[name]!.text = '$value';
+                    }
+                    _sourceChanged();
+                  },
           ),
         ),
       ],

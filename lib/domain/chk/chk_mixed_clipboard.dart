@@ -37,7 +37,7 @@ final class MixedClipboardData {
   final IsomBrushCatalog? brush;
 }
 
-/// An immutable, same-document region. No operating-system clipboard or code.
+/// An immutable verified region. Cross-document callers must remap references.
 final class ChkMixedClipboard {
   ChkMixedClipboard._(
     this.source,
@@ -383,8 +383,10 @@ final class ChkMixedClipboard {
     RawChkDocument target, {
     required int x,
     required int y,
+    Map<int, int> locationStrings = const {},
+    bool includeLocations = true,
   }) {
-    _checkLocationReferences(target);
+    _checkLocationReferences(target, locationStrings);
     final (w, h) = editor.dimensions(target);
     if (_tileset(target) != _tileset(source) ||
         x < 0 ||
@@ -504,13 +506,15 @@ final class ChkMixedClipboard {
         result,
         x: x * 32 + objects!.anchorX - region.left * 32,
         y: y * 32 + objects!.anchorY - region.top * 32,
+        locationStrings: locationStrings,
+        includeLocations: includeLocations,
       );
     }
     layout(result, data, isom: isom);
     return result;
   }
 
-  void _checkLocationReferences(RawChkDocument target) {
+  void _checkLocationReferences(RawChkDocument target, Map<int, int> mapped) {
     final names = {
       for (final record in objects?.records['MRGN'] ?? <List<int>>[])
         ByteData.sublistView(
@@ -530,7 +534,7 @@ final class ChkMixedClipboard {
     }
     for (final id in names) {
       final before = a.single.entryForId(id)?.rawBytes,
-          after = b.single.entryForId(id)?.rawBytes;
+          after = b.single.entryForId(mapped[id] ?? id)?.rawBytes;
       // Same ID is insufficient after string-table compaction or replacement.
       if (before == null ||
           after == null ||

@@ -1,5 +1,6 @@
 import '../../domain/chk/chk.dart';
 import '../../domain/chk/chk_mixed_clipboard.dart';
+import '../../domain/chk/chk_mixed_document_transfer.dart';
 import '../../domain/terrain/isom_doodad_overlay.dart';
 import '../documents/isom_fill_controller.dart';
 import '../documents/open_map_controller.dart';
@@ -14,23 +15,47 @@ final class MixedClipboardPreview {
     this.isCut,
     this.sections,
     this.session,
+    this.transfer,
+    this.expectedSession,
   );
   final RawChkDocument source, result;
   final bool isCut;
   final Set<String> sections;
   final OpenedMapSession session;
+  final ChkMixedDocumentTransferPlan? transfer;
+  final OpenedMapSession expectedSession;
   int get changedSections => sections.length;
 }
 
-/// One immutable payload per document; only an issued preview can be applied.
+/// A tool-owned immutable payload; only its issued preview can be applied.
 final class MixedClipboardController {
   MixedClipboardController({
     required this.maps,
     required this.layers,
     required this.apply,
-  });
+  }) : targetMaps = null,
+       targetLayers = null,
+       isAvailable = null;
+  MixedClipboardController.betweenDocuments({
+    required this.maps,
+    required this.layers,
+    required this.targetMaps,
+    required this.targetLayers,
+    required this.isAvailable,
+    required this.apply,
+  }) {
+    if (targetMaps == null ||
+        targetLayers == null ||
+        identical(maps, targetMaps)) {
+      throw ArgumentError('Mixed transfer needs two independent documents.');
+    }
+  }
   final OpenMapController maps;
   final MapLayerController layers;
+  final OpenMapController? targetMaps;
+  final MapLayerController? targetLayers;
+  final bool Function()? isAvailable;
+  bool get isCrossDocument => targetMaps != null;
   final bool Function(RawChkDocument, RawChkDocument, String) apply;
   MixedClipboardData? _data;
   IsomFillController? _loader;
@@ -39,21 +64,54 @@ final class MixedClipboardController {
   ChkMixedClipboard? _clipboard;
   Object? _token;
   MixedClipboardPreview? _preview;
+  OpenedMapSession? _capturedSource;
+  bool _disposed = false;
 
   bool get hasData =>
-      _catalog != null && _loader!.isClipboardCatalogCurrent(_catalog!);
+      !_disposed &&
+      _catalog != null &&
+      _loader!.isClipboardCatalogCurrent(_catalog!);
   SolidIsomCatalog? get catalog => hasData ? _catalog : null;
   ChkMixedClipboard? get clipboard =>
-      identical(_token, maps.state.session?.extractedMap) &&
+      !_disposed &&
+          isAvailable?.call() != false &&
+          (!isCrossDocument ||
+              identical(_capturedSource, maps.state.session)) &&
+          identical(_token, maps.state.session?.extractedMap) &&
           (_clipboard?.data.catalog == null || hasData)
       ? _clipboard
       : null;
   MixedClipboardPreview? get preview => _preview;
+  bool get isPreviewCurrent =>
+      _preview != null &&
+      clipboard != null &&
+      (!isCrossDocument ||
+          identical(_preview!.expectedSession, targetMaps!.state.session)) &&
+      identical(
+        _preview!.source,
+        (targetMaps ?? maps).state.session?.rawDocument,
+      );
   RawChkDocument get _source {
     final s = maps.state.session, p = maps.operationProgressController.current;
-    if (s == null ||
+    if (_disposed ||
+        isAvailable?.call() == false ||
+        s == null ||
         s.requiresRestrictedEditing ||
         maps.editHistory.isTransactionActive ||
+        (p != null && !p.isTerminal)) {
+      throw StateError('MIXED_CLIPBOARD_BUSY');
+    }
+    return s.rawDocument;
+  }
+
+  RawChkDocument get _destination {
+    if (targetMaps == null) return _source;
+    _source;
+    final s = targetMaps!.state.session,
+        p = targetMaps!.operationProgressController.current;
+    if (s == null ||
+        s.requiresRestrictedEditing ||
+        targetMaps!.editHistory.isTransactionActive ||
         (p != null && !p.isTerminal)) {
       throw StateError('MIXED_CLIPBOARD_BUSY');
     }
@@ -108,7 +166,17 @@ final class MixedClipboardController {
   void clear() {
     _clipboard = null;
     _token = null;
+    _capturedSource = null;
     invalidatePreview();
+  }
+
+  void dispose() {
+    _disposed = true;
+    _loadRevision++;
+    clear();
+    _catalog = null;
+    _data = null;
+    _loader = null;
   }
 
   void _unlocked(Set<String> sections) {
@@ -121,6 +189,9 @@ final class MixedClipboardController {
         _ => MapLayerType.terrain,
       };
       if (!layers.state.statusOf(layer).isSelectable) {
+        throw StateError('MIXED_CLIPBOARD_LAYER: ${layer.name}');
+      }
+      if (targetLayers?.state.statusOf(layer).isSelectable == false) {
         throw StateError('MIXED_CLIPBOARD_LAYER: ${layer.name}');
       }
     }
@@ -143,14 +214,16 @@ final class MixedClipboardController {
     );
     _unlocked(captured.sections);
     _token = maps.state.session!.extractedMap;
+    _capturedSource = maps.state.session;
     return _clipboard = captured;
   }
 
   MixedClipboardPreview _issue(
     RawChkDocument source,
     RawChkDocument result,
-    bool cut,
-  ) {
+    bool cut, {
+    ChkMixedDocumentTransferPlan? transfer,
+  }) {
     final sections = <String>{};
     for (final s in result.sections) {
       final old = source.sections.where((v) => v.name == s.name).toList();
@@ -160,7 +233,7 @@ final class MixedClipboardController {
       if (!source.sections.contains(s)) sections.add(s.name);
     }
     _unlocked(clipboard!.sections);
-    final before = maps.state.session!;
+    final before = (targetMaps ?? maps).state.session!;
     final session = OpenedMapSession(
       extractedMap: before.extractedMap,
       rawDocument: result,
@@ -178,6 +251,8 @@ final class MixedClipboardController {
       cut,
       Set.unmodifiable(sections),
       session,
+      transfer,
+      before,
     );
   }
 
@@ -191,12 +266,23 @@ final class MixedClipboardController {
 
   MixedClipboardPreview previewPaste({required int x, required int y}) {
     invalidatePreview();
-    final source = _source, clip = clipboard;
+    final source = _destination, clip = clipboard;
     if (clip == null) throw StateError('MIXED_CLIPBOARD_STALE');
-    return _issue(source, clip.paste(source, x: x, y: y), false);
+    final transfer = isCrossDocument
+        ? ChkMixedDocumentTransferPlan.preview(clip, source, x: x, y: y)
+        : null;
+    return _issue(
+      source,
+      transfer?.result ?? clip.paste(source, x: x, y: y),
+      false,
+      transfer: transfer,
+    );
   }
 
   MixedClipboardPreview previewCut({int? rawReplacement, int? fillShape}) {
+    if (isCrossDocument) {
+      throw StateError('MIXED_CLIPBOARD_CROSS_CUT_UNSUPPORTED');
+    }
     invalidatePreview();
     final source = _source, clip = clipboard;
     if (clip == null || !identical(clip.source, source)) {
@@ -212,7 +298,9 @@ final class MixedClipboardController {
   bool applyPreview(MixedClipboardPreview preview) {
     if (!identical(preview, _preview) ||
         clipboard == null ||
-        !identical(preview.source, _source)) {
+        (isCrossDocument &&
+            !identical(preview.expectedSession, targetMaps!.state.session)) ||
+        !identical(preview.source, _destination)) {
       throw StateError('MIXED_CLIPBOARD_STALE');
     }
     _unlocked(clipboard!.sections);

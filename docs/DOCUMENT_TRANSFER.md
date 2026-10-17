@@ -19,8 +19,9 @@
 | 사운드 | 참조하는 ASCII 상대 WAV 경로와 PCM 바이트. source 실제 파일 재검증·중립 locale/유일한 이름 검사. 대상 파일/대기 편집/문자열 경로와 대소문자 무관 충돌 시 전체 거절 |
 | 적용 | 양쪽 문서/현재 session·진행 작업·관련 레이어 잠금 재검증. CHK와 사운드를 대상의 한 Undo로 적용. 원본/미리보기는 무변경 |
 
-동일 타일셋만 허용한다. 초기 프로필은 DD2/두다드 overlay·raw/ISOM 영역을
-문서 간 전송하지 않는다. 이들은 기존 **같은 맵** 혼합 영역 복사에서만 지원한다.
+동일 타일셋만 허용한다. 초기 일반 객체/트리거 프로필에 이어 아래의
+**맵 간 혼합 영역** 프로필을 추가했다. 두 화면은 각각 원자 적용하며 하나의
+미리보기에서 임의의 트리거와 지형 영역을 결합하지 않는다.
 일반 트리거만 이식하며 EUD 소스/프로젝트나 참조 밖 트리거를 자동 추적하지 않는다.
 유닛/플레이어/세력/DAT 등 맵 전역 설정은 대상 값을 유지한다. 문서 간 Move,
 OS clipboard, 외부 코드 실행, 게임 동작의 의미 동등성 보증은 제공하지 않는다.
@@ -78,3 +79,39 @@ Windows 빌드에는 기존 third-party CMake minimum-version 경고만 있었�
 환경: Flutter 3.47.5 / Dart 3.13.4, Windows. 저장소 기준 3.44.8/3.12와 다르다.
 실제 앱/게임 조작은 이전 사용자 지시대로 수행하지 않는다. SC:R 원시 자산이나
 추출 이미지를 추가하지 않았고 실제 테스트 입력은 임시 자체 제작 맵/PCM뿐이다.
+
+## 혼합 영역 전송 확장 (2026-10-17)
+
+상단 영역 복사 아이콘은 원본을 현재 문서로 고정하고 다른 열린 맵을 대상으로
+선택한다. 기존 혼합 영역 UI에서 source 영역·raw/ISOM·레이어·DD2 연결 그래픽을
+명시하고 Copy → 대상 좌표 → Preview → Apply한다. source Cut/Undo/Redo는 숨긴다.
+
+| 데이터 | 추가 계약 |
+| --- | --- |
+| raw/ISOM | 기존 혼합 복사 지원표·4×2 phase·완전한 diamond·region solver 재사용. 타일셋/profile/경계 불일치 거절 |
+| 다수 DD2/THG2 | 검증된 recipe·전체 footprint/underlying·명시 선택한 정확한 overlay만 이식. 부분/중복/기존 대상 footprint/overlay 충돌은 전체 거절 |
+| MRGN | 영역 안의 위치 이름을 별도 참조 계획으로 먼저 새 ID에 복사. 대상에서 참조 중인 빈 슬롯도 보호하고 mixed paste에서는 MRGN을 다시 추가하지 않음 |
+| UNIT | 기존 fresh class/peer ID 할당·쌍 검증 재사용. 원본 class → 새 class 매핑 표시 |
+| 수명 | 양쪽 문서/레이어·원본 session/자산 catalog·대상 session 동일성 재검증. 다른 target 선택 시 컨트롤러/미리보기 교체, 문서 닫힘 시 stale 화면 |
+| Undo | 대상의 지형/두다드/객체/문자열을 한 번에 기록. 원본·자원·트리거는 변경하지 않음 |
+
+`ChkMixedDocumentTransferPlan`은 새 지형 엔진을 만들지 않는다. 기존 reference
+계획과 verified mixed payload를 순서대로 결합한다. 위치를 두 번 추가하지 않는
+이유와 문서 간 Cut을 차단하는 계약은 코드에도 남겼다. 저장 원본 MPQ를 수정하거나
+알 수 없는 섹션/문자열을 정규화하지 않는다. 게임 규칙·의미 동등성 보증은 아니다.
+
+확장 첫 테스트에서 대상 CHK identity만 같고 session이 바뀐 미리보기가 적용되는
+결함을 발견했다. 대상 session도 묶어 거절하도록 수정했다. 범위 밖 좌표의 예외를
+StateError로 기대한 테스트는 실제 RangeError 계약에 맞춰 교정했다. 수명 종료 후
+payload 재사용과 asset revision 변경을 차단하는 회귀도 추가했다.
+문서 닫기 화면 회귀는 가상 시간에서 비동기 해제를 직접 기다리며 정지했다.
+실제 async 영역에서 닫기를 시작하고 프레임을 진행한 뒤 완료를 확인하도록
+테스트를 수정했으며 600/1200px 모두 통과했다. 임시 해제 진단 출력은 제거했다.
+
+- 기존 같은 맵 혼합 복사 집중 회귀: 19 PASS.
+- 새 도메인/컨트롤러/600·1200px UI/실제 raw·ISOM MPQ 4파일: 10 PASS, skip 없음.
+- 확장 최종 전체: **2,267 PASS / 환경 조건부 69 skip**. 현재 사용자 변경이 포함된 작업 트리이며 기준 SDK CI 결과와 구분한다.
+- 같은 맵/일반 전송/혼합 전송 12파일의 최종 집중 실행: **53 PASS / skip 없음**. 실제 MPQ 왕복 3개(일반+PCM 1, raw/ISOM 혼합 2)를 포함하며 전체 테스트 수에 더하지 않는다.
+- `flutter analyze`: No issues found. format 538파일은 기존 infrastructure 3파일 차이로 exit 1, 이번 변경 파일 차이 없음.
+- `flutter build windows --debug`: PASS. native CTest **7/7 PASS**, 기존 third-party CMake 경고만 존재.
+- 실제 게임/외부 에디터, 다중 맵 RSS·렌더 캐시 예산은 별도 인수다.

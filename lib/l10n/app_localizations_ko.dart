@@ -9,6 +9,9 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get transferRegionTitle => '맵 간 혼합 영역 복사';
+
+  @override
   String get transferTitle => '맵 간 복사';
 
   @override

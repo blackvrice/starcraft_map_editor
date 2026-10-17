@@ -14,6 +14,9 @@ import '../presentation/shell/editor_shell.dart';
 import 'app.dart';
 import '../application/editing/document_transfer_controller.dart';
 import '../presentation/documents/document_transfer_dialog.dart';
+import '../presentation/documents/mixed_document_transfer_dialog.dart';
+import '../application/editing/basic_editing_controller.dart';
+import '../application/editing/mixed_clipboard_controller.dart';
 
 enum _CloseChoice { cancel, save, discard }
 
@@ -160,6 +163,46 @@ class _DocumentWorkspaceHostState extends State<DocumentWorkspaceHost>
     } finally {
       controller.dispose();
     }
+  });
+
+  Future<void> _transferRegion() => _run(() async {
+    final workspace = widget.workspace, source = workspace.active;
+    if (source == null || source.maps.state.session == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => MixedDocumentTransferDialog(
+        workspace: workspace,
+        source: source,
+        nameOf: _name,
+        loader: source.value.isomFillController,
+        textures: source.value.terrainTileTextureController.state,
+        createController: (target) => BasicEditingController(
+          maps: source.maps,
+          layers: source.value.mapLayerController,
+          mixedClipboard: MixedClipboardController.betweenDocuments(
+            maps: source.maps,
+            layers: source.value.mapLayerController,
+            targetMaps: target.maps,
+            targetLayers: target.value.mapLayerController,
+            isAvailable: () =>
+                workspace.contains(source) &&
+                workspace.contains(target) &&
+                !source.busy &&
+                !target.busy,
+            apply: (expected, result, label) {
+              if (identical(expected, result)) return false;
+              target.value.objectEditingController.applyDocumentTransfer(
+                expectedDocument: expected,
+                updatedDocument: result,
+                resourceEdits: target.maps.state.session!.resourceEdits,
+                includeTerrain: true,
+              );
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
   });
 
   Future<int?> _confirm(WorkspaceDocument<EditorAppDependencies> d) async {
@@ -442,6 +485,20 @@ class _DocumentWorkspaceHostState extends State<DocumentWorkspaceHost>
                         ? null
                         : _transfer,
                     icon: const Icon(Icons.copy_all),
+                  ),
+                  IconButton(
+                    key: const Key('workspace-transfer-region'),
+                    tooltip: l.transferRegionTitle,
+                    onPressed:
+                        _closing ||
+                            w.active?.maps.state.session == null ||
+                            docs
+                                    .where((d) => d.maps.state.session != null)
+                                    .length <
+                                2
+                        ? null
+                        : _transferRegion,
+                    icon: const Icon(Icons.select_all),
                   ),
                   IconButton(
                     key: const Key('workspace-new'),

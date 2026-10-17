@@ -4,7 +4,7 @@ import 'raw_chk_document.dart';
 import 'raw_chk_section.dart';
 import 'typed/chk_string_views.dart';
 
-/// An immutable, document-local clipboard. String IDs remain local references.
+/// Immutable object records. IDs remain local unless a caller remaps them.
 class ChkEditingClipboard {
   ChkEditingClipboard._(this.records, this.anchorX, this.anchorY);
   final Map<String, List<List<int>>> records;
@@ -145,6 +145,7 @@ class ChkEditingClipboard {
     Map<int, int> locationStrings = const {},
     Map<int, int> owners = const {},
     Set<int> reservedLocations = const {},
+    bool includeLocations = true,
   }) {
     const e = ChkBasicEditing();
     final (w, h) = e.dimensions(doc);
@@ -172,6 +173,7 @@ class ChkEditingClipboard {
       if (old != 0) ids[old] = next;
     }
     for (final entry in records.entries) {
+      if (entry.key == 'MRGN' && !includeLocations) continue;
       final stride = _strides[entry.key]!,
           old = e.section(result, entry.key, stride: stride);
       final bytes = old?.payload.toList() ?? <int>[];

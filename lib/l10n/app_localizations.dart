@@ -98,6 +98,12 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @transferRegionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy mixed region between maps'**
+  String get transferRegionTitle;
+
   /// No description provided for @transferTitle.
   ///
   /// In en, this message translates to:

@@ -9,6 +9,9 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get transferRegionTitle => 'Copy mixed region between maps';
+
+  @override
   String get transferTitle => 'Copy between maps';
 
   @override

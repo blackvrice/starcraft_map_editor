@@ -280,11 +280,13 @@ class ObjectEditingController {
     required RawChkDocument expectedDocument,
     required RawChkDocument updatedDocument,
     required Map<String, List<int>?> resourceEdits,
+    bool includeTerrain = false,
   }) => _applyResourcePatch(
     expectedDocument: expectedDocument,
     updatedDocument: updatedDocument,
     resourceEdits: resourceEdits,
     documentTransfer: true,
+    includeTerrain: includeTerrain,
   );
 
   void _applyResourcePatch({
@@ -292,6 +294,7 @@ class ObjectEditingController {
     required RawChkDocument updatedDocument,
     Map<String, List<int>?>? resourceEdits,
     bool documentTransfer = false,
+    bool includeTerrain = false,
   }) {
     final session = openMapController.state.session;
     if (session == null ||
@@ -301,6 +304,7 @@ class ObjectEditingController {
     }
     final allowed = {
       if (documentTransfer) ...{'UNIT', 'THG2'},
+      if (includeTerrain) ...{'DD2 ', 'MTXM', 'TILE', 'ISOM'},
       'STR ',
       'STRx',
       'SWNM',
@@ -342,6 +346,7 @@ class ObjectEditingController {
               'UPUS',
               'WAV ',
               if (documentTransfer) ...{'UNIT', 'THG2', 'MBRF'},
+              if (includeTerrain) ...{'DD2 ', 'TILE', 'ISOM'},
             }.contains(next.name) ||
             updatedDocument.sections.where((s) => s.name == next.name).length !=
                 1) {
