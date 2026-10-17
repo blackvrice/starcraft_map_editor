@@ -1,4 +1,5 @@
 import '../application/documents/isom_fill_controller.dart';
+import '../application/terrain/terrain_brush_library.dart';
 import '../application/documents/autosave_controller.dart';
 import '../application/eud/eud_build_preparation_controller.dart';
 import '../application/settings/eud_tool_settings_controller.dart';
@@ -52,10 +53,12 @@ class EditorAppDependencies {
     required this.objectSpriteTextureController,
     this.languageController,
     this.isomFillController,
+    this.brushLibrary,
     this.autosaveController,
   });
 
   final IsomFillController? isomFillController;
+  final TerrainBrushLibrary? brushLibrary;
   final AutosaveController? autosaveController;
   final EditorCommandDispatcher commandDispatcher;
   final OpenMapController openMapController;
@@ -178,6 +181,7 @@ class _StarCraftMapEditorAppState extends State<StarCraftMapEditorApp> {
           : EditorShell(
               autosaveController: dependencies.autosaveController,
               isomFillController: dependencies.isomFillController,
+              brushLibrary: dependencies.brushLibrary,
               commandDispatcher: dependencies.commandDispatcher,
               openMapController: dependencies.openMapController,
               saveMapController: dependencies.saveMapController,

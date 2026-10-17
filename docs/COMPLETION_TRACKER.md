@@ -9,7 +9,7 @@
 | --- | --- | --- |
 | 1 | FR-222 맵 간 참조 재매핑 복사 | [지원 프로필 구현](DOCUMENT_TRANSFER.md), 일반 객체/트리거/브리핑·리소스. 게임/외부 인수 별도 |
 | 1b | DD2/raw·ISOM 영역의 문서 간 전송 프로필 | 구현. 같은 맵 혼합 복사·기존 solver를 재사용하고 위치 이름 재매핑·문서/자산 수명·전체 footprint/overlay·한 Undo 검증. 게임/외부 인수 별도 |
-| 2 | FR-220 사용자 raw/ISOM 브러시·저장/로드·대칭 | 미구현. schema/상한/자료 revision·solver·preview/Undo. 대응 없는 ramp/두다드는 거절 |
+| 2 | FR-220 사용자 raw/ISOM 브러시·저장/로드·대칭 | [지원 프로필 구현](USER_TERRAIN_BRUSHES.md). schema/상한/자료 revision·기존 solver·preview/Undo와 평지 ISOM 대칭. raw/전환/경사로/두다드 방향 변환은 미지원, 게임 인수 별도 |
 | 3 | FR-219 높이·건설/이동 가능·범위 보조 표시 | 일부 기존 기반만 있음. 좌표 조회와 캔버스 overlay를 구분하고 unknown/출처·revision/cache/profile 검증 필요 |
 | 4 | FR-406/319 일반 epScript/Python/Lua | L0→L1→L2→L3→L4 미구현. 제한 문법·모델·raw 보존·GUI/스크립트 초안 충돌·실행 0회·MPQ 왕복 필요 |
 | 5 | FR-320 여러 소스·검색·완성·진단 | 미구현. 루트/링크/외부 변경·취소/정적 분석, native source 원문 보존 필요 |

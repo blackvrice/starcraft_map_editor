@@ -416,6 +416,60 @@ abstract class AppLocalizations {
   /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
   String get playerColorPreviewLimit;
 
+  /// No description provided for @brushLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain brushes'**
+  String get brushLibrary;
+
+  /// No description provided for @brushName.
+  ///
+  /// In en, this message translates to:
+  /// **'Brush name'**
+  String get brushName;
+
+  /// No description provided for @brushSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save brush'**
+  String get brushSave;
+
+  /// No description provided for @brushReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload brushes'**
+  String get brushReload;
+
+  /// No description provided for @brushDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete brush'**
+  String get brushDelete;
+
+  /// No description provided for @brushDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this saved brush?'**
+  String get brushDeleteTitle;
+
+  /// No description provided for @brushMirrorX.
+  ///
+  /// In en, this message translates to:
+  /// **'Mirror left/right'**
+  String get brushMirrorX;
+
+  /// No description provided for @brushMirrorY.
+  ///
+  /// In en, this message translates to:
+  /// **'Mirror top/bottom'**
+  String get brushMirrorY;
+
+  /// No description provided for @brushRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The brush operation was rejected.'**
+  String get brushRejected;
+
   /// No description provided for @recoveryTitle.
   ///
   /// In en, this message translates to:

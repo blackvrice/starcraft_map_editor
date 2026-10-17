@@ -1,5 +1,10 @@
 # 아키텍처
 
+2026-10-17 [사용자 지형 브러시](USER_TERRAIN_BRUSHES.md)는 domain의 숫자 metadata,
+application의 문서 수명/preview/Undo 제어기와 앱 공용 직렬 보관함,
+`TerrainBrushStore` 포트 및 infrastructure의 로컬 append-only 저장 구현으로
+분리한다. UI는 파일/파서/프로세스를 직접 실행하지 않는다.
+
 2026-10-17 [맵 간 참조 복사](DOCUMENT_TRANSFER.md)는 domain의 불변 closure/계획과
 application의 두 문서 session·레이어·사운드 조회 검사를 분리한다. CHK와 사운드
 snapshot을 기존 자원 명령의 한 Undo로 적용하며 UI가 아카이브를 읽지 않는다.

@@ -4,6 +4,7 @@ import '../documents/recovery_dialog.dart';
 import '../../application/layers/selection_navigation_controller.dart';
 import '../documents/isom_fill_dialog.dart';
 import '../documents/basic_editing_tools_dialog.dart';
+import '../../application/terrain/terrain_brush_library.dart';
 import '../../application/editing/basic_editing_controller.dart';
 import '../../application/documents/isom_fill_controller.dart';
 import '../documents/terrain_data_panel.dart';
@@ -100,6 +101,7 @@ class EditorShell extends StatefulWidget {
     required this.recentProjectsService,
     required this.starCraftDataAssetSettingsController,
     this.isomFillController,
+    this.brushLibrary,
     required this.terrainEditingController,
     required this.mapLayerController,
     required this.objectEditingController,
@@ -128,6 +130,7 @@ class EditorShell extends StatefulWidget {
   final StarCraftDataAssetSettingsController
   starCraftDataAssetSettingsController;
   final IsomFillController? isomFillController;
+  final TerrainBrushLibrary? brushLibrary;
   final TerrainEditingController terrainEditingController;
   final MapLayerController mapLayerController;
   final ObjectEditingController objectEditingController;
@@ -221,6 +224,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
         initialTab: initialTab,
         catalog: widget.placementCatalogController,
         isomController: widget.isomFillController,
+        brushLibrary: widget.brushLibrary,
         textures: widget.terrainTileTextureController.state,
       ),
     );

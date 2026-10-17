@@ -171,6 +171,33 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
+  String get brushLibrary => '사용자 지형 브러시';
+
+  @override
+  String get brushName => '브러시 이름';
+
+  @override
+  String get brushSave => '브러시 저장';
+
+  @override
+  String get brushReload => '브러시 다시 불러오기';
+
+  @override
+  String get brushDelete => '브러시 삭제';
+
+  @override
+  String get brushDeleteTitle => '저장된 브러시를 삭제할까요?';
+
+  @override
+  String get brushMirrorX => '좌우 대칭';
+
+  @override
+  String get brushMirrorY => '상하 대칭';
+
+  @override
+  String get brushRejected => '브러시 작업이 거부되었습니다.';
+
+  @override
   String get recoveryTitle => '미저장 작업 복구';
 
   @override

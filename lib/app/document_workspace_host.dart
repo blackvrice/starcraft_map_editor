@@ -330,6 +330,7 @@ class _DocumentWorkspaceHostState extends State<DocumentWorkspaceHost>
       isDocumentActive: identical(widget.workspace.active, entry),
       autosaveController: d.autosaveController,
       isomFillController: d.isomFillController,
+      brushLibrary: d.brushLibrary,
       commandDispatcher: d.commandDispatcher,
       openMapController: d.openMapController,
       saveMapController: d.saveMapController,

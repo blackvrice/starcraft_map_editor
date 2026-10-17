@@ -1,5 +1,9 @@
 # 제품 요구사항
 
+2026-10-17 FR-220의 [사용자 지형 브러시 지원 프로필](USER_TERRAIN_BRUSHES.md)을
+구현했다. v1 보관함·preview/Apply·Undo, raw/ISOM 저장·재사용과 검증된 평지
+ISOM 대칭을 제공한다. 전환/ramp/두다드 방향 변환과 실제 게임 인수는 미완료다.
+
 이 문서는 목표와 인수 조건이다. 항목에 “해야 한다”가 있어도 구현 완료를 뜻하지
 않는다. 2026-10-04 현재 상태는 [기능 대조표](BASIC_EDITOR_COVERAGE.md)와
 [개발 계획](DEVELOPMENT_PLAN.md)을 따른다.

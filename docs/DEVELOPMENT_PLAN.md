@@ -1413,10 +1413,19 @@ source 자산·target session을 다시 검사한다. Cut/원본 Undo는 전송 
 
 ### EP4. 지형·보조 표시
 
-- [ ] versioned raw/ISOM 사용자 브러시 metadata와 저장/로드·자료 검증
-- [ ] 좌우/상하 대칭·경사로/두다드 대응 지원표·기존 ISOM solver 재사용
+- [x] versioned raw/ISOM 사용자 브러시 metadata와 저장/로드·자료 검증
+- [x] 검증된 평지 ISOM 좌우/상하 대칭·경사로/두다드 미지원 대응표·기존 solver 재사용
 - [ ] height/buildability/walkability/범위·전력/크립의 검증 범위와 미확인 표시
 - [ ] PAR-11/12의 외부 왕복·게임 관찰·revision cache/profile 예산
+
+2026-10-17: [사용자 지형 브러시](USER_TERRAIN_BRUSHES.md)의 schema v1,
+보관함 저장/로드·자료 검증, 평지 ISOM 대칭·지원표와 preview/Undo를 구현했다.
+방향 미검증 전환/경사로/두다드는 거절하며 FR-219 보조 표시와 게임 인수는 남는다.
+검증: 집중 19 통과/1 skip(링크 생성 권한), 실제 MPQ 왕복 2개 포함,
+전체 2,284 통과/72 조건부 skip, analyze 무이슈, Windows Debug 빌드와
+native CTest 7/7. 전체 format은 기존 미수정 인프라 테스트 3개 차이로 exit 1이며
+변경 파일은 통과했다. 환경 Flutter 3.47.5/Dart 3.13.4로 기준 3.44.8/3.12와
+다르다. 실제 앱/게임/외부 에디터·clean Windows는 미실행이다.
 
 ### EP5. 언어·소스
 

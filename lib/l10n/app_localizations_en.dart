@@ -172,6 +172,33 @@ class AppLocalizationsEn extends AppLocalizations {
       'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
 
   @override
+  String get brushLibrary => 'Terrain brushes';
+
+  @override
+  String get brushName => 'Brush name';
+
+  @override
+  String get brushSave => 'Save brush';
+
+  @override
+  String get brushReload => 'Reload brushes';
+
+  @override
+  String get brushDelete => 'Delete brush';
+
+  @override
+  String get brushDeleteTitle => 'Delete this saved brush?';
+
+  @override
+  String get brushMirrorX => 'Mirror left/right';
+
+  @override
+  String get brushMirrorY => 'Mirror top/bottom';
+
+  @override
+  String get brushRejected => 'The brush operation was rejected.';
+
+  @override
   String get recoveryTitle => 'Recover Unsaved Work';
 
   @override

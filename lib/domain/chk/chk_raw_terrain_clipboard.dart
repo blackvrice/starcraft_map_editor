@@ -6,6 +6,21 @@ import 'raw_chk_document.dart';
 /// Doodad maps are excluded until a composite footprint is explicitly verified.
 class ChkRawTerrainClipboard {
   ChkRawTerrainClipboard._(this.width, this.height, this.values);
+  factory ChkRawTerrainClipboard.fromValues({
+    required int width,
+    required int height,
+    required List<int> values,
+  }) {
+    if (width < 1 ||
+        width > 256 ||
+        height < 1 ||
+        height > 256 ||
+        values.length != width * height ||
+        values.any((v) => v < 0 || v > 65535)) {
+      throw const FormatException('BRUSH_RAW_GRID');
+    }
+    return ChkRawTerrainClipboard._(width, height, List.unmodifiable(values));
+  }
   final int width, height;
   final List<int> values;
   static ByteData _grid(RawChkDocument doc) {

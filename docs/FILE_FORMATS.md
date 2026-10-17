@@ -638,6 +638,13 @@ recipe·명시적 overlay를 검증한다. 새 문자열을 정규화하지 않�
 반환하며 이전 revision은 거절한다. 원시 자산은 저장/배포하지 않는다.
 [설정 계약](SETTINGS_TRIGGER_EDITING.md)과 [EUD 보완](EUD_COMPLETION.md)을 따른다.
 
+## 사용자 브러시 Metadata (2026-10-17)
+
+[schema v1과 지원표](USER_TERRAIN_BRUSHES.md)는 게임 원시 자산/전체 CHK가 아닌
+제한된 raw MTXM 값 또는 상대 ISOM diamond와 catalog revision만 저장한다.
+raw는 TILE/ISOM을 정규화하지 않고, ISOM은 기존 solver로 TILE/MTXM을 재생성한다.
+원본 맵은 저장하지 않으며 맵 출력은 기존 Save As 검증 경로를 사용한다.
+
 ## ISOM 전환·수직 적층 재계산 (2026-10-01)
 
 File → 등각 지형 채우기의 기존 ISOM 재계산 모드는 전환 연결표·수직 적층의 공통 member 경로로 TILE/MTXM을 함께 변경하고 ISOM/플래그·객체/리소스를 보존한다. 한영 UI·읽기 전용 미리보기·공통 Undo/Redo와 무변경 거부 범위는 [계약](ISOM_TRANSITIONS.md)을 따른다. 새 경계/높이/경사로 브러시는 [후속 구현](ISOM_BRUSHES.md)에서 제공한다. 실제 게임 인수는 별도다.

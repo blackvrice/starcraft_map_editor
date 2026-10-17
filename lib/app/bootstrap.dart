@@ -46,6 +46,8 @@ import '../infrastructure/filesystem/local_map_save_file_gateway.dart';
 import '../infrastructure/filesystem/method_channel_directory_picker.dart';
 import '../infrastructure/filesystem/method_channel_map_file_picker.dart';
 import '../infrastructure/settings/json_file_settings_store.dart';
+import '../application/terrain/terrain_brush_library.dart';
+import '../infrastructure/filesystem/local_terrain_brush_store.dart';
 import '../presentation/map_canvas/terrain_tile_texture_controller.dart';
 import '../presentation/map_canvas/object_sprite_texture_controller.dart';
 import 'app.dart';
@@ -56,6 +58,9 @@ void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
 
   final settingsStore = JsonFileSettingsStore.forCurrentUser();
+  final brushLibrary = TerrainBrushLibrary(
+    LocalTerrainBrushStore.forCurrentUser(),
+  );
   final languageController = AppLanguageController(store: settingsStore);
   final eudToolInspector = BundledEudTool.inspector();
   final eudToolSettingsController = EudToolSettingsController(
@@ -239,6 +244,7 @@ void bootstrap() {
       operationProgressController: operationProgressController,
       recentProjectsService: recentProjectsService,
       settingsStore: settingsStore,
+      brushLibrary: brushLibrary,
       starCraftDataAssetSettingsController:
           starCraftDataAssetSettingsController,
       isomFillController: IsomFillController(
