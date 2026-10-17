@@ -1,5 +1,9 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-17 [문서 간 참조 복사](DOCUMENT_TRANSFER.md)는 지원된 원시 문자열을 새
+ID로 batch append하며 기존 alias·trailing payload·ID를 보존한다. 일반 참조만
+폐쇄적으로 이식하고 unknown/EUDX/예약 트리거를 추측 변환하지 않는다.
+
 2026-10-16 [수집용 임시 맵 준비](UNIT_CREEP_MAP_PREPARATION.md)는 기존 MPQ helper를
 재사용해 현재 raw CHK·WAV overlay를 임시 출력/재열기 검증한다. locale0·완전 이름 목록·
 canonical WAV만 지원하고 signed/non-WAV 자산 등 검증 불가능한 archive는 거절한다.

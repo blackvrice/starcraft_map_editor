@@ -270,6 +270,28 @@ class ObjectEditingController {
     required RawChkDocument expectedDocument,
     required RawChkDocument updatedDocument,
     Map<String, List<int>?>? resourceEdits,
+  }) => _applyResourcePatch(
+    expectedDocument: expectedDocument,
+    updatedDocument: updatedDocument,
+    resourceEdits: resourceEdits,
+  );
+
+  void applyDocumentTransfer({
+    required RawChkDocument expectedDocument,
+    required RawChkDocument updatedDocument,
+    required Map<String, List<int>?> resourceEdits,
+  }) => _applyResourcePatch(
+    expectedDocument: expectedDocument,
+    updatedDocument: updatedDocument,
+    resourceEdits: resourceEdits,
+    documentTransfer: true,
+  );
+
+  void _applyResourcePatch({
+    required RawChkDocument expectedDocument,
+    required RawChkDocument updatedDocument,
+    Map<String, List<int>?>? resourceEdits,
+    bool documentTransfer = false,
   }) {
     final session = openMapController.state.session;
     if (session == null ||
@@ -277,7 +299,8 @@ class ObjectEditingController {
         !identical(session.rawDocument, expectedDocument)) {
       throw StateError('Map changed. Reopen trigger resources.');
     }
-    const allowed = {
+    final allowed = {
+      if (documentTransfer) ...{'UNIT', 'THG2'},
       'STR ',
       'STRx',
       'SWNM',
@@ -313,7 +336,13 @@ class ObjectEditingController {
     for (var i = 0; i < updatedDocument.sections.length; i++) {
       final next = updatedDocument.sections[i];
       if (i >= expectedDocument.sections.length) {
-        if (!{'SWNM', 'UPRP', 'UPUS', 'WAV '}.contains(next.name) ||
+        if (!{
+              'SWNM',
+              'UPRP',
+              'UPUS',
+              'WAV ',
+              if (documentTransfer) ...{'UNIT', 'THG2', 'MBRF'},
+            }.contains(next.name) ||
             updatedDocument.sections.where((s) => s.name == next.name).length !=
                 1) {
           throw StateError('Unsupported appended resource.');
@@ -331,7 +360,9 @@ class ObjectEditingController {
     if (after.isEmpty && appended.isEmpty && resourceEdits == null) return;
     _applyAndRecord(
       _ObjectEditCommand(
-        label: 'Edit trigger resources',
+        label: documentTransfer
+            ? 'Copy from another map'
+            : 'Edit trigger resources',
         beforeResources: resourceEdits == null ? null : session.resourceEdits,
         afterResources: resourceEdits == null
             ? null

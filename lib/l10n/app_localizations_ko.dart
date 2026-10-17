@@ -9,6 +9,42 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get transferTitle => '맵 간 복사';
+
+  @override
+  String get transferSource => '원본 맵';
+
+  @override
+  String get transferTarget => '대상 맵';
+
+  @override
+  String get transferOffsetX => 'X 이동 (px)';
+
+  @override
+  String get transferOffsetY => 'Y 이동 (px)';
+
+  @override
+  String get transferSelectAll => '전체 선택';
+
+  @override
+  String get transferExclude => '제외';
+
+  @override
+  String get transferOwners => '플레이어 매핑';
+
+  @override
+  String get transferRemapping => 'ID 매핑';
+
+  @override
+  String get transferStrings => '문자열';
+
+  @override
+  String get transferSwitches => '스위치';
+
+  @override
+  String get transferProperties => '유닛 속성';
+
+  @override
   String get settingsDatDefaults => '로컬 DAT 기본값';
 
   @override

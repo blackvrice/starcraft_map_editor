@@ -1676,11 +1676,15 @@ class _EditorToolbar extends StatelessWidget {
               children: [
                 const Icon(Icons.grid_view_rounded, color: Color(0xFF70A1FF)),
                 const SizedBox(width: 10),
-                Text(
-                  l10n.appTitle,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                Flexible(
+                  child: Text(
+                    l10n.appTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 if (showEnvironmentBadge) ...[
@@ -1996,7 +2000,7 @@ class _EditorWorkspace extends StatelessWidget {
     final showRail =
         session != null || eudDocument != null || projectWorkspace != null;
 
-    return Row(
+    final content = Row(
       children: [
         if (showRail) ...[
           _WorkspaceRail(
@@ -2226,6 +2230,18 @@ class _EditorWorkspace extends StatelessWidget {
           ),
         ),
       ],
+    );
+    // Keep the tool surface usable when the two sidebars would squeeze the
+    // canvas to zero. The stable scroll wrapper also preserves drafts on resize.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: constraints.maxWidth < 1000 ? 1000 : constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: content,
+        ),
+      ),
     );
   }
 }

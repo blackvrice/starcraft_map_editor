@@ -139,24 +139,39 @@ final class ChkStringTableView {
   }
 
   ChkStringAppendResult withAddedRawString({required List<int> rawBytes}) {
+    final added = withAddedRawStrings(rawStrings: [rawBytes]);
+    return ChkStringAppendResult(
+      section: added.section,
+      stringId: added.stringIds.single,
+    );
+  }
+
+  ({RawChkSection section, List<int> stringIds}) withAddedRawStrings({
+    required List<List<int>> rawStrings,
+  }) {
     if (!canAppendSafely) {
       throw StateError(
         'Cannot edit a string table that has blocking diagnostics.',
       );
     }
-    _validateStringBytes(rawBytes);
+    for (final bytes in rawStrings) {
+      _validateStringBytes(bytes);
+    }
+    if (rawStrings.isEmpty) return (section: rawSection, stringIds: const []);
     final maximumCount = kind == ChkStringTableKind.legacy
         ? 0xffff
         : 0xffffffff;
-    if (declaredStringCount >= maximumCount) {
+    final count = declaredStringCount + rawStrings.length;
+    if (count > maximumCount) {
       throw RangeError('The string table has no remaining string IDs.');
     }
-    final addedStringId = declaredStringCount + 1;
-    final headerGrowth = kind.offsetFieldWidth;
+    final headerGrowth = kind.offsetFieldWidth * rawStrings.length;
     final originalPayload = rawSection.payload;
     final addedOffset = originalPayload.length + headerGrowth;
-    final updatedLength = addedOffset + rawBytes.length + 1;
-    if (addedOffset > kind.maximumOffset || updatedLength > 0xffffffff) {
+    final updatedLength =
+        addedOffset + rawStrings.fold<int>(0, (n, b) => n + b.length + 1);
+    final lastOffset = updatedLength - rawStrings.last.length - 1;
+    if (lastOffset > kind.maximumOffset || updatedLength > 0xffffffff) {
       throw RangeError('The updated string table exceeds its format limit.');
     }
 
@@ -169,7 +184,7 @@ final class ChkStringTableView {
     );
     final data = ByteData.sublistView(updatedPayload);
     if (kind == ChkStringTableKind.legacy) {
-      data.setUint16(0, addedStringId, Endian.little);
+      data.setUint16(0, count, Endian.little);
       for (final entry in entries) {
         final adjustedOffset = entry.rawOffset + headerGrowth;
         if (adjustedOffset > kind.maximumOffset) {
@@ -181,13 +196,8 @@ final class ChkStringTableView {
           Endian.little,
         );
       }
-      data.setUint16(
-        kind.countFieldWidth + (addedStringId - 1) * kind.offsetFieldWidth,
-        addedOffset,
-        Endian.little,
-      );
     } else {
-      data.setUint32(0, addedStringId, Endian.little);
+      data.setUint32(0, count, Endian.little);
       for (final entry in entries) {
         data.setUint32(
           kind.countFieldWidth + (entry.stringId - 1) * kind.offsetFieldWidth,
@@ -195,17 +205,24 @@ final class ChkStringTableView {
           Endian.little,
         );
       }
-      data.setUint32(
-        kind.countFieldWidth + (addedStringId - 1) * kind.offsetFieldWidth,
-        addedOffset,
-        Endian.little,
-      );
     }
-    updatedPayload.setAll(addedOffset, rawBytes);
-    updatedPayload[updatedPayload.length - 1] = 0;
-    return ChkStringAppendResult(
+    var at = addedOffset;
+    final ids = <int>[];
+    for (var i = 0; i < rawStrings.length; i++) {
+      final id = declaredStringCount + i + 1;
+      final offset = kind.countFieldWidth + (id - 1) * kind.offsetFieldWidth;
+      if (kind == ChkStringTableKind.legacy) {
+        data.setUint16(offset, at, Endian.little);
+      } else {
+        data.setUint32(offset, at, Endian.little);
+      }
+      updatedPayload.setAll(at, rawStrings[i]);
+      at += rawStrings[i].length + 1;
+      ids.add(id);
+    }
+    return (
       section: rawSection.withPayload(updatedPayload),
-      stringId: addedStringId,
+      stringIds: List<int>.unmodifiable(ids),
     );
   }
 }

@@ -12,6 +12,8 @@ import '../presentation/documents/recovery_dialog.dart';
 import '../presentation/localization/l10n.dart';
 import '../presentation/shell/editor_shell.dart';
 import 'app.dart';
+import '../application/editing/document_transfer_controller.dart';
+import '../presentation/documents/document_transfer_dialog.dart';
 
 enum _CloseChoice { cancel, save, discard }
 
@@ -132,6 +134,31 @@ class _DocumentWorkspaceHostState extends State<DocumentWorkspaceHost>
       }
     } finally {
       if (!published) await workspace.abandon(d);
+    }
+  });
+
+  Future<void> _transfer() => _run(() async {
+    final workspace = widget.workspace, source = workspace.active;
+    if (source == null || source.maps.state.session == null) return;
+    final controller = DocumentTransferController(
+      workspace: workspace,
+      access: (d) => DocumentTransferAccess(
+        d.value.mapLayerController,
+        d.value.objectEditingController,
+      ),
+    );
+    try {
+      final target = await showDialog<String>(
+        context: context,
+        builder: (_) => DocumentTransferDialog(
+          controller: controller,
+          nameOf: _name,
+          initialSource: source,
+        ),
+      );
+      if (target != null && mounted) workspace.activate(target);
+    } finally {
+      controller.dispose();
     }
   });
 
@@ -401,6 +428,20 @@ class _DocumentWorkspaceHostState extends State<DocumentWorkspaceHost>
                         ],
                       ),
                     ),
+                  ),
+                  IconButton(
+                    key: const Key('workspace-transfer'),
+                    tooltip: l.transferTitle,
+                    onPressed:
+                        _closing ||
+                            w.active?.maps.state.session == null ||
+                            docs
+                                    .where((d) => d.maps.state.session != null)
+                                    .length <
+                                2
+                        ? null
+                        : _transfer,
+                    icon: const Icon(Icons.copy_all),
                   ),
                   IconButton(
                     key: const Key('workspace-new'),

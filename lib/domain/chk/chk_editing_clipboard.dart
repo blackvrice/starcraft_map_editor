@@ -138,7 +138,14 @@ class ChkEditingClipboard {
     }
   }
 
-  RawChkDocument paste(RawChkDocument doc, {required int x, required int y}) {
+  RawChkDocument paste(
+    RawChkDocument doc, {
+    required int x,
+    required int y,
+    Map<int, int> locationStrings = const {},
+    Map<int, int> owners = const {},
+    Set<int> reservedLocations = const {},
+  }) {
     const e = ChkBasicEditing();
     final (w, h) = e.dimensions(doc);
     final dx = x - anchorX, dy = y - anchorY;
@@ -173,6 +180,12 @@ class ChkEditingClipboard {
         final record = Uint8List.fromList(entry.value[i]),
             d = ByteData.sublistView(record);
         if (entry.key == 'MRGN') {
+          final name = d.getUint16(16, Endian.little);
+          if (locationStrings.containsKey(name)) {
+            final mapped = locationStrings[name]!;
+            RangeError.checkValueInInterval(mapped, 0, 65535, 'location name');
+            d.setUint16(16, mapped, Endian.little);
+          }
           _checkLocationString(doc, d);
           for (final at in [0, 8]) {
             final value = d.getUint32(at, Endian.little) + dx;
@@ -185,6 +198,13 @@ class ChkEditingClipboard {
             d.setUint32(at, value, Endian.little);
           }
         } else {
+          final ownerAt = entry.key == 'UNIT' ? 16 : 6;
+          final oldOwner = d.getUint8(ownerAt);
+          if (owners.containsKey(oldOwner)) {
+            final mapped = owners[oldOwner]!;
+            RangeError.checkValueInInterval(mapped, 0, 11, 'owner');
+            d.setUint8(ownerAt, mapped);
+          }
           final at = entry.key == 'UNIT' ? 4 : 2;
           final nx = d.getUint16(at, Endian.little) + dx,
               ny = d.getUint16(at + 2, Endian.little) + dy;
@@ -207,6 +227,7 @@ class ChkEditingClipboard {
         final slots = [
           for (var k = 0; k < bytes.length ~/ 20; k++)
             if (k != 63 &&
+                !reservedLocations.contains(k + 1) &&
                 bytes.sublist(k * 20, k * 20 + 20).every((v) => v == 0))
               k,
         ];

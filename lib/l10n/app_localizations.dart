@@ -98,6 +98,78 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @transferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy between maps'**
+  String get transferTitle;
+
+  /// No description provided for @transferSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source map'**
+  String get transferSource;
+
+  /// No description provided for @transferTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target map'**
+  String get transferTarget;
+
+  /// No description provided for @transferOffsetX.
+  ///
+  /// In en, this message translates to:
+  /// **'X offset (px)'**
+  String get transferOffsetX;
+
+  /// No description provided for @transferOffsetY.
+  ///
+  /// In en, this message translates to:
+  /// **'Y offset (px)'**
+  String get transferOffsetY;
+
+  /// No description provided for @transferSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get transferSelectAll;
+
+  /// No description provided for @transferExclude.
+  ///
+  /// In en, this message translates to:
+  /// **'Exclude'**
+  String get transferExclude;
+
+  /// No description provided for @transferOwners.
+  ///
+  /// In en, this message translates to:
+  /// **'Player mapping'**
+  String get transferOwners;
+
+  /// No description provided for @transferRemapping.
+  ///
+  /// In en, this message translates to:
+  /// **'ID mapping'**
+  String get transferRemapping;
+
+  /// No description provided for @transferStrings.
+  ///
+  /// In en, this message translates to:
+  /// **'Strings'**
+  String get transferStrings;
+
+  /// No description provided for @transferSwitches.
+  ///
+  /// In en, this message translates to:
+  /// **'Switches'**
+  String get transferSwitches;
+
+  /// No description provided for @transferProperties.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit properties'**
+  String get transferProperties;
+
   /// No description provided for @settingsDatDefaults.
   ///
   /// In en, this message translates to:

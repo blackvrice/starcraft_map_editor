@@ -1,5 +1,9 @@
 # 아키텍처
 
+2026-10-17 [맵 간 참조 복사](DOCUMENT_TRANSFER.md)는 domain의 불변 closure/계획과
+application의 두 문서 session·레이어·사운드 조회 검사를 분리한다. CHK와 사운드
+snapshot을 기존 자원 명령의 한 Undo로 적용하며 UI가 아카이브를 읽지 않는다.
+
 2026-10-16 [여러 맵](MULTI_MAP_WORKSPACE.md)은 `DocumentWorkspaceController`가
 stable ID와 문서별 controller 묶음을 소유한다. bootstrap은 맵마다 controller를
 생성하고 keyed Stack/Offstage로 초안/카메라 State를 유지한다. 저장/EUD 출력과

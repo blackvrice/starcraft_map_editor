@@ -1382,7 +1382,8 @@ analyze 무이슈·Windows Debug/native7종을 확인했다. 알림의 snapshot 
 - [x] EP3a: 다수 두다드+객체+raw/ISOM 혼합 clipboard의 지원표·참조/경계 검증
 - [x] EP3a: 부분 footprint/overlay 거절·원자 적용/Undo·PAR-08 자동 회귀 범위
 - [x] EP3b: workspace/중복 열기/저장·복구 경로 ADR와 문서별 상태·요청 수명 분리
-- [ ] EP3b: 참조 closure·ID/리소스 재매핑 preview와 target revision 재검증·PAR-09/10
+- [x] EP3b: 참조 closure·ID/리소스 재매핑 preview와 target revision 재검증·PAR-09/10 자동 회귀 (일반 객체/트리거 지원 프로필)
+- [ ] EP3b: DD2/지형 문서 간 전송 프로필 확대·PAR-09/10 실제 앱/게임/외부 인수
 
 2026-10-16 EP3a는 [혼합 영역 복사](MIXED_REGION_CLIPBOARD.md)로 구현했다.
 raw MTXM/TILE 독립 복사와 ISOM 내부의 완전한 diamond+경계 재계산을 구분한다.
@@ -1395,6 +1396,13 @@ SC:R PAR-08 인수는 미실행이며 자동 테스트 통과와 구분한다. E
 분리하고 실제 파일 중복 열기·입출력 path lease·새 문서 복구·닫기/종료 revision을
 검사한다. 자동 검증과 수동 앱/RSS/게임 인수는 구분한다. EP3b의 FR-222 문서 간
 참조 재매핑 복사는 여전히 다음 미완료 코드 항목이다.
+
+2026-10-17 [맵 간 복사](DOCUMENT_TRANSFER.md)를 구현했다. 선택 UNIT/Sprite와
+위치·일반 TRIG/MBRF의 문자열/위치/스위치/UPRP/PCM 사운드 closure를 새 ID로
+매핑한다. 대상의 참조 중인 빈 위치와 경로 충돌을 보호하고 전체를 한 Undo로
+적용한다. 실제 MPQ/사운드 왕복과 600/1200px 자동 회귀를 추가했다. 원시/EUD
+트리거·두다드/지형 전송은 미지원이며 실제 게임 인수로 간주하지 않는다.
+전체 잔여 요청의 코드/인수 구분과 순서는 [완료 추적표](COMPLETION_TRACKER.md)를 따른다.
 
 ### EP4. 지형·보조 표시
 

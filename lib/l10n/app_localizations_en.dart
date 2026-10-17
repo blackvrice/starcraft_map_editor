@@ -9,6 +9,42 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get transferTitle => 'Copy between maps';
+
+  @override
+  String get transferSource => 'Source map';
+
+  @override
+  String get transferTarget => 'Target map';
+
+  @override
+  String get transferOffsetX => 'X offset (px)';
+
+  @override
+  String get transferOffsetY => 'Y offset (px)';
+
+  @override
+  String get transferSelectAll => 'Select all';
+
+  @override
+  String get transferExclude => 'Exclude';
+
+  @override
+  String get transferOwners => 'Player mapping';
+
+  @override
+  String get transferRemapping => 'ID mapping';
+
+  @override
+  String get transferStrings => 'Strings';
+
+  @override
+  String get transferSwitches => 'Switches';
+
+  @override
+  String get transferProperties => 'Unit properties';
+
+  @override
   String get settingsDatDefaults => 'Local DAT defaults';
 
   @override

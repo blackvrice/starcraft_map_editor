@@ -53,11 +53,13 @@ class MultiMapFixture {
     MapFileFingerprintGateway? fingerprints,
     MapSaveFileGateway? files,
     RecoveryStore? recovery,
+    MapResourceGateway? resourceGateway,
   }) {
     archives = archive ?? fakeArchive;
     hashes = fingerprints ?? _Fingerprints();
     saveFiles = files ?? paths;
     store = recovery ?? memoryRecovery;
+    resourceFiles = resourceGateway ?? resources;
     workspace = DocumentWorkspaceController(
       createDocument: _create,
       filePicker: picker,
@@ -78,6 +80,7 @@ class MultiMapFixture {
   late final MapFileFingerprintGateway hashes;
   late final MapSaveFileGateway saveFiles;
   late final RecoveryStore store;
+  late final MapResourceGateway resourceFiles;
   late final DocumentWorkspaceController<EditorAppDependencies> workspace;
   late final assets = StarCraftDataAssetSettingsController(
     settingsStore: settings,
@@ -148,7 +151,7 @@ class MultiMapFixture {
     final layers = MapLayerController(),
         terrain = TerrainEditingController(openMapController: maps);
     final editing = ObjectEditingController(
-      resourceGateway: resources,
+      resourceGateway: resourceFiles,
       openMapController: maps,
       mapLayerController: layers,
     );
