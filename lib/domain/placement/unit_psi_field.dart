@@ -20,6 +20,23 @@ abstract final class UnitPsiField {
     (5, 10),
   ];
 
+  /// Half-open integer pixel strips equivalent to containsPoint, including its
+  /// strict negative extent. Rendering must not replace these with an ellipse.
+  static Iterable<({int left, int top, int right, int bottom})>
+  get strips sync* {
+    for (var i = 0; i < _rows.length; i++) {
+      final row = _rows[i];
+      final left = row.$1 * tilePixels - horizontalExtent;
+      final top = i * tilePixels - verticalExtent;
+      yield (
+        left: left == -horizontalExtent ? left + 1 : left,
+        top: top == -verticalExtent ? top + 1 : top,
+        right: (row.$2 + 1) * tilePixels - horizontalExtent,
+        bottom: (i + 1) * tilePixels - verticalExtent,
+      );
+    }
+  }
+
   static bool containsPoint({
     required int x,
     required int y,

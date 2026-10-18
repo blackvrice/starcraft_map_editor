@@ -9,6 +9,31 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get overlayBaseRanges => 'DAT base ranges';
+
+  @override
+  String get overlayLayoutPower => 'Preplaced power layout';
+
+  @override
+  String get overlayBaseOnly =>
+      'Static local DAT geometry; upgrades, map/EUD overrides and terrain visibility are not included.';
+
+  @override
+  String get overlayRangeLegend =>
+      'Selected units: yellow sight, red ground, cyan air; thin inner ring = minimum range';
+
+  @override
+  String get overlayLayoutOnly =>
+      'Design model: regular preplaced Pylons are assumed complete and enabled. Green = point coverage, red = outside, gray = unknown. Not observed game power.';
+
+  @override
+  String get overlayProviders => 'Verified layout Pylons';
+
+  @override
+  String get overlayBudget =>
+      'Display budget exceeded: at most 64 selected units and 512 range rings.';
+
+  @override
   String get transferRegionTitle => 'Copy mixed region between maps';
 
   @override

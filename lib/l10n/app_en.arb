@@ -1,4 +1,11 @@
 {
+  "overlayBaseRanges": "DAT base ranges",
+  "overlayLayoutPower": "Preplaced power layout",
+  "overlayBaseOnly": "Static local DAT geometry; upgrades, map/EUD overrides and terrain visibility are not included.",
+  "overlayRangeLegend": "Selected units: yellow sight, red ground, cyan air; thin inner ring = minimum range",
+  "overlayLayoutOnly": "Design model: regular preplaced Pylons are assumed complete and enabled. Green = point coverage, red = outside, gray = unknown. Not observed game power.",
+  "overlayProviders": "Verified layout Pylons",
+  "overlayBudget": "Display budget exceeded: at most 64 selected units and 512 range rings.",
   "transferRegionTitle": "Copy mixed region between maps",
   "transferTitle": "Copy between maps",
   "transferSource": "Source map",

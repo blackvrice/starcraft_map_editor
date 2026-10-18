@@ -86,8 +86,44 @@ final class UnitPowerCatalog {
           mapWidth: mapWidthTiles,
           mapHeight: mapHeightTiles,
         );
-    var powered = false;
+    final field = project(
+      owner: owner,
+      mapWidthTiles: mapWidthTiles,
+      mapHeightTiles: mapHeightTiles,
+      existing: existing,
+    );
+    if (field.failure == UnitPowerCheck.unavailable) {
+      return UnitPowerCheck.unavailable;
+    }
+    if (unsupported || field.failure == UnitPowerCheck.stateUnsupported) {
+      return UnitPowerCheck.stateUnsupported;
+    }
+    if (outside || field.failure == UnitPowerCheck.outOfBounds) {
+      return UnitPowerCheck.outOfBounds;
+    }
+    return field.containsPoint(x, y) == true
+        ? UnitPowerCheck.powered
+        : UnitPowerCheck.unpowered;
+  }
+
+  /// Validates suppliers once, independently of any proposed building. Both
+  /// placement checks and the read-only field use this same fail-closed scan.
+  UnitPowerField project({
+    required int owner,
+    required int mapWidthTiles,
+    required int mapHeightTiles,
+    required Iterable<UnitPowerUnitState> existing,
+  }) {
+    if (mapWidthTiles < 1 ||
+        mapWidthTiles > 256 ||
+        mapHeightTiles < 1 ||
+        mapHeightTiles > 256) {
+      return UnitPowerField._(UnitPowerCheck.unavailable, const []);
+    }
+    var unsupported = owner < 0 || owner > 7;
+    var outside = false;
     var unavailable = false;
+    final providers = <({int x, int y})>[];
     // A known supplier must not hide a later unknown or unsupported one.
     for (final state in existing) {
       final unit = state.unit;
@@ -153,18 +189,35 @@ final class UnitPowerCatalog {
         outside = true;
         continue;
       }
-      if (UnitPsiField.containsPoint(
-        x: x,
-        y: y,
-        providerX: unit.x,
-        providerY: unit.y,
-      )) {
-        powered = true;
-      }
+      providers.add((x: unit.x, y: unit.y));
     }
-    if (unavailable) return UnitPowerCheck.unavailable;
-    if (unsupported) return UnitPowerCheck.stateUnsupported;
-    if (outside) return UnitPowerCheck.outOfBounds;
-    return powered ? UnitPowerCheck.powered : UnitPowerCheck.unpowered;
+    return UnitPowerField._(
+      unavailable
+          ? UnitPowerCheck.unavailable
+          : unsupported
+          ? UnitPowerCheck.stateUnsupported
+          : outside
+          ? UnitPowerCheck.outOfBounds
+          : null,
+      providers,
+    );
   }
+}
+
+final class UnitPowerField {
+  UnitPowerField._(this.failure, List<({int x, int y})> providers)
+    : providers = List.unmodifiable(providers);
+  final UnitPowerCheck? failure;
+  final List<({int x, int y})> providers;
+
+  bool? containsPoint(int x, int y) => failure != null
+      ? null
+      : providers.any(
+          (p) => UnitPsiField.containsPoint(
+            x: x,
+            y: y,
+            providerX: p.x,
+            providerY: p.y,
+          ),
+        );
 }

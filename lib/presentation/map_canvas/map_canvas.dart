@@ -11,6 +11,9 @@ import '../../application/ports/starcraft_object_atlas_gateway.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../../domain/terrain/terrain_analysis_view.dart';
+import '../../domain/placement/unit_range_projection.dart';
+import '../../domain/placement/unit_power_catalog.dart';
+import '../../domain/placement/unit_psi_field.dart';
 import '../localization/l10n.dart';
 import 'object_sprite_texture.dart';
 import 'object_sprite_texture_controller.dart';
@@ -67,6 +70,9 @@ class MapCanvas extends StatefulWidget {
     this.analysisView,
     this.analysisMode = TerrainAnalysisMode.off,
     this.distanceMeasurement,
+    this.rangeProjection,
+    this.powerField,
+    this.showLayoutPower = false,
     this.terrainTextureState = const TerrainTileTextureState.idle(),
     this.objectSpriteTextureState = const ObjectSpriteTextureState.idle(),
     this.editingTool = TerrainEditingTool.select,
@@ -108,6 +114,9 @@ class MapCanvas extends StatefulWidget {
   final TerrainAnalysisView? analysisView;
   final TerrainAnalysisMode analysisMode;
   final MapDistanceMeasurement? distanceMeasurement;
+  final UnitRangeProjection? rangeProjection;
+  final UnitPowerField? powerField;
+  final bool showLayoutPower;
   final List<int>? fogValues;
   final int? fogPlayer;
   final TerrainTileTextureState terrainTextureState;
@@ -329,6 +338,9 @@ class _MapCanvasState extends State<MapCanvas> {
                               rawTileValues: terrainValues,
                               analysisView: widget.analysisView,
                               analysisMode: widget.analysisMode,
+                              rangeProjection: widget.rangeProjection,
+                              powerField: widget.powerField,
+                              showLayoutPower: widget.showLayoutPower,
                               distanceMeasurement: widget.distanceMeasurement,
                               terrainTextures:
                                   widget.terrainTextureState.textures,
@@ -1505,6 +1517,9 @@ class MapCanvasPainter extends CustomPainter {
     this.analysisView,
     this.analysisMode = TerrainAnalysisMode.off,
     this.distanceMeasurement,
+    this.rangeProjection,
+    this.powerField,
+    this.showLayoutPower = false,
     this.terrainTextures = const {},
     this.unsupportedRawValues = const [],
     this.objectTextures = const {},
@@ -1555,6 +1570,9 @@ class MapCanvasPainter extends CustomPainter {
   ];
 
   final MapCanvasLayout layout;
+  final UnitRangeProjection? rangeProjection;
+  final UnitPowerField? powerField;
+  final bool showLayoutPower;
   final TerrainAnalysisView? analysisView;
   final TerrainAnalysisMode analysisMode;
   final MapDistanceMeasurement? distanceMeasurement;
@@ -1606,8 +1624,10 @@ class MapCanvasPainter extends CustomPainter {
       canvas.drawRect(mapRect, Paint()..color = mapBackground);
       _paintTerrain(canvas, counters);
       analysisCounts = _paintAnalysis(canvas);
+      _paintPowerField(canvas);
       _paintGrid(canvas);
       _paintObjectLayers(canvas, counters);
+      _paintRanges(canvas);
       _paintFog(canvas);
       _paintEditOverlay(canvas);
       canvas.drawRect(
@@ -1643,6 +1663,66 @@ class MapCanvasPainter extends CustomPainter {
         );
       }
     }
+  }
+
+  void _paintRanges(Canvas canvas) {
+    final rings = rangeProjection?.rings;
+    if (rings == null || rings.isEmpty) return;
+    final scale = layout.tileExtent / 32;
+    canvas.save();
+    canvas.clipRect(layout.mapRect);
+    for (final ring in rings) {
+      final center =
+          layout.mapRect.topLeft + Offset(ring.x * scale, ring.y * scale);
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = switch (ring.kind) {
+          UnitRangeKind.sight => const Color(0xFFF8D76A),
+          UnitRangeKind.ground => const Color(0xFFEF6470),
+          UnitRangeKind.air => const Color(0xFF58CFE8),
+        };
+      if (!(Rect.fromCircle(
+        center: center,
+        radius: ring.maximum * scale,
+      ).overlaps(Offset.zero & layout.viewportSize))) {
+        continue;
+      }
+      canvas.drawCircle(center, ring.maximum * scale, paint);
+      if (ring.minimum > 0) {
+        paint.strokeWidth = 1;
+        canvas.drawCircle(center, ring.minimum * scale, paint);
+      }
+    }
+    canvas.restore();
+  }
+
+  void _paintPowerField(Canvas canvas) {
+    if (!showLayoutPower) return;
+    canvas.save();
+    canvas.clipRect(layout.mapRect);
+    final field = powerField;
+    if (field == null || field.failure != null) {
+      canvas.drawRect(layout.mapRect, Paint()..color = const Color(0x667D8796));
+    } else {
+      canvas.drawRect(layout.mapRect, Paint()..color = const Color(0x33EF6470));
+      final scale = layout.tileExtent / 32, path = Path();
+      for (final provider in field.providers) {
+        for (final strip in UnitPsiField.strips) {
+          final rect = Rect.fromLTRB(
+            layout.mapRect.left + (provider.x + strip.left) * scale,
+            layout.mapRect.top + (provider.y + strip.top) * scale,
+            layout.mapRect.left + (provider.x + strip.right) * scale,
+            layout.mapRect.top + (provider.y + strip.bottom) * scale,
+          );
+          if (rect.overlaps(Offset.zero & layout.viewportSize)) {
+            path.addRect(rect);
+          }
+        }
+      }
+      canvas.drawPath(path, Paint()..color = const Color(0x9944B888));
+    }
+    canvas.restore();
   }
 
   (int, int) _paintAnalysis(Canvas canvas) {
@@ -2215,6 +2295,9 @@ class MapCanvasPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant MapCanvasPainter oldDelegate) {
     return !identical(oldDelegate.analysisView, analysisView) ||
+        !identical(oldDelegate.rangeProjection, rangeProjection) ||
+        !identical(oldDelegate.powerField, powerField) ||
+        oldDelegate.showLayoutPower != showLayoutPower ||
         oldDelegate.analysisMode != analysisMode ||
         oldDelegate.distanceMeasurement != distanceMeasurement ||
         oldDelegate.layout.viewportSize != layout.viewportSize ||

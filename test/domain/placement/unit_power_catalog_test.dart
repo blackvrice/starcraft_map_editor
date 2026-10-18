@@ -8,12 +8,87 @@ import 'package:starcraft_map_editor/domain/placement/unit_environment_profile.d
 import 'package:starcraft_map_editor/domain/placement/unit_placement_capability.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_power_catalog.dart';
 import 'package:starcraft_map_editor/domain/placement/unit_power_unit_state.dart';
+import 'package:starcraft_map_editor/domain/placement/unit_psi_field.dart';
 
 void main() {
   final candidate = _cap(160);
   final pylon = _cap(156, psi: false, width: 64, height: 64);
   final catalog = UnitPowerCatalog({160: candidate, 156: pylon});
   final active = _state();
+  test(
+    'projected field matches placement geometry and suppliers are immutable',
+    () {
+      final field = catalog.project(
+        owner: 0,
+        mapWidthTiles: 64,
+        mapHeightTiles: 64,
+        existing: [active],
+      );
+      expect(field.failure, isNull);
+      expect(field.providers, [(x: 1024, y: 1024)]);
+      expect(() => field.providers.clear(), throwsUnsupportedError);
+      for (var dx = -257; dx <= 257; dx++) {
+        for (var dy = -161; dy <= 161; dy++) {
+          final actual = field.containsPoint(1024 + dx, 1024 + dy);
+          final strips = UnitPsiField.strips.any(
+            (s) => dx >= s.left && dx < s.right && dy >= s.top && dy < s.bottom,
+          );
+          if (actual != strips) fail('Strip mismatch at $dx,$dy');
+        }
+      }
+    },
+  );
+  test('field projection retains unknown/unsupported/bounds priority', () {
+    for (final (states, expected) in [
+      ([active, _state(id: 300)], UnitPowerCheck.unavailable),
+      ([active, _state(flags: 8)], UnitPowerCheck.stateUnsupported),
+      ([active, _state(x: 0)], UnitPowerCheck.outOfBounds),
+    ]) {
+      final field = catalog.project(
+        owner: 0,
+        mapWidthTiles: 64,
+        mapHeightTiles: 64,
+        existing: states,
+      );
+      expect(field.failure, expected);
+      expect(field.containsPoint(1024, 1024), isNull);
+    }
+  });
+  test(
+    'field projection validates owner/dimensions and handles empty supply',
+    () {
+      expect(
+        catalog
+            .project(
+              owner: 8,
+              mapWidthTiles: 64,
+              mapHeightTiles: 64,
+              existing: [],
+            )
+            .failure,
+        UnitPowerCheck.stateUnsupported,
+      );
+      expect(
+        catalog
+            .project(
+              owner: 0,
+              mapWidthTiles: 0,
+              mapHeightTiles: 64,
+              existing: [],
+            )
+            .failure,
+        UnitPowerCheck.unavailable,
+      );
+      final empty = catalog.project(
+        owner: 0,
+        mapWidthTiles: 64,
+        mapHeightTiles: 64,
+        existing: [],
+      );
+      expect(empty.failure, isNull);
+      expect(empty.containsPoint(1024, 1024), isFalse);
+    },
+  );
   test(
     'explicit active same-owner Pylon supplies; empty snapshot does not',
     () {

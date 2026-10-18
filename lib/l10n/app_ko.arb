@@ -1,4 +1,11 @@
 {
+  "overlayBaseRanges": "DAT 기본 사거리·시야",
+  "overlayLayoutPower": "배치 설계 전력",
+  "overlayBaseOnly": "로컬 DAT 기본 도형: 업그레이드, 맵·EUD 변경값, 지형에 따른 실제 시야는 반영하지 않습니다.",
+  "overlayRangeLegend": "선택 유닛: 노랑 시야, 빨강 지상, 청록 공중 · 가는 안쪽 원 = 최소 사거리",
+  "overlayLayoutOnly": "설계 모델: 일반 선배치 파이런은 완성·활성으로 가정합니다. 초록 = 좌표 공급 범위, 빨강 = 범위 밖, 회색 = 미확인. 실제 게임 전력이 아닙니다.",
+  "overlayProviders": "검증된 설계 파이런",
+  "overlayBudget": "표시 예산 초과: 선택 유닛 최대 64개, 사거리 원 최대 512개입니다.",
   "transferRegionTitle": "맵 간 혼합 영역 복사",
   "transferTitle": "맵 간 복사",
   "transferSource": "원본 맵",

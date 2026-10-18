@@ -9,6 +9,30 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get overlayBaseRanges => 'DAT 기본 사거리·시야';
+
+  @override
+  String get overlayLayoutPower => '배치 설계 전력';
+
+  @override
+  String get overlayBaseOnly =>
+      '로컬 DAT 기본 도형: 업그레이드, 맵·EUD 변경값, 지형에 따른 실제 시야는 반영하지 않습니다.';
+
+  @override
+  String get overlayRangeLegend =>
+      '선택 유닛: 노랑 시야, 빨강 지상, 청록 공중 · 가는 안쪽 원 = 최소 사거리';
+
+  @override
+  String get overlayLayoutOnly =>
+      '설계 모델: 일반 선배치 파이런은 완성·활성으로 가정합니다. 초록 = 좌표 공급 범위, 빨강 = 범위 밖, 회색 = 미확인. 실제 게임 전력이 아닙니다.';
+
+  @override
+  String get overlayProviders => '검증된 설계 파이런';
+
+  @override
+  String get overlayBudget => '표시 예산 초과: 선택 유닛 최대 64개, 사거리 원 최대 512개입니다.';
+
+  @override
   String get transferRegionTitle => '맵 간 혼합 영역 복사';
 
   @override

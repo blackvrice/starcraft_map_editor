@@ -21,6 +21,10 @@ import '../triggers/trigger_pane.dart';
 import '../settings/eud_tool_settings_dialog.dart';
 import '../settings/eud_build_preparation_dialog.dart';
 import 'dart:async';
+import '../../application/terrain/editor_overlay_controller.dart';
+import '../../domain/terrain/terrain_analysis_view.dart';
+import '../map_canvas/editor_overlay_host.dart';
+import '../map_canvas/editor_overlay_toolbar.dart';
 import '../placement/doodad_delete_dialog.dart';
 import '../../application/ports/starcraft_placement_catalog_gateway.dart';
 
@@ -2686,24 +2690,28 @@ class _MapWorkspace extends StatelessWidget {
       );
     }
     if (session != null) {
-      return _OpenedMapWorkspace(
-        onEditTerrain: onEditTerrain,
-        session: session,
-        selectionNavigation: selectionNavigation,
-        navigationTarget: navigationTarget,
-        selectionInteractionRevision: selectionInteractionRevision,
-        diagnostics: [
-          ...session.diagnostics,
-          ...terrainTileTextureState.diagnostics,
-          ...objectSpriteTextureState.diagnostics,
-        ],
-        terrainEditingController: terrainEditingController,
-        mapLayerController: mapLayerController,
-        objectEditingController: objectEditingController,
-        objectPaletteController: objectPaletteController,
-        placementCatalogController: placementCatalogController,
-        terrainTileTextureState: terrainTileTextureState,
-        objectSpriteTextureState: objectSpriteTextureState,
+      return EditorOverlayHost(
+        catalog: placementCatalogController,
+        builder: (context, overlays) => _OpenedMapWorkspace(
+          overlays: overlays,
+          onEditTerrain: onEditTerrain,
+          session: session,
+          selectionNavigation: selectionNavigation,
+          navigationTarget: navigationTarget,
+          selectionInteractionRevision: selectionInteractionRevision,
+          diagnostics: [
+            ...session.diagnostics,
+            ...terrainTileTextureState.diagnostics,
+            ...objectSpriteTextureState.diagnostics,
+          ],
+          terrainEditingController: terrainEditingController,
+          mapLayerController: mapLayerController,
+          objectEditingController: objectEditingController,
+          objectPaletteController: objectPaletteController,
+          placementCatalogController: placementCatalogController,
+          terrainTileTextureState: terrainTileTextureState,
+          objectSpriteTextureState: objectSpriteTextureState,
+        ),
       );
     }
 
@@ -2802,6 +2810,7 @@ class _MapWorkspace extends StatelessWidget {
 
 class _OpenedMapWorkspace extends StatelessWidget {
   const _OpenedMapWorkspace({
+    required this.overlays,
     this.onEditTerrain,
     required this.session,
     required this.diagnostics,
@@ -2817,6 +2826,7 @@ class _OpenedMapWorkspace extends StatelessWidget {
     required this.objectSpriteTextureState,
   });
 
+  final EditorOverlayController overlays;
   final VoidCallback? onEditTerrain;
   final OpenedMapSession session;
   final List<EditorDiagnostic> diagnostics;
@@ -3143,6 +3153,10 @@ class _OpenedMapWorkspace extends StatelessWidget {
                             }
                           },
                         ),
+                      EditorOverlayToolbar(
+                        controller: overlays,
+                        layers: layerState,
+                      ),
                     ],
                   ),
                 ),
@@ -3157,6 +3171,17 @@ class _OpenedMapWorkspace extends StatelessWidget {
                   ? const _MapCanvasUnavailable()
                   : MapCanvas(
                       key: ObjectKey(session.extractedMap),
+                      analysisView: terrainLayer.isVisible
+                          ? overlays.view
+                          : null,
+                      analysisMode: terrainLayer.isVisible
+                          ? overlays.mode
+                          : TerrainAnalysisMode.off,
+                      rangeProjection: overlays.ranges(layerState),
+                      showLayoutPower:
+                          overlays.showLayoutPower &&
+                          layerState.statusOf(MapLayerType.units).isVisible,
+                      powerField: overlays.powerField,
                       navigationTarget:
                           identical(
                             navigationTarget?.document,

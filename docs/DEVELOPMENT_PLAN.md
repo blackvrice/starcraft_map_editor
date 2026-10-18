@@ -1417,7 +1417,7 @@ source 자산·target session을 다시 검사한다. Cut/원본 Undo는 전송 
 - [x] 검증된 평지 ISOM 좌우/상하 대칭·경사로/두다드 미지원 대응표·기존 solver 재사용
 - [x] 높이/건설/이동 가능의 읽기 전용 분석 탭·미확인/출처·문서/자료 캐시
 - [x] 픽셀 거리 측정과 실제 전력/크립 수집 미지원·전체 미확인 표시
-- [ ] DAT 무기/시야 범위·검증된 전력 projection 및 주 편집 캔버스 통합
+- [x] DAT 무기/시야 범위·검증된 전력 projection 및 주 편집 캔버스 통합
 - [ ] PAR-11/12의 외부 왕복·게임 관찰·revision cache/profile 예산
 
 2026-10-17: [사용자 지형 브러시](USER_TERRAIN_BRUSHES.md)의 schema v1,
@@ -1442,6 +1442,18 @@ DAT 무기/시야·검증된 전력 projection은 후속이다. source revision�
 전체 format은 기존 미수정 파일 3개 차이로 exit 1, 변경 파일은 포맷 차이가 없다.
 기준과 다른 Flutter 3.47.5/Dart 3.13.4, 공유 작업 트리이며 게임/실제 앱/DPI·
 clean Windows/release profile/RSS는 미실행이다. 실제 수집 미지원 결정을 유지한다.
+
+2026-10-18 후속: [주 편집 지도 보조 표시](EDITOR_OVERLAYS.md)에 높이/건설·이동,
+DAT 기본 시야·터렛 포함 최소/최대 사거리, P1~P8 배치 설계 전력장을 통합했다.
+기존 전력 supplier 검증과 psi 도형을 공유하며 원본/Undo/배치 선택·캔버스 state를
+보존한다. 실제 전력·크립은 미지원/미확인이고 기본 도형을 유효 게임 범위로
+주장하지 않는다. 선택/원/공급자 상한과 출처·문서/설치 무효화, 좁은 화면을 검증했다.
+집중 87개, 전체 2350 통과/72 조건부 skip, 실제 CASC 2개, 최종 analyze 무이슈,
+Windows Debug 빌드·native CTest 7/7을 확인했다. 첫 전체 실행에서 검출한
+로케이션 도구 가림 회귀를 수정하고 전체 재실행했다. format은 기존 미수정
+인프라 테스트 3개 차이로 exit 1이며 이번 변경은 차이가 없다. SDK는 기준과 다른
+Flutter 3.47.5/Dart 3.13.4다. 상세 실행/분석/상한은 위 문서를 따른다.
+게임/외부·release profile/RSS 인수는 남으며 다음 코드 단계는 EP5 L0/L1이다.
 
 ### EP5. 언어·소스
 

@@ -463,6 +463,23 @@ class PlacementCatalogController {
   EudDatReadResult? lastEudDatRead;
   EudDatSource? get eudData => _eudData;
 
+  /// Read-only inspection does not require changing the placement selection.
+  bool get _inspectionReady =>
+      !_disposed &&
+      _installationPath != null &&
+      openMapController.state.session != null &&
+      identical(_mapSnapshot, openMapController.state.session!.extractedMap);
+  EudDatSource? get inspectionDatSource => _inspectionReady ? _eudData : null;
+  TerrainPlacementSource? get inspectionTerrainSource =>
+      _inspectionReady &&
+          _terrainPlacementSource?.snapshot.tileset == mapTileset?.rawValue
+      ? _terrainPlacementSource
+      : null;
+  UnitPowerCatalog? get inspectionPowerCatalog =>
+      _inspectionReady ? _powerCatalog : null;
+  (String?, int?, String?, String?)? get inspectionUnitIdentity =>
+      _inspectionReady ? _collisionIdentity : null;
+
   Future<EudDatSource> loadEudData() {
     if (_eudData != null) return Future.value(_eudData);
     if (_eudDataPending != null) return _eudDataPending!;

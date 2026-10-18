@@ -98,6 +98,48 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @overlayBaseRanges.
+  ///
+  /// In en, this message translates to:
+  /// **'DAT base ranges'**
+  String get overlayBaseRanges;
+
+  /// No description provided for @overlayLayoutPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Preplaced power layout'**
+  String get overlayLayoutPower;
+
+  /// No description provided for @overlayBaseOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Static local DAT geometry; upgrades, map/EUD overrides and terrain visibility are not included.'**
+  String get overlayBaseOnly;
+
+  /// No description provided for @overlayRangeLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected units: yellow sight, red ground, cyan air; thin inner ring = minimum range'**
+  String get overlayRangeLegend;
+
+  /// No description provided for @overlayLayoutOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Design model: regular preplaced Pylons are assumed complete and enabled. Green = point coverage, red = outside, gray = unknown. Not observed game power.'**
+  String get overlayLayoutOnly;
+
+  /// No description provided for @overlayProviders.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified layout Pylons'**
+  String get overlayProviders;
+
+  /// No description provided for @overlayBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Display budget exceeded: at most 64 selected units and 512 range rings.'**
+  String get overlayBudget;
+
   /// No description provided for @transferRegionTitle.
   ///
   /// In en, this message translates to:
