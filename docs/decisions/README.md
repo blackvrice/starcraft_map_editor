@@ -35,6 +35,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0020](0020-observed-creep-placement-policy.md) | Accepted | 명시적 전력/크립 조회 UI·실제 수집 미지원·현재 초기 크립의 opt-in 요구 배치 검사 |
 | [0021](0021-settings-trigger-editing.md) | Accepted | 일반 DAT 예상값·CRGB·가역 byte token·snapshot 기반 트리거 참조 치환 |
 | [0022](0022-multi-map-document-lifetime.md) | Accepted | 문서별 controller/화면 수명·물리 경로 점유·복구/닫기/종료 격리 |
+| [0023](0023-portable-trigger-declarations.md) | Accepted | 일반 TRIG의 세 언어 제한 선언·snapshot/raw 보존·격리 분석·원문/새 파일 보호 |
 
 ## 새 ADR 형식
 

@@ -9,6 +9,64 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get scriptTitle => '트리거 스크립트';
+
+  @override
+  String get scriptDraftTitle => '미적용 스크립트';
+
+  @override
+  String get scriptKeepDraft => '계속하기 전에 현재 소스를 원문 보관함에 남기시겠습니까?';
+
+  @override
+  String get scriptArchive => '보관 후 계속';
+
+  @override
+  String get scriptCloseDraft =>
+      '미적용 초안 또는 파일에 저장하지 않은 원문이 있습니다. 각 소스를 새 파일로 저장하거나 명시적으로 버린 뒤 닫아주세요.';
+
+  @override
+  String get scriptDiscardClose => '저장하지 않고 닫기';
+
+  @override
+  String get scriptSaveClose => '새 파일 저장 후 닫기';
+
+  @override
+  String get scriptHistory => '원문 보관함';
+
+  @override
+  String get scriptSaveAs => '소스 다른 이름으로 저장 (새 파일)';
+
+  @override
+  String get scriptImport => '트리거 선언 소스 열기';
+
+  @override
+  String get scriptReload => '맵에서 다시 불러오기';
+
+  @override
+  String get scriptSource => '원본 소스';
+
+  @override
+  String get scriptPreview => '정규 형식 미리보기';
+
+  @override
+  String get scriptConvert => '언어 전환 미리보기';
+
+  @override
+  String get scriptAcceptConversion => '전환 소스 사용';
+
+  @override
+  String get scriptStale => '맵이 변경되었습니다. 명시적으로 다시 불러오기 전에는 초안을 적용할 수 없습니다.';
+
+  @override
+  String get scriptRecords => '트리거 수';
+
+  @override
+  String get scriptOpaqueDeletions => '트리거 또는 미지원 슬롯 삭제 수';
+
+  @override
+  String get scriptAllowDeletion => '미리보기에 표시된 트리거·미지원 슬롯 삭제를 승인합니다.';
+
+  @override
   String get overlayBaseRanges => 'DAT 기본 사거리·시야';
 
   @override

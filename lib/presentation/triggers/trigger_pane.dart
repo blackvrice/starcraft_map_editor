@@ -6,6 +6,7 @@ import '../../domain/chk/typed/chk_trigger_editor.dart';
 import '../../domain/chk/typed/chk_trigger_resources.dart';
 import '../../domain/chk/typed/chk_trigger_search.dart';
 import 'trigger_replace_dialog.dart';
+import 'trigger_script_dialog.dart';
 import 'trigger_reference_labels.dart';
 import '../localization/l10n.dart';
 import 'trigger_labels.dart';
@@ -337,6 +338,22 @@ class _TriggerPaneState extends State<TriggerPane> {
                     widget.briefing ? l10n.trigAddBriefing : l10n.trigAdd,
                   ),
                 ),
+                if (!widget.briefing)
+                  OutlinedButton.icon(
+                    key: const Key('trigger-script'),
+                    onPressed:
+                        data == null ||
+                            widget.controller.triggerScriptGateway == null
+                        ? null
+                        : () => showDialog<void>(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) =>
+                                TriggerScriptDialog(editing: widget.controller),
+                          ),
+                    icon: const Icon(Icons.code),
+                    label: Text(l10n.scriptTitle),
+                  ),
               ],
             ),
           ),

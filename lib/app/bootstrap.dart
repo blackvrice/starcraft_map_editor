@@ -3,6 +3,8 @@ import '../application/documents/isom_fill_controller.dart';
 import '../application/documents/autosave_controller.dart';
 import '../infrastructure/filesystem/local_recovery_store.dart';
 import 'dart:async';
+import '../infrastructure/compiler/isolate_trigger_script_gateway.dart';
+import '../infrastructure/filesystem/local_trigger_script_files.dart';
 
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
 import 'package:flutter/widgets.dart';
@@ -154,6 +156,8 @@ void bootstrap() {
       projects: eudProjectWorkspace,
     );
     final objectEditingController = ObjectEditingController(
+      triggerScriptGateway: IsolateTriggerScriptGateway(),
+      triggerScriptFiles: const LocalTriggerScriptFiles(),
       resourceGateway: LocalMapResourceGateway(archiveGateway),
       openMapController: openMapController,
       mapLayerController: mapLayerController,

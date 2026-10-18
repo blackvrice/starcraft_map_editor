@@ -1,5 +1,11 @@
 # 아키텍처
 
+2026-10-18 [일반 트리거 언어 전환](TRIGGER_SCRIPT_LANGUAGES.md)은 domain의
+bounded call AST·snapshot/raw/동등성 검사, application의 초안/문서 수명과
+`TriggerScriptGateway/TriggerScriptFiles`, infrastructure의 killable isolate·
+기존 안전 저장 gateway, presentation의 명시적 preview/채택/적용으로 분리한다.
+일반 소스는 실행하지 않으며 UI가 파서/파일/프로세스를 직접 호출하지 않는다.
+
 2026-10-18 [읽기 전용 지도 분석](TERRAIN_ANALYSIS.md)은 기존 terrain placement
 포트의 선택적 VF4 높이 프로필, domain 지연 캐시, application 요청/문서 수명,
 presentation overlay/계측으로 분리한다. 그리기·모드 전환은 외부 도구를 실행하지 않는다.

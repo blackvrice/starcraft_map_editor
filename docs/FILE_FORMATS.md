@@ -1,5 +1,11 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-18 [일반 트리거 선언 v1](TRIGGER_SCRIPT_LANGUAGES.md)은 새 CHK 섹션을
+추가하지 않는다. 전체 CHK SHA-256에 귀속된 Source/Raw 참조와 기존 TRIG 모델을
+사용해 모르는 bytes·예약 flags·slot gaps를 유지한다. 인자 검증·삭제 승인 뒤
+한 Undo로 적용한다. `.eps/.py/.lua`는 별도 UTF-8 선언 소스이며 기존 EUD project
+schema는 바꾸지 않는다. [ADR-0023](decisions/0023-portable-trigger-declarations.md).
+
 2026-10-18 [지도 분석](TERRAIN_ANALYSIS.md)의 `elevationProfile` v1은 기존
 CV5/VF4 snapshot의 선택적 bit1/bit2 mask이다. 누락은 미확인, 잘못된 coverage는
 거절하며 source revision에 포함한다. CHK에 새 섹션을 쓰지 않는다.

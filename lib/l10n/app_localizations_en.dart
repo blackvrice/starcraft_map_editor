@@ -9,6 +9,67 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get scriptTitle => 'Trigger Script';
+
+  @override
+  String get scriptDraftTitle => 'Unapplied Script';
+
+  @override
+  String get scriptKeepDraft =>
+      'Keep the current source in draft history before continuing?';
+
+  @override
+  String get scriptArchive => 'Keep and Continue';
+
+  @override
+  String get scriptCloseDraft =>
+      'An unapplied draft or original source has not been saved to a file. Save each pending source to a new file, or explicitly discard them before closing.';
+
+  @override
+  String get scriptDiscardClose => 'Discard and Close';
+
+  @override
+  String get scriptSaveClose => 'Save New File and Close';
+
+  @override
+  String get scriptHistory => 'Original Sources';
+
+  @override
+  String get scriptSaveAs => 'Save Source As (new file)';
+
+  @override
+  String get scriptImport => 'Open Trigger Declarations';
+
+  @override
+  String get scriptReload => 'Reload from Map';
+
+  @override
+  String get scriptSource => 'Source';
+
+  @override
+  String get scriptPreview => 'Canonical Preview';
+
+  @override
+  String get scriptConvert => 'Preview Conversion';
+
+  @override
+  String get scriptAcceptConversion => 'Use Converted Source';
+
+  @override
+  String get scriptStale =>
+      'Map changed. Reload explicitly; this draft cannot be applied.';
+
+  @override
+  String get scriptRecords => 'Records';
+
+  @override
+  String get scriptOpaqueDeletions => 'Record or Opaque Slot Deletions';
+
+  @override
+  String get scriptAllowDeletion =>
+      'I approve the record and unsupported-slot deletions shown in this preview.';
+
+  @override
   String get overlayBaseRanges => 'DAT base ranges';
 
   @override

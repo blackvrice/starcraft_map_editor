@@ -186,10 +186,14 @@ bool FlutterWindow::OnCreate() {
                                 call.method_name() == "saveEudProject";
         const bool is_sound = call.method_name() == "openSound" ||
                               call.method_name() == "saveSound";
+        const bool is_script = call.method_name() == "openTriggerScript" ||
+                               call.method_name() == "saveTriggerScript";
         const bool is_open = call.method_name() == "openMap" ||
+                             call.method_name() == "openTriggerScript" ||
                              call.method_name() == "openSound" ||
                              call.method_name() == "openEudProject";
         const bool is_save = call.method_name() == "saveMap" ||
+                             call.method_name() == "saveTriggerScript" ||
                              call.method_name() == "saveSound" ||
                              call.method_name() == "saveEudProject";
         const bool is_data_directory =
@@ -248,30 +252,34 @@ bool FlutterWindow::OnCreate() {
         constexpr wchar_t project_filter[] =
             L"EUD projects (*.eud.json)\0*.eud.json\0";
         constexpr wchar_t sound_filter[] = L"Wave audio (*.wav)\0*.wav\0";
+        constexpr wchar_t script_filter[] =
+            L"Trigger declarations (*.eps;*.py;*.lua)\0*.eps;*.py;*.lua\0";
         OPENFILENAMEW dialog = {};
         dialog.lStructSize = sizeof(dialog);
         dialog.hwndOwner = GetHandle();
         dialog.lpstrFile = selected_path;
         dialog.nMaxFile =
             static_cast<DWORD>(sizeof(selected_path) / sizeof(wchar_t));
-        dialog.lpstrFilter = is_sound     ? sound_filter
+        dialog.lpstrFilter = is_script ? script_filter : is_sound ? sound_filter
                              : is_project ? project_filter
                                           : filter;
         dialog.nFilterIndex = 1;
         dialog.lpstrTitle =
-            is_sound ? (is_open ? L"Import PCM WAV" : L"Export WAV")
+            is_script ? (is_open ? L"Open Trigger Declarations"
+                                : L"Save Trigger Declarations As (new file)")
+            : is_sound ? (is_open ? L"Import PCM WAV" : L"Export WAV")
             : is_project
                 ? (is_open ? L"Open EUD Project"
                            : L"Save EUD Project As (new file)")
                 : (is_open ? L"Open StarCraft Map" : L"Save StarCraft Map As");
-        dialog.lpstrDefExt = is_sound     ? L"wav"
+        dialog.lpstrDefExt = is_script ? nullptr : is_sound ? L"wav"
                              : is_project ? L"eud.json"
                                           : L"scx";
         dialog.Flags =
             OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
         if (is_open) {
           dialog.Flags |= OFN_FILEMUSTEXIST;
-        } else if (!is_project) {
+        } else if (!is_project && !is_script) {
           dialog.Flags |= OFN_OVERWRITEPROMPT;
         }
 

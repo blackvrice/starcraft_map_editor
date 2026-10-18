@@ -11,7 +11,7 @@
 | 1b | DD2/raw·ISOM 영역의 문서 간 전송 프로필 | 구현. 같은 맵 혼합 복사·기존 solver를 재사용하고 위치 이름 재매핑·문서/자산 수명·전체 footprint/overlay·한 Undo 검증. 게임/외부 인수 별도 |
 | 2 | FR-220 사용자 raw/ISOM 브러시·저장/로드·대칭 | [지원 프로필 구현](USER_TERRAIN_BRUSHES.md). schema/상한/자료 revision·기존 solver·preview/Undo와 평지 ISOM 대칭. raw/전환/경사로/두다드 방향 변환은 미지원, 게임 인수 별도 |
 | 3 | FR-219 높이·건설/이동 가능·범위 보조 표시 | [분석 탭](TERRAIN_ANALYSIS.md)과 [주 편집 지도 통합](EDITOR_OVERLAYS.md) 구현. VF4/CV5·DAT 기본 사거리/시야·검증된 배치 설계 전력장·미확인·상한·캐시. 실제 게임 수집은 미지원, 외부/게임·release profile/RSS 인수는 남음 |
-| 4 | FR-406/319 일반 epScript/Python/Lua | L0→L1→L2→L3→L4 미구현. 제한 문법·모델·raw 보존·GUI/스크립트 초안 충돌·실행 0회·MPQ 왕복 필요 |
+| 4 | FR-406/319 일반 epScript/Python/Lua | [제한 선언 v1 구현](TRIGGER_SCRIPT_LANGUAGES.md). 세 언어·snapshot/raw 보존·초안/원문·미리보기/Undo·실행 0회·실제 syntax/MPQ 자동 검증. 범용/EUD 자유 코드 변환·crash 복구와 게임/배포 인수는 별도 |
 | 5 | FR-320 여러 소스·검색·완성·진단 | 미구현. 루트/링크/외부 변경·취소/정적 분석, native source 원문 보존 필요 |
 | 6 | X3/X4/L5 정식 Python entry·제한 Lua EUD | 미구현. native/portable 구분·실제 빌드·source map·설정 조합과 별도 게임 인수 필요 |
 | 7 | FR-107 게임 실행/관찰 기록 | 실행 인자 feasibility·안전 포트 또는 수동 fallback·출력별 사용자 관찰 기록 필요 |

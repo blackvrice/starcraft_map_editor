@@ -24,7 +24,7 @@
 | 설정 UI | 7개 탭·이름/ID·검색·범위 초안 복사·유닛/무기 연결 | DAT 기본 수치 전체 조회는 미구현 |
 | EUD 초기 필드 | 8분류·61후보, 초안·프로젝트 저장·코드 생성·테스트 빌드 | 공유 그래픽 영향·전체 게임/멀티 검증 M6.3.1~2 |
 | EUD 실행 규칙 | 변수/식·개체/플레이어/위치/표시, schema v3·실제 컴파일 | 게임 생명주기·성능·멀티 검증 M7.1 |
-| EUD 도구·언어 | 관리형 euddraft 동봉, epScript entry | 깨끗한 Windows 인수 X1/X5; Python X3·Lua X4 미구현 |
+| EUD 도구·언어 | 관리형 euddraft 동봉, epScript entry. 일반 TRIG는 [세 언어 선언 v1](TRIGGER_SCRIPT_LANGUAGES.md) 구현 | 깨끗한 Windows 인수 X1/X5; EUD Python X3·Lua X4 및 일반 선언 crash 복구/게임 인수는 남음 |
 | Tile/Unit/Sprite/Doodad | 카탈로그·썸네일·검증된 factory·배치 | Doodad 삭제 게임/외부 왕복·미지원 확대 M6.2 |
 | 지형 | raw MTXM·TILE/ISOM 검사·평지/재계산·[경계/높이·경사로 브러시](ISOM_BRUSHES.md)·선택 영역·시각 미리보기 | 게임 통행·외부 에디터 인수는 별도 |
 | 시작 위치 | 소유자별 목록/선택/배치·이동·캔버스 좌표와 누락/중복 표시 | 실제 게임·외부 에디터 인수 M6.4 |

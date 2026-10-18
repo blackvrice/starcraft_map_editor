@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:re_highlight/re_highlight.dart';
+import 'package:re_highlight/languages/python.dart';
+import 'package:re_highlight/languages/lua.dart';
 
 const epScriptKeywords = <String>[
   'function',
@@ -80,11 +82,19 @@ const epScriptStarter =
 
 /// Display grammar only. euddraft remains the authority for compilation.
 class EpScriptTextController extends TextEditingController {
-  EpScriptTextController({super.text});
+  EpScriptTextController({
+    super.text,
+    this.grammar = 'eps',
+    this.symbols = epScriptSymbols,
+  });
+  String grammar;
+  List<String> symbols;
   static const keywordColor = Color(0xFFC792EA);
   static const commentColor = Color(0xFF80968A);
   static const stringColor = Color(0xFFC3D98B);
   static final _highlight = Highlight()
+    ..registerLanguage('py', langPython)
+    ..registerLanguage('lua', langLua)
     ..registerLanguage(
       'eps',
       Mode(
@@ -116,12 +126,15 @@ class EpScriptTextController extends TextEditingController {
       ),
     );
   String? _cachedText;
+  String? _cachedGrammar;
   TextStyle? _cachedStyle;
   TextSpan? _cachedSpan;
 
   TextSpan syntaxSpan(TextStyle? style) {
     if (text.length > 200000) return TextSpan(text: text, style: style);
-    if (_cachedText != text || _cachedStyle != style) {
+    if (_cachedText != text ||
+        _cachedStyle != style ||
+        _cachedGrammar != grammar) {
       final renderer = TextSpanRenderer(style ?? const TextStyle(), const {
         'keyword': TextStyle(color: keywordColor),
         'comment': TextStyle(color: commentColor),
@@ -130,9 +143,10 @@ class EpScriptTextController extends TextEditingController {
         'built_in': TextStyle(color: Color(0xFF74CDE8)),
         'literal': TextStyle(color: Color(0xFFFFC67A)),
       });
-      _highlight.highlight(code: text, language: 'eps').render(renderer);
+      _highlight.highlight(code: text, language: grammar).render(renderer);
       _cachedSpan = renderer.span ?? TextSpan(text: text, style: style);
       _cachedText = text;
+      _cachedGrammar = grammar;
       _cachedStyle = style;
     }
     return _cachedSpan!;
@@ -188,7 +202,7 @@ class EpScriptTextController extends TextEditingController {
   List<String> get completions {
     final range = completionRange;
     if (range == null || range.prefix.length < 2) return const [];
-    return epScriptSymbols
+    return symbols
         .where((s) => s.startsWith(range.prefix) && s != range.prefix)
         .take(8)
         .toList();
@@ -196,7 +210,7 @@ class EpScriptTextController extends TextEditingController {
 
   void complete(String symbol) {
     final range = completionRange;
-    if (range == null || !epScriptSymbols.contains(symbol)) return;
+    if (range == null || !symbols.contains(symbol)) return;
     final end = selection.baseOffset;
     value = TextEditingValue(
       text: text.replaceRange(range.start, end, symbol),

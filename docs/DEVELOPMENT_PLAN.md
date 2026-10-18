@@ -1457,10 +1457,24 @@ Flutter 3.47.5/Dart 3.13.4다. 상세 실행/분석/상한은 위 문서를 따�
 
 ### EP5. 언어·소스
 
-- [ ] 기존 L0 모델/문법/파서/라이선스와 L1 원시 보존 계약에 FR-406/319 연결
-- [ ] L2 일반 epScript -> TRIG/GUI -> L3 Python/L4 Lua -> L5 EUD/native -> L6 인수 순서 유지
+- [x] L0 선언 API/파서 feasibility·라이선스 ADR와 L1 snapshot/raw 보존·원자 적용
+- [x] L2 일반 epScript -> TRIG/GUI와 L3 Python/L4 Lua 제한 선언 전환·원문/새 파일 보호
+- [ ] L5 공통 EUD/native Python·실제 빌드와 L6 게임/복구/배포 인수
 - [ ] 소스 루트/여러 파일·검색·정적 완성·원본 위치·외부 변경/루트 이탈 검증
 - [ ] PAR-13/ML-01~12 및 일반 모드 외부 실행 0·임의 번역 거절 검증
+
+2026-10-18: [일반 트리거 언어 전환](TRIGGER_SCRIPT_LANGUAGES.md)과
+[ADR-0023](decisions/0023-portable-trigger-declarations.md)을 구현했다. TRIG 코드
+보기에서 세 언어 제한 call AST·진단/완성/강조·변환 미리보기/명시 채택,
+원문/주석 보관·새 파일 저장·원자 적용/Undo를 제공한다. 일반 경로의 euddraft와
+사용자 코드 실행은 0회다. 22조건/57액션·raw/EUDX·현재 CHK 귀속과 상한을
+검증했다. 집중 117 통과/1 링크 권한 skip, 실제 frontend syntax 1개·실제 MPQ
+왕복 1개 통과. L5 EUD/free/native code·미적용 초안 crash 복구·여러 소스·L6
+외부/배포 인수는 완료하지 않았다. 전체 2467 통과/75 조건부 skip·analyze 무이슈,
+Windows Debug 빌드·native CTest 7/7과 최종 실제 syntax/MPQ 2개를 확인했다.
+format은 기존 미수정 테스트 3개 차이로 exit 1이며 이번 변경 파일은 차이가 없다.
+SDK는 기준과 다른 Flutter 3.47.5/Dart 3.13.4다. 실제 앱/게임/배포는 미실행이며
+상한·실패 수정과 전체 결과는 위 문서를 따른다.
 
 ### EP6. 결과·품질·출시
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../ports/trigger_script_gateway.dart';
 import 'dart:typed_data';
 import '../../domain/chk/chk_basic_editing.dart';
 import '../ports/map_resource_gateway.dart';
@@ -65,6 +66,8 @@ class ObjectEditingController {
     this.doodadPlacementFactory = const DoodadPlacementFactory(),
     this.historyLimit = 100,
     this.resourceGateway,
+    this.triggerScriptGateway,
+    this.triggerScriptFiles,
   }) {
     if (historyLimit <= 0) {
       throw ArgumentError.value(
@@ -236,6 +239,8 @@ class ObjectEditingController {
   final SpritePlacementFactory spritePlacementFactory;
   final DoodadPlacementFactory doodadPlacementFactory;
   final int historyLimit;
+  final TriggerScriptGateway? triggerScriptGateway;
+  final TriggerScriptFiles? triggerScriptFiles;
   final StreamController<ObjectEditingState> _changes =
       StreamController<ObjectEditingState>.broadcast(sync: true);
   late final StreamSubscription<void> _historySubscription;

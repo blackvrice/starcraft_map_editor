@@ -1,5 +1,8 @@
 # 문서 인덱스
 
+[일반 트리거 언어 전환](TRIGGER_SCRIPT_LANGUAGES.md): epScript/Python/Lua
+제한 선언 v1·원문/원시 데이터 보존·전환/적용·실제 syntax/MPQ 검증.
+
 [주 편집 지도 보조 표시](EDITOR_OVERLAYS.md): DAT 기본 사거리·시야,
 검증된 배치 설계 전력장·주 지도 통합·상한과 자동 검증 기록.
 

@@ -98,6 +98,120 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @scriptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trigger Script'**
+  String get scriptTitle;
+
+  /// No description provided for @scriptDraftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unapplied Script'**
+  String get scriptDraftTitle;
+
+  /// No description provided for @scriptKeepDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep the current source in draft history before continuing?'**
+  String get scriptKeepDraft;
+
+  /// No description provided for @scriptArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep and Continue'**
+  String get scriptArchive;
+
+  /// No description provided for @scriptCloseDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'An unapplied draft or original source has not been saved to a file. Save each pending source to a new file, or explicitly discard them before closing.'**
+  String get scriptCloseDraft;
+
+  /// No description provided for @scriptDiscardClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and Close'**
+  String get scriptDiscardClose;
+
+  /// No description provided for @scriptSaveClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Save New File and Close'**
+  String get scriptSaveClose;
+
+  /// No description provided for @scriptHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Original Sources'**
+  String get scriptHistory;
+
+  /// No description provided for @scriptSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Source As (new file)'**
+  String get scriptSaveAs;
+
+  /// No description provided for @scriptImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Trigger Declarations'**
+  String get scriptImport;
+
+  /// No description provided for @scriptReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload from Map'**
+  String get scriptReload;
+
+  /// No description provided for @scriptSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source'**
+  String get scriptSource;
+
+  /// No description provided for @scriptPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Canonical Preview'**
+  String get scriptPreview;
+
+  /// No description provided for @scriptConvert.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview Conversion'**
+  String get scriptConvert;
+
+  /// No description provided for @scriptAcceptConversion.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Converted Source'**
+  String get scriptAcceptConversion;
+
+  /// No description provided for @scriptStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Map changed. Reload explicitly; this draft cannot be applied.'**
+  String get scriptStale;
+
+  /// No description provided for @scriptRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Records'**
+  String get scriptRecords;
+
+  /// No description provided for @scriptOpaqueDeletions.
+  ///
+  /// In en, this message translates to:
+  /// **'Record or Opaque Slot Deletions'**
+  String get scriptOpaqueDeletions;
+
+  /// No description provided for @scriptAllowDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'I approve the record and unsupported-slot deletions shown in this preview.'**
+  String get scriptAllowDeletion;
+
   /// No description provided for @overlayBaseRanges.
   ///
   /// In en, this message translates to:
