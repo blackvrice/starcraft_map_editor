@@ -110,22 +110,22 @@ void main() {
       expect(asset.unsupportedRawValues, [0, 1, 0x4000, 0x5000]);
     }, skip: !Platform.isWindows);
 
-    test('rejects malformed process output and atlas envelopes', () async {
-      for (final scenario in const [
-        'invalid-response',
-        'protocol-mismatch',
-        'request-mismatch',
-        'revision-mismatch',
-        'path-mismatch',
-        'tileset-mismatch',
-        'atlas-header-mismatch',
-        'atlas-entry-mismatch',
-        'atlas-size-mismatch',
-        'atlas-output-name-mismatch',
-        'atlas-output-missing',
-        'unsupported-mismatch',
-        'asset-size-mismatch',
-      ]) {
+    for (final scenario in const [
+      'invalid-response',
+      'protocol-mismatch',
+      'request-mismatch',
+      'revision-mismatch',
+      'path-mismatch',
+      'tileset-mismatch',
+      'atlas-header-mismatch',
+      'atlas-entry-mismatch',
+      'atlas-size-mismatch',
+      'atlas-output-name-mismatch',
+      'atlas-output-missing',
+      'unsupported-mismatch',
+      'asset-size-mismatch',
+    ]) {
+      test('rejects malformed tile envelope $scenario', () async {
         final result = await createGateway().render(requestFor(scenario));
 
         expect(
@@ -133,8 +133,8 @@ void main() {
           StarCraftTileAtlasDiagnosticCodes.helperInvalidResponse,
           reason: scenario,
         );
-      }
-    }, skip: !Platform.isWindows);
+      }, skip: !Platform.isWindows);
+    }
 
     test('rejects excessive output and terminates a timeout', () async {
       final excessive = await createGateway(

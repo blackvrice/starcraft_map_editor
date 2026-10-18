@@ -36,13 +36,20 @@ TerrainPlacementSnapshot ReadTerrainPlacement(
     result.mega_tile_references.push_back(references);
   }
   for (std::size_t mega = 0; mega < vf4.size() / 32; ++mega) {
-    std::uint16_t mask = 0;
+    std::uint16_t mask = 0, mid = 0, high = 0;
     for (std::size_t mini = 0; mini < 16; ++mini) {
-      if ((U16(vf4, mega * 32 + mini * 2) & 1U) != 0) {
+      const auto flags = U16(vf4, mega * 32 + mini * 2);
+      if ((flags & 1U) != 0) {
         mask = static_cast<std::uint16_t>(mask | (1U << mini));
       }
+      // VF4 MiniTileFlags bit1=mid, bit2=high. Preserve both; high takes
+      // display precedence. Chkdraft sc.h at 32d27861b16d, lines 3743-3764.
+      if ((flags & 2U) != 0) mid = static_cast<std::uint16_t>(mid | (1U << mini));
+      if ((flags & 4U) != 0) high = static_cast<std::uint16_t>(high | (1U << mini));
     }
     result.walkable_masks.push_back(mask);
+    result.mid_elevation_masks.push_back(mid);
+    result.high_elevation_masks.push_back(high);
   }
   result.success = true;
   return result;

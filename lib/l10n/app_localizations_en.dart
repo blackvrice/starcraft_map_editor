@@ -172,6 +172,81 @@ class AppLocalizationsEn extends AppLocalizations {
       'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
 
   @override
+  String get analysisTitle => 'Map analysis';
+
+  @override
+  String get analysisOff => 'Off';
+
+  @override
+  String get analysisElevation => 'Terrain elevation';
+
+  @override
+  String get analysisBuildable => 'Terrain buildability';
+
+  @override
+  String get analysisWalkable => 'Terrain walkability';
+
+  @override
+  String get analysisPower => 'Actual power (unsupported)';
+
+  @override
+  String get analysisCreep => 'Actual creep (unsupported)';
+
+  @override
+  String get analysisDistance => 'Distance measurement';
+
+  @override
+  String get analysisLoad => 'Load local terrain facts';
+
+  @override
+  String get analysisRuntimeUnsupported =>
+      'Actual initial/live game state collection is unsupported. All cells are unknown.';
+
+  @override
+  String get analysisStaticOnly =>
+      'Local CV5/VF4 facts only; not UNIT occupancy or game pathfinding.';
+
+  @override
+  String get analysisDistanceOnly =>
+      'Geometric pixel radius only; not a verified weapon range.';
+
+  @override
+  String get analysisUnknown => 'Unknown';
+
+  @override
+  String get analysisLow => 'Low';
+
+  @override
+  String get analysisMid => 'Mid';
+
+  @override
+  String get analysisHigh => 'High';
+
+  @override
+  String get analysisYes => 'Possible';
+
+  @override
+  String get analysisNo => 'Not possible';
+
+  @override
+  String get analysisMixed => 'Mixed at low zoom';
+
+  @override
+  String get analysisPixelX => 'Center X (px)';
+
+  @override
+  String get analysisPixelY => 'Center Y (px)';
+
+  @override
+  String get analysisRadius => 'Radius (px)';
+
+  @override
+  String get analysisMeasure => 'Measure distance';
+
+  @override
+  String get analysisRejected => 'The map analysis request was rejected.';
+
+  @override
   String get brushLibrary => 'Terrain brushes';
 
   @override

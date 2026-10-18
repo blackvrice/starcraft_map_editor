@@ -121,30 +121,30 @@ void main() {
       expect(palette.unsupportedObjects, hasLength(2));
     }, skip: !Platform.isWindows);
 
-    test('rejects malformed process output and object envelopes', () async {
-      for (final scenario in const [
-        'invalid-response',
-        'protocol-mismatch',
-        'request-mismatch',
-        'revision-mismatch',
-        'path-mismatch',
-        'object-tileset-mismatch',
-        'object-atlas-header-mismatch',
-        'object-atlas-entry-mismatch',
-        'object-atlas-size-mismatch',
-        'object-atlas-output-name-mismatch',
-        'object-atlas-output-missing',
-        'object-unsupported-mismatch',
-        'object-asset-size-mismatch',
-      ]) {
+    for (final scenario in const [
+      'invalid-response',
+      'protocol-mismatch',
+      'request-mismatch',
+      'revision-mismatch',
+      'path-mismatch',
+      'object-tileset-mismatch',
+      'object-atlas-header-mismatch',
+      'object-atlas-entry-mismatch',
+      'object-atlas-size-mismatch',
+      'object-atlas-output-name-mismatch',
+      'object-atlas-output-missing',
+      'object-unsupported-mismatch',
+      'object-asset-size-mismatch',
+    ]) {
+      test('rejects malformed object envelope $scenario', () async {
         final result = await createGateway().render(requestFor(scenario));
         expect(
           result.diagnostics.single.code,
           StarCraftObjectAtlasDiagnosticCodes.helperInvalidResponse,
           reason: scenario,
         );
-      }
-    }, skip: !Platform.isWindows);
+      }, skip: !Platform.isWindows);
+    }
 
     test('rejects excessive output and terminates a timeout', () async {
       final excessive = await createGateway(

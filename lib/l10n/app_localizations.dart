@@ -416,6 +416,150 @@ abstract class AppLocalizations {
   /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
   String get playerColorPreviewLimit;
 
+  /// No description provided for @analysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Map analysis'**
+  String get analysisTitle;
+
+  /// No description provided for @analysisOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get analysisOff;
+
+  /// No description provided for @analysisElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain elevation'**
+  String get analysisElevation;
+
+  /// No description provided for @analysisBuildable.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain buildability'**
+  String get analysisBuildable;
+
+  /// No description provided for @analysisWalkable.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain walkability'**
+  String get analysisWalkable;
+
+  /// No description provided for @analysisPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual power (unsupported)'**
+  String get analysisPower;
+
+  /// No description provided for @analysisCreep.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual creep (unsupported)'**
+  String get analysisCreep;
+
+  /// No description provided for @analysisDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance measurement'**
+  String get analysisDistance;
+
+  /// No description provided for @analysisLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load local terrain facts'**
+  String get analysisLoad;
+
+  /// No description provided for @analysisRuntimeUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Actual initial/live game state collection is unsupported. All cells are unknown.'**
+  String get analysisRuntimeUnsupported;
+
+  /// No description provided for @analysisStaticOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Local CV5/VF4 facts only; not UNIT occupancy or game pathfinding.'**
+  String get analysisStaticOnly;
+
+  /// No description provided for @analysisDistanceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Geometric pixel radius only; not a verified weapon range.'**
+  String get analysisDistanceOnly;
+
+  /// No description provided for @analysisUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get analysisUnknown;
+
+  /// No description provided for @analysisLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get analysisLow;
+
+  /// No description provided for @analysisMid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mid'**
+  String get analysisMid;
+
+  /// No description provided for @analysisHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get analysisHigh;
+
+  /// No description provided for @analysisYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible'**
+  String get analysisYes;
+
+  /// No description provided for @analysisNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Not possible'**
+  String get analysisNo;
+
+  /// No description provided for @analysisMixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed at low zoom'**
+  String get analysisMixed;
+
+  /// No description provided for @analysisPixelX.
+  ///
+  /// In en, this message translates to:
+  /// **'Center X (px)'**
+  String get analysisPixelX;
+
+  /// No description provided for @analysisPixelY.
+  ///
+  /// In en, this message translates to:
+  /// **'Center Y (px)'**
+  String get analysisPixelY;
+
+  /// No description provided for @analysisRadius.
+  ///
+  /// In en, this message translates to:
+  /// **'Radius (px)'**
+  String get analysisRadius;
+
+  /// No description provided for @analysisMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'Measure distance'**
+  String get analysisMeasure;
+
+  /// No description provided for @analysisRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'The map analysis request was rejected.'**
+  String get analysisRejected;
+
   /// No description provided for @brushLibrary.
   ///
   /// In en, this message translates to:

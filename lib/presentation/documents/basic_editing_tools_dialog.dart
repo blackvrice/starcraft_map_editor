@@ -2,6 +2,7 @@ import 'dart:async';
 import '../../application/documents/isom_fill_controller.dart';
 import 'mixed_clipboard_pane.dart';
 import 'user_terrain_brush_pane.dart';
+import 'terrain_analysis_pane.dart';
 import '../../application/terrain/terrain_brush_library.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
@@ -167,7 +168,7 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
         width: 960,
         height: 660,
         child: DefaultTabController(
-          length: 9,
+          length: 10,
           initialIndex: widget.initialTab,
           child: Column(
             children: [
@@ -202,6 +203,7 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
                   Tab(text: l.basicRawTerrain),
                   Tab(text: l.mixedClipboardTitle),
                   Tab(text: l.brushLibrary),
+                  Tab(text: l.analysisTitle),
                 ],
               ),
               if (_error != null)
@@ -239,6 +241,11 @@ class _BasicEditingToolsDialogState extends State<BasicEditingToolsDialog> {
                       UserTerrainBrushPane(
                         editing: widget.controller,
                         library: widget.brushLibrary,
+                        loader: widget.isomController,
+                        textures: widget.textures,
+                      ),
+                      TerrainAnalysisPane(
+                        editing: widget.controller,
                         loader: widget.isomController,
                         textures: widget.textures,
                       ),

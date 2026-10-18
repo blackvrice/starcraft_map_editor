@@ -1,5 +1,9 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-18 [지도 분석](TERRAIN_ANALYSIS.md)의 `elevationProfile` v1은 기존
+CV5/VF4 snapshot의 선택적 bit1/bit2 mask이다. 누락은 미확인, 잘못된 coverage는
+거절하며 source revision에 포함한다. CHK에 새 섹션을 쓰지 않는다.
+
 2026-10-17 [문서 간 참조 복사](DOCUMENT_TRANSFER.md)는 지원된 원시 문자열을 새
 ID로 batch append하며 기존 alias·trailing payload·ID를 보존한다. 일반 참조만
 폐쇄적으로 이식하고 unknown/EUDX/예약 트리거를 추측 변환하지 않는다.

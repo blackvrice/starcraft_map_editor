@@ -86,6 +86,22 @@ final class TerrainPlacementSnapshotDecoder {
       assets[1].byteLength ~/ 32,
     ).map((mask) => _int(mask, 65535)).toList();
     Cv5CreepCandidateProfile? creepProfile;
+    List<int>? midElevation, highElevation;
+    final rawElevation = json['elevationProfile'];
+    if (rawElevation != null) {
+      final profile = _object(rawElevation);
+      if (profile['version'] is! int || profile['version'] != 1) {
+        throw const FormatException('Unsupported VF4 elevation version.');
+      }
+      midElevation = _list(
+        profile['midMasks'],
+        masks.length,
+      ).map((v) => _int(v, 65535)).toList();
+      highElevation = _list(
+        profile['highMasks'],
+        masks.length,
+      ).map((v) => _int(v, 65535)).toList();
+    }
     final rawProfile = json['creepCandidateProfile'];
     if (rawProfile != null) {
       final profile = _object(rawProfile);
@@ -107,6 +123,8 @@ final class TerrainPlacementSnapshotDecoder {
       groupBuildable: buildable,
       megaTileReferences: references,
       walkableMasks: masks,
+      midElevationMasks: midElevation,
+      highElevationMasks: highElevation,
       creepCandidateProfile: creepProfile,
     );
     // Canonical identity excludes request IDs and installation directory.
@@ -124,6 +142,8 @@ final class TerrainPlacementSnapshotDecoder {
       // Preserve legacy identities; known zero flags differ from missing data.
       if (creepProfile != null)
         [Cv5CreepCandidateProfile.version, creepProfile.groupFlags],
+      if (midElevation != null)
+        ['vf4-elevation-v1', midElevation, highElevation],
     ];
     return TerrainPlacementSource(
       snapshot: snapshot,

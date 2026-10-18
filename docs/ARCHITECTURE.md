@@ -1,5 +1,9 @@
 # 아키텍처
 
+2026-10-18 [읽기 전용 지도 분석](TERRAIN_ANALYSIS.md)은 기존 terrain placement
+포트의 선택적 VF4 높이 프로필, domain 지연 캐시, application 요청/문서 수명,
+presentation overlay/계측으로 분리한다. 그리기·모드 전환은 외부 도구를 실행하지 않는다.
+
 2026-10-17 [사용자 지형 브러시](USER_TERRAIN_BRUSHES.md)는 domain의 숫자 metadata,
 application의 문서 수명/preview/Undo 제어기와 앱 공용 직렬 보관함,
 `TerrainBrushStore` 포트 및 infrastructure의 로컬 append-only 저장 구현으로

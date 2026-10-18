@@ -37,6 +37,9 @@ void main() {
       final snapshot = result.source!.snapshot;
       expect(snapshot.groupBuildable, hasLength(4096));
       expect(snapshot.walkableMasks, hasLength(65536));
+      expect(snapshot.midElevationMasks, hasLength(65536));
+      expect(snapshot.highElevationMasks, hasLength(65536));
+      expect(snapshot.elevation(65535), (mid: 65535, high: 65535));
       expect(snapshot.creepCandidateProfile!.groupFlags, hasLength(4096));
       expect(snapshot.creepCandidateProfile!.flagsForGroup(4095), 0x5040);
       expect(snapshot.tile(65535), (buildable: false, walkableMask: 65535));
@@ -57,6 +60,7 @@ void main() {
       );
       expect(result.isSuccess, isTrue, reason: result.errorCode);
       expect(result.source!.snapshot.creepCandidateProfile, isNull);
+      expect(result.source!.snapshot.elevation(0), isNull);
       expect(result.source!.snapshot.tile(0), (
         buildable: true,
         walkableMask: 0,
@@ -71,6 +75,7 @@ void main() {
     ('overflow', 'SC_TERRAIN_OUTPUT_LIMIT', 1024),
     ('mismatch', 'SC_TERRAIN_RESPONSE_INVALID', 2 * 1024 * 1024),
     ('bad-profile', 'SC_TERRAIN_RESPONSE_INVALID', 2 * 1024 * 1024),
+    ('bad-elevation', 'SC_TERRAIN_RESPONSE_INVALID', 2 * 1024 * 1024),
   ]) {
     test('placement transport rejects $path without a usable source', () async {
       final result = await gateway(limit: limit).readPlacement(

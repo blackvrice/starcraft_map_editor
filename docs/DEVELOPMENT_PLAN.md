@@ -1415,7 +1415,9 @@ source 자산·target session을 다시 검사한다. Cut/원본 Undo는 전송 
 
 - [x] versioned raw/ISOM 사용자 브러시 metadata와 저장/로드·자료 검증
 - [x] 검증된 평지 ISOM 좌우/상하 대칭·경사로/두다드 미지원 대응표·기존 solver 재사용
-- [ ] height/buildability/walkability/범위·전력/크립의 검증 범위와 미확인 표시
+- [x] 높이/건설/이동 가능의 읽기 전용 분석 탭·미확인/출처·문서/자료 캐시
+- [x] 픽셀 거리 측정과 실제 전력/크립 수집 미지원·전체 미확인 표시
+- [ ] DAT 무기/시야 범위·검증된 전력 projection 및 주 편집 캔버스 통합
 - [ ] PAR-11/12의 외부 왕복·게임 관찰·revision cache/profile 예산
 
 2026-10-17: [사용자 지형 브러시](USER_TERRAIN_BRUSHES.md)의 schema v1,
@@ -1426,6 +1428,20 @@ source 자산·target session을 다시 검사한다. Cut/원본 Undo는 전송 
 native CTest 7/7. 전체 format은 기존 미수정 인프라 테스트 3개 차이로 exit 1이며
 변경 파일은 통과했다. 환경 Flutter 3.47.5/Dart 3.13.4로 기준 3.44.8/3.12와
 다르다. 실제 앱/게임/외부 에디터·clean Windows는 미실행이다.
+
+2026-10-18: [지도 분석](TERRAIN_ANALYSIS.md)에 VF4 높이·CV5 건설·VF4 이동 가능
+overlay/미확인, 픽셀 거리 측정과 실제 전력/크립 수집 미지원 표시를 구현했다.
+숫자 자료만 읽고 원본/dirty/Undo를 바꾸지 않는 별도 지도이며, 주 편집 지도와
+DAT 무기/시야·검증된 전력 projection은 후속이다. source revision·문서/자산
+수명·4096 LRU와 viewport 계측을 검증했다. native/로컬 8타일셋과 실행 결과는
+위 문서의 시나리오/지원표/성능 기록을 따른다.
+집중 84개·별도 실제 CASC/프로세스 11개·native CTest 7/7·Windows Debug 빌드와
+최종 analyze를 통과했다. 기본 전체 실행의 atlas 2개 집계 테스트 timeout은
+원래 검사를 개별 scenario로 분리해 수정했으며, 최종 기본 `flutter test`는
+2326 통과/72 조건부 skip이다(그중 24개 증가는 기존 검사 집계 단위 변경).
+전체 format은 기존 미수정 파일 3개 차이로 exit 1, 변경 파일은 포맷 차이가 없다.
+기준과 다른 Flutter 3.47.5/Dart 3.13.4, 공유 작업 트리이며 게임/실제 앱/DPI·
+clean Windows/release profile/RSS는 미실행이다. 실제 수집 미지원 결정을 유지한다.
 
 ### EP5. 언어·소스
 

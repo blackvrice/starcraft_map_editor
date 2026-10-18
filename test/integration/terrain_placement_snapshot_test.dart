@@ -32,6 +32,22 @@ void main() {
         expect(source.assets.last.path, endsWith('.vf4'));
         expect(snapshot.creepCandidateProfile, isNotNull);
         expect(
+          snapshot.midElevationMasks,
+          hasLength(snapshot.walkableMasks.length),
+        );
+        expect(
+          snapshot.highElevationMasks,
+          hasLength(snapshot.walkableMasks.length),
+        );
+        expect(
+          snapshot.midElevationMasks!.every((v) => v >= 0 && v <= 65535),
+          isTrue,
+        );
+        expect(
+          snapshot.highElevationMasks!.every((v) => v >= 0 && v <= 65535),
+          isTrue,
+        );
+        expect(
           snapshot.creepCandidateProfile!.groupFlags,
           hasLength(snapshot.groupBuildable.length),
         );

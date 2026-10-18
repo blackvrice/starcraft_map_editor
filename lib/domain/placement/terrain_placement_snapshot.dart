@@ -19,12 +19,20 @@ final class TerrainPlacementSnapshot {
     required List<bool> groupBuildable,
     required List<List<int>> megaTileReferences,
     required List<int> walkableMasks,
+    List<int>? midElevationMasks,
+    List<int>? highElevationMasks,
     this.creepCandidateProfile,
   }) : groupBuildable = List.unmodifiable(groupBuildable),
        megaTileReferences = List.unmodifiable(
          megaTileReferences.map((row) => List<int>.unmodifiable(row)),
        ),
-       walkableMasks = List.unmodifiable(walkableMasks) {
+       walkableMasks = List.unmodifiable(walkableMasks),
+       midElevationMasks = midElevationMasks == null
+           ? null
+           : List.unmodifiable(midElevationMasks),
+       highElevationMasks = highElevationMasks == null
+           ? null
+           : List.unmodifiable(highElevationMasks) {
     if (tileset < 0 ||
         tileset > 7 ||
         groupBuildable.isEmpty ||
@@ -41,6 +49,15 @@ final class TerrainPlacementSnapshot {
         )) {
       throw ArgumentError('Invalid terrain placement dimensions or values.');
     }
+    if ((midElevationMasks == null) != (highElevationMasks == null) ||
+        [midElevationMasks, highElevationMasks].any(
+          (masks) =>
+              masks != null &&
+              (masks.length != walkableMasks.length ||
+                  masks.any((v) => v < 0 || v > 65535)),
+        )) {
+      throw ArgumentError('Invalid terrain elevation coverage.');
+    }
   }
 
   static const version = 1;
@@ -53,6 +70,15 @@ final class TerrainPlacementSnapshot {
 
   /// VF4 bit0 projected to bit (row*4+column), for sixteen 8px mini-tiles.
   final List<int> walkableMasks;
+
+  /// Optional VF4 bit1/bit2 projections. Missing does not mean low ground.
+  final List<int>? midElevationMasks, highElevationMasks;
+
+  ({int mid, int high})? elevation(int rawValue) {
+    if (tile(rawValue) == null || midElevationMasks == null) return null;
+    final mega = megaTileReferences[rawValue ~/ 16][rawValue & 15];
+    return (mid: midElevationMasks![mega], high: highElevationMasks![mega]);
+  }
 
   /// Missing on legacy helpers. Shares this snapshot's CV5 source identity.
   final Cv5CreepCandidateProfile? creepCandidateProfile;

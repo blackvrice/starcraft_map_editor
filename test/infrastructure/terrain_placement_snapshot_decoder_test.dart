@@ -17,6 +17,69 @@ void main() {
     tileset: tileset,
   );
 
+  test(
+    'optional elevation profile is immutable and participates in identity',
+    () {
+      final original = decode(terrainPlacementJson());
+      expect(original.snapshot.elevation(0), isNull);
+      final json = terrainPlacementJson()
+        ..['elevationProfile'] = {
+          'version': 1,
+          'midMasks': [0xaaaa, 0],
+          'highMasks': [0xcccc, 0],
+        };
+      final current = decode(json);
+      expect(current.snapshot.elevation(0), (mid: 0xaaaa, high: 0xcccc));
+      expect(current.revision, isNot(original.revision));
+      json['elevationProfile']['midMasks'][0] = 0;
+      expect(current.snapshot.elevation(0)!.mid, 0xaaaa);
+      expect(decode(json).revision, isNot(current.revision));
+      expect(
+        () => current.snapshot.midElevationMasks!.clear(),
+        throwsUnsupportedError,
+      );
+      json['elevationProfile'] = null;
+      expect(decode(json).revision, original.revision);
+    },
+  );
+  test(
+    'invalid elevation versions, coverage and mask types reject the packet',
+    () {
+      for (final profile in <Object?>[
+        [],
+        {'version': 2},
+        {
+          'version': 1.0,
+          'midMasks': [0, 0],
+          'highMasks': [0, 0],
+        },
+        {
+          'version': 1,
+          'midMasks': [0],
+          'highMasks': [0, 0],
+        },
+        {
+          'version': 1,
+          'midMasks': [0, 0],
+          'highMasks': [0, 65536],
+        },
+        {
+          'version': 1,
+          'midMasks': [0, 0],
+          'highMasks': [0, 1.0],
+        },
+        {
+          'version': 1,
+          'midMasks': [0, 0],
+        },
+      ]) {
+        expect(
+          () => decode(terrainPlacementJson()..['elevationProfile'] = profile),
+          throwsFormatException,
+        );
+      }
+    },
+  );
   for (var tileset = 0; tileset < 8; tileset++) {
     test('optional CV5 profile is source-bound for tileset $tileset', () {
       final json = terrainPlacementJson(tileset: tileset);

@@ -171,6 +171,79 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
+  String get analysisTitle => '지도 분석';
+
+  @override
+  String get analysisOff => '끄기';
+
+  @override
+  String get analysisElevation => '지형 높이';
+
+  @override
+  String get analysisBuildable => '지형 건설 가능';
+
+  @override
+  String get analysisWalkable => '지형 이동 가능';
+
+  @override
+  String get analysisPower => '실제 전력 (미지원)';
+
+  @override
+  String get analysisCreep => '실제 크립 (미지원)';
+
+  @override
+  String get analysisDistance => '거리 측정';
+
+  @override
+  String get analysisLoad => '로컬 지형 자료 불러오기';
+
+  @override
+  String get analysisRuntimeUnsupported =>
+      '실제 초기·실시간 게임 상태 수집은 미지원입니다. 모든 영역은 미확인입니다.';
+
+  @override
+  String get analysisStaticOnly => '로컬 CV5/VF4 자료이며 유닛 점유·게임 경로 탐색 결과가 아닙니다.';
+
+  @override
+  String get analysisDistanceOnly => '기하학적 픽셀 반경이며 검증된 무기 사거리가 아닙니다.';
+
+  @override
+  String get analysisUnknown => '미확인';
+
+  @override
+  String get analysisLow => '저지';
+
+  @override
+  String get analysisMid => '중지';
+
+  @override
+  String get analysisHigh => '고지';
+
+  @override
+  String get analysisYes => '가능';
+
+  @override
+  String get analysisNo => '불가';
+
+  @override
+  String get analysisMixed => '낮은 확대율에서 혼합';
+
+  @override
+  String get analysisPixelX => '중심 X (px)';
+
+  @override
+  String get analysisPixelY => '중심 Y (px)';
+
+  @override
+  String get analysisRadius => '반경 (px)';
+
+  @override
+  String get analysisMeasure => '거리 측정';
+
+  @override
+  String get analysisRejected => '지도 분석 요청이 거부되었습니다.';
+
+  @override
   String get brushLibrary => '사용자 지형 브러시';
 
   @override

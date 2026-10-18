@@ -10,6 +10,7 @@ import '../../application/layers/selection_navigation_controller.dart';
 import '../../application/ports/starcraft_object_atlas_gateway.dart';
 import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
+import '../../domain/terrain/terrain_analysis_view.dart';
 import '../localization/l10n.dart';
 import 'object_sprite_texture.dart';
 import 'object_sprite_texture_controller.dart';
@@ -32,6 +33,8 @@ final class MapCanvasPaintMetrics {
     required this.objectTextureCount,
     required this.objectMarkerCount,
     required this.culledObjectCount,
+    this.analysisTileCount = 0,
+    this.analysisMiniTileCount = 0,
   });
 
   final Duration paintDuration;
@@ -46,6 +49,7 @@ final class MapCanvasPaintMetrics {
   final int objectTextureCount;
   final int objectMarkerCount;
   final int culledObjectCount;
+  final int analysisTileCount, analysisMiniTileCount;
 
   int get paintedTerrainTileCount =>
       textureTileCount + fallbackTileCount + unsupportedTileCount;
@@ -60,6 +64,9 @@ class MapCanvas extends StatefulWidget {
     required this.mapWidth,
     required this.mapHeight,
     this.rawTileValues,
+    this.analysisView,
+    this.analysisMode = TerrainAnalysisMode.off,
+    this.distanceMeasurement,
     this.terrainTextureState = const TerrainTileTextureState.idle(),
     this.objectSpriteTextureState = const ObjectSpriteTextureState.idle(),
     this.editingTool = TerrainEditingTool.select,
@@ -98,6 +105,9 @@ class MapCanvas extends StatefulWidget {
   final int mapWidth;
   final int mapHeight;
   final List<int>? rawTileValues;
+  final TerrainAnalysisView? analysisView;
+  final TerrainAnalysisMode analysisMode;
+  final MapDistanceMeasurement? distanceMeasurement;
   final List<int>? fogValues;
   final int? fogPlayer;
   final TerrainTileTextureState terrainTextureState;
@@ -317,6 +327,9 @@ class _MapCanvasState extends State<MapCanvas> {
                             painter: MapCanvasPainter(
                               layout: layout,
                               rawTileValues: terrainValues,
+                              analysisView: widget.analysisView,
+                              analysisMode: widget.analysisMode,
+                              distanceMeasurement: widget.distanceMeasurement,
                               terrainTextures:
                                   widget.terrainTextureState.textures,
                               unsupportedRawValues: widget
@@ -1489,6 +1502,9 @@ class MapCanvasPainter extends CustomPainter {
   MapCanvasPainter({
     required this.layout,
     required this.rawTileValues,
+    this.analysisView,
+    this.analysisMode = TerrainAnalysisMode.off,
+    this.distanceMeasurement,
     this.terrainTextures = const {},
     this.unsupportedRawValues = const [],
     this.objectTextures = const {},
@@ -1539,6 +1555,9 @@ class MapCanvasPainter extends CustomPainter {
   ];
 
   final MapCanvasLayout layout;
+  final TerrainAnalysisView? analysisView;
+  final TerrainAnalysisMode analysisMode;
+  final MapDistanceMeasurement? distanceMeasurement;
   final List<int>? rawTileValues;
   final List<int>? fogValues;
   final int? fogPlayer;
@@ -1563,6 +1582,7 @@ class MapCanvasPainter extends CustomPainter {
     final observer = onPaintMeasured;
     final stopwatch = observer == null ? null : (Stopwatch()..start());
     final counters = observer == null ? null : _MapCanvasPaintCounters();
+    var analysisCounts = (0, 0);
     developer.Timeline.startSync(
       'MapCanvasPainter.paint',
       arguments: {
@@ -1585,6 +1605,7 @@ class MapCanvasPainter extends CustomPainter {
       final mapRect = layout.mapRect;
       canvas.drawRect(mapRect, Paint()..color = mapBackground);
       _paintTerrain(canvas, counters);
+      analysisCounts = _paintAnalysis(canvas);
       _paintGrid(canvas);
       _paintObjectLayers(canvas, counters);
       _paintFog(canvas);
@@ -1616,10 +1637,130 @@ class MapCanvasPainter extends CustomPainter {
             objectTextureCount: counters.objectTextureCount,
             objectMarkerCount: counters.objectMarkerCount,
             culledObjectCount: counters.culledObjectCount,
+            analysisTileCount: analysisCounts.$1,
+            analysisMiniTileCount: analysisCounts.$2,
           ),
         );
       }
     }
+  }
+
+  (int, int) _paintAnalysis(Canvas canvas) {
+    if (analysisMode == TerrainAnalysisMode.off) return (0, 0);
+    if (analysisMode == TerrainAnalysisMode.distance) {
+      final measure = distanceMeasurement;
+      if (measure == null) return (0, 0);
+      final scale = layout.tileExtent / 32;
+      final center =
+          layout.mapRect.topLeft + Offset(measure.x * scale, measure.y * scale);
+      canvas.save();
+      canvas.clipRect(layout.mapRect);
+      final paint = Paint()
+        ..color = const Color(0xFFF8D76A)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+      canvas.drawCircle(center, measure.radius * scale, paint);
+      canvas.drawLine(
+        center - const Offset(5, 0),
+        center + const Offset(5, 0),
+        paint,
+      );
+      canvas.drawLine(
+        center - const Offset(0, 5),
+        center + const Offset(0, 5),
+        paint,
+      );
+      canvas.restore();
+      return (0, 0);
+    }
+    final view = analysisView;
+    if (view == null ||
+        view.width != layout.mapWidth ||
+        view.height != layout.mapHeight) {
+      return (0, 0);
+    }
+    final paints = [
+      for (final color in [
+        0x9944B888,
+        0x996587E8,
+        0x99EF6470,
+        0x99E8BD55,
+        0x997D8796,
+      ])
+        Paint()..color = Color(color),
+    ];
+    final visible = layout.visibleTiles;
+    var count = 0, minis = 0;
+    final exact = layout.tileExtent >= 8;
+    for (var y = visible.top; y < visible.bottomExclusive; y++) {
+      for (var x = visible.left; x < visible.rightExclusive; x++) {
+        count++;
+        final facts =
+            analysisMode == TerrainAnalysisMode.power ||
+                analysisMode == TerrainAnalysisMode.creep
+            ? null
+            : view.tileAt(x, y);
+        final rect = _tileRect(x, y);
+        final unknown =
+            facts == null ||
+            (analysisMode == TerrainAnalysisMode.elevation &&
+                facts.midMask == null);
+        if (unknown) {
+          canvas.drawRect(rect, paints[4]);
+          if (layout.tileExtent >= 8) {
+            canvas.drawLine(
+              rect.topLeft,
+              rect.bottomRight,
+              Paint()
+                ..color = const Color(0xFFC7CED7)
+                ..strokeWidth = 1,
+            );
+          }
+          continue;
+        }
+        if (analysisMode == TerrainAnalysisMode.buildable) {
+          canvas.drawRect(rect, paints[facts.buildable ? 0 : 2]);
+        } else if (exact) {
+          final extent = layout.tileExtent / 4;
+          for (var mini = 0; mini < 16; mini++) {
+            final index = analysisMode == TerrainAnalysisMode.elevation
+                ? facts.elevation(mini)!
+                : (facts.walkableMask & (1 << mini)) != 0
+                ? 0
+                : 2;
+            canvas.drawRect(
+              Rect.fromLTWH(
+                rect.left + (mini % 4) * extent,
+                rect.top + (mini ~/ 4) * extent,
+                extent,
+                extent,
+              ),
+              paints[index],
+            );
+            minis++;
+          }
+        } else {
+          // At low zoom mixed tiles are explicit, never one sampled mini-tile.
+          final index = analysisMode == TerrainAnalysisMode.walkable
+              ? facts.walkableMask == 65535
+                    ? 0
+                    : facts.walkableMask == 0
+                    ? 2
+                    : 3
+              : facts.highMask == 65535
+              ? 2
+              : facts.highMask != 0
+              ? 3
+              : facts.midMask == 65535
+              ? 1
+              : facts.midMask == 0
+              ? 0
+              : 3;
+          canvas.drawRect(rect, paints[index]);
+        }
+      }
+    }
+    return (count, minis);
   }
 
   void _paintFog(Canvas canvas) {
@@ -2073,7 +2214,10 @@ class MapCanvasPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant MapCanvasPainter oldDelegate) {
-    return oldDelegate.layout.viewportSize != layout.viewportSize ||
+    return !identical(oldDelegate.analysisView, analysisView) ||
+        oldDelegate.analysisMode != analysisMode ||
+        oldDelegate.distanceMeasurement != distanceMeasurement ||
+        oldDelegate.layout.viewportSize != layout.viewportSize ||
         oldDelegate.layout.mapWidth != layout.mapWidth ||
         oldDelegate.layout.mapHeight != layout.mapHeight ||
         oldDelegate.layout.mapRect != layout.mapRect ||

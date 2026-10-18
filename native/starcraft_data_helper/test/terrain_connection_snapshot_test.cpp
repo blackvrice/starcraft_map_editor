@@ -34,6 +34,16 @@ int main() {
   assert(projected.mega_tile_references[0][15] == 1);
   assert(projected.mega_tile_references[1][15] == 65535);
   assert(placement == placement_original);
+  auto elevations = placement_original;
+  for (std::size_t mini = 0; mini < 16; ++mini) {
+    Put(elevations[1], mini * 2, static_cast<std::uint16_t>((mini % 4) * 2));
+  }
+  const auto elevation_original = elevations;
+  const auto elevation = sc::ReadTerrainPlacement(elevations);
+  assert(elevation.success);
+  assert((elevation.mid_elevation_masks == std::vector<std::uint16_t>{0xaaaa, 0}));
+  assert((elevation.high_elevation_masks == std::vector<std::uint16_t>{0xcccc, 0}));
+  assert(elevations == elevation_original);
   // All independent combinations survive unrelated header bits unchanged.
   auto candidates = placement_original;
   candidates[0].resize(8 * 52);

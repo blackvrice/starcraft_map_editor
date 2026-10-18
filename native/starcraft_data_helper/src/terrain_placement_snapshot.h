@@ -11,6 +11,8 @@ struct TerrainPlacementSnapshot {
   std::vector<bool> group_buildable;
   std::vector<std::array<std::uint16_t, 16>> mega_tile_references;
   std::vector<std::uint16_t> walkable_masks;
+  std::vector<std::uint16_t> mid_elevation_masks;
+  std::vector<std::uint16_t> high_elevation_masks;
   std::vector<std::uint16_t> creep_candidate_flags;
   std::string error_code;
 };
