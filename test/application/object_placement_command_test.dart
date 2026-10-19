@@ -25,8 +25,186 @@ import 'package:starcraft_map_editor/domain/placement/unit_collision_catalog.dar
 import 'package:starcraft_map_editor/domain/placement/unit_collision_profile.dart';
 import 'package:starcraft_map_editor/domain/placement/terrain_placement_snapshot.dart';
 import 'package:starcraft_map_editor/infrastructure/settings/in_memory_settings_store.dart';
+import 'package:starcraft_map_editor/l10n/app_localizations.dart';
+import '../fixtures/doodad_deletion_fixture.dart';
 
 void main() {
+  for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
+    test(
+      'disabled Doodad $overlay deletes in one reversible command and respects every required layer',
+      () async {
+        final fixture = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(
+            deletionDocument(overlay: overlay),
+          ),
+        );
+        addTearDown(fixture.dispose);
+        final c = fixture.controller, maps = fixture.openMapController;
+        final before = const RawChkEncoder().encode(
+          maps.state.session!.rawDocument,
+        );
+        final plan = c.prepareDoodadDeletion(
+          recipe: deletionRecipe(overlay: overlay),
+          recordIndex: 0,
+          overlayRecordIndex: overlay == null ? null : 1,
+        );
+        for (final layer in [
+          MapLayerType.terrain,
+          MapLayerType.doodads,
+          if (overlay != null) MapLayerType.sprites,
+        ]) {
+          fixture.mapLayerController.setLocked(layer, true);
+          expect(() => c.deleteDoodad(plan), throwsStateError);
+          expect(
+            const RawChkEncoder().encode(maps.state.session!.rawDocument),
+            before,
+          );
+          expect(maps.editHistory.undoDepth, 0);
+          fixture.mapLayerController.setLocked(layer, false);
+        }
+        c.deleteDoodad(plan);
+        expect(maps.editHistory.undoDepth, 1);
+        final after = const RawChkEncoder().encode(
+          maps.state.session!.rawDocument,
+        );
+        expect(c.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(maps.state.session!.rawDocument),
+          before,
+        );
+        expect(c.redo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(maps.state.session!.rawDocument),
+          after,
+        );
+        expect(() => c.deleteDoodad(plan), throwsStateError);
+      },
+    );
+  }
+  for (final (width, locale) in [
+    (600.0, const Locale('ko')),
+    (1200.0, const Locale('en')),
+  ]) {
+    testWidgets(
+      'disabled sprite-unit delete review keeps explicit ownership at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 800);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final fixture = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(
+            deletionDocument(overlay: DoodadOverlaySemantic.spriteUnit),
+          ),
+        );
+        addTearDown(fixture.dispose);
+        final session = fixture.openMapController.state.session!;
+        fixture.mapLayerController.selectObject(
+          session: session,
+          object: MapLayerObjectRef(
+            layer: MapLayerType.doodads,
+            sectionIndex:
+                session.objectViews.doodadSections.single.sectionIndex,
+            recordIndex: 0,
+          ),
+        );
+        final before = const RawChkEncoder().encode(session.rawDocument);
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => deleteObjectsWithDoodadReview(
+                    context,
+                    fixture.controller,
+                    _DeletionCatalog(
+                      deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
+                    ),
+                  ),
+                  child: const Text('Delete selection'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Delete selection'));
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('doodad-delete-apply')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(
+          find.text(
+            locale.languageCode == 'ko'
+                ? '두다드 삭제 및 지형 복원'
+                : 'Delete Doodad and restore terrain',
+          ),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+        await tester.pumpAndSettle();
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        await tester.tap(find.text('Delete selection'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('doodad-delete-overlay')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find
+              .text(
+                locale.languageCode == 'ko'
+                    ? 'THG2 레코드 #1 · 종류 100'
+                    : 'THG2 record #1 · type 100',
+              )
+              .last,
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+        await tester.pumpAndSettle();
+        expect(
+          fixture
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .doodadSections
+              .single
+              .doodads,
+          hasLength(1),
+        );
+        expect(
+          fixture
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .spriteSections
+              .single
+              .sprites,
+          hasLength(2),
+        );
+        expect(tester.takeException(), isNull);
+        fixture.controller.undo();
+        expect(
+          const RawChkEncoder().encode(
+            fixture.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+      },
+    );
+  }
   for (final kind in [
     'clear',
     'walk',

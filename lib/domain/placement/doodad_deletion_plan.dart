@@ -50,9 +50,9 @@ final class DoodadDeletionPlan {
     }
     final doodad = section.doodads[recordIndex];
     if (doodad.doodadType != recipe.doodadType ||
-        doodad.enabledValue != recipe.enabledValue) {
+        (doodad.enabledValue != 0 && doodad.enabledValue != 1)) {
       reject(
-        'recipe does not match enabled doodad (${doodad.doodadType}/${doodad.enabledValue}, expected ${recipe.doodadType}/${recipe.enabledValue})',
+        'recipe does not match a known doodad state (${doodad.doodadType}/${doodad.enabledValue}, expected type ${recipe.doodadType}, state 0 or 1)',
       );
     }
     final dx = doodad.x - recipe.centerOffsetX;
@@ -118,7 +118,7 @@ final class DoodadDeletionPlan {
           sprite.x != doodad.x ||
           sprite.y != doodad.y ||
           sprite.owner != doodad.owner ||
-          sprite.flags != overlay.thg2Flags ||
+          sprite.flags != overlay.flagsForEnabled(doodad.enabledValue == 0) ||
           sprite.unused != 0) {
         reject('overlay does not match recipe');
       }

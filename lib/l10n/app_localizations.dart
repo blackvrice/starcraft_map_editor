@@ -608,6 +608,72 @@ abstract class AppLocalizations {
   /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
   String get playerColorPreviewLimit;
 
+  /// No description provided for @doodadDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Doodad and restore terrain'**
+  String get doodadDeleteTitle;
+
+  /// No description provided for @doodadDeleteRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'DD2 record #{index} · type {type} · state {state}'**
+  String doodadDeleteRecord(int index, int type, int state);
+
+  /// No description provided for @doodadDeleteOneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one Doodad for verified composite deletion.'**
+  String get doodadDeleteOneRequired;
+
+  /// No description provided for @doodadDeleteAmbiguousSprites.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple THG2 sections are ambiguous.'**
+  String get doodadDeleteAmbiguousSprites;
+
+  /// No description provided for @doodadDeleteMapChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The map changed. Reopen this dialog.'**
+  String get doodadDeleteMapChanged;
+
+  /// No description provided for @doodadDeleteNoRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'No verified recipe is available for this Doodad.'**
+  String get doodadDeleteNoRecipe;
+
+  /// No description provided for @doodadDeleteOwnershipWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Matching coordinates do not prove ownership. Confirm the overlay to delete, or cancel.'**
+  String get doodadDeleteOwnershipWarning;
+
+  /// No description provided for @doodadDeleteOverlayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm overlay ownership'**
+  String get doodadDeleteOverlayHint;
+
+  /// No description provided for @doodadDeleteApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete together'**
+  String get doodadDeleteApply;
+
+  /// No description provided for @doodadDeleteRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Group {group} · {width} × {height}'**
+  String doodadDeleteRecipe(int group, int width, int height);
+
+  /// No description provided for @doodadDeleteOverlayRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'THG2 record #{index} · type {type}'**
+  String doodadDeleteOverlayRecord(int index, int type);
+
   /// No description provided for @sourceProjectFolder.
   ///
   /// In en, this message translates to:

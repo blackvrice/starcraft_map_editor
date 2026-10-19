@@ -22,7 +22,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0007](0007-object-sprite-atlas-protocol.md) | Accepted | 요청별 객체 스프라이트 아틀라스 프로토콜 |
 | [0008](0008-validated-visual-placement-catalog.md) | Accepted | 검증된 로컬 카탈로그와 종류별 배치 recipe |
 | [0009](0009-declarative-eud-project.md) | Accepted | 별도 JSON 프로젝트의 EUD 선언적 설정·저장·Undo 경계 |
-| [0010](0010-reviewed-doodad-deletion.md) | Accepted | 복원 정보와 명시적 overlay 확인에 따른 단일 Doodad 복합 삭제 |
+| [0010](0010-reviewed-doodad-deletion.md) | Superseded by 0026 | 복원 정보와 명시적 overlay 확인에 따른 단일 Doodad 복합 삭제 |
 | [0011](0011-managed-euddraft-bundle.md) | Accepted | updater 대체 소스와 신뢰 목록을 포함한 관리형 euddraft 동봉 |
 | [0012](0012-generated-eud-test-builds.md) | Accepted | 선언적 EUD 설정의 명시적 테스트 빌드 |
 | [0013](0013-localized-editor-ui.md) | Accepted | 시스템 언어를 따르는 한국어·영어 UI |
@@ -38,6 +38,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0023](0023-portable-trigger-declarations.md) | Accepted | 일반 TRIG의 세 언어 제한 선언·snapshot/raw 보존·격리 분석·원문/새 파일 보호 |
 | [0024](0024-eud-source-translation-and-draft-recovery.md) | Accepted | 공식 EPS→Python·native Python 빌드·공통 EUD 액션 모델과 미적용 초안 복구 |
 | [0025](0025-static-source-workspace.md) | Accepted | 실행 없는 다중 소스·원문/충돌 보존·schema v3 복구·빌드 의존 지문 |
+| [0026](0026-disabled-doodad-deletion.md) | Accepted | 일관된 비활성 두다드의 상태별 overlay 검증·단일 복합 삭제 |
 
 ## 새 ADR 형식
 

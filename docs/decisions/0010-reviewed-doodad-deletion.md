@@ -1,7 +1,10 @@
 # ADR-0010: 복원 정보가 있는 단일 Doodad의 명시적 복합 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0026](0026-disabled-doodad-deletion.md)
 - Date: 2026-09-25
+
+2026-10-19: 아래는 당시 결정이다. ADR-0026은 기존 안전 조건을 유지하면서
+일관된 비활성 상태도 허용한다. 실제 게임/외부 에디터 인수 완료를 뜻하지 않는다.
 
 ## Context
 

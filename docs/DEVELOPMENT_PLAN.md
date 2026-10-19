@@ -131,6 +131,16 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] Doodad의 `DD2 `·`MTXM`·필요한 `THG2` 원자적 배치와 검증형 단일 삭제/Undo 구현
       (2026-09-25: 유일한 TILE·일치한 recipe·명시적 overlay 귀속 확인에 한정. 겹침 가능성·disabled·다중 선택·복원 정보 부재는 전체 거부. [ADR-0010](decisions/0010-reviewed-doodad-deletion.md))
 - [ ] Doodad 복합 삭제의 실제 게임/외부 에디터 왕복 검증과 미지원 사례 확대
+- [x] 검증된 비활성 Doodad 단일 삭제·상태별 overlay 확인·한영 UI·MPQ/Undo 회귀
+
+2026-10-19: 첫 미완료 항목의 미지원 사례 중 비활성 단일 삭제를 확대했다.
+[현재 계약/실행 기록](DOODAD_DELETION.md)과 [ADR-0026](decisions/0026-disabled-doodad-deletion.md)을 따른다.
+DD2 0/1과 일관된 THG2 flags만 허용하고 기존 TILE/geometry/귀속/잠금·context
+검사를 유지한다. 실제 게임/외부 인수, 다중/겹침/복원 정보 부재는 여전히 미완료다.
+검증: analyze 무이슈·전체 2586 통과/83 조건부 skip·별도 실제 MPQ/도메인 16개
+통과·Windows Debug 빌드·native CTest 7/7. SDK 차이와 기존 미수정 테스트 3개의
+포맷 차이, 실패 재현/수정 결과는 위 실행 기록을 따른다.
+
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
 - [x] 선택 결과의 커서 ghost, 스냅, 단일/연속 배치와 `Escape` 취소 구현

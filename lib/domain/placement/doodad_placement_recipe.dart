@@ -22,6 +22,12 @@ final class DoodadOverlayRecipe {
 
   int get thg2Flags =>
       semantic == DoodadOverlaySemantic.pureSprite ? drawAsSpriteFlag : 0;
+
+  /// Only sprite-unit overlays mirror DD2's disabled state in THG2 bit 15.
+  /// Pure sprite flags stay unchanged, even when their DD2 metadata is disabled.
+  int flagsForEnabled(bool enabled) =>
+      thg2Flags |
+      (!enabled && semantic == DoodadOverlaySemantic.spriteUnit ? 0x8000 : 0);
 }
 
 final class DoodadFootprintCell {

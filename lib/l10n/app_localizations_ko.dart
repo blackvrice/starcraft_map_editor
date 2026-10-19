@@ -272,6 +272,46 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
+  String get doodadDeleteTitle => '두다드 삭제 및 지형 복원';
+
+  @override
+  String doodadDeleteRecord(int index, int type, int state) {
+    return 'DD2 레코드 #$index · 종류 $type · 상태 $state';
+  }
+
+  @override
+  String get doodadDeleteOneRequired => '검증된 복합 삭제를 위해 두다드 한 개를 선택하세요.';
+
+  @override
+  String get doodadDeleteAmbiguousSprites => 'THG2 섹션이 여러 개여서 귀속을 확인할 수 없습니다.';
+
+  @override
+  String get doodadDeleteMapChanged => '맵이 변경되었습니다. 삭제 창을 다시 여세요.';
+
+  @override
+  String get doodadDeleteNoRecipe => '이 두다드에 사용할 검증된 배치 정의가 없습니다.';
+
+  @override
+  String get doodadDeleteOwnershipWarning =>
+      '같은 좌표만으로 귀속을 판단할 수 없습니다. 삭제할 오버레이를 확인하거나 취소하세요.';
+
+  @override
+  String get doodadDeleteOverlayHint => '오버레이 귀속 확인';
+
+  @override
+  String get doodadDeleteApply => '함께 삭제';
+
+  @override
+  String doodadDeleteRecipe(int group, int width, int height) {
+    return '그룹 $group · $width × $height';
+  }
+
+  @override
+  String doodadDeleteOverlayRecord(int index, int type) {
+    return 'THG2 레코드 #$index · 종류 $type';
+  }
+
+  @override
   String get sourceProjectFolder => '소스 폴더';
 
   @override

@@ -279,6 +279,49 @@ class AppLocalizationsEn extends AppLocalizations {
       'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
 
   @override
+  String get doodadDeleteTitle => 'Delete Doodad and restore terrain';
+
+  @override
+  String doodadDeleteRecord(int index, int type, int state) {
+    return 'DD2 record #$index · type $type · state $state';
+  }
+
+  @override
+  String get doodadDeleteOneRequired =>
+      'Select one Doodad for verified composite deletion.';
+
+  @override
+  String get doodadDeleteAmbiguousSprites =>
+      'Multiple THG2 sections are ambiguous.';
+
+  @override
+  String get doodadDeleteMapChanged => 'The map changed. Reopen this dialog.';
+
+  @override
+  String get doodadDeleteNoRecipe =>
+      'No verified recipe is available for this Doodad.';
+
+  @override
+  String get doodadDeleteOwnershipWarning =>
+      'Matching coordinates do not prove ownership. Confirm the overlay to delete, or cancel.';
+
+  @override
+  String get doodadDeleteOverlayHint => 'Confirm overlay ownership';
+
+  @override
+  String get doodadDeleteApply => 'Delete together';
+
+  @override
+  String doodadDeleteRecipe(int group, int width, int height) {
+    return 'Group $group · $width × $height';
+  }
+
+  @override
+  String doodadDeleteOverlayRecord(int index, int type) {
+    return 'THG2 record #$index · type $type';
+  }
+
+  @override
   String get sourceProjectFolder => 'Source folder';
 
   @override

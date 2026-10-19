@@ -4,6 +4,7 @@ import '../../application/editing/object_editing_controller.dart';
 import '../../application/layers/map_layer_controller.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../localization/l10n.dart';
 
 Future<void> deleteObjectsWithDoodadReview(
   BuildContext context,
@@ -17,11 +18,11 @@ Future<void> deleteObjectsWithDoodadReview(
   }
   try {
     if (selected.length != 1) {
-      throw StateError('Select one Doodad for verified composite deletion.');
+      throw StateError(context.l10n.doodadDeleteOneRequired);
     }
     final session = editing.openMapController.state.session!;
     if (session.objectViews.spriteSections.length > 1) {
-      throw StateError('Multiple THG2 sections are ambiguous.');
+      throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
     }
     final object = selected.single.object;
     final section = session.objectViews.doodadSections
@@ -34,10 +35,10 @@ Future<void> deleteObjectsWithDoodadReview(
       editing.openMapController.state.session?.rawDocument,
       session.rawDocument,
     )) {
-      throw StateError('The map changed. Select the Doodad again.');
+      throw StateError(context.l10n.doodadDeleteMapChanged);
     }
     if (recipes.isEmpty) {
-      throw StateError('No verified recipe is available for this Doodad.');
+      throw StateError(context.l10n.doodadDeleteNoRecipe);
     }
     var recipe = recipes.first;
     int? overlayIndex;
@@ -55,12 +56,13 @@ Future<void> deleteObjectsWithDoodadReview(
                     sprite.x == doodad.x &&
                     sprite.y == doodad.y &&
                     sprite.owner == doodad.owner &&
-                    sprite.flags == overlay.thg2Flags &&
+                    sprite.flags ==
+                        overlay.flagsForEnabled(doodad.enabledValue == 0) &&
                     sprite.unused == 0)
                   sprite,
           ];
           return AlertDialog(
-            title: const Text('Delete Doodad and restore terrain'),
+            title: Text(context.l10n.doodadDeleteTitle),
             content: SizedBox(
               width: 520,
               child: SingleChildScrollView(
@@ -68,8 +70,12 @@ Future<void> deleteObjectsWithDoodadReview(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Restore the verified footprint from TILE and delete DD2 metadata together. Cancel leaves the map unchanged.',
+                    Text(
+                      context.l10n.doodadDeleteRecord(
+                        object.recordIndex,
+                        doodad.doodadType,
+                        doodad.enabledValue,
+                      ),
                     ),
                     DropdownButton<DoodadPlacementRecipe>(
                       value: recipe,
@@ -79,7 +85,11 @@ Future<void> deleteObjectsWithDoodadReview(
                           DropdownMenuItem(
                             value: r,
                             child: Text(
-                              'Group ${r.startTileGroup} · ${r.width} × ${r.height}',
+                              context.l10n.doodadDeleteRecipe(
+                                r.startTileGroup,
+                                r.width,
+                                r.height,
+                              ),
                             ),
                           ),
                       ],
@@ -90,19 +100,21 @@ Future<void> deleteObjectsWithDoodadReview(
                       }),
                     ),
                     if (overlay != null) ...[
-                      const Text(
-                        'Choose the overlay that belongs to this Doodad. Matching coordinates do not prove ownership. If unsure, cancel.',
-                      ),
+                      Text(context.l10n.doodadDeleteOwnershipWarning),
                       DropdownButton<int>(
+                        key: const Key('doodad-delete-overlay'),
                         value: overlayIndex,
-                        hint: const Text('Confirm overlay ownership'),
+                        hint: Text(context.l10n.doodadDeleteOverlayHint),
                         isExpanded: true,
                         items: [
                           for (final s in candidates)
                             DropdownMenuItem(
                               value: s.recordIndex,
                               child: Text(
-                                'THG2 record #${s.recordIndex} · type ${s.spriteType}',
+                                context.l10n.doodadDeleteOverlayRecord(
+                                  s.recordIndex,
+                                  s.spriteType,
+                                ),
                               ),
                             ),
                         ],
@@ -125,10 +137,12 @@ Future<void> deleteObjectsWithDoodadReview(
             ),
             actions: [
               TextButton(
+                key: const Key('doodad-delete-cancel'),
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
+                child: Text(context.l10n.eudCancel),
               ),
               FilledButton(
+                key: const Key('doodad-delete-apply'),
                 onPressed: overlay != null && overlayIndex == null
                     ? null
                     : () {
@@ -142,7 +156,7 @@ Future<void> deleteObjectsWithDoodadReview(
                             session.rawDocument,
                           )) {
                             throw StateError(
-                              'The map changed. Reopen this dialog.',
+                              context.l10n.doodadDeleteMapChanged,
                             );
                           }
                           final plan = editing.prepareDoodadDeletion(
@@ -156,7 +170,7 @@ Future<void> deleteObjectsWithDoodadReview(
                           update(() => error = '$failure');
                         }
                       },
-                child: const Text('Delete together'),
+                child: Text(context.l10n.doodadDeleteApply),
               ),
             ],
           );
