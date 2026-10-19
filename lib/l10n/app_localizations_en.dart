@@ -279,6 +279,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
 
   @override
+  String get doodadDeleteMixedSelection =>
+      'Select Doodads only. Mixed object selections are not deleted.';
+
+  @override
+  String doodadDeleteBatchLimit(int count) {
+    return 'Select no more than $count Doodads for one deletion.';
+  }
+
+  @override
+  String doodadDeleteBatchTitle(int count) {
+    return 'Delete $count Doodads and restore terrain';
+  }
+
+  @override
   String get doodadDeleteTitle => 'Delete Doodad and restore terrain';
 
   @override

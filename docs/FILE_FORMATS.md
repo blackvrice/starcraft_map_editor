@@ -598,12 +598,14 @@ TECS/TECx와 PTEC/PTEx를 버전별로 선택하며 기본값 상속은 저장 �
 
 ## 기존 Doodad 복합 삭제 (2026-09-25)
 
-[ADR-0026](decisions/0026-disabled-doodad-deletion.md)의 단일 Doodad 검증을 통과한
+[ADR-0027](decisions/0027-atomic-batch-doodad-deletion.md)의 단일/다중 Doodad 검증을 통과한
 경우에만 기존 TILE을 원본 복원 정보로 읽고 MTXM의 recipe 쓰기 셀을 복원한다.
 DD2와 명시적으로 확인한 THG2 삭제는 같은 명령에 포함하며 TILE 자체는 바꾸지 않는다.
 누락/중복/잘린 복원 정보는 자동 보정하지 않고 전체 삭제를 거부한다.
 2026-10-19부터 DD2=1 비활성도 상태와 THG2 flags가 일관될 때만 허용한다.
 pure sprite는 `0x1000`, sprite-unit은 활성 `0`/비활성 `0x8000`을 요구한다.
+다중 삭제는 원래 DD2/THG2 인덱스로 검증한 뒤 최대 32개를 한 명령으로 제거한다.
+선택되지 않은 레코드 순서/원시 bytes와 TILE은 그대로 두며 CHK 포맷은 바꾸지 않는다.
 
 ## 일반 트리거·속성·스위치 (2026-09-27)
 

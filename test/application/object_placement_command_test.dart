@@ -29,6 +29,298 @@ import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import '../fixtures/doodad_deletion_fixture.dart';
 
 void main() {
+  for (final kind in ['mixed', 'oversized', 'stale']) {
+    testWidgets('batch review rejects $kind selection/context before editing', (
+      tester,
+    ) async {
+      final count = kind == 'oversized' ? 33 : 2;
+      final f = await _openFixture(
+        mapBytes: const RawChkEncoder().encode(
+          batchDeletionDocument(
+            count: count,
+            overlay: DoodadOverlaySemantic.spriteUnit,
+          ),
+        ),
+      );
+      addTearDown(f.dispose);
+      final session = f.openMapController.state.session!,
+          section = session.objectViews.doodadSections.single;
+      f.mapLayerController.selectObjects(
+        session: session,
+        objects: [
+          for (var i = 0; i < (kind == 'mixed' ? 1 : count); i++)
+            MapLayerObjectRef(
+              layer: MapLayerType.doodads,
+              sectionIndex: section.sectionIndex,
+              recordIndex: i == 0 ? 0 : i + 1,
+            ),
+          if (kind == 'mixed')
+            MapLayerObjectRef(
+              layer: MapLayerType.sprites,
+              sectionIndex:
+                  session.objectViews.spriteSections.single.sectionIndex,
+              recordIndex: 0,
+            ),
+        ],
+      );
+      final before = const RawChkEncoder().encode(session.rawDocument),
+          catalog = _DeletionCatalog(
+            deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
+          );
+      if (kind == 'stale') {
+        catalog.beforeList = () async {
+          await f.openMapController.open(sourcePath: r'C:\Maps\Placement.scx');
+        };
+      }
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => deleteObjectsWithDoodadReview(
+                  context,
+                  f.controller,
+                  catalog,
+                ),
+                child: const Text('Delete selection'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Delete selection'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(catalog.calls, kind == 'stale' ? 1 : 0);
+      expect(f.openMapController.editHistory.undoDepth, 0);
+      expect(
+        const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+  for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
+    test(
+      'batch Doodad $overlay is one Undo and every failure preserves all records',
+      () async {
+        final f = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(
+            batchDeletionDocument(overlay: overlay),
+          ),
+        );
+        addTearDown(f.dispose);
+        final before = const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        );
+        final requests = batchDeletionRequests(overlay: overlay),
+            plan = f.controller.prepareDoodadDeletions(
+              batchDeletionRequests(overlay: overlay),
+            );
+        for (final layer in [
+          MapLayerType.doodads,
+          MapLayerType.terrain,
+          if (overlay != null) MapLayerType.sprites,
+        ]) {
+          f.mapLayerController.setLocked(layer, true);
+          expect(() => f.controller.deleteDoodad(plan), throwsStateError);
+          expect(
+            const RawChkEncoder().encode(
+              f.openMapController.state.session!.rawDocument,
+            ),
+            before,
+          );
+          expect(f.openMapController.editHistory.undoDepth, 0);
+          f.mapLayerController.setLocked(layer, false);
+        }
+        expect(
+          () => f.controller.prepareDoodadDeletions([
+            requests.first,
+            requests.first,
+          ]),
+          throwsStateError,
+        );
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        f.controller.deleteDoodad(plan);
+        expect(f.openMapController.editHistory.undoDepth, 1);
+        final after = const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        );
+        expect(f.controller.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        expect(f.controller.redo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          after,
+        );
+        expect(() => f.controller.deleteDoodad(plan), throwsStateError);
+      },
+    );
+  }
+  for (final (width, locale) in [
+    (600.0, const Locale('ko')),
+    (1200.0, const Locale('en')),
+  ]) {
+    testWidgets(
+      'batch review requires every overlay and cancellation is read-only at $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final f = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(
+            batchDeletionDocument(overlay: DoodadOverlaySemantic.spriteUnit),
+          ),
+        );
+        addTearDown(f.dispose);
+        final session = f.openMapController.state.session!,
+            section = session.objectViews.doodadSections.single;
+        f.mapLayerController.selectObjects(
+          session: session,
+          objects: [
+            for (final index in [0, 2])
+              MapLayerObjectRef(
+                layer: MapLayerType.doodads,
+                sectionIndex: section.sectionIndex,
+                recordIndex: index,
+              ),
+          ],
+        );
+        final before = const RawChkEncoder().encode(session.rawDocument),
+            catalog = _DeletionCatalog(
+              deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
+            );
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => deleteObjectsWithDoodadReview(
+                    context,
+                    f.controller,
+                    catalog,
+                  ),
+                  child: const Text('Delete selection'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Delete selection'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text(
+            locale.languageCode == 'ko'
+                ? '두다드 2개 삭제 및 지형 복원'
+                : 'Delete 2 Doodads and restore terrain',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('doodad-delete-apply')),
+              )
+              .onPressed,
+          isNull,
+        );
+        expect(catalog.calls, 1);
+        await tester.tap(find.byKey(const Key('doodad-delete-overlay-0')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find
+              .text(
+                locale.languageCode == 'ko'
+                    ? 'THG2 레코드 #1 · 종류 100'
+                    : 'THG2 record #1 · type 100',
+              )
+              .last,
+        );
+        await tester.pumpAndSettle();
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('doodad-delete-apply')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+        await tester.pumpAndSettle();
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        await tester.tap(find.text('Delete selection'));
+        await tester.pumpAndSettle();
+        for (final (record, overlay) in [(0, 1), (2, 3)]) {
+          await tester.ensureVisible(
+            find.byKey(Key('doodad-delete-overlay-$record')),
+          );
+          await tester.tap(find.byKey(Key('doodad-delete-overlay-$record')));
+          await tester.pumpAndSettle();
+          await tester.tap(
+            find
+                .text(
+                  locale.languageCode == 'ko'
+                      ? 'THG2 레코드 #$overlay · 종류 100'
+                      : 'THG2 record #$overlay · type 100',
+                )
+                .last,
+          );
+          await tester.pumpAndSettle();
+        }
+        await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+        await tester.pumpAndSettle();
+        expect(
+          f
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .doodadSections
+              .single
+              .doodads,
+          hasLength(1),
+        );
+        expect(
+          f
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .spriteSections
+              .single
+              .sprites,
+          hasLength(2),
+        );
+        expect(f.openMapController.editHistory.undoDepth, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
     test(
       'disabled Doodad $overlay deletes in one reversible command and respects every required layer',
@@ -2346,8 +2638,15 @@ final class _Fixture {
 class _DeletionCatalog implements PlacementCatalogController {
   _DeletionCatalog(this.recipe);
   final DoodadPlacementRecipe recipe;
+  int calls = 0;
+  Future<void> Function()? beforeList;
   @override
-  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async => [recipe];
+  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async {
+    calls++;
+    await beforeList?.call();
+    return [recipe];
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

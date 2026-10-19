@@ -608,6 +608,24 @@ abstract class AppLocalizations {
   /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
   String get playerColorPreviewLimit;
 
+  /// No description provided for @doodadDeleteMixedSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Doodads only. Mixed object selections are not deleted.'**
+  String get doodadDeleteMixedSelection;
+
+  /// No description provided for @doodadDeleteBatchLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select no more than {count} Doodads for one deletion.'**
+  String doodadDeleteBatchLimit(int count);
+
+  /// No description provided for @doodadDeleteBatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {count} Doodads and restore terrain'**
+  String doodadDeleteBatchTitle(int count);
+
   /// No description provided for @doodadDeleteTitle.
   ///
   /// In en, this message translates to:

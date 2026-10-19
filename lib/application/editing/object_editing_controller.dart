@@ -2031,6 +2031,19 @@ class ObjectEditingController {
     );
   }
 
+  DoodadDeletionPlan prepareDoodadDeletions(
+    Iterable<DoodadDeletionRequest> requests,
+  ) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map.');
+    }
+    return DoodadDeletionPlan.createBatch(
+      document: session.rawDocument,
+      requests: requests,
+    );
+  }
+
   bool undo() => openMapController.editHistory.undo();
 
   bool redo() => openMapController.editHistory.redo();

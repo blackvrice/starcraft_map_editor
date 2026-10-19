@@ -3,18 +3,121 @@ import 'dart:typed_data';
 import '../chk/chk.dart';
 import 'doodad_placement_recipe.dart';
 
+final class DoodadDeletionRequest {
+  const DoodadDeletionRequest({
+    required this.recipe,
+    required this.recordIndex,
+    this.confirmedOverlayRecordIndex,
+  });
+  final DoodadPlacementRecipe recipe;
+  final int recordIndex;
+  final int? confirmedOverlayRecordIndex;
+}
+
 /// Existing maps carry no overlay ownership ID. The caller must explicitly
 /// choose the overlay record; coordinate equality alone never grants ownership.
 final class DoodadDeletionPlan {
-  DoodadDeletionPlan._(this.document, this.replacements);
+  DoodadDeletionPlan._(
+    this.document,
+    this.replacements,
+    this._restoredTiles,
+    this.doodadCount,
+    this.overlayCount,
+  );
   final RawChkDocument document;
   final Map<int, RawChkSection> replacements;
+  final Map<int, int> _restoredTiles;
+  final int doodadCount, overlayCount;
+  static const maximumBatchSize = 32;
 
   static DoodadDeletionPlan create({
     required RawChkDocument document,
     required DoodadPlacementRecipe recipe,
     required int recordIndex,
     int? confirmedOverlayRecordIndex,
+  }) => _create(
+    document: document,
+    recipe: recipe,
+    recordIndex: recordIndex,
+    confirmedOverlayRecordIndex: confirmedOverlayRecordIndex,
+    reviewedNeighbors: const {},
+  );
+
+  static DoodadDeletionPlan createBatch({
+    required RawChkDocument document,
+    required Iterable<DoodadDeletionRequest> requests,
+  }) {
+    final items = requests.take(maximumBatchSize + 1).toList();
+    if (items.isEmpty || items.length > maximumBatchSize) {
+      throw StateError('DOODAD_DELETE: batch size');
+    }
+    final records = items.map((r) => r.recordIndex).toSet();
+    final overlays = items
+        .map((r) => r.confirmedOverlayRecordIndex)
+        .whereType<int>()
+        .toList();
+    if (records.length != items.length ||
+        overlays.toSet().length != overlays.length) {
+      throw StateError('DOODAD_DELETE: duplicate record ownership');
+    }
+    final neighbors = {for (final r in items) r.recordIndex: r.recipe};
+    final restored = <int, int>{};
+    // Validate every request against the same immutable source before merging.
+    // Deleting sequentially would shift DD2/THG2 indices and could leave partial edits.
+    for (final request in items) {
+      final plan = _create(
+        document: document,
+        recipe: request.recipe,
+        recordIndex: request.recordIndex,
+        confirmedOverlayRecordIndex: request.confirmedOverlayRecordIndex,
+        reviewedNeighbors: neighbors,
+        buildReplacements: false,
+      );
+      for (final tile in plan._restoredTiles.entries) {
+        if (restored.containsKey(tile.key)) {
+          throw StateError('DOODAD_DELETE: overlapping restore cells');
+        }
+        restored[tile.key] = tile.value;
+      }
+    }
+    final objects = const ChkObjectViewDecoder().decode(document),
+        terrain = const ChkTerrainViewDecoder()
+            .decode(document)
+            .tileMaps
+            .single;
+    final values = terrain.rawTileValues.toList();
+    for (final tile in restored.entries) {
+      values[tile.key] = tile.value;
+    }
+    const editor = ChkObjectSectionEditor();
+    final dd = objects.doodadSections.single;
+    final replacements = <int, RawChkSection>{
+      terrain.sectionIndex: terrain.withRawTileValues(values),
+      dd.sectionIndex: editor.deleteDoodads(dd, records),
+    };
+    if (overlays.isNotEmpty) {
+      final sprites = objects.spriteSections.single;
+      replacements[sprites.sectionIndex] = editor.deleteSprites(
+        sprites,
+        overlays.toSet(),
+      );
+    }
+    return DoodadDeletionPlan._(
+      document,
+      Map.unmodifiable(replacements),
+      Map.unmodifiable(restored),
+      items.length,
+      overlays.length,
+    );
+  }
+
+  static DoodadDeletionPlan _create({
+    required RawChkDocument document,
+    required DoodadPlacementRecipe recipe,
+    required int recordIndex,
+    required int? confirmedOverlayRecordIndex,
+    required Map<int, DoodadPlacementRecipe> reviewedNeighbors,
+    bool buildReplacements = true,
   }) {
     Never reject(String reason) => throw StateError('DOODAD_DELETE: $reason');
     int unique(String name) {
@@ -69,6 +172,18 @@ final class DoodadDeletionPlan {
     // possible intersection with their maximum 16x16 footprint.
     for (final other in section.doodads) {
       if (other.recordIndex == recordIndex) continue;
+      final reviewed = reviewedNeighbors[other.recordIndex];
+      if (reviewed != null) {
+        final left = other.x - reviewed.centerOffsetX,
+            top = other.y - reviewed.centerOffsetY;
+        if (left < dx + recipe.width * 32 &&
+            left + reviewed.width * 32 > dx &&
+            top < dy + recipe.height * 32 &&
+            top + reviewed.height * 32 > dy) {
+          reject('reviewed doodad footprints overlap');
+        }
+        continue;
+      }
       if (other.x + 256 > dx &&
           other.x - 256 < dx + recipe.width * 32 &&
           other.y + 256 > dy &&
@@ -81,7 +196,8 @@ final class DoodadDeletionPlan {
       reject('invalid TILE length');
     }
     final data = ByteData.sublistView(underlying);
-    final values = terrain.rawTileValues.toList();
+    final values = terrain.rawTileValues;
+    final restoredTiles = <int, int>{};
     for (final cell in recipe.footprint) {
       if (!cell.writesTerrain) continue;
       final index = (y + cell.y) * terrain.width! + x + cell.x;
@@ -94,13 +210,20 @@ final class DoodadDeletionPlan {
               restored >> 4 != cell.requiredTileGroup)) {
         reject('TILE is not verified underlying terrain');
       }
-      values[index] = restored;
+      restoredTiles[index] = restored;
     }
     const editor = ChkObjectSectionEditor();
-    final replacements = <int, RawChkSection>{
-      terrain.sectionIndex: terrain.withRawTileValues(values),
-      section.sectionIndex: editor.deleteDoodads(section, {recordIndex}),
-    };
+    final replacements = <int, RawChkSection>{};
+    if (buildReplacements) {
+      final output = values.toList();
+      for (final tile in restoredTiles.entries) {
+        output[tile.key] = tile.value;
+      }
+      replacements[terrain.sectionIndex] = terrain.withRawTileValues(output);
+      replacements[section.sectionIndex] = editor.deleteDoodads(section, {
+        recordIndex,
+      });
+    }
     final overlay = recipe.overlay;
     if (overlay != null) {
       unique('THG2');
@@ -122,12 +245,20 @@ final class DoodadDeletionPlan {
           sprite.unused != 0) {
         reject('overlay does not match recipe');
       }
-      replacements[sprites.sectionIndex] = editor.deleteSprites(sprites, {
-        index,
-      });
+      if (buildReplacements) {
+        replacements[sprites.sectionIndex] = editor.deleteSprites(sprites, {
+          index,
+        });
+      }
     } else if (confirmedOverlayRecordIndex != null) {
       reject('recipe has no overlay');
     }
-    return DoodadDeletionPlan._(document, Map.unmodifiable(replacements));
+    return DoodadDeletionPlan._(
+      document,
+      Map.unmodifiable(replacements),
+      Map.unmodifiable(restoredTiles),
+      1,
+      overlay == null ? 0 : 1,
+    );
   }
 }

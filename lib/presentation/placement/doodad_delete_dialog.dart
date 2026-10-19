@@ -4,6 +4,9 @@ import '../../application/editing/object_editing_controller.dart';
 import '../../application/layers/map_layer_controller.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/doodad_deletion_plan.dart';
+import '../../domain/chk/typed/chk_object_views.dart';
+import '../../application/documents/opened_map_session.dart';
 import '../localization/l10n.dart';
 
 Future<void> deleteObjectsWithDoodadReview(
@@ -17,12 +20,23 @@ Future<void> deleteObjectsWithDoodadReview(
     return;
   }
   try {
-    if (selected.length != 1) {
-      throw StateError(context.l10n.doodadDeleteOneRequired);
+    if (selected.any((s) => s.object.layer != MapLayerType.doodads)) {
+      throw StateError(context.l10n.doodadDeleteMixedSelection);
+    }
+    if (selected.length > DoodadDeletionPlan.maximumBatchSize) {
+      throw StateError(
+        context.l10n.doodadDeleteBatchLimit(
+          DoodadDeletionPlan.maximumBatchSize,
+        ),
+      );
     }
     final session = editing.openMapController.state.session!;
     if (session.objectViews.spriteSections.length > 1) {
       throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
+    }
+    if (selected.length > 1) {
+      await _reviewBatch(context, editing, catalog, session, selected);
+      return;
     }
     final object = selected.single.object;
     final section = session.objectViews.doodadSections
@@ -184,4 +198,189 @@ Future<void> deleteObjectsWithDoodadReview(
       ).showSnackBar(SnackBar(content: Text('$error')));
     }
   }
+}
+
+final class _DoodadReview {
+  _DoodadReview(this.doodad, this.recipes);
+  final ChkDoodadPlacement doodad;
+  final List<DoodadPlacementRecipe> recipes;
+  late DoodadPlacementRecipe recipe = recipes.first;
+  int? overlayIndex;
+}
+
+Future<void> _reviewBatch(
+  BuildContext context,
+  ObjectEditingController editing,
+  PlacementCatalogController catalog,
+  OpenedMapSession session,
+  List<MapLayerSelection> selected,
+) async {
+  final reviews = <_DoodadReview>[],
+      cache = <int, List<DoodadPlacementRecipe>>{};
+  for (final selection in selected) {
+    final object = selection.object;
+    final section = session.objectViews.doodadSections
+        .where((s) => s.sectionIndex == object.sectionIndex)
+        .single;
+    final d = section.doodads[object.recordIndex];
+    final recipes =
+        cache[d.doodadType] ?? await catalog.doodadRecipes(d.doodadType);
+    if (!context.mounted) return;
+    if (!identical(
+      editing.openMapController.state.session?.rawDocument,
+      session.rawDocument,
+    )) {
+      throw StateError(context.l10n.doodadDeleteMapChanged);
+    }
+    if (recipes.isEmpty) throw StateError(context.l10n.doodadDeleteNoRecipe);
+    cache[d.doodadType] = recipes;
+    reviews.add(_DoodadReview(d, recipes));
+  }
+  if (!context.mounted) return;
+  String? error;
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, update) {
+        final ready = reviews.every(
+          (r) => r.recipe.overlay == null || r.overlayIndex != null,
+        );
+        return AlertDialog(
+          title: Text(context.l10n.doodadDeleteBatchTitle(reviews.length)),
+          content: SizedBox(
+            width: 560,
+            height: 420,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ListView(
+                    children: [
+                      for (final r in reviews) ...[
+                        Text(
+                          context.l10n.doodadDeleteRecord(
+                            r.doodad.recordIndex,
+                            r.doodad.doodadType,
+                            r.doodad.enabledValue,
+                          ),
+                        ),
+                        DropdownButton<DoodadPlacementRecipe>(
+                          key: Key(
+                            'doodad-delete-recipe-${r.doodad.recordIndex}',
+                          ),
+                          value: r.recipe,
+                          isExpanded: true,
+                          items: [
+                            for (final recipe in r.recipes)
+                              DropdownMenuItem(
+                                value: recipe,
+                                child: Text(
+                                  context.l10n.doodadDeleteRecipe(
+                                    recipe.startTileGroup,
+                                    recipe.width,
+                                    recipe.height,
+                                  ),
+                                ),
+                              ),
+                          ],
+                          onChanged: (value) => update(() {
+                            r.recipe = value!;
+                            r.overlayIndex = null;
+                            error = null;
+                          }),
+                        ),
+                        if (r.recipe.overlay case final overlay?) ...[
+                          Text(context.l10n.doodadDeleteOwnershipWarning),
+                          DropdownButton<int>(
+                            key: Key(
+                              'doodad-delete-overlay-${r.doodad.recordIndex}',
+                            ),
+                            value: r.overlayIndex,
+                            isExpanded: true,
+                            hint: Text(context.l10n.doodadDeleteOverlayHint),
+                            items: [
+                              for (final section
+                                  in session.objectViews.spriteSections)
+                                for (final s in section.sprites)
+                                  if (s.spriteType == overlay.id &&
+                                      s.x == r.doodad.x &&
+                                      s.y == r.doodad.y &&
+                                      s.owner == r.doodad.owner &&
+                                      s.flags ==
+                                          overlay.flagsForEnabled(
+                                            r.doodad.enabledValue == 0,
+                                          ) &&
+                                      s.unused == 0)
+                                    DropdownMenuItem(
+                                      value: s.recordIndex,
+                                      child: Text(
+                                        context.l10n.doodadDeleteOverlayRecord(
+                                          s.recordIndex,
+                                          s.spriteType,
+                                        ),
+                                      ),
+                                    ),
+                            ],
+                            onChanged: (value) => update(() {
+                              r.overlayIndex = value;
+                              error = null;
+                            }),
+                          ),
+                        ],
+                        const Divider(),
+                      ],
+                    ],
+                  ),
+                ),
+                if (error != null)
+                  Text(
+                    error!,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              key: const Key('doodad-delete-cancel'),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(context.l10n.eudCancel),
+            ),
+            FilledButton(
+              key: const Key('doodad-delete-apply'),
+              onPressed: !ready
+                  ? null
+                  : () {
+                      try {
+                        if (!identical(
+                          editing.openMapController.state.session?.rawDocument,
+                          session.rawDocument,
+                        )) {
+                          throw StateError(context.l10n.doodadDeleteMapChanged);
+                        }
+                        final plan = editing.prepareDoodadDeletions([
+                          for (final r in reviews)
+                            DoodadDeletionRequest(
+                              recipe: r.recipe,
+                              recordIndex: r.doodad.recordIndex,
+                              confirmedOverlayRecordIndex: r.overlayIndex,
+                            ),
+                        ]);
+                        editing.deleteDoodad(plan);
+                        Navigator.pop(dialogContext);
+                      } on Object catch (e) {
+                        update(() => error = '$e');
+                      }
+                    },
+              child: Text(context.l10n.doodadDeleteApply),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }

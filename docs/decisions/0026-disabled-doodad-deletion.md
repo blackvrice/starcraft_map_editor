@@ -1,8 +1,11 @@
 # ADR-0026: 일관된 비활성 두다드의 검증형 단일 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0027](0027-atomic-batch-doodad-deletion.md)
 - Date: 2026-10-19
 - Supersedes: [ADR-0010](0010-reviewed-doodad-deletion.md)
+
+2026-10-19 후속: 아래는 단일 삭제 당시 결정이다. ADR-0027은 같은 안전 조건을
+유지하며 확인된 다중 선택의 원자 삭제를 추가한다. 게임/외부 인수는 남는다.
 
 ## Context
 

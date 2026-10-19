@@ -272,6 +272,20 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
+  String get doodadDeleteMixedSelection =>
+      '두다드만 선택하세요. 다른 종류가 섞인 선택은 삭제하지 않습니다.';
+
+  @override
+  String doodadDeleteBatchLimit(int count) {
+    return '한 번에 삭제할 두다드는 $count개 이하로 선택하세요.';
+  }
+
+  @override
+  String doodadDeleteBatchTitle(int count) {
+    return '두다드 $count개 삭제 및 지형 복원';
+  }
+
+  @override
   String get doodadDeleteTitle => '두다드 삭제 및 지형 복원';
 
   @override

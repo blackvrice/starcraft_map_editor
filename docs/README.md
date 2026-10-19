@@ -1,6 +1,6 @@
 # 문서 인덱스
 
-[두다드 복합 삭제](DOODAD_DELETION.md): 비활성 상태 지원·명시 overlay 귀속,
+[두다드 복합 삭제](DOODAD_DELETION.md): 최대 32개 일괄 삭제·비활성 지원·명시 overlay 귀속,
 지형 복원/Undo·원본/미선택 bytes 보존과 실제 MPQ 왕복 검증.
 
 [여러 소스 편집](SOURCE_WORKSPACE.md): 소스 폴더/탭·정적 완성/검색·원본 진단,

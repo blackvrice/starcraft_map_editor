@@ -132,6 +132,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
       (2026-09-25: 유일한 TILE·일치한 recipe·명시적 overlay 귀속 확인에 한정. 겹침 가능성·disabled·다중 선택·복원 정보 부재는 전체 거부. [ADR-0010](decisions/0010-reviewed-doodad-deletion.md))
 - [ ] Doodad 복합 삭제의 실제 게임/외부 에디터 왕복 검증과 미지원 사례 확대
 - [x] 검증된 비활성 Doodad 단일 삭제·상태별 overlay 확인·한영 UI·MPQ/Undo 회귀
+- [x] 최대 32개 Doodad의 원본 인덱스·전체 footprint/명시 overlay 검증·한 Undo 일괄 삭제
 
 2026-10-19: 첫 미완료 항목의 미지원 사례 중 비활성 단일 삭제를 확대했다.
 [현재 계약/실행 기록](DOODAD_DELETION.md)과 [ADR-0026](decisions/0026-disabled-doodad-deletion.md)을 따른다.
@@ -140,6 +141,14 @@ DD2 0/1과 일관된 THG2 flags만 허용하고 기존 TILE/geometry/귀속/잠�
 검증: analyze 무이슈·전체 2586 통과/83 조건부 skip·별도 실제 MPQ/도메인 16개
 통과·Windows Debug 빌드·native CTest 7/7. SDK 차이와 기존 미수정 테스트 3개의
 포맷 차이, 실패 재현/수정 결과는 위 실행 기록을 따른다.
+
+2026-10-19 후속: [ADR-0027](decisions/0027-atomic-batch-doodad-deletion.md)의
+다중 삭제를 구현했다. 원래 문서에서 모든 요청을 검증하고 최종 섹션을 한 번
+생성한다. 선택 recipe가 확인된 이웃끼리 실제 footprint가 겹치지 않으면 인접
+선택도 허용한다. 혼합 선택/실제 겹침/미확인 이웃/복원 정보 부족과 게임·외부
+인수는 계속 남는다. 범위/상한·시나리오/실행 결과는 [삭제 계약](DOODAD_DELETION.md)을 따른다.
+analyze 무이슈·전체 2600 통과/86 조건부 skip·집중 155 통과(실제 MPQ 6개 포함),
+Windows Debug 빌드·native CTest 7/7을 확인했다. 기존 포맷 3개와 SDK 차이는 유지된다.
 
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
