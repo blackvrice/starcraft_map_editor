@@ -1,5 +1,9 @@
 # 남은 개발 작업과 검증
 
+2026-10-19 갱신: [EUD 번역·Python·미적용 초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)는
+공식 EPS→Python·공통 액션 프로필·native Python 빌드·강제 종료 후 명시 복구까지
+구현/자동 검증했다. 임의 Python/Lua 역변환·여러 파일 workspace·게임/배포 인수는 남는다.
+
 2026-10-04, 기존 에디터 비교·사용자 제작 흐름·언어 계획 반영. [개발 계획](DEVELOPMENT_PLAN.md)의 미완료 항목을
 중복 없이 묶은 현황이다. 체크박스의 원본은 개발 계획이며 이 문서는 작업 선택을
 돕는 요약이다. 기능 구현, 실제 게임 확인, 배포 인수를 서로 구분한다.
@@ -50,7 +54,7 @@ EUD 관리형 도구 동봉, 61개 후보 필드, 실행 규칙과 명시적 테
 | 기본 설정·작성 효율 | [기본값·CRGB 표식·문자열 token·트리거 검색/참조 치환](SETTINGS_TRIGGER_EDITING.md) 에디터 구현. sprite 재색상/확장 ID와 게임/외부 인수는 별도 | EP2 |
 | 복사·다중 문서 | 복수 두다드/ISOM 혼합 복사, 독립 맵 탭, 참조 재매핑 문서 간 복사 | EP3a/3b |
 | 지형·배치 보조 | 저장형 사용자 브러시·지형 대칭, 검증 자료 기반 읽기 전용 overlay | EP4 |
-| 일반 스크립트·소스 작업 공간 | [일반 TRIG의 EPS/Python/Lua 제한 선언 전환](TRIGGER_SCRIPT_LANGUAGES.md)은 구현·자동 검증. 여러 소스 workspace·미적용 선언 초안 crash 복구·게임 인수는 남음 | EP5, L0~L6, X3/X4 |
+| 일반 스크립트·소스 작업 공간 | [일반 제한 선언 전환](TRIGGER_SCRIPT_LANGUAGES.md)과 [EUD 번역/Python/초안 crash 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)는 구현·자동 검증. 여러 소스 workspace·임의 Python/Lua 역변환·게임 인수는 남음 | EP5, L0~L6, X3/X4 |
 | 결과 확인·선택 기능 | 게임 테스트 흐름, codec/게임 사운드 범위, 이미지 출력은 별도 지원 검증 후 | EP0/6 |
 | EUD 후속 확대 | [기본값·공유 그래프·정적 충돌](EUD_COMPLETION.md)은 구현. 동적 코드·IScript/HD 분석은 확장 범위이며 게임 인수와 분리 | M6.3.1~2 |
 | 사용성 | 한영 번역·진단 ID화·Windows 한글 줄바꿈은 완료. 접근성·고대비, Ctrl+K·떠 있는 도구 막대·유닛 중심 EUD 목업 요소 검토는 남음 | UX v2, M8 |

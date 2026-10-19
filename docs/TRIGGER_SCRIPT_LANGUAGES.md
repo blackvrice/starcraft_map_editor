@@ -86,8 +86,9 @@ CRLF를 읽고 `.eps/.py/.lua`와 선택 언어를 대조한다. 링크·잘못�
 초과를 거절한다. 저장은 **새 파일만** 허용하며 임시 출력→재읽기→비덮어쓰기
 승격→재검증한다. 기존 파일, 원본 맵, 가져온 소스를 덮어쓰지 않는다.
 
-이 대화상자의 미적용 초안/원문은 아직 crash 복구 snapshot에 포함되지 않는다.
-강제 종료·OS 장애 시의 복구와 여러 소스 workspace는 후속 L6/FR-320이다.
+2026-10-19부터 미적용 초안/원문은 [복구 schema v2](EUD_SOURCE_TRANSLATION_RECOVERY.md)에
+포함된다. 완료된 checkpoint 뒤 강제 종료 복구를 검증했다. 전원 차단 전체
+행렬과 여러 소스 workspace는 여전히 후속이다.
 정상 닫기/앱 종료는 source 보존 확인 또는 대화상자 종료를 먼저 요구한다.
 
 ## 파서·성능·보안
@@ -176,7 +177,8 @@ wrapper/import는 제공하지 않으며, 일반 저장은 이 검사 도구를 
 포맷 차이는 미수정 `local_map_save_file_gateway_test.dart`,
 `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`다.
 사용자의 기존 변경은 보존했다. 실제 앱 조작/게임·외부 에디터·clean Windows,
-미적용 선언 초안의 crash 복구는 검증 완료로 세지 않는다.
+이 단락은 2026-10-18 검증 기록이다. 미적용 선언 초안의 crash 복구는 다음 날
+[추가 구현·강제 종료 검증](EUD_SOURCE_TRANSLATION_RECOVERY.md)을 완료했다.
 
 로컬 로그: `.dart_tool/trigger_language_focused_complete.log`,
 `trigger_language_analyze_complete.log`, `trigger_language_format_complete.log`,

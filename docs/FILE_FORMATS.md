@@ -1,5 +1,10 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-19 [EUD 소스/복구](EUD_SOURCE_TRANSLATION_RECOVERY.md): native .py 입력은
+기존 .eds의 사용자 플러그인 경로로 기록하며 CHK/EUD 프로젝트 포맷은 바꾸지
+않는다. 미적용 초안은 앱 전용 recovery schema v2의 기준 CHK/현재 소스/언어/
+loadedText/원문 이력으로 저장한다. v1도 읽으며 복구·번역은 맵을 자동 변경하지 않는다.
+
 2026-10-18 [일반 트리거 선언 v1](TRIGGER_SCRIPT_LANGUAGES.md)은 새 CHK 섹션을
 추가하지 않는다. 전체 CHK SHA-256에 귀속된 Source/Raw 참조와 기존 TRIG 모델을
 사용해 모르는 bytes·예약 flags·slot gaps를 유지한다. 인자 검증·삭제 승인 뒤

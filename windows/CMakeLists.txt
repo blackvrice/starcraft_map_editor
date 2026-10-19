@@ -82,6 +82,10 @@ add_subdirectory(
   "../native/starcraft_data_helper"
   "${CMAKE_CURRENT_BINARY_DIR}/starcraft_data_helper"
 )
+add_subdirectory(
+  "../native/eud_source_translate"
+  "${CMAKE_CURRENT_BINARY_DIR}/eud_source_translate"
+)
 
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)

@@ -50,7 +50,7 @@ final class EudBuildPreparationController {
     try {
       builds.clearPreparation();
       if (!trustSource) {
-        return 'Confirm that you trust the epScript source and its imports.';
+        return 'Confirm that you trust the EUD source and its imports.';
       }
       final blocked = blockReason();
       if (blocked != null) return blocked;
@@ -87,6 +87,9 @@ final class EudBuildPreparationController {
         );
       }
       final configuration = EudBuildConfiguration(
+        compilerProfile: entrySource.toLowerCase().endsWith('.py')
+            ? EudCompilerProfile.starcraftRemasteredPython
+            : EudCompilerProfile.starcraftRemastered,
         baseMapPath: baseMap,
         sourceRootPath: sourceRoot,
         entrySourcePath: entrySource,

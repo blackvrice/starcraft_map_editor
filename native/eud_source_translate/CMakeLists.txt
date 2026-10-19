@@ -1,0 +1,6 @@
+add_executable(eud_source_translate_helper src/main.cpp)
+target_compile_features(eud_source_translate_helper PRIVATE cxx_std_17)
+target_compile_definitions(eud_source_translate_helper PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_options(eud_source_translate_helper PRIVATE /W4 /WX /EHsc /utf-8)
+target_link_libraries(eud_source_translate_helper PRIVATE nlohmann_json::nlohmann_json)
+install(TARGETS eud_source_translate_helper RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT Runtime)

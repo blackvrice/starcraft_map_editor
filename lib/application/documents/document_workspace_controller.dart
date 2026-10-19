@@ -47,6 +47,7 @@ final class WorkspaceDocument<T> {
   int _revision = 0;
   int get revision => _revision;
   bool get dirty =>
+      (autosave?.hasTriggerDraft ?? false) ||
       (maps.state.session?.isDirty ?? false) ||
       (sources.state.document?.isDirty ?? false) ||
       (sources.state.document?.isUntitled ?? false) ||

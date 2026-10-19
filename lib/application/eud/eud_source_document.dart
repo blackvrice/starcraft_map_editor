@@ -1,3 +1,5 @@
+import '../../domain/triggers/trigger_script_syntax.dart';
+
 final class EudSourceDocument {
   EudSourceDocument._({
     required this.documentId,
@@ -49,6 +51,9 @@ final class EudSourceDocument {
   bool get isDirty => text != savedText;
   bool get isUntitled => sourcePath == null;
   int get lineCount => '\n'.allMatches(text).length + 1;
+  TriggerScriptLanguage get language => fileName.toLowerCase().endsWith('.py')
+      ? TriggerScriptLanguage.python
+      : TriggerScriptLanguage.epScript;
 
   EudSourceDocument withText(String nextText) {
     if (nextText == text) {
@@ -72,6 +77,10 @@ final class EudSourceDocument {
       throw StateError(
         'An untitled epScript document needs a path before it can be saved.',
       );
+    }
+    if (resolvedPath.toLowerCase().endsWith('.py') !=
+        (language == TriggerScriptLanguage.python)) {
+      throw ArgumentError('Save As must retain the source language.');
     }
     return EudSourceDocument._(
       documentId: documentId,
@@ -105,11 +114,11 @@ String _requireEpsFileName(String value) {
       value.contains('/') ||
       value.contains(r'\') ||
       value.codeUnits.any((codeUnit) => codeUnit < 0x20) ||
-      !value.toLowerCase().endsWith('.eps')) {
+      !_sourceExtension(value)) {
     throw ArgumentError.value(
       value,
       'fileName',
-      'The epScript file name must be a single .eps path segment.',
+      'The EUD file name must be a single .eps or .py path segment.',
     );
   }
   return value;
@@ -123,11 +132,15 @@ String _requireAbsoluteEpsPath(String value) {
   if (trimmed.isEmpty ||
       trimmed != value ||
       !isAbsoluteWindowsPath ||
-      !value.toLowerCase().endsWith('.eps')) {
+      !_sourceExtension(value) ||
+      value.startsWith(r'\\?\') ||
+      value.startsWith(r'\\.\') ||
+      value.split(RegExp(r'[\\/]')).any((s) => s == '..' || s == '.') ||
+      value.codeUnits.any((c) => c < 0x20)) {
     throw ArgumentError.value(
       value,
       'sourcePath',
-      'The source path must be an absolute Windows .eps path.',
+      'The source path must be an absolute Windows .eps or .py path.',
     );
   }
   return value;
@@ -136,3 +149,6 @@ String _requireAbsoluteEpsPath(String value) {
 String _fileName(String path) {
   return path.replaceAll(r'\', '/').split('/').last;
 }
+
+bool _sourceExtension(String value) =>
+    value.toLowerCase().endsWith('.eps') || value.toLowerCase().endsWith('.py');

@@ -9,6 +9,27 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get eudTranslate => 'EUD Source Translation';
+
+  @override
+  String get editorUseASavedEudSource =>
+      'Use a saved EUD source file before building.';
+
+  @override
+  String get eudSourceHelpTitle => 'EUD Source';
+
+  @override
+  String get eudSourceHelpBody =>
+      'epScript (.eps) and Python/eudplib (.py) are native EUD build inputs. Save to a new source file, prepare a trusted build, then write a separate output map. Editing and translation do not execute source code.\n\nThe managed epScript compiler translates supported epScript to Python. Python-to-epScript and Lua export accept only the portable action-hook profile; unsupported syntax is rejected. Lua is not a native euddraft entry. Translation export preserves the original source; imported dependencies are not copied.';
+
+  @override
+  String get eudOpenSource => 'Open EUD Source (.eps / .py)';
+
+  @override
+  String get recoveryTriggerDraft =>
+      'Unapplied trigger script and original sources';
+
+  @override
   String get scriptTitle => 'Trigger Script';
 
   @override
@@ -3360,7 +3381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editorSourceFolderPath => 'Source folder path';
 
   @override
-  String get editorEntryEpsPath => 'Entry .eps path';
+  String get editorEntryEpsPath => 'Entry .eps / .py path';
 
   @override
   String get editorNewOutputScxPath => 'New output .scx path';
@@ -6472,7 +6493,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editorConfirmThatYouTrustTheEpScriptSourceAndIts =>
-      'Confirm that you trust the epScript source and its imports.';
+      'Confirm that you trust the EUD source and its imports.';
 
   @override
   String get editorEnableTheUnverifiedSettingsTestBuildToCompileProject =>

@@ -47,7 +47,7 @@ class _TriggerScriptDialogState extends State<TriggerScriptDialog> {
       _output.text = _controller.preview?.generated ?? '';
       setState(() {});
     });
-    unawaited(_run(() => _controller.reload()));
+    unawaited(_run(() => _controller.open()));
   }
 
   List<String> _symbols(TriggerScriptLanguage language) => [
@@ -147,6 +147,7 @@ class _TriggerScriptDialogState extends State<TriggerScriptDialog> {
       }
     }
     if (!mounted) return;
+    c.discardRecovery();
     setState(() => _closing = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) Navigator.pop(context);

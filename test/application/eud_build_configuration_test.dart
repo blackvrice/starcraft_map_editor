@@ -3,6 +3,22 @@ import 'package:starcraft_map_editor/application/eud/eud_build_configuration.dar
 import 'package:starcraft_map_editor/application/ports/eud_tool_inspector.dart';
 
 void main() {
+  test('native Python profile accepts only Python and keeps output safety', () {
+    EudBuildConfiguration config(String path) => EudBuildConfiguration(
+      baseMapPath: r'C:\Project\base.scx',
+      sourceRootPath: r'C:\Project\src',
+      entrySourcePath: path,
+      outputMapPath: r'C:\Project\out.scx',
+      compilerProfile: EudCompilerProfile.starcraftRemasteredPython,
+    );
+    expect(
+      config(r'C:\Project\src\main.py').compilerProfile.language,
+      'Python',
+    );
+    expect(() => config(r'C:\Project\src\main.eps'), throwsArgumentError);
+    expect(() => config(r'C:\Project\src\main.lua'), throwsArgumentError);
+    expect(() => config(r'C:\Outside\main.py'), throwsArgumentError);
+  });
   group('EudBuildConfiguration', () {
     test('stores an immutable SCR euddraft project configuration', () {
       final environment = {'BUILD_MODE': 'debug'};

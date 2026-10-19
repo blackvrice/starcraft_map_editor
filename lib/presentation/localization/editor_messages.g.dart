@@ -6,6 +6,8 @@ String? resolveEditorMessage(
   String? id,
   List<String> values,
 ) => switch (id) {
+  'editorUseASavedEudSource' when values.isEmpty =>
+    l10n.editorUseASavedEudSource,
   'editorPrepareEUDBuild' when values.isEmpty => l10n.editorPrepareEUDBuild,
   'editorBuildSavedFilesOnDiskSaveMapAndSource' when values.isEmpty =>
     l10n.editorBuildSavedFilesOnDiskSaveMapAndSource,
@@ -1628,12 +1630,13 @@ String? resolveEditorMessage(
 };
 
 const _exactMessages = <String, String>{
+  'Use a saved EUD source file before building.': 'editorUseASavedEudSource',
   'Prepare EUD Build': 'editorPrepareEUDBuild',
   'Build saved files on disk. Save map and source edits first. With project settings, leave source folder and entry blank for a settings-only build. Output must be a new .scx.':
       'editorBuildSavedFilesOnDiskSaveMapAndSource',
   'Base map path': 'editorBaseMapPath',
   'Source folder path': 'editorSourceFolderPath',
-  'Entry .eps path': 'editorEntryEpsPath',
+  'Entry .eps / .py path': 'editorEntryEpsPath',
   'New output .scx path': 'editorNewOutputScxPath',
   'Tool override for this build (optional)':
       'editorToolOverrideForThisBuildOptional',
@@ -2679,7 +2682,7 @@ const _exactMessages = <String, String>{
   'Edit map information': 'editorEditMapInformation',
   'A build or preparation is already running.':
       'editorABuildOrPreparationIsAlreadyRunning',
-  'Confirm that you trust the epScript source and its imports.':
+  'Confirm that you trust the EUD source and its imports.':
       'editorConfirmThatYouTrustTheEpScriptSourceAndIts',
   'Enable the unverified settings test build to compile project settings.':
       'editorEnableTheUnverifiedSettingsTestBuildToCompileProject',

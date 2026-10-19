@@ -4,6 +4,7 @@ import '../application/documents/autosave_controller.dart';
 import '../infrastructure/filesystem/local_recovery_store.dart';
 import 'dart:async';
 import '../infrastructure/compiler/isolate_trigger_script_gateway.dart';
+import '../infrastructure/compiler/process_eud_source_translation_gateway.dart';
 import '../infrastructure/filesystem/local_trigger_script_files.dart';
 
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
@@ -111,7 +112,10 @@ void bootstrap() {
       diagnosticParser: const EuddraftDiagnosticParser(),
       operationProgressController: operationProgressController,
     );
-    final eudSourceController = EudSourceController();
+    final eudSourceController = EudSourceController(
+      files: const LocalTriggerScriptFiles(),
+      translator: ProcessEudSourceTranslationGateway.bundled(),
+    );
     final openMapController = OpenMapController(
       archiveGateway: archiveGateway,
       filePicker: filePicker,
@@ -143,7 +147,7 @@ void bootstrap() {
         return 'Save or discard source edits before building.';
       }
       if (eudSourceController.state.document?.isUntitled ?? false) {
-        return 'Use a saved epScript file before building.';
+        return 'Use a saved EUD source file before building.';
       }
       return null;
     }
@@ -224,6 +228,7 @@ void bootstrap() {
 
     final dependencies = EditorAppDependencies(
       autosaveController: AutosaveController(
+        triggerDrafts: objectEditingController.triggerDrafts,
         maps: openMapController,
         sources: eudSourceController,
         projects: eudProjectWorkspace.projects,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../ports/trigger_script_gateway.dart';
+import '../triggers/trigger_script_drafts.dart';
 import 'dart:typed_data';
 import '../../domain/chk/chk_basic_editing.dart';
 import '../ports/map_resource_gateway.dart';
@@ -241,6 +242,7 @@ class ObjectEditingController {
   final int historyLimit;
   final TriggerScriptGateway? triggerScriptGateway;
   final TriggerScriptFiles? triggerScriptFiles;
+  final triggerDrafts = TriggerScriptDraftWorkspace();
   final StreamController<ObjectEditingState> _changes =
       StreamController<ObjectEditingState>.broadcast(sync: true);
   late final StreamSubscription<void> _historySubscription;
@@ -2909,6 +2911,7 @@ class ObjectEditingController {
   }
 
   Future<void> dispose() async {
+    await triggerDrafts.dispose();
     if (_disposed) return;
     _disposed = true;
     _classIdDocument = null;

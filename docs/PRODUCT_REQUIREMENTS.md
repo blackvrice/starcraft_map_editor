@@ -1,5 +1,10 @@
 # 제품 요구사항
 
+2026-10-19 FR-319/406의 [EUD 번역·Python·초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md):
+공식 EPS→Python, 제한 공통 액션·훅 전환, .py 정식 빌드/새 파일 저장과 미적용
+TRIG 초안의 명시 복구를 구현했다. 임의 Python/Lua 역변환·native Lua 실행·
+FR-320 여러 파일 workspace와 게임/배포 인수는 완료로 세지 않는다.
+
 2026-10-18 FR-219의 [분석 탭](TERRAIN_ANALYSIS.md)은 높이/건설·이동 가능의
 로컬 정적 사실과 미확인, 픽셀 거리 측정을 제공한다. 실제 전력/크립은 수집기
 미지원이며 DAT 사거리/시야·주 편집 통합과 게임·성능 인수를 완료한 것은 아니다.

@@ -1459,7 +1459,8 @@ Flutter 3.47.5/Dart 3.13.4다. 상세 실행/분석/상한은 위 문서를 따�
 
 - [x] L0 선언 API/파서 feasibility·라이선스 ADR와 L1 snapshot/raw 보존·원자 적용
 - [x] L2 일반 epScript -> TRIG/GUI와 L3 Python/L4 Lua 제한 선언 전환·원문/새 파일 보호
-- [ ] L5 공통 EUD/native Python·실제 빌드와 L6 게임/복구/배포 인수
+- [x] L5 공통 액션 EUD/native Python·공식 EPS→Python·실제 빌드/미적용 초안 crash 복구
+- [ ] L6 임의 Python/Lua 역변환 검토·게임/외부/배포 인수 (native Lua runtime 미지원)
 - [ ] 소스 루트/여러 파일·검색·정적 완성·원본 위치·외부 변경/루트 이탈 검증
 - [ ] PAR-13/ML-01~12 및 일반 모드 외부 실행 0·임의 번역 거절 검증
 
@@ -1475,6 +1476,17 @@ Windows Debug 빌드·native CTest 7/7과 최종 실제 syntax/MPQ 2개를 확�
 format은 기존 미수정 테스트 3개 차이로 exit 1이며 이번 변경 파일은 차이가 없다.
 SDK는 기준과 다른 Flutter 3.47.5/Dart 3.13.4다. 실제 앱/게임/배포는 미실행이며
 상한·실패 수정과 전체 결과는 위 문서를 따른다.
+
+2026-10-19: [EUD 소스 번역·Python·초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md),
+[ADR-0024](decisions/0024-eud-source-translation-and-draft-recovery.md)를 구현했다.
+공식 compiler의 no-VM helper로 자유 EPS→Python, 공통 액션·훅 세 언어 모델,
+native .py 편집/새 파일/안전 빌드, 문서별 미적용 초안의 기존 checkpoint 연결과
+수동 복구를 제공한다. 임의 Python/Lua 역변환과 native Lua 빌드는 지원하지 않는다.
+실제 compiler 전환·3개 실제 맵 빌드/재열기·프로세스 강제 종료 복구 5종을 확인했다.
+모든 원문/원본을 보존하며 실제 열린 앱/게임을 조작하지 않았다. 전체 게이트는
+연결 문서에 기록하며 다중 파일 workspace와 게임/외부/clean Windows 인수는 남는다.
+최종 analyze 무이슈·전체 2,544 통과/79 조건부 skip·실제 통합 5/5·Windows Debug와
+native CTest 7/7을 확인했다. SDK 차이와 기존 미수정 3개 파일의 포맷 차이는 유지된다.
 
 ### EP6. 결과·품질·출시
 

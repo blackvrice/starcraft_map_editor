@@ -1,14 +1,12 @@
 import 'dart:async';
+import 'package:crypto/crypto.dart';
+import '../../domain/chk/raw_chk_encoder.dart';
 import '../../domain/chk/raw_chk_document.dart';
 import '../../domain/triggers/trigger_script.dart';
 import '../editing/object_editing_controller.dart';
 import '../ports/trigger_script_gateway.dart';
-
-final class TriggerScriptDraft {
-  const TriggerScriptDraft(this.text, this.language);
-  final String text;
-  final TriggerScriptLanguage language;
-}
+import 'trigger_script_drafts.dart';
+export 'trigger_script_drafts.dart';
 
 final class TriggerScriptController {
   TriggerScriptController({
@@ -34,6 +32,7 @@ final class TriggerScriptController {
   int _revision = 0;
   String? _operation;
   bool _disposed = false, busy = false;
+  bool _initialized = false;
   String text = '', _loadedText = '';
   TriggerScriptLanguage language = TriggerScriptLanguage.epScript;
   TriggerScriptLanguage? target;
@@ -56,6 +55,28 @@ final class TriggerScriptController {
   bool get stale => !identical(baseline, currentDocument);
   bool get canApply =>
       !busy && !stale && preview?.isSuccess == true && target == language;
+
+  Future<bool> open() async {
+    final recovered = editing.triggerDrafts.value;
+    if (recovered == null) return reload();
+    final current = currentDocument;
+    baseline =
+        current != null &&
+            sha256.convert(const RawChkEncoder().encode(current)) ==
+                sha256.convert(const RawChkEncoder().encode(recovered.baseline))
+        ? current
+        : recovered.baseline;
+    text = recovered.current.text;
+    language = recovered.current.language;
+    _loadedText = recovered.loadedText;
+    _history.addAll(recovered.history);
+    _initialized = true;
+    error = stale ? 'SCRIPT_STALE_MAP' : null;
+    _notify();
+    return true;
+  }
+
+  void discardRecovery() => editing.triggerDrafts.update(null);
 
   void updateText(String value) {
     if (_disposed || value == text) return;
@@ -98,6 +119,7 @@ final class TriggerScriptController {
     if (dirty && !keepDraft) throw StateError('SCRIPT_DIRTY');
     if (keepDraft) _archive();
     _invalidate();
+    _initialized = true;
     baseline = currentDocument;
     return _analyze(initial: true);
   }
@@ -231,7 +253,28 @@ final class TriggerScriptController {
   }
 
   void _notify() {
-    if (!_disposed) _changes.add(null);
+    if (!_disposed) {
+      if (_initialized && baseline != null) {
+        try {
+          editing.triggerDrafts.update(
+            hasPendingSources
+                ? TriggerScriptRecovery(
+                    baseline: baseline!,
+                    current: TriggerScriptDraft(text, language),
+                    loadedText: _loadedText,
+                    history: _history.where(
+                      (d) => !_exportedHistory.contains(d),
+                    ),
+                  )
+                : null,
+          );
+        } on FormatException {
+          // Keep the last checkpoint and exact editor text, never truncate.
+          error = 'SCRIPT_RECOVERY_LIMIT';
+        }
+      }
+      _changes.add(null);
+    }
   }
 
   Future<void> dispose() async {

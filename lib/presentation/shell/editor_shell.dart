@@ -2506,6 +2506,8 @@ class _EudSourceList extends StatelessWidget {
             subtitle: Text(
               document.isUntitled
                   ? context.l10n.sourceDraft
+                  : document.fileName.toLowerCase().endsWith('.py')
+                  ? 'Python'
                   : context.l10n.sourceEpScript,
             ),
             onTap: onSelected,

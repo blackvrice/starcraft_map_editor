@@ -9,6 +9,25 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String get eudTranslate => 'EUD 소스 번역';
+
+  @override
+  String get editorUseASavedEudSource => '빌드 전에 EUD 소스를 파일로 저장하세요.';
+
+  @override
+  String get eudSourceHelpTitle => 'EUD 소스';
+
+  @override
+  String get eudSourceHelpBody =>
+      'epScript(.eps)와 Python/eudplib(.py)은 정식 EUD 빌드 입력입니다. 새 소스 파일로 저장하고 신뢰하는 빌드를 준비한 뒤 별도 출력 맵으로 빌드합니다. 편집과 번역만으로 소스 코드를 실행하지 않습니다.\n\n관리형 epScript 컴파일러로 지원되는 epScript를 Python으로 변환합니다. Python→epScript와 Lua 내보내기는 공통 액션·훅 프로필만 지원하며 미지원 문법은 거절합니다. Lua는 정식 euddraft 진입점이 아닙니다. 번역 내보내기는 원문을 보존하며 가져온 의존 파일을 복사하지 않습니다.';
+
+  @override
+  String get eudOpenSource => 'EUD 소스 열기 (.eps / .py)';
+
+  @override
+  String get recoveryTriggerDraft => '미적용 트리거 스크립트 및 원문 이력';
+
+  @override
   String get scriptTitle => '트리거 스크립트';
 
   @override
@@ -3282,7 +3301,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get editorSourceFolderPath => '소스 폴더 경로';
 
   @override
-  String get editorEntryEpsPath => '진입 .eps 파일 경로';
+  String get editorEntryEpsPath => '진입 .eps / .py 파일 경로';
 
   @override
   String get editorNewOutputScxPath => '새 출력 .scx 경로';
@@ -6329,7 +6348,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get editorConfirmThatYouTrustTheEpScriptSourceAndIts =>
-      'epScript 소스와 가져오는 코드를 신뢰하는지 확인하세요.';
+      'EUD 소스와 가져오는 코드를 신뢰하는지 확인하세요.';
 
   @override
   String get editorEnableTheUnverifiedSettingsTestBuildToCompileProject =>

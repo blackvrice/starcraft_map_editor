@@ -7,6 +7,7 @@ import 'ep_script_text_controller.dart';
 
 import '../../application/eud/eud_source_controller.dart';
 import '../../application/eud/eud_source_document.dart';
+import '../../domain/triggers/trigger_script_syntax.dart';
 
 class EudSourceEditor extends StatefulWidget {
   const EudSourceEditor({
@@ -30,12 +31,41 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
   bool _synchronizing = false;
   bool _hideCompletions = false;
   int _completionIndex = 0;
+  List<String> get _symbols =>
+      widget.document.language == TriggerScriptLanguage.python
+      ? [
+          'def',
+          'if',
+          'elif',
+          'else',
+          'for',
+          'in',
+          'while',
+          'return',
+          'break',
+          'continue',
+          'True',
+          'False',
+          'from',
+          'import',
+          'as',
+          'pass',
+          'and',
+          'or',
+          'not',
+          'EUDFunc',
+          'DoActions',
+          ...epScriptSymbols.where((v) => !epScriptKeywords.contains(v)),
+        ]
+      : epScriptSymbols;
 
   @override
   void initState() {
     super.initState();
     _textController = EpScriptTextController(text: widget.document.text)
       ..addListener(_handleTextChanged);
+    _textController.grammar = widget.document.language.extension;
+    _textController.symbols = _symbols;
     _editorScrollController = ScrollController()
       ..addListener(_synchronizeGutter);
     _gutterScrollController = ScrollController();
@@ -45,6 +75,8 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
   @override
   void didUpdateWidget(EudSourceEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _textController.grammar = widget.document.language.extension;
+    _textController.symbols = _symbols;
     if (_textController.text == widget.document.text) {
       return;
     }
@@ -119,7 +151,10 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
     final start = selection.isValid
         ? selection.end
         : _textController.text.length;
-    final inserted = '${start > 0 ? '\n' : ''}$epScriptStarter';
+    final starter = widget.document.language == TriggerScriptLanguage.python
+        ? pythonEudStarter
+        : epScriptStarter;
+    final inserted = '${start > 0 ? '\n' : ''}$starter';
     _textController.value = TextEditingValue(
       text: _textController.text.replaceRange(start, start, inserted),
       selection: TextSelection.collapsed(offset: start + inserted.length),
@@ -130,11 +165,11 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
   void _showHelp() => showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(context.l10n.epScriptHelpTitle),
+      title: Text(context.l10n.eudSourceHelpTitle),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
-          child: Text(context.l10n.epScriptHelpBody),
+          child: Text(context.l10n.eudSourceHelpBody),
         ),
       ),
       actions: [
@@ -145,6 +180,136 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
       ],
     ),
   );
+
+  Future<void> _fileAction(Future<Object?> Function() action) async {
+    try {
+      await action();
+    } on Object catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
+      }
+    }
+  }
+
+  Future<void> _translate() async {
+    final source = widget.sourceController;
+    var target = widget.document.language == TriggerScriptLanguage.epScript
+        ? TriggerScriptLanguage.python
+        : TriggerScriptLanguage.epScript;
+    String? output, error;
+    var busy = false;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+          title: Text(context.l10n.eudTranslate),
+          content: SizedBox(
+            width: 800,
+            height: 420,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    DropdownButton<TriggerScriptLanguage>(
+                      value: target,
+                      onChanged: busy
+                          ? null
+                          : (v) => update(() {
+                              target = v!;
+                              output = null;
+                              error = null;
+                            }),
+                      items: TriggerScriptLanguage.values
+                          .map(
+                            (v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(
+                                v == TriggerScriptLanguage.epScript
+                                    ? 'epScript'
+                                    : v.name,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(width: 12),
+                    IconButton(
+                      tooltip: context.l10n.scriptPreview,
+                      icon: const Icon(Icons.translate),
+                      onPressed: busy
+                          ? null
+                          : () async {
+                              update(() {
+                                busy = true;
+                                error = null;
+                                output = null;
+                              });
+                              try {
+                                final result = await source.translate(target);
+                                if (context.mounted) {
+                                  update(() => output = result);
+                                }
+                              } on Object catch (e) {
+                                if (context.mounted) update(() => error = '$e');
+                              } finally {
+                                if (context.mounted) update(() => busy = false);
+                              }
+                            },
+                    ),
+                  ],
+                ),
+                if (busy) const LinearProgressIndicator(),
+                if (error != null) SelectableText(error!),
+                if (output != null && source.latestTranslation != null)
+                  SelectableText(source.latestTranslation!.toolVersion),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      output ?? '',
+                      style: const TextStyle(
+                        fontFamily: 'Consolas',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(context.l10n.trigClose),
+            ),
+            FilledButton(
+              key: const Key('eud-translation-save'),
+              onPressed: output == null || busy || source.files == null
+                  ? null
+                  : () async {
+                      update(() => busy = true);
+                      try {
+                        final path = await source.exportTranslation(
+                          output!,
+                          target,
+                        );
+                        if (context.mounted && path != null) {
+                          Navigator.pop(context);
+                        }
+                      } on Object catch (e) {
+                        if (context.mounted) update(() => error = '$e');
+                      } finally {
+                        if (context.mounted) update(() => busy = false);
+                      }
+                    },
+              child: Text(context.l10n.scriptSaveAs),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _synchronizeGutter() {
     if (!_gutterScrollController.hasClients) {
@@ -175,6 +340,59 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
             document: document,
             onExample: _insertStarter,
             onHelp: _showHelp,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                DropdownButton<TriggerScriptLanguage>(
+                  key: const Key('eud-source-language'),
+                  value: document.language,
+                  onChanged: document.isUntitled && document.text.isEmpty
+                      ? (v) => widget.sourceController.changeEmptyLanguage(v!)
+                      : null,
+                  items:
+                      [
+                            TriggerScriptLanguage.epScript,
+                            TriggerScriptLanguage.python,
+                          ]
+                          .map(
+                            (v) => DropdownMenuItem(
+                              value: v,
+                              child: Text(
+                                v == TriggerScriptLanguage.epScript
+                                    ? 'epScript'
+                                    : 'Python',
+                              ),
+                            ),
+                          )
+                          .toList(),
+                ),
+                const Spacer(),
+                IconButton(
+                  key: const Key('eud-source-open'),
+                  tooltip: context.l10n.eudOpenSource,
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: widget.sourceController.files == null
+                      ? null
+                      : () => _fileAction(widget.sourceController.openFile),
+                ),
+                IconButton(
+                  key: const Key('eud-source-save'),
+                  tooltip: context.l10n.scriptSaveAs,
+                  icon: const Icon(Icons.save_as),
+                  onPressed: widget.sourceController.files == null
+                      ? null
+                      : () => _fileAction(widget.sourceController.saveNew),
+                ),
+                IconButton(
+                  key: const Key('eud-source-translate'),
+                  tooltip: context.l10n.eudTranslate,
+                  icon: const Icon(Icons.translate),
+                  onPressed: _translate,
+                ),
+              ],
+            ),
           ),
           const Divider(height: 1),
           Expanded(
@@ -418,9 +636,11 @@ class _EditorFooter extends StatelessWidget {
                 style: const TextStyle(color: Color(0xFFB4C0D4), fontSize: 11),
               ),
               const SizedBox(width: 14),
-              const Text(
-                'epScript',
-                style: TextStyle(color: Color(0xFFB4C0D4), fontSize: 11),
+              Text(
+                document.language == TriggerScriptLanguage.python
+                    ? 'Python'
+                    : 'epScript',
+                style: const TextStyle(color: Color(0xFFB4C0D4), fontSize: 11),
               ),
             ],
           ),

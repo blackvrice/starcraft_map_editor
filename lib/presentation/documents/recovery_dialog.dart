@@ -69,6 +69,8 @@ class _RecoveryDialogState extends State<RecoveryDialog> {
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
                             if (snapshot != null) ...[
+                              if (snapshot.triggerDraft != null)
+                                Text(l10n.recoveryTriggerDraft),
                               if (snapshot.map != null)
                                 Text(
                                   l10n.recoveryBaseline(

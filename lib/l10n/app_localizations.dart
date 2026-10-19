@@ -98,6 +98,42 @@ abstract class AppLocalizations {
     Locale('ko'),
   ];
 
+  /// No description provided for @eudTranslate.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD Source Translation'**
+  String get eudTranslate;
+
+  /// No description provided for @editorUseASavedEudSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a saved EUD source file before building.'**
+  String get editorUseASavedEudSource;
+
+  /// No description provided for @eudSourceHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'EUD Source'**
+  String get eudSourceHelpTitle;
+
+  /// No description provided for @eudSourceHelpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'epScript (.eps) and Python/eudplib (.py) are native EUD build inputs. Save to a new source file, prepare a trusted build, then write a separate output map. Editing and translation do not execute source code.\n\nThe managed epScript compiler translates supported epScript to Python. Python-to-epScript and Lua export accept only the portable action-hook profile; unsupported syntax is rejected. Lua is not a native euddraft entry. Translation export preserves the original source; imported dependencies are not copied.'**
+  String get eudSourceHelpBody;
+
+  /// No description provided for @eudOpenSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Open EUD Source (.eps / .py)'**
+  String get eudOpenSource;
+
+  /// No description provided for @recoveryTriggerDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Unapplied trigger script and original sources'**
+  String get recoveryTriggerDraft;
+
   /// No description provided for @scriptTitle.
   ///
   /// In en, this message translates to:
@@ -6047,7 +6083,7 @@ abstract class AppLocalizations {
   /// No description provided for @editorEntryEpsPath.
   ///
   /// In en, this message translates to:
-  /// **'Entry .eps path'**
+  /// **'Entry .eps / .py path'**
   String get editorEntryEpsPath;
 
   /// No description provided for @editorNewOutputScxPath.
@@ -10837,7 +10873,7 @@ abstract class AppLocalizations {
   /// No description provided for @editorConfirmThatYouTrustTheEpScriptSourceAndIts.
   ///
   /// In en, this message translates to:
-  /// **'Confirm that you trust the epScript source and its imports.'**
+  /// **'Confirm that you trust the EUD source and its imports.'**
   String get editorConfirmThatYouTrustTheEpScriptSourceAndIts;
 
   /// No description provided for @editorEnableTheUnverifiedSettingsTestBuildToCompileProject.

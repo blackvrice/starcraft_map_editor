@@ -12,6 +12,7 @@ import '../ports/settings_store.dart';
 import 'open_map_controller.dart';
 import 'opened_map_session.dart';
 import 'recovery_snapshot.dart';
+import '../triggers/trigger_script_drafts.dart';
 
 final class RecoveryCandidate {
   const RecoveryCandidate(this.id, this.snapshot);
@@ -28,6 +29,7 @@ final class AutosaveController {
     required this.settings,
     this.reserveRestoreInput,
     this.canAccessCheckpoint,
+    this.triggerDrafts,
     String? ownerId,
     DateTime Function()? clock,
   }) : _ownerId =
@@ -40,6 +42,20 @@ final class AutosaveController {
     _subscriptions.add(maps.changes.listen((_) => _changed()));
     _subscriptions.add(sources.changes.listen((_) => _changed()));
     _subscriptions.add(projects.changes.listen((_) => _changed()));
+    if (triggerDrafts != null) {
+      _subscriptions.add(
+        triggerDrafts!.changes.listen((_) {
+          _changed();
+          _draftTimer?.cancel();
+          if (enabled) {
+            _draftTimer = Timer(
+              const Duration(milliseconds: 500),
+              () => unawaited(checkpoint()),
+            );
+          }
+        }),
+      );
+    }
   }
 
   final OpenMapController maps;
@@ -47,6 +63,7 @@ final class AutosaveController {
   final EudProjectController projects;
   final RecoveryStore store;
   final SettingsStore settings;
+  final TriggerScriptDraftWorkspace? triggerDrafts;
   final DocumentPathReserver? reserveRestoreInput;
   final bool Function(String id)? canAccessCheckpoint;
   bool ownsCheckpoint(String id) => _owned.contains(id);
@@ -57,6 +74,7 @@ final class AutosaveController {
   final _subscriptions = <StreamSubscription<dynamic>>[];
   List<String> _owned = [];
   Timer? _timer;
+  Timer? _draftTimer;
   Future<void>? _pending;
   bool _disposed = false;
   bool _restoring = false;
@@ -74,6 +92,7 @@ final class AutosaveController {
   List<RecoveryCandidate> candidates = const [];
   Stream<void> get changes => _changes.stream;
   bool get busy => _restoring || _pending != null;
+  bool get hasTriggerDraft => triggerDrafts?.value != null;
 
   void _changed() {
     final map = maps.state.session?.extractedMap;
@@ -138,12 +157,14 @@ final class AutosaveController {
 
   void _restartTimer() {
     _timer?.cancel();
+    if (!enabled) _draftTimer?.cancel();
     if (enabled && !_disposed) {
       _timer = Timer.periodic(interval, (_) => unawaited(checkpoint()));
     }
   }
 
   bool get _hasUnsaved =>
+      triggerDrafts?.value != null ||
       (maps.state.session?.isDirty ?? false) ||
       projects.isDirty ||
       (sources.state.document?.isDirty ?? false) ||
@@ -190,6 +211,7 @@ final class AutosaveController {
         project: projects.project,
         projectPath: projects.path,
         source: sources.state.document,
+        triggerDraft: triggerDrafts?.value,
       );
       final id = 'checkpoint-$_ownerId-${++_sequence}';
       final content = await Isolate.run(snapshot.encode);
@@ -280,6 +302,9 @@ final class AutosaveController {
       final snapshot = await Isolate.run(
         () => RecoverySnapshot.decode(content),
       );
+      if (snapshot.triggerDraft != null && triggerDrafts == null) {
+        throw StateError('RECOVERY_DRAFT_UNAVAILABLE');
+      }
       OpenedMapSession? session;
       final map = snapshot.map;
       if (map != null) {
@@ -357,6 +382,7 @@ final class AutosaveController {
       if (session != null) maps.adoptRecoverySession(session);
       if (snapshot.project != null) projects.create(snapshot.project!);
       if (snapshot.source != null) sources.restore(snapshot.source!);
+      triggerDrafts?.update(snapshot.triggerDraft);
       _owned.add(id);
       _revision++;
       progress.succeed(operationId: operationId, message: 'Recovery opened');
@@ -388,6 +414,7 @@ final class AutosaveController {
   }
 
   Future<void> dispose() async {
+    _draftTimer?.cancel();
     _timer?.cancel();
     _disposed = true;
     for (final subscription in _subscriptions) {

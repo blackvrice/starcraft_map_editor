@@ -1,0 +1,9 @@
+function onPluginStart() {
+    var count = 0;
+    for (var i = 0; i < 3; i++) {
+        count += 1;
+    }
+    if (count == 3) {
+        SetMemory(0x6509B0, Add, 0);
+    }
+}

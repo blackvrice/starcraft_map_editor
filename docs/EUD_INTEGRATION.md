@@ -1,5 +1,11 @@
 # EUD 연동
 
+2026-10-19: [EUD 소스 번역·복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)에서 .py
+정식 entry와 Python 프로필을 추가했다. 공식 EPS→Python은 별도 no-VM helper,
+역방향/Lua는 제한 액션·훅 모델만 사용한다. 편집/번역은 코드 실행 0회이며 실제
+빌드는 기존 신뢰 확인/원본 분리/임시 MPQ 재검증을 따른다. 실제 세 소스 경로의
+euddraft 빌드/재열기를 확인했으며 native Lua·임의 코드의 역변환은 미지원이다.
+
 2026-10-03: epScript 편집기에 예약어/내장 기호·문자열·주석·숫자 색상과
 접두어 자동 완성을 추가했다. 두 글자 이상 입력하면 최대 8개 후보를 표시한다.
 위/아래로 선택하고 Tab/Enter 또는 클릭으로 삽입, Escape로 닫고 Ctrl+Space로 다시 연다.

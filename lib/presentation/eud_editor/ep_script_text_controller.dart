@@ -79,6 +79,12 @@ const epScriptStarter =
     '    DisplayText("EUD script loaded.");\n}\n\n'
     'function beforeTriggerExec() {\n}\n\n'
     'function afterTriggerExec() {\n}\n';
+const pythonEudStarter =
+    'from eudplib import *\n\n'
+    'def onPluginStart():\n'
+    '    DoActions(SetMemory(0x6509B0, Add, 0))\n\n'
+    'def beforeTriggerExec():\n    pass\n\n'
+    'def afterTriggerExec():\n    pass\n';
 
 /// Display grammar only. euddraft remains the authority for compilation.
 class EpScriptTextController extends TextEditingController {

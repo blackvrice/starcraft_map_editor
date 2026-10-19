@@ -40,10 +40,20 @@ final class TriggerScriptCall {
   final int offset;
 }
 
+final class TriggerScriptIdentifier {
+  const TriggerScriptIdentifier(this.name);
+  final String name;
+}
+
 /// Parser for the editor's versioned declaration API, not a general language
 /// interpreter. Calls/literals only; no identifier evaluation or host runtime.
 final class TriggerScriptSyntax {
-  TriggerScriptSyntax(this.source, this.language);
+  TriggerScriptSyntax(
+    this.source,
+    this.language, {
+    this.allowIdentifiers = false,
+  });
+  final bool allowIdentifiers;
   static const maximumCharacters = 1024 * 1024;
   static const maximumNodes = 100000;
   static const maximumDepth = 8;
@@ -134,7 +144,10 @@ final class TriggerScriptSyntax {
         source.substring(nameEnd, _at).contains('\n')) {
       _fail('SCRIPT_PYTHON_LINE', nameEnd);
     }
-    if (!_take('(')) _fail('SCRIPT_UNSUPPORTED', start, name);
+    if (!_take('(')) {
+      if (allowIdentifiers) return TriggerScriptIdentifier(name);
+      _fail('SCRIPT_UNSUPPORTED', start, name);
+    }
     final args = <Object>[];
     _space();
     if (_take(')')) return TriggerScriptCall(name, args, start);

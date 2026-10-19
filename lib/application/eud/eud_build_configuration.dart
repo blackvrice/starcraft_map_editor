@@ -9,6 +9,12 @@ enum EudCompilerProfile {
     game: 'StarCraft: Remastered',
     language: 'epScript',
     outputExtension: '.scx',
+  ),
+  starcraftRemasteredPython(
+    id: 'scr-euddraft-python',
+    game: 'StarCraft: Remastered',
+    language: 'Python',
+    outputExtension: '.scx',
   );
 
   const EudCompilerProfile({
@@ -56,7 +62,11 @@ final class EudBuildConfiguration {
          environmentOverrides,
        ) {
     const mapExtensions = {'.scm', '.scx'};
-    const sourceExtensions = {'.eps'};
+    final sourceExtensions = {
+      compilerProfile == EudCompilerProfile.starcraftRemasteredPython
+          ? '.py'
+          : '.eps',
+    };
     _requireExtension(this.baseMapPath, mapExtensions, 'baseMapPath');
     if (settingsOnly && generatedSettings == null) {
       throw ArgumentError('Settings-only builds require generated settings.');

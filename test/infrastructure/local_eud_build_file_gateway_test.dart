@@ -140,6 +140,51 @@ void main() {
         }
       },
     );
+    test(
+      'native Python entry composes after generated settings without rewriting sources',
+      () async {
+        final python = await File(
+          '${sourceRoot.path}/main.py',
+        ).writeAsString('from eudplib import *\n');
+        final generated = EudGeneratedSettings(
+          EudProject(
+            mapPath: baseMap.path,
+            mapSha256: 'a' * 64,
+            overrides: [
+              EudOverride(field: 'unit.hasShield', targetId: 8, value: true),
+            ],
+          ),
+        );
+        final config = EudBuildConfiguration(
+          baseMapPath: baseMap.path,
+          sourceRootPath: sourceRoot.path,
+          entrySourcePath: python.path,
+          outputMapPath: '${outputRoot.path}/python.scx',
+          compilerProfile: EudCompilerProfile.starcraftRemasteredPython,
+          generatedSettings: generated,
+        );
+        await gateway.validateInputs(config);
+        final workspace = await gateway.createWorkspace(config);
+        try {
+          final settings = await File(
+            workspace.settingsFilePath,
+          ).readAsString();
+          expect(
+            settings.indexOf('editor-settings.py]'),
+            lessThan(settings.indexOf('[${python.path}]')),
+          );
+          expect(await python.readAsString(), 'from eudplib import *\n');
+          expect(
+            await File(
+              '${workspace.directoryPath}/editor-settings.py',
+            ).readAsString(),
+            generated.source,
+          );
+        } finally {
+          await gateway.cleanup(workspace);
+        }
+      },
+    );
 
     test(
       'promotes a verified temporary output without touching the base map',

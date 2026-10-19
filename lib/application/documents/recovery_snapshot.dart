@@ -6,6 +6,7 @@ import '../../domain/eud/eud_project.dart';
 import '../eud/eud_source_document.dart';
 import '../ports/map_file_fingerprint_gateway.dart';
 import 'opened_map_session.dart';
+import '../triggers/trigger_script_drafts.dart';
 
 /// A checkpoint of committed document state, never a playable map or code entry.
 final class RecoverySnapshot {
@@ -15,6 +16,7 @@ final class RecoverySnapshot {
     this.project,
     this.projectPath,
     this.source,
+    this.triggerDraft,
   });
 
   static const maxBytes = 192 * 1024 * 1024;
@@ -23,9 +25,11 @@ final class RecoverySnapshot {
   final EudProject? project;
   final String? projectPath;
   final EudSourceDocument? source;
+  final TriggerScriptRecovery? triggerDraft;
 
   String encode() => jsonEncode({
-    'schema': 1,
+    'schema': triggerDraft == null ? 1 : 2,
+    if (triggerDraft != null) 'triggerDraft': triggerDraft!.toJson(),
     'savedAt': savedAt.toUtc().toIso8601String(),
     'map': map?.toJson(),
     'project': project?.encode(),
@@ -47,7 +51,7 @@ final class RecoverySnapshot {
       );
     }
     final json = jsonDecode(content) as Map<String, dynamic>;
-    if (json['schema'] != 1) {
+    if (json['schema'] != 1 && json['schema'] != 2) {
       throw const FormatException('Unsupported recovery schema.');
     }
     final source = json['source'] as Map<String, dynamic>?;
@@ -75,10 +79,16 @@ final class RecoverySnapshot {
           : EudProject.decode(json['project'] as String),
       projectPath: json['projectPath'] as String?,
       source: document?.withText(source!['text'] as String),
+      triggerDraft: json['schema'] == 2
+          ? TriggerScriptRecovery.fromJson(
+              json['triggerDraft'] as Map<String, dynamic>,
+            )
+          : null,
     );
     if (snapshot.map == null &&
         snapshot.project == null &&
-        snapshot.source == null) {
+        snapshot.source == null &&
+        snapshot.triggerDraft == null) {
       throw const FormatException('Empty recovery checkpoint.');
     }
     return snapshot;

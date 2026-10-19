@@ -1,5 +1,8 @@
 # 문서 인덱스
 
+[EUD 번역·Python·초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md): 공식 EPS→Python,
+native .py 빌드·공통 액션 프로필·강제 종료 후 미적용 초안 복구 및 검증.
+
 [일반 트리거 언어 전환](TRIGGER_SCRIPT_LANGUAGES.md): epScript/Python/Lua
 제한 선언 v1·원문/원시 데이터 보존·전환/적용·실제 syntax/MPQ 검증.
 
