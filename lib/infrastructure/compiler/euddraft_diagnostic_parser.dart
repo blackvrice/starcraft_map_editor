@@ -12,6 +12,9 @@ final class EuddraftDiagnosticParser implements EudCompilerDiagnosticParser {
     r'^\[Error (-?\d{1,10})\] Module "([^"]+)" '
     r'Line ([1-9]\d{0,9}) : (.+)$',
   );
+  static final _pythonFrame = RegExp(
+    r'^File "([^"\r\n]+\.py)", line ([1-9]\d{0,9})(?:, in .+)?$',
+  );
 
   @override
   EditorDiagnostic? parseLine({
@@ -24,6 +27,19 @@ final class EuddraftDiagnosticParser implements EudCompilerDiagnosticParser {
 
     final match = _epScriptErrorPattern.firstMatch(text.trim());
     if (match == null) {
+      final frame = _pythonFrame.firstMatch(text.trim());
+      final line = frame == null ? null : int.tryParse(frame.group(2)!);
+      if (frame != null && line != null && line <= 0x7fffffff) {
+        return EditorDiagnostic(
+          code: 'EUD_PYTHON_SOURCE',
+          message: 'Python source location',
+          severity: DiagnosticSeverity.error,
+          stage: DiagnosticStage.compile,
+          filePath: frame.group(1),
+          sourceLine: line,
+          rawDetails: text,
+        );
+      }
       return null;
     }
 

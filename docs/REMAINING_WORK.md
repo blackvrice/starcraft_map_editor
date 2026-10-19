@@ -2,7 +2,8 @@
 
 2026-10-19 갱신: [EUD 번역·Python·미적용 초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)는
 공식 EPS→Python·공통 액션 프로필·native Python 빌드·강제 종료 후 명시 복구까지
-구현/자동 검증했다. 임의 Python/Lua 역변환·여러 파일 workspace·게임/배포 인수는 남는다.
+구현/자동 검증했다. [여러 소스 workspace](SOURCE_WORKSPACE.md)도 구현했다.
+임의 Python/Lua 역변환·전체 LSP/생성 source map·게임/배포 인수는 남는다.
 
 2026-10-04, 기존 에디터 비교·사용자 제작 흐름·언어 계획 반영. [개발 계획](DEVELOPMENT_PLAN.md)의 미완료 항목을
 중복 없이 묶은 현황이다. 체크박스의 원본은 개발 계획이며 이 문서는 작업 선택을
@@ -54,15 +55,15 @@ EUD 관리형 도구 동봉, 61개 후보 필드, 실행 규칙과 명시적 테
 | 기본 설정·작성 효율 | [기본값·CRGB 표식·문자열 token·트리거 검색/참조 치환](SETTINGS_TRIGGER_EDITING.md) 에디터 구현. sprite 재색상/확장 ID와 게임/외부 인수는 별도 | EP2 |
 | 복사·다중 문서 | 복수 두다드/ISOM 혼합 복사, 독립 맵 탭, 참조 재매핑 문서 간 복사 | EP3a/3b |
 | 지형·배치 보조 | 저장형 사용자 브러시·지형 대칭, 검증 자료 기반 읽기 전용 overlay | EP4 |
-| 일반 스크립트·소스 작업 공간 | [일반 제한 선언 전환](TRIGGER_SCRIPT_LANGUAGES.md)과 [EUD 번역/Python/초안 crash 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)는 구현·자동 검증. 여러 소스 workspace·임의 Python/Lua 역변환·게임 인수는 남음 | EP5, L0~L6, X3/X4 |
+| 일반 스크립트·소스 작업 공간 | [일반 제한 선언](TRIGGER_SCRIPT_LANGUAGES.md), [EUD 번역/Python/초안 crash 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md), [여러 소스 workspace](SOURCE_WORKSPACE.md) 구현. 전체 LSP·임의 역변환·게임 인수는 남음 | EP5, L0~L6, X3/X4 |
 | 결과 확인·선택 기능 | 게임 테스트 흐름, codec/게임 사운드 범위, 이미지 출력은 별도 지원 검증 후 | EP0/6 |
 | EUD 후속 확대 | [기본값·공유 그래프·정적 충돌](EUD_COMPLETION.md)은 구현. 동적 코드·IScript/HD 분석은 확장 범위이며 게임 인수와 분리 | M6.3.1~2 |
 | 사용성 | 한영 번역·진단 ID화·Windows 한글 줄바꿈은 완료. 접근성·고대비, Ctrl+K·떠 있는 도구 막대·유닛 중심 EUD 목업 요소 검토는 남음 | UX v2, M8 |
 | 안정화·배포 | [자동 저장·미저장 복구](AUTOSAVE_RECOVERY.md)는 구현(2026-10-03). 로그 개인정보 제거, 대표 대용량 맵 추가 프로파일링, 패키징·업데이트/복구·버전/마이그레이션 정책은 남음 | M8, X5 |
-| 추가 EUD 언어 확장 | 정식 Python EUD entry·진단·프로젝트 마이그레이션, 공통 Lua EUD backend·원본 위치 진단. 일반 선언 전환과 별도 | X3/X4 |
+| 추가 EUD 언어 확장 | 정식 Python entry·원본 위치 진단은 구현. 임의 Python/Lua 역변환·native Lua runtime·완전한 생성 source map과 프로젝트 마이그레이션은 후속 | X3/X4 |
 
-기본 epScript 빌드는 이미 구현되어 있다. Python이 euddraft 내부에서 쓰인다는
-사실은 앱의 정식 Python entry 지원과 다르다. Lua는 아직 미지원이다.
+기본 epScript와 정식 Python entry 빌드는 구현되어 있다. Lua 편집/제한 선언
+전환은 지원하지만 native Lua runtime 빌드는 지원하지 않는다.
 기존 타일/객체 성능 계측과 사용자 확인은 보존한다. M8의 프로파일링은 릴리스
 대표 맵으로 범위를 넓히는 작업이며 이전 확인을 취소하는 뜻이 아니다.
 

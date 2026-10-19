@@ -59,6 +59,16 @@ void main() {
       expect(recovered.triggerDraft!.current.text, 'invalid draft 한글\n');
       expect(recovered.triggerDraft!.history.single.text, '// original');
       expect(recovered.triggerDraft!.current.language.name, 'python');
+      expect(recovered.sourceWorkspace!.activeId, 'py');
+      expect(recovered.sourceWorkspace!.documents.map((d) => d.text), [
+        'unsaved eps 한글',
+        'unsaved python',
+        'unsaved lua',
+      ]);
+      expect(
+        recovered.sourceWorkspace!.documents.first.savedText,
+        'original eps',
+      );
     },
     skip: dart == null
         ? 'Set DART_EXECUTABLE_PATH for forced-kill integration.'

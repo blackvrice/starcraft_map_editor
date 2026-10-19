@@ -7,6 +7,7 @@ import '../eud/eud_source_document.dart';
 import '../ports/map_file_fingerprint_gateway.dart';
 import 'opened_map_session.dart';
 import '../triggers/trigger_script_drafts.dart';
+import '../eud/source_workspace_recovery.dart';
 
 /// A checkpoint of committed document state, never a playable map or code entry.
 final class RecoverySnapshot {
@@ -17,6 +18,7 @@ final class RecoverySnapshot {
     this.projectPath,
     this.source,
     this.triggerDraft,
+    this.sourceWorkspace,
   });
 
   static const maxBytes = 192 * 1024 * 1024;
@@ -26,9 +28,15 @@ final class RecoverySnapshot {
   final String? projectPath;
   final EudSourceDocument? source;
   final TriggerScriptRecovery? triggerDraft;
+  final SourceWorkspaceRecovery? sourceWorkspace;
 
   String encode() => jsonEncode({
-    'schema': triggerDraft == null ? 1 : 2,
+    'schema': sourceWorkspace != null
+        ? 3
+        : triggerDraft == null
+        ? 1
+        : 2,
+    if (sourceWorkspace != null) 'sourceWorkspace': sourceWorkspace!.toJson(),
     if (triggerDraft != null) 'triggerDraft': triggerDraft!.toJson(),
     'savedAt': savedAt.toUtc().toIso8601String(),
     'map': map?.toJson(),
@@ -51,8 +59,12 @@ final class RecoverySnapshot {
       );
     }
     final json = jsonDecode(content) as Map<String, dynamic>;
-    if (json['schema'] != 1 && json['schema'] != 2) {
+    if (json['schema'] != 1 && json['schema'] != 2 && json['schema'] != 3) {
       throw const FormatException('Unsupported recovery schema.');
+    }
+    if ((json['schema'] == 2 && json['triggerDraft'] == null) ||
+        (json['sourceWorkspace'] != null && json['source'] != null)) {
+      throw const FormatException('Invalid recovery source payload.');
     }
     final source = json['source'] as Map<String, dynamic>?;
     final path = source?['path'] as String?;
@@ -79,7 +91,14 @@ final class RecoverySnapshot {
           : EudProject.decode(json['project'] as String),
       projectPath: json['projectPath'] as String?,
       source: document?.withText(source!['text'] as String),
-      triggerDraft: json['schema'] == 2
+      sourceWorkspace: json['schema'] == 3
+          ? SourceWorkspaceRecovery.fromJson(
+              json['sourceWorkspace'] as Map<String, dynamic>,
+            )
+          : null,
+      triggerDraft:
+          (json['schema'] == 2 || json['schema'] == 3) &&
+              json['triggerDraft'] != null
           ? TriggerScriptRecovery.fromJson(
               json['triggerDraft'] as Map<String, dynamic>,
             )
@@ -88,7 +107,8 @@ final class RecoverySnapshot {
     if (snapshot.map == null &&
         snapshot.project == null &&
         snapshot.source == null &&
-        snapshot.triggerDraft == null) {
+        snapshot.triggerDraft == null &&
+        snapshot.sourceWorkspace == null) {
       throw const FormatException('Empty recovery checkpoint.');
     }
     return snapshot;

@@ -31,7 +31,7 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
   bool _synchronizing = false;
   bool _hideCompletions = false;
   int _completionIndex = 0;
-  List<String> get _symbols =>
+  List<String> get _baseSymbols =>
       widget.document.language == TriggerScriptLanguage.python
       ? [
           'def',
@@ -57,7 +57,51 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
           'DoActions',
           ...epScriptSymbols.where((v) => !epScriptKeywords.contains(v)),
         ]
+      : widget.document.language == TriggerScriptLanguage.lua
+      ? const [
+          'function',
+          'local',
+          'return',
+          'if',
+          'then',
+          'else',
+          'elseif',
+          'end',
+          'for',
+          'while',
+          'do',
+          'break',
+          'true',
+          'false',
+          'nil',
+          'require',
+          'pairs',
+          'ipairs',
+        ]
       : epScriptSymbols;
+  List<String> get _symbols => [
+    ..._baseSymbols,
+    ...?widget.sourceController.index?.completions(
+      widget.sourceController.relativeFor(widget.document.sourcePath) ?? '',
+    ),
+  ];
+  int _lastFocus = 0;
+  void _navigate() {
+    final request = widget.sourceController.focusRequest;
+    if (request == null ||
+        request.id != widget.document.documentId ||
+        request.sequence == _lastFocus) {
+      return;
+    }
+    _lastFocus = request.sequence;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _textController.selection = TextSelection.collapsed(
+        offset: request.offset.clamp(0, _textController.text.length),
+      );
+      _focusNode.requestFocus();
+    });
+  }
 
   @override
   void initState() {
@@ -66,10 +110,12 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
       ..addListener(_handleTextChanged);
     _textController.grammar = widget.document.language.extension;
     _textController.symbols = _symbols;
+    _textController.qualifiedCompletions = true;
     _editorScrollController = ScrollController()
       ..addListener(_synchronizeGutter);
     _gutterScrollController = ScrollController();
     _focusNode = FocusNode(onKeyEvent: _handleKey);
+    _navigate();
   }
 
   @override
@@ -77,6 +123,7 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
     super.didUpdateWidget(oldWidget);
     _textController.grammar = widget.document.language.extension;
     _textController.symbols = _symbols;
+    _navigate();
     if (_textController.text == widget.document.text) {
       return;
     }
@@ -105,7 +152,10 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
     _hideCompletions = false;
     _completionIndex = 0;
     if (!_synchronizing) {
-      widget.sourceController.updateText(_textController.text);
+      widget.sourceController.updateDocumentText(
+        widget.document.documentId,
+        _textController.text,
+      );
     }
     if (mounted) {
       setState(() {});
@@ -153,6 +203,8 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
         : _textController.text.length;
     final starter = widget.document.language == TriggerScriptLanguage.python
         ? pythonEudStarter
+        : widget.document.language == TriggerScriptLanguage.lua
+        ? 'function helper()\nend\n'
         : epScriptStarter;
     final inserted = '${start > 0 ? '\n' : ''}$starter';
     _textController.value = TextEditingValue(
@@ -355,6 +407,8 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
                       [
                             TriggerScriptLanguage.epScript,
                             TriggerScriptLanguage.python,
+                            if (widget.sourceController.root != null)
+                              TriggerScriptLanguage.lua,
                           ]
                           .map(
                             (v) => DropdownMenuItem(
@@ -362,7 +416,9 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
                               child: Text(
                                 v == TriggerScriptLanguage.epScript
                                     ? 'epScript'
-                                    : 'Python',
+                                    : v == TriggerScriptLanguage.python
+                                    ? 'Python'
+                                    : 'Lua',
                               ),
                             ),
                           )
@@ -389,7 +445,9 @@ class _EudSourceEditorState extends State<EudSourceEditor> {
                   key: const Key('eud-source-translate'),
                   tooltip: context.l10n.eudTranslate,
                   icon: const Icon(Icons.translate),
-                  onPressed: _translate,
+                  onPressed: document.language == TriggerScriptLanguage.lua
+                      ? null
+                      : _translate,
                 ),
               ],
             ),

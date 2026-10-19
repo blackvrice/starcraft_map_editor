@@ -6,6 +6,7 @@ import 'dart:async';
 import '../infrastructure/compiler/isolate_trigger_script_gateway.dart';
 import '../infrastructure/compiler/process_eud_source_translation_gateway.dart';
 import '../infrastructure/filesystem/local_trigger_script_files.dart';
+import '../infrastructure/filesystem/local_source_workspace_gateway.dart';
 
 import '../infrastructure/filesystem/local_map_resource_gateway.dart';
 import 'package:flutter/widgets.dart';
@@ -115,6 +116,12 @@ void bootstrap() {
     final eudSourceController = EudSourceController(
       files: const LocalTriggerScriptFiles(),
       translator: ProcessEudSourceTranslationGateway.bundled(),
+      workspaceGateway: const LocalSourceWorkspaceGateway(),
+      reserveWrite: (path) => workspace.reserve(
+        id,
+        path,
+        purpose: WorkspacePathPurpose.sourceOutput,
+      ),
     );
     final openMapController = OpenMapController(
       archiveGateway: archiveGateway,
@@ -143,11 +150,19 @@ void bootstrap() {
       if (openMapController.state.session?.isDirty ?? false) {
         return 'Save the edited map before building.';
       }
-      if (eudSourceController.state.document?.isDirty ?? false) {
+      if (eudSourceController.documents.any((d) => d.isDirty)) {
         return 'Save or discard source edits before building.';
       }
-      if (eudSourceController.state.document?.isUntitled ?? false) {
+      if (eudSourceController.documents.any((d) => d.isUntitled)) {
         return 'Use a saved EUD source file before building.';
+      }
+      if (eudSourceController.workspaceBusy ||
+          eudSourceController.indexPending ||
+          eudSourceController.conflicts.isNotEmpty ||
+          (eudSourceController.root != null &&
+              !eudSourceController.workspaceVerified) ||
+          eudSourceController.workspaceError != null) {
+        return 'SOURCE_WORKSPACE_NOT_READY';
       }
       return null;
     }
@@ -158,6 +173,12 @@ void bootstrap() {
       files: LocalEudBuildFileGateway(),
       blockReason: buildBlockReason,
       projects: eudProjectWorkspace,
+      validateSources: eudSourceController.validateForBuild,
+      sourceRevision: () => eudSourceController.revision,
+      sourceRevisions: () => {
+        for (final f in eudSourceController.workspaceFiles)
+          f.relativePath: f.revision,
+      },
     );
     final objectEditingController = ObjectEditingController(
       triggerScriptGateway: IsolateTriggerScriptGateway(),
@@ -214,7 +235,7 @@ void bootstrap() {
       await saveMapController.saveAs();
     });
     commandDispatcher.register(EditorCommandId.newEudSource, (_) {
-      eudSourceController.createUntitled();
+      eudSourceController.newTab();
     });
     commandDispatcher.register(EditorCommandId.buildEud, (_) async {
       if (eudBuildPreparationController.busy || buildBlockReason() != null) {

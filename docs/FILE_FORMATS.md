@@ -1,5 +1,10 @@
 # 파일 포맷과 무손실 정책
 
+2026-10-19 [여러 소스](SOURCE_WORKSPACE.md)의 앱 전용 recovery schema v3는
+`sourceWorkspace: {root, activeId, documents:[{id,fileName,path,savedText,text}]}`를
+포함한다. v1/v2 입력도 유지하며 각 문서 원문과 기준을 복원한다. CHK/EUD project
+schema는 바꾸지 않으며 소스는 엄격한 UTF-8로 읽고 명시 저장만 수행한다.
+
 2026-10-19 [EUD 소스/복구](EUD_SOURCE_TRANSLATION_RECOVERY.md): native .py 입력은
 기존 .eds의 사용자 플러그인 경로로 기록하며 CHK/EUD 프로젝트 포맷은 바꾸지
 않는다. 미적용 초안은 앱 전용 recovery schema v2의 기준 CHK/현재 소스/언어/

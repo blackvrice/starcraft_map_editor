@@ -24,6 +24,7 @@ import 'package:starcraft_map_editor/infrastructure/compiler/bundled_eud_tool.da
 import 'package:starcraft_map_editor/infrastructure/compiler/process_eud_compiler_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_eud_build_file_gateway.dart';
 import 'package:starcraft_map_editor/infrastructure/filesystem/local_map_file_fingerprint_gateway.dart';
+import 'package:starcraft_map_editor/infrastructure/filesystem/local_source_workspace_gateway.dart';
 
 void main() {
   final installationPath = Platform.environment['EUDDRAFT_TEST_INSTALLATION'];
@@ -113,6 +114,14 @@ void main() {
             translated = (await gateway.toPython(
               await File('test/fixtures/eud/free-smoke.eps').readAsString(),
             )).source;
+            await File(
+              '${sourceDirectory.path}/editor_helper.py',
+            ).writeAsString(
+              'def identity(value):\n    return value\n',
+              flush: true,
+            );
+            translated =
+                'from editor_helper import identity\nassert identity(7) == 7\n$translated';
           }
           entrySource = await File(
             '${sourceDirectory.path}${Platform.pathSeparator}최소 스모크.py',
@@ -162,11 +171,18 @@ void main() {
           inspector: toolInspector,
         );
         addTearDown(toolSettings.dispose);
+        final scan = await const LocalSourceWorkspaceGateway().scan(
+          sourceDirectory.path,
+        );
+        final revisions = {
+          for (final file in scan.files) file.relativePath: file.revision,
+        };
         final preparation = EudBuildPreparationController(
           tools: toolSettings,
           builds: controller,
           files: LocalEudBuildFileGateway(),
           blockReason: () => null,
+          sourceRevisions: () => revisions,
         );
         final error = await preparation.prepare(
           baseMap: baseMap.path,
@@ -185,11 +201,15 @@ void main() {
           bundled ? EudToolPathSource.bundled : EudToolPathSource.userSettings,
         );
         final succeeded = await controller.start();
+        final sourcesAfter = await const LocalSourceWorkspaceGateway().scan(
+          sourceDirectory.path,
+        );
         expect(
           succeeded,
           isTrue,
           reason:
               'status=${controller.state.status}; '
+              'dependencies before=$revisions after=${{for (final f in sourcesAfter.files) f.relativePath: f.revision}}; '
               'diagnostics=${controller.state.diagnostics.map((diagnostic) => '${diagnostic.code}:${diagnostic.message}:${diagnostic.rawDetails}')}; '
               'stdout=${controller.state.latestRecord?.stdoutLines}; '
               'stderr=${controller.state.latestRecord?.stderrLines}',

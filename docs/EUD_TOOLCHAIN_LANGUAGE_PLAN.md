@@ -3,7 +3,8 @@
 2026-10-19 L5의 [구현 계약과 검증](EUD_SOURCE_TRANSLATION_RECOVERY.md)을 추가했다.
 공식 EPS→Python/제한 액션·훅 전환, 정식 .py entry, 미적용 초안 crash 복구는
 구현했다. 임의 Python/Lua 역변환과 native Lua runtime은 지원하지 않으며
-다중 파일/source map·게임/배포 인수는 별도다. 아래 계획은 원래의 장기 범위다.
+[다중 파일/원본 진단](SOURCE_WORKSPACE.md)도 구현했다. 전체 LSP/생성 source map·
+게임/배포 인수는 별도다. 아래 계획은 원래의 장기 범위다.
 
 **2026-10-04 계획 확장:** 일반 트리거도 epScript/Python/Lua 중 선택한 언어로
 편집하고 검증된 공통 범위에서 언어를 전환하는 계획을 §7에 추가했다.

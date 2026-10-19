@@ -50,6 +50,37 @@ AutosaveController attach(
 
 void main() {
   test(
+    'autosave captures inactive source drafts and restores all tabs without source IO',
+    () async {
+      final fixture = EudWorkspaceFixture(),
+          source = EudSourceController(),
+          store = MemoryRecoveryStore();
+      final controller = attach(fixture, source, store);
+      addTearDown(controller.dispose);
+      addTearDown(fixture.dispose);
+      addTearDown(source.dispose);
+      source.newTab(fileName: 'a.eps', initialText: 'first draft');
+      final first = source.state.document!.documentId;
+      source.newTab(fileName: 'b.py', initialText: 'second draft');
+      source.activate(first);
+      await controller.checkpoint();
+      expect(controller.lastError, isNull);
+      final id = store.values.keys.single;
+      final snapshot = RecoverySnapshot.decode(store.values[id]!);
+      expect(snapshot.sourceWorkspace!.documents, hasLength(2));
+      for (final d in source.documents) {
+        source.closeTab(d.documentId, discardChanges: true);
+      }
+      await controller.restore(id);
+      expect(source.documents.map((d) => d.text), [
+        'first draft',
+        'second draft',
+      ]);
+      expect(source.state.document!.fileName, 'a.eps');
+      expect(source.hasUnsaved, isTrue);
+    },
+  );
+  test(
     'periodic autosave runs with stored preferences and stops after disposal',
     () async {
       final fixture = EudWorkspaceFixture(),

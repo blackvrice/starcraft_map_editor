@@ -16,12 +16,18 @@ final class EudBuildPreparationController {
     required this.files,
     required this.blockReason,
     this.projects,
+    this.validateSources,
+    this.sourceRevision,
+    this.sourceRevisions,
   });
   final EudToolSettingsController tools;
   final EudBuildController builds;
   final EudBuildFileGateway files;
   final String? Function() blockReason;
   final EudProjectWorkspace? projects;
+  final Future<void> Function(String root, String entry)? validateSources;
+  final int Function()? sourceRevision;
+  final Map<String, String> Function()? sourceRevisions;
   bool get hasProjectSettings => projects?.hasUnbuiltOverrides ?? false;
   bool busy = false;
   List<EditorDiagnostic> _diagnostics = const [];
@@ -54,9 +60,14 @@ final class EudBuildPreparationController {
       }
       final blocked = blockReason();
       if (blocked != null) return blocked;
+      if (entrySource.isNotEmpty) {
+        await validateSources?.call(sourceRoot, entrySource);
+      }
+      final expectedSourceRevision = sourceRevision?.call();
       final project = projects?.projects.project;
       final mapSession = projects?.maps.state.session;
       bool contextIsCurrent() =>
+          sourceRevision?.call() == expectedSourceRevision &&
           identical(projects?.projects.project, project) &&
           identical(projects?.maps.state.session, mapSession) &&
           !(projects?.isBusy ?? false) &&
@@ -87,6 +98,9 @@ final class EudBuildPreparationController {
         );
       }
       final configuration = EudBuildConfiguration(
+        sourceRevisions: entrySource.isEmpty
+            ? const {}
+            : sourceRevisions?.call() ?? const {},
         compilerProfile: entrySource.toLowerCase().endsWith('.py')
             ? EudCompilerProfile.starcraftRemasteredPython
             : EudCompilerProfile.starcraftRemastered,

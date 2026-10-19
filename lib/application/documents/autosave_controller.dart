@@ -38,7 +38,7 @@ final class AutosaveController {
        _clock = clock ?? DateTime.now {
     _mapIdentity = maps.state.session?.extractedMap;
     _projectIdentity = projects.path;
-    _sourceIdentity = sources.state.document?.documentId;
+    _sourceIdentity = '${sources.workspaceEpoch}';
     _subscriptions.add(maps.changes.listen((_) => _changed()));
     _subscriptions.add(sources.changes.listen((_) => _changed()));
     _subscriptions.add(projects.changes.listen((_) => _changed()));
@@ -97,7 +97,7 @@ final class AutosaveController {
   void _changed() {
     final map = maps.state.session?.extractedMap;
     final project = projects.path;
-    final source = sources.state.document?.documentId;
+    final source = '${sources.workspaceEpoch}';
     if (!identical(map, _mapIdentity) ||
         project != _projectIdentity ||
         source != _sourceIdentity) {
@@ -167,8 +167,7 @@ final class AutosaveController {
       triggerDrafts?.value != null ||
       (maps.state.session?.isDirty ?? false) ||
       projects.isDirty ||
-      (sources.state.document?.isDirty ?? false) ||
-      (sources.state.document?.isUntitled ?? false);
+      sources.hasUnsaved;
 
   Future<void> checkpoint() {
     if (_disposed || _restoring) return Future.value();
@@ -185,6 +184,7 @@ final class AutosaveController {
     final progress = maps.operationProgressController.current;
     if (maps.editHistory.isTransactionActive ||
         projects.isBusy ||
+        sources.workspaceBusy ||
         (progress != null && !progress.isTerminal) ||
         _revision == _writtenRevision) {
       return;
@@ -210,7 +210,12 @@ final class AutosaveController {
         map: session == null ? null : RecoveryMap.capture(session),
         project: projects.project,
         projectPath: projects.path,
-        source: sources.state.document,
+        source: sources.documents.length <= 1 && sources.root == null
+            ? sources.state.document
+            : null,
+        sourceWorkspace: sources.documents.length > 1 || sources.root != null
+            ? sources.recovery
+            : null,
         triggerDraft: triggerDrafts?.value,
       );
       final id = 'checkpoint-$_ownerId-${++_sequence}';
@@ -275,6 +280,7 @@ final class AutosaveController {
       throw StateError('RECOVERY_DOCUMENT_BUSY');
     }
     if (busy ||
+        sources.workspaceBusy ||
         _hasUnsaved ||
         maps.editHistory.isTransactionActive ||
         projects.isBusy) {
@@ -285,7 +291,7 @@ final class AutosaveController {
       throw StateError('RECOVERY_DOCUMENT_BUSY');
     }
     final oldMap = maps.state.session;
-    final oldSource = sources.state.document;
+    final oldSource = sources.revision;
     final oldProject = projects.project;
     _restoring = true;
     final operationId = 'restore-$_ownerId-${++_sequence}';
@@ -372,16 +378,21 @@ final class AutosaveController {
       await pathLease?.validate();
       if (_disposed ||
           !identical(oldMap, maps.state.session) ||
-          !identical(oldSource, sources.state.document) ||
+          oldSource != sources.revision ||
           !identical(oldProject, projects.project) ||
           projects.isBusy ||
+          sources.workspaceBusy ||
           _hasUnsaved) {
         throw StateError('RECOVERY_DOCUMENT_CHANGED');
       }
       // Everything is validated before any controller is changed. No compiler runs.
       if (session != null) maps.adoptRecoverySession(session);
       if (snapshot.project != null) projects.create(snapshot.project!);
-      if (snapshot.source != null) sources.restore(snapshot.source!);
+      if (snapshot.sourceWorkspace != null) {
+        sources.restoreWorkspace(snapshot.sourceWorkspace!);
+      } else if (snapshot.source != null) {
+        sources.restore(snapshot.source!);
+      }
       triggerDrafts?.update(snapshot.triggerDraft);
       _owned.add(id);
       _revision++;

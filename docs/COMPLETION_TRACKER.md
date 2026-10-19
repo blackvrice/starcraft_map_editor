@@ -12,8 +12,8 @@
 | 2 | FR-220 사용자 raw/ISOM 브러시·저장/로드·대칭 | [지원 프로필 구현](USER_TERRAIN_BRUSHES.md). schema/상한/자료 revision·기존 solver·preview/Undo와 평지 ISOM 대칭. raw/전환/경사로/두다드 방향 변환은 미지원, 게임 인수 별도 |
 | 3 | FR-219 높이·건설/이동 가능·범위 보조 표시 | [분석 탭](TERRAIN_ANALYSIS.md)과 [주 편집 지도 통합](EDITOR_OVERLAYS.md) 구현. VF4/CV5·DAT 기본 사거리/시야·검증된 배치 설계 전력장·미확인·상한·캐시. 실제 게임 수집은 미지원, 외부/게임·release profile/RSS 인수는 남음 |
 | 4 | FR-406/319 일반 epScript/Python/Lua | [제한 선언 v1 구현](TRIGGER_SCRIPT_LANGUAGES.md). 세 언어·snapshot/raw 보존·원문·미리보기/Undo. [미적용 초안 crash 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)도 구현. 게임/배포 인수는 별도 |
-| 5 | FR-320 여러 소스·검색·완성·진단 | 미구현. 루트/링크/외부 변경·취소/정적 분석, native source 원문 보존 필요 |
-| 6 | X3/X4/L5 정식 Python entry·제한 Lua EUD | [Python native·공식 EPS→Python·공통 액션 프로필 구현](EUD_SOURCE_TRANSLATION_RECOVERY.md), 실제 빌드/재열기·설정 조합 검증. native Lua/임의 역변환·다중 파일/source map·게임 인수는 미완료 |
+| 5 | FR-320 여러 소스·검색·완성·진단 | [정적 작업 공간 구현](SOURCE_WORKSPACE.md). 폴더/다중 탭·검색/완성·원본 진단, 안전 저장/충돌·schema v3 복구·빌드 의존 검증. 전체 LSP·게임/배포 인수 별도 |
+| 6 | X3/X4/L5 정식 Python entry·제한 Lua EUD | [Python native·공식 EPS→Python·공통 액션 프로필 구현](EUD_SOURCE_TRANSLATION_RECOVERY.md), 실제 빌드/재열기·설정 조합 검증. 다중 파일/원본 위치는 FR-320으로 추가. native Lua/임의 역변환·완전한 생성 코드 source map·게임 인수는 미완료 |
 | 7 | FR-107 게임 실행/관찰 기록 | 실행 인자 feasibility·안전 포트 또는 수동 fallback·출력별 사용자 관찰 기록 필요 |
 | 8 | FR-226 사운드 지원 확대 | PCM 기반은 구현. 추가 codec·로컬 게임 사운드 선택의 라이선스/상한/출처·게임 재생 검증 필요 |
 | 9 | FR-227 이미지 출력 | 미구현. 영역/레이어·별도 경로·크기 예산·카메라 무변경·자산 배포 경계 필요 |

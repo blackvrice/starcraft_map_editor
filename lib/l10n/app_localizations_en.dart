@@ -279,6 +279,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.';
 
   @override
+  String get sourceProjectFolder => 'Source folder';
+
+  @override
+  String get sourceRefreshProject => 'Refresh source folder';
+
+  @override
+  String get sourceSearchProject => 'Search sources';
+
+  @override
+  String get sourceSearchText => 'Search text';
+
+  @override
+  String get sourceSaveFile => 'Save file (with backup)';
+
+  @override
+  String get sourceReloadFile => 'Reload file from disk';
+
+  @override
+  String get sourceVerifyRestoredRoot => 'Source folder verification required.';
+
+  @override
+  String get sourceExternalConflict =>
+      'Files changed outside the editor. Refresh, then reload or Save As.';
+
+  @override
+  String get sourceCloseTab => 'Close source tab';
+
+  @override
+  String get sourceNewTab => 'New source tab';
+
+  @override
+  String get sourceDiscardChanges => 'Discard unsaved source changes?';
+
+  @override
+  String get sourceDiscard => 'Discard';
+
+  @override
   String get analysisTitle => 'Map analysis';
 
   @override

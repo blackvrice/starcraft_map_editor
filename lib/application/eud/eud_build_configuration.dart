@@ -2,6 +2,7 @@ import '../ports/eud_compiler_gateway.dart';
 import '../ports/eud_tool_inspector.dart';
 import 'eud_environment.dart';
 import '../../domain/eud/eud_generated_settings.dart';
+import '../../domain/eud/source_workspace_index.dart';
 
 enum EudCompilerProfile {
   starcraftRemastered(
@@ -42,6 +43,7 @@ final class EudBuildConfiguration {
     Map<String, String> environmentOverrides = const {},
     this.generatedSettings,
     this.settingsOnly = false,
+    Map<String, String> sourceRevisions = const {},
   }) : baseMapPath = _requireAbsoluteWindowsPath(baseMapPath, 'baseMapPath'),
        sourceRootPath = settingsOnly
            ? ''
@@ -58,9 +60,18 @@ final class EudBuildConfiguration {
          'compilerPathOverride',
        ),
        compilerOptions = _copyCompilerOptions(compilerOptions),
+       sourceRevisions = Map.unmodifiable(sourceRevisions),
        environmentOverrides = EudEnvironmentRules.copyAndValidate(
          environmentOverrides,
        ) {
+    if (sourceRevisions.length > 256 ||
+        sourceRevisions.entries.any(
+          (e) =>
+              SourcePaths.relative(e.key) != e.key ||
+              !RegExp(r'^[0-9a-f]{64}$').hasMatch(e.value),
+        )) {
+      throw ArgumentError('SOURCE_REVISIONS');
+    }
     const mapExtensions = {'.scm', '.scx'};
     final sourceExtensions = {
       compilerProfile == EudCompilerProfile.starcraftRemasteredPython
@@ -120,6 +131,7 @@ final class EudBuildConfiguration {
   final Map<String, String> environmentOverrides;
   final EudGeneratedSettings? generatedSettings;
   final bool settingsOnly;
+  final Map<String, String> sourceRevisions;
 
   EudToolInspectionRequest createToolInspectionRequest({
     String? userSettingsPath,

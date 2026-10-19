@@ -608,6 +608,78 @@ abstract class AppLocalizations {
   /// **'Canvas owner markers show the configured color. Sprite recoloring and random/player-choice colors are not simulated.'**
   String get playerColorPreviewLimit;
 
+  /// No description provided for @sourceProjectFolder.
+  ///
+  /// In en, this message translates to:
+  /// **'Source folder'**
+  String get sourceProjectFolder;
+
+  /// No description provided for @sourceRefreshProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh source folder'**
+  String get sourceRefreshProject;
+
+  /// No description provided for @sourceSearchProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sources'**
+  String get sourceSearchProject;
+
+  /// No description provided for @sourceSearchText.
+  ///
+  /// In en, this message translates to:
+  /// **'Search text'**
+  String get sourceSearchText;
+
+  /// No description provided for @sourceSaveFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Save file (with backup)'**
+  String get sourceSaveFile;
+
+  /// No description provided for @sourceReloadFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload file from disk'**
+  String get sourceReloadFile;
+
+  /// No description provided for @sourceVerifyRestoredRoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Source folder verification required.'**
+  String get sourceVerifyRestoredRoot;
+
+  /// No description provided for @sourceExternalConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Files changed outside the editor. Refresh, then reload or Save As.'**
+  String get sourceExternalConflict;
+
+  /// No description provided for @sourceCloseTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Close source tab'**
+  String get sourceCloseTab;
+
+  /// No description provided for @sourceNewTab.
+  ///
+  /// In en, this message translates to:
+  /// **'New source tab'**
+  String get sourceNewTab;
+
+  /// No description provided for @sourceDiscardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved source changes?'**
+  String get sourceDiscardChanges;
+
+  /// No description provided for @sourceDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get sourceDiscard;
+
   /// No description provided for @analysisTitle.
   ///
   /// In en, this message translates to:

@@ -444,6 +444,9 @@ final class SafeEudBuildPipeline implements EudBuildGateway {
           );
         }
 
+        if (plan.configuration.sourceRevisions.isNotEmpty) {
+          await buildFileGateway.validateInputs(plan.configuration);
+        }
         await _inspectUnchangedTool(plan, processExitCode: 0);
 
         await _verifyDestinationUnchanged(

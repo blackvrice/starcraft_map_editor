@@ -16,6 +16,22 @@ void main() {
   setUp(() => f = MultiMapFixture());
   tearDown(() => f.dispose());
   test(
+    'inactive source tab prevents map workspace from closing without consent',
+    () async {
+      final map = f.addMap();
+      map.sources.newTab(fileName: 'draft.eps', initialText: 'unsaved');
+      map.sources.newTab(fileName: 'clean.py');
+      map.sources.markSaved(sourcePath: r'C:\Project\clean.py');
+      expect(map.sources.state.document!.isDirty, isFalse);
+      expect(map.dirty, isTrue);
+      expect(
+        await f.workspace.close(map, expectedRevision: map.revision),
+        isFalse,
+      );
+      expect(f.workspace.documents, contains(map));
+    },
+  );
+  test(
     'resource import belongs to A and prevents closing A while B stays editable',
     () async {
       final a = f.addMap(), b = f.addMap();

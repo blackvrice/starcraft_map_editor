@@ -14,6 +14,35 @@ import 'package:starcraft_map_editor/domain/diagnostics/editor_diagnostic.dart';
 
 void main() {
   group('SafeEudBuildPipeline', () {
+    test(
+      'dependency changes after compilation prevent output promotion',
+      () async {
+        final files = _FakeEudBuildFileGateway(
+          destinationStates: [false, false],
+        )..failValidationAt = 2;
+        final compiler = _FakeCompilerGateway.success();
+        final events =
+            await _pipeline(
+                  files: files,
+                  fingerprints: _successFingerprints(),
+                  compiler: compiler,
+                )
+                .build(
+                  _plan(
+                    sourceRevisions: {
+                      'main.eps': 'a' * 64,
+                      'util.eps': 'b' * 64,
+                    },
+                  ),
+                )
+                .toList();
+        expect(compiler.request, isNotNull);
+        expect(files.validateCalls, 2);
+        expect(events.last.kind, EudBuildEventKind.failed);
+        expect(files.promoteCalls, 0);
+        expect(files.cleanupCalls, 1);
+      },
+    );
     for (final afterCompile in [false, true]) {
       test(
         'rejects stale project ${afterCompile ? 'before promotion' : 'before execution'}',
@@ -334,6 +363,7 @@ SafeEudBuildPipeline _pipeline({
 }
 
 EudBuildPlan _plan({
+  Map<String, String> sourceRevisions = const {},
   bool Function()? contextIsCurrent,
   bool replaceExistingOutput = false,
   EudToolPathSource source = EudToolPathSource.projectProfile,
@@ -341,6 +371,7 @@ EudBuildPlan _plan({
   return EudBuildPlan(
     buildId: 'safe-build',
     configuration: EudBuildConfiguration(
+      sourceRevisions: sourceRevisions,
       baseMapPath: _basePath,
       sourceRootPath: _sourceRootPath,
       entrySourcePath: _entryPath,
@@ -597,9 +628,15 @@ final class _FakeEudBuildFileGateway implements EudBuildFileGateway {
   int promoteCalls = 0;
   int cleanupCalls = 0;
   bool? lastReplaceExisting;
+  int validateCalls = 0;
+  int? failValidationAt;
 
   @override
-  Future<void> validateInputs(EudBuildConfiguration configuration) async {}
+  Future<void> validateInputs(EudBuildConfiguration configuration) async {
+    if (++validateCalls == failValidationAt) {
+      throw const FileSystemException('SOURCE_BUILD_DEPENDENCY_CHANGED');
+    }
+  }
 
   @override
   Future<bool> destinationExists(String path) async {

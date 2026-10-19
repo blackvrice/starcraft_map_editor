@@ -199,16 +199,21 @@ bool FlutterWindow::OnCreate() {
         const bool is_data_directory =
             call.method_name() == "pickStarCraftInstallationDirectory";
         const bool is_eud_directory = call.method_name() == "pickEudToolDirectory";
-        if (!is_open && !is_save && !is_data_directory && !is_eud_directory) {
+        const bool is_source_directory = call.method_name() == "pickSourceRoot";
+        if (!is_open && !is_save && !is_data_directory && !is_eud_directory &&
+            !is_source_directory) {
           result->NotImplemented();
           return;
         }
 
-        if (is_data_directory || is_eud_directory) {
+        if (is_data_directory || is_eud_directory || is_source_directory) {
           const DirectoryDialogSelection selection =
-              PickInstallationDirectory(GetHandle(), is_eud_directory
-                  ? L"Choose euddraft Installation Directory"
-                  : L"Choose StarCraft Installation Directory");
+              PickInstallationDirectory(
+                  GetHandle(), is_source_directory
+                                   ? L"Choose Source Root Directory"
+                                   : is_eud_directory
+                                         ? L"Choose euddraft Installation Directory"
+                                         : L"Choose StarCraft Installation Directory");
           if (selection.status == DirectoryDialogStatus::accepted) {
             result->Success(flutter::EncodableValue(selection.path));
             return;

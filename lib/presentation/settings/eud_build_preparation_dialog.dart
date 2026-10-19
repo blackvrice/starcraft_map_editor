@@ -9,11 +9,13 @@ class EudBuildPreparationDialog extends StatefulWidget {
     required this.controller,
     this.baseMap = '',
     this.entrySource = '',
+    this.sourceRoot,
     super.key,
   });
   final EudBuildPreparationController controller;
   final String baseMap;
   final String entrySource;
+  final String? sourceRoot;
   @override
   State<EudBuildPreparationDialog> createState() =>
       _EudBuildPreparationDialogState();
@@ -32,7 +34,7 @@ class _EudBuildPreparationDialogState extends State<EudBuildPreparationDialog> {
     final previous = widget.controller.builds.state.plan?.configuration;
     _fields = [
       widget.baseMap.isEmpty ? previous?.baseMapPath ?? '' : widget.baseMap,
-      previous?.sourceRootPath ?? '',
+      widget.sourceRoot ?? previous?.sourceRootPath ?? '',
       widget.entrySource.isEmpty
           ? previous?.entrySourcePath ?? ''
           : widget.entrySource,

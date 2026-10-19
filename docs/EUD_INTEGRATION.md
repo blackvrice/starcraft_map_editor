@@ -1,5 +1,10 @@
 # EUD 연동
 
+2026-10-19 [FR-320 여러 소스](SOURCE_WORKSPACE.md)는 루트/다중 탭과 정적
+import 완성·검색·EPS/Python 원본 진단 이동을 추가한다. 모든 소스의 저장/확인과
+준비한 의존 목록/지문을 실행 및 출력 승격 전에 검사한다. 편집/색인은 실행 0회이며
+동적 import·완전한 LSP/생성 source map·native Lua는 지원하지 않는다.
+
 2026-10-19: [EUD 소스 번역·복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)에서 .py
 정식 entry와 Python 프로필을 추가했다. 공식 EPS→Python은 별도 no-VM helper,
 역방향/Lua는 제한 액션·훅 모델만 사용한다. 편집/번역은 코드 실행 0회이며 실제

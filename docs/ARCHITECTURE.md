@@ -1,5 +1,10 @@
 # 아키텍처
 
+2026-10-19 [여러 소스](SOURCE_WORKSPACE.md)는 application의 다중 문서 수명,
+SourceWorkspaceGateway의 제한된 파일 I/O, 순수 domain 정적 색인/isolate와
+탭별 presentation으로 분리한다. 모든 탭/의존 경로를 맵 workspace/복구/빌드에
+반영하며 interpreter/LSP를 편집 경로에서 실행하지 않는다.
+
 2026-10-19 [EUD 소스 번역·복구](EUD_SOURCE_TRANSLATION_RECOVERY.md)는
 EudSourceTranslationGateway/별도 native compiler helper와 도메인의 공통 액션
 모델을 분리한다. 문서별 TriggerScriptDraftWorkspace를 AutosaveController에

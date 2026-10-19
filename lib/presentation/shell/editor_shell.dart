@@ -57,7 +57,7 @@ import '../../application/terrain/terrain_editing_controller.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/terrain/terrain_tile_display_value.dart';
 import '../eud_editor/eud_build_steps.dart';
-import '../eud_editor/eud_source_editor.dart';
+import '../eud_editor/source_workspace_pane.dart';
 import '../localization/l10n.dart';
 import '../localization/editor_message_localization.dart';
 import '../map_canvas/map_canvas.dart';
@@ -624,14 +624,16 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   StreamSubscription<EudSourceState> _listenForEudSources(
     EudSourceController controller,
   ) {
+    var previous = controller.state.document?.documentId;
     return controller.changes.listen((state) {
       if (mounted) {
         setState(() {
-          if (state.hasDocument) {
+          if (state.hasDocument && previous != state.document?.documentId) {
             _workspaceView = _WorkspaceView.eud;
-          } else {
+          } else if (!state.hasDocument) {
             _workspaceView = _WorkspaceView.map;
           }
+          previous = state.document?.documentId;
         });
       }
     });
@@ -854,7 +856,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
   bool _activeDocumentDirty() {
     final eudDocument = widget.eudSourceController.state.document;
     if (_workspaceView == _WorkspaceView.eud && eudDocument != null) {
-      return eudDocument.isDirty;
+      return widget.eudSourceController.hasUnsaved;
     }
     return widget.openMapController.state.session?.isDirty ?? false;
   }
@@ -942,6 +944,7 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
             builder: (_) => EudBuildPreparationDialog(
               controller: widget.eudBuildPreparationController!,
               baseMap: widget.openMapController.state.session?.sourcePath ?? '',
+              sourceRoot: widget.eudSourceController.root,
               entrySource:
                   widget.eudSourceController.state.document?.sourcePath ?? '',
             ),
@@ -1333,6 +1336,20 @@ class _EditorShellState extends State<EditorShell> with WidgetsBindingObserver {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _OutputPanel(
+                          onSourceDiagnostic: (d) =>
+                              sourceAction(context, () async {
+                                await widget.eudSourceController.navigate(
+                                  d.filePath!,
+                                  d.sourceLine!,
+                                  column: d.sourceColumn ?? 1,
+                                );
+                                if (mounted) {
+                                  setState(
+                                    () => _workspaceView = _WorkspaceView.eud,
+                                  );
+                                }
+                                return true;
+                              }),
                           progress: snapshot.data,
                           diagnostics: visibleDiagnostics,
                           eudBuildState: eudBuildState,
@@ -2038,7 +2055,10 @@ class _EditorWorkspace extends StatelessWidget {
                   ? l10n.paneProjectLayers
                   : l10n.paneLayersPalette,
               child: showingEud
-                  ? _EudSourceList(document: eudDocument, onSelected: onShowEud)
+                  ? SourceWorkspaceNavigator(
+                      controller: eudSourceController,
+                      onSelected: onShowEud,
+                    )
                   : session == null
                   ? _EmptyPaneMessage(
                       icon: Icons.layers_outlined,
@@ -2476,48 +2496,6 @@ class _RailDestination extends StatelessWidget {
   }
 }
 
-class _EudSourceList extends StatelessWidget {
-  const _EudSourceList({required this.document, required this.onSelected});
-
-  final EudSourceDocument document;
-  final VoidCallback onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      key: const Key('eud-source-list'),
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: ListTile(
-            selected: true,
-            dense: true,
-            leading: const Icon(
-              Icons.code_rounded,
-              size: 18,
-              color: Color(0xFF70A1FF),
-            ),
-            title: Text(
-              '${document.fileName}${document.isDirty ? ' •' : ''}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              document.isUntitled
-                  ? context.l10n.sourceDraft
-                  : document.fileName.toLowerCase().endsWith('.py')
-                  ? 'Python'
-                  : context.l10n.sourceEpScript,
-            ),
-            onTap: onSelected,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _EudSourceInspector extends StatelessWidget {
   const _EudSourceInspector({required this.document});
 
@@ -2668,10 +2646,7 @@ class _MapWorkspace extends StatelessWidget {
     final session = openMapState.session;
     final eudDocument = eudSourceController.state.document;
     if (workspaceView == _WorkspaceView.eud && eudDocument != null) {
-      final editor = EudSourceEditor(
-        document: eudDocument,
-        sourceController: eudSourceController,
-      );
+      final editor = SourceWorkspacePane(controller: eudSourceController);
       final steps = eudBuildSteps;
       return steps == null
           ? editor
@@ -5136,11 +5111,13 @@ class _OutputPanel extends StatefulWidget {
     required this.progress,
     required this.diagnostics,
     required this.eudBuildState,
+    this.onSourceDiagnostic,
   });
 
   final OperationProgress? progress;
   final List<EditorDiagnostic> diagnostics;
   final EudBuildState eudBuildState;
+  final ValueChanged<EditorDiagnostic>? onSourceDiagnostic;
 
   @override
   State<_OutputPanel> createState() => _OutputPanelState();
@@ -5282,7 +5259,10 @@ class _OutputPanelState extends State<_OutputPanel> {
                 _OutputPanelTab.problems =>
                   diagnostics.isEmpty
                       ? _OutputPanelMessage(l10n.noProblems)
-                      : _DiagnosticList(diagnostics: diagnostics),
+                      : _DiagnosticList(
+                          diagnostics: diagnostics,
+                          onSourceDiagnostic: widget.onSourceDiagnostic,
+                        ),
                 _OutputPanelTab.output =>
                   widget.progress == null
                       ? _OutputPanelMessage(l10n.noOutput)
@@ -5696,7 +5676,8 @@ Color _buildRecordStatusColor(EudBuildRecordStatus status) {
 }
 
 class _DiagnosticList extends StatelessWidget {
-  const _DiagnosticList({required this.diagnostics});
+  const _DiagnosticList({required this.diagnostics, this.onSourceDiagnostic});
+  final ValueChanged<EditorDiagnostic>? onSourceDiagnostic;
 
   final List<EditorDiagnostic> diagnostics;
 
@@ -5756,12 +5737,20 @@ class _DiagnosticList extends StatelessWidget {
               if (_diagnosticLocationLabel(diagnostic) case final location?)
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
-                  child: Text(
-                    location,
-                    style: const TextStyle(
-                      color: Color(0xFF8994A8),
-                      fontFamily: 'monospace',
-                      fontSize: 11,
+                  child: InkWell(
+                    onTap:
+                        diagnostic.filePath != null &&
+                            diagnostic.sourceLine != null &&
+                            onSourceDiagnostic != null
+                        ? () => onSourceDiagnostic!(diagnostic)
+                        : null,
+                    child: Text(
+                      location,
+                      style: const TextStyle(
+                        color: Color(0xFF8994A8),
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ),

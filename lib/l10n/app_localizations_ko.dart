@@ -272,6 +272,43 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
+  String get sourceProjectFolder => '소스 폴더';
+
+  @override
+  String get sourceRefreshProject => '소스 폴더 새로 고침';
+
+  @override
+  String get sourceSearchProject => '소스 검색';
+
+  @override
+  String get sourceSearchText => '검색어';
+
+  @override
+  String get sourceSaveFile => '파일 저장 (백업 포함)';
+
+  @override
+  String get sourceReloadFile => '디스크 파일 다시 읽기';
+
+  @override
+  String get sourceVerifyRestoredRoot => '소스 폴더를 다시 확인해야 합니다.';
+
+  @override
+  String get sourceExternalConflict =>
+      '외부에서 변경된 파일이 있습니다. 새로 고침 후 다시 읽거나 다른 이름으로 저장하세요.';
+
+  @override
+  String get sourceCloseTab => '소스 탭 닫기';
+
+  @override
+  String get sourceNewTab => '새 소스 탭';
+
+  @override
+  String get sourceDiscardChanges => '저장하지 않은 소스 변경을 버릴까요?';
+
+  @override
+  String get sourceDiscard => '버리기';
+
+  @override
   String get analysisTitle => '지도 분석';
 
   @override

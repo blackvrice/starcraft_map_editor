@@ -51,9 +51,7 @@ final class EudSourceDocument {
   bool get isDirty => text != savedText;
   bool get isUntitled => sourcePath == null;
   int get lineCount => '\n'.allMatches(text).length + 1;
-  TriggerScriptLanguage get language => fileName.toLowerCase().endsWith('.py')
-      ? TriggerScriptLanguage.python
-      : TriggerScriptLanguage.epScript;
+  TriggerScriptLanguage get language => _language(fileName);
 
   EudSourceDocument withText(String nextText) {
     if (nextText == text) {
@@ -78,8 +76,7 @@ final class EudSourceDocument {
         'An untitled epScript document needs a path before it can be saved.',
       );
     }
-    if (resolvedPath.toLowerCase().endsWith('.py') !=
-        (language == TriggerScriptLanguage.python)) {
+    if (_language(resolvedPath) != language) {
       throw ArgumentError('Save As must retain the source language.');
     }
     return EudSourceDocument._(
@@ -91,6 +88,17 @@ final class EudSourceDocument {
       revision: revision + 1,
     );
   }
+
+  /// A save may finish after more typing. Advance only the disk baseline, not
+  /// the editor buffer, so the newer revision remains dirty and can be saved.
+  EudSourceDocument withSavedText(String persistedText) => EudSourceDocument._(
+    documentId: documentId,
+    fileName: fileName,
+    sourcePath: sourcePath,
+    savedText: persistedText,
+    text: text,
+    revision: revision + 1,
+  );
 }
 
 String _requireDocumentId(String value) {
@@ -118,7 +126,7 @@ String _requireEpsFileName(String value) {
     throw ArgumentError.value(
       value,
       'fileName',
-      'The EUD file name must be a single .eps or .py path segment.',
+      'The source file name must be a single .eps, .py or .lua path segment.',
     );
   }
   return value;
@@ -140,7 +148,7 @@ String _requireAbsoluteEpsPath(String value) {
     throw ArgumentError.value(
       value,
       'sourcePath',
-      'The source path must be an absolute Windows .eps or .py path.',
+      'The source path must be an absolute Windows .eps, .py or .lua path.',
     );
   }
   return value;
@@ -151,4 +159,11 @@ String _fileName(String path) {
 }
 
 bool _sourceExtension(String value) =>
-    value.toLowerCase().endsWith('.eps') || value.toLowerCase().endsWith('.py');
+    const ['.eps', '.py', '.lua'].any(value.toLowerCase().endsWith);
+
+TriggerScriptLanguage _language(String path) =>
+    path.toLowerCase().endsWith('.py')
+    ? TriggerScriptLanguage.python
+    : path.toLowerCase().endsWith('.lua')
+    ? TriggerScriptLanguage.lua
+    : TriggerScriptLanguage.epScript;

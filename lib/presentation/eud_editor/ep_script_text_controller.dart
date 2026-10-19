@@ -95,6 +95,7 @@ class EpScriptTextController extends TextEditingController {
   });
   String grammar;
   List<String> symbols;
+  bool qualifiedCompletions = false;
   static const keywordColor = Color(0xFFC792EA);
   static const commentColor = Color(0xFF80968A);
   static const stringColor = Color(0xFFC3D98B);
@@ -185,7 +186,11 @@ class EpScriptTextController extends TextEditingController {
     }
     final cursor = selection.baseOffset;
     final before = text.substring(0, cursor);
-    final match = RegExp(r'[A-Za-z_$][A-Za-z0-9_$]*$').firstMatch(before);
+    final match = RegExp(
+      qualifiedCompletions
+          ? r'[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\.?$'
+          : r'[A-Za-z_$][A-Za-z0-9_$]*$',
+    ).firstMatch(before);
     if (match == null) return null;
     var offset = 0;
     Color? cursorColor;

@@ -92,6 +92,14 @@ class _RecoveryDialogState extends State<RecoveryDialog> {
                                         snapshot.source!.fileName,
                                   ),
                                 ),
+                              if (snapshot.sourceWorkspace
+                                  case final workspace?)
+                                for (final source in workspace.documents)
+                                  Text(
+                                    l10n.recoverySource(
+                                      source.sourcePath ?? source.fileName,
+                                    ),
+                                  ),
                             ],
                             Row(
                               children: [

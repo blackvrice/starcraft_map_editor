@@ -1,5 +1,8 @@
 # 문서 인덱스
 
+[여러 소스 편집](SOURCE_WORKSPACE.md): 소스 폴더/탭·정적 완성/검색·원본 진단,
+외부 변경/안전 저장·다중 초안 복구와 빌드 의존 파일 검증.
+
 [EUD 번역·Python·초안 복구](EUD_SOURCE_TRANSLATION_RECOVERY.md): 공식 EPS→Python,
 native .py 빌드·공통 액션 프로필·강제 종료 후 미적용 초안 복구 및 검증.
 

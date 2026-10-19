@@ -37,6 +37,7 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0022](0022-multi-map-document-lifetime.md) | Accepted | 문서별 controller/화면 수명·물리 경로 점유·복구/닫기/종료 격리 |
 | [0023](0023-portable-trigger-declarations.md) | Accepted | 일반 TRIG의 세 언어 제한 선언·snapshot/raw 보존·격리 분석·원문/새 파일 보호 |
 | [0024](0024-eud-source-translation-and-draft-recovery.md) | Accepted | 공식 EPS→Python·native Python 빌드·공통 EUD 액션 모델과 미적용 초안 복구 |
+| [0025](0025-static-source-workspace.md) | Accepted | 실행 없는 다중 소스·원문/충돌 보존·schema v3 복구·빌드 의존 지문 |
 
 ## 새 ADR 형식
 

@@ -13,6 +13,7 @@ enum WorkspacePathPurpose {
   mapOutput,
   buildOutput,
   projectOutput,
+  sourceOutput,
   restoreInput,
 }
 
@@ -49,8 +50,7 @@ final class WorkspaceDocument<T> {
   bool get dirty =>
       (autosave?.hasTriggerDraft ?? false) ||
       (maps.state.session?.isDirty ?? false) ||
-      (sources.state.document?.isDirty ?? false) ||
-      (sources.state.document?.isUntitled ?? false) ||
+      sources.hasUnsaved ||
       (projects?.projects.isDirty ?? false);
   bool get busy {
     final progress = maps.operationProgressController.current;
@@ -58,6 +58,7 @@ final class WorkspaceDocument<T> {
         saves.isSaving ||
         maps.editHistory.isTransactionActive ||
         builds.state.isActive ||
+        sources.workspaceBusy ||
         (projects?.isBusy ?? false) ||
         (autosave?.busy ?? false) ||
         (additionalBusy?.call() ?? false) ||
@@ -67,8 +68,9 @@ final class WorkspaceDocument<T> {
   Iterable<(WorkspacePathPurpose?, String)> get inputs sync* {
     final map = maps.state.session?.sourcePath;
     if (map != null) yield (null, map);
-    final source = sources.state.document?.sourcePath;
-    if (source != null) yield (null, source);
+    for (final source in sources.inputPaths) {
+      yield (WorkspacePathPurpose.sourceOutput, source);
+    }
     final project = projects?.projects.path;
     if (project != null) yield (WorkspacePathPurpose.projectOutput, project);
     if (builds.state.isActive) {
@@ -260,6 +262,8 @@ final class DocumentWorkspaceController<T> {
         if (d.id == owner &&
             (purpose == WorkspacePathPurpose.restoreInput ||
                 (purpose == WorkspacePathPurpose.projectOutput &&
+                    kind == purpose) ||
+                (purpose == WorkspacePathPurpose.sourceOutput &&
                     kind == purpose))) {
           continue;
         }

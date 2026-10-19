@@ -1461,7 +1461,7 @@ Flutter 3.47.5/Dart 3.13.4다. 상세 실행/분석/상한은 위 문서를 따�
 - [x] L2 일반 epScript -> TRIG/GUI와 L3 Python/L4 Lua 제한 선언 전환·원문/새 파일 보호
 - [x] L5 공통 액션 EUD/native Python·공식 EPS→Python·실제 빌드/미적용 초안 crash 복구
 - [ ] L6 임의 Python/Lua 역변환 검토·게임/외부/배포 인수 (native Lua runtime 미지원)
-- [ ] 소스 루트/여러 파일·검색·정적 완성·원본 위치·외부 변경/루트 이탈 검증
+- [x] 소스 루트/여러 파일·검색·정적 완성·원본 위치·외부 변경/루트 이탈 검증
 - [ ] PAR-13/ML-01~12 및 일반 모드 외부 실행 0·임의 번역 거절 검증
 
 2026-10-18: [일반 트리거 언어 전환](TRIGGER_SCRIPT_LANGUAGES.md)과
@@ -1487,6 +1487,13 @@ native .py 편집/새 파일/안전 빌드, 문서별 미적용 초안의 기존
 연결 문서에 기록하며 다중 파일 workspace와 게임/외부/clean Windows 인수는 남는다.
 최종 analyze 무이슈·전체 2,544 통과/79 조건부 skip·실제 통합 5/5·Windows Debug와
 native CTest 7/7을 확인했다. SDK 차이와 기존 미수정 3개 파일의 포맷 차이는 유지된다.
+
+2026-10-19 FR-320: [여러 소스 편집](SOURCE_WORKSPACE.md)과
+[ADR-0025](decisions/0025-static-source-workspace.md)를 구현했다. 루트/파일 트리·
+다중 탭·실행 없는 선언/import 색인/검색·원본 진단 이동, 외부 변경·안전 저장,
+모든 탭의 schema v3 복구와 빌드 의존 목록/지문 재검증을 연결했다.
+전체 LSP·동적 import 해석·native Lua와 게임/배포 인수는 완료 범위가 아니다.
+상세 실행·검증 결과와 상한은 위 문서를 따른다.
 
 ### EP6. 결과·품질·출시
 

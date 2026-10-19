@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'local_source_workspace_gateway.dart';
 
 import '../../application/eud/eud_build_configuration.dart';
 import '../../application/ports/eud_build_file_gateway.dart';
@@ -65,6 +66,19 @@ final class LocalEudBuildFileGateway implements EudBuildFileGateway {
         'The canonical EUD entry source is outside the source root.',
         configuration.entrySourcePath,
       );
+    }
+    if (configuration.sourceRevisions.isNotEmpty) {
+      final scan = await const LocalSourceWorkspaceGateway().scan(
+        configuration.sourceRootPath,
+      );
+      if (scan.files.length != configuration.sourceRevisions.length ||
+          scan.files.any(
+            (file) =>
+                configuration.sourceRevisions[file.relativePath] !=
+                file.revision,
+          )) {
+        throw const FileSystemException('SOURCE_BUILD_DEPENDENCY_CHANGED');
+      }
     }
     final canonicalOutputParent = _normalize(
       await destination.parent.resolveSymbolicLinks(),

@@ -5,6 +5,25 @@ import 'package:starcraft_map_editor/infrastructure/compiler/euddraft_diagnostic
 
 void main() {
   const parser = EuddraftDiagnosticParser();
+  test(
+    'Python traceback retains exact original source position without opening paths',
+    () {
+      final diagnostic = parser.parseLine(
+        channel: EudCompilerOutputChannel.stderr,
+        text: '  File "C:\\Project\\src\\helper.py", line 42, in Work',
+      );
+      expect(diagnostic!.code, 'EUD_PYTHON_SOURCE');
+      expect(diagnostic.filePath, r'C:\Project\src\helper.py');
+      expect(diagnostic.sourceLine, 42);
+      expect(
+        parser.parseLine(
+          channel: EudCompilerOutputChannel.stderr,
+          text: 'File "x.py", line 0',
+        ),
+        isNull,
+      );
+    },
+  );
 
   test('converts an official epScript error line into a source diagnostic', () {
     const rawLine =
