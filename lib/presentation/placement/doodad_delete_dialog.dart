@@ -215,25 +215,28 @@ Future<void> _reviewBatch(
   OpenedMapSession session,
   List<MapLayerSelection> selected,
 ) async {
-  final reviews = <_DoodadReview>[],
-      cache = <int, List<DoodadPlacementRecipe>>{};
+  final doodads = <ChkDoodadPlacement>[];
   for (final selection in selected) {
     final object = selection.object;
     final section = session.objectViews.doodadSections
         .where((s) => s.sectionIndex == object.sectionIndex)
         .single;
-    final d = section.doodads[object.recordIndex];
-    final recipes =
-        cache[d.doodadType] ?? await catalog.doodadRecipes(d.doodadType);
-    if (!context.mounted) return;
-    if (!identical(
-      editing.openMapController.state.session?.rawDocument,
-      session.rawDocument,
-    )) {
-      throw StateError(context.l10n.doodadDeleteMapChanged);
-    }
+    doodads.add(section.doodads[object.recordIndex]);
+  }
+  final byType = await catalog.doodadRecipesForTypes(
+    doodads.map((d) => d.doodadType).toSet(),
+  );
+  if (!context.mounted) return;
+  if (!identical(
+    editing.openMapController.state.session?.rawDocument,
+    session.rawDocument,
+  )) {
+    throw StateError(context.l10n.doodadDeleteMapChanged);
+  }
+  final reviews = <_DoodadReview>[];
+  for (final d in doodads) {
+    final recipes = byType[d.doodadType] ?? const <DoodadPlacementRecipe>[];
     if (recipes.isEmpty) throw StateError(context.l10n.doodadDeleteNoRecipe);
-    cache[d.doodadType] = recipes;
     reviews.add(_DoodadReview(d, recipes));
   }
   if (!context.mounted) return;

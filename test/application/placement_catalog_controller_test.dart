@@ -122,6 +122,7 @@ final class _TerrainPlacementGateway
 }
 
 void main() {
+  _doodadRecipeLookupTests();
   _creepPlacementPolicyTests();
   _environmentInspectionTests();
   _unitCreepInspectionTests();
@@ -3292,6 +3293,250 @@ void main() {
         );
       });
     }
+  }
+}
+
+void _doodadRecipeLookupTests() {
+  test(
+    'Doodad recipe lookup scans once for 32 types and freezes results',
+    () async {
+      final gateway = _RecipeLookupGateway();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      final document = f.openMapController.state.session!.rawDocument;
+      final result = await c.doodadRecipesForTypes(List.generate(32, (i) => i));
+      expect(gateway.requests.map((r) => r.offset), [0, 256]);
+      expect(result.length, 32);
+      expect(result[0]!.map((r) => r.startTileGroup), [200, 201]);
+      expect(result[31]!.single.doodadType, 31);
+      expect(() => result[0]!.clear(), throwsUnsupportedError);
+      expect(() => result.clear(), throwsUnsupportedError);
+      expect(f.openMapController.state.session!.rawDocument, same(document));
+      expect(f.objectEditingController.canUndo, isFalse);
+      expect(c.state.items, isEmpty);
+      final single = await c.doodadRecipes(0);
+      expect(single.length, 2);
+      expect(gateway.requests.map((r) => r.operationId).toSet().length, 4);
+    },
+  );
+
+  test(
+    'Doodad recipe lookup bounds input and keeps missing types empty',
+    () async {
+      final gateway = _RecipeLookupGateway();
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller;
+      expect(await c.doodadRecipesForTypes([]), isEmpty);
+      await expectLater(c.doodadRecipes(0), throwsStateError);
+      c.setInstallationPath(_installationPath);
+      await expectLater(c.doodadRecipes(-1), throwsRangeError);
+      await expectLater(c.doodadRecipes(65536), throwsRangeError);
+      var reads = 0;
+      Iterable<int> unbounded() sync* {
+        while (true) {
+          reads++;
+          yield 0;
+        }
+      }
+
+      await expectLater(
+        c.doodadRecipesForTypes(unbounded()),
+        throwsArgumentError,
+      );
+      expect(reads, 33);
+      expect(gateway.requests, isEmpty);
+      final result = await c.doodadRecipesForTypes([0, 0, 65535]);
+      expect(result.keys, [0, 65535]);
+      expect(result[65535], isEmpty);
+      expect(gateway.requests.length, 2);
+    },
+  );
+
+  for (final fault in [
+    'operation',
+    'path',
+    'kind',
+    'tileset',
+    'offset',
+    'limit',
+    'metadata',
+    'total',
+    'product',
+    'build',
+    'helper',
+    'revision',
+    'duplicate',
+    'throw',
+  ]) {
+    test(
+      'Doodad recipe lookup rejects $fault without partial results',
+      () async {
+        final gateway = _RecipeLookupGateway(fault: fault);
+        final f = await _openFixture(catalogGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        final document = f.openMapController.state.session!.rawDocument;
+        await expectLater(c.doodadRecipesForTypes([0, 1]), throwsStateError);
+        expect(gateway.requests.length, lessThanOrEqualTo(2));
+        expect(f.openMapController.state.session!.rawDocument, same(document));
+        expect(f.objectEditingController.canUndo, isFalse);
+      },
+    );
+  }
+
+  for (final change in ['installation', 'map', 'dispose']) {
+    for (final cancelFailure in ['none', 'sync', 'async']) {
+      test(
+        'Doodad recipe lookup cancels $change with $cancelFailure failure',
+        () async {
+          final gateway = _RecipeLookupGateway(
+            hold: true,
+            cancelFailure: cancelFailure,
+          );
+          final f = await _openFixture(catalogGateway: gateway);
+          addTearDown(f.dispose);
+          final c = f.controller..setInstallationPath(_installationPath);
+          final pending = c.doodadRecipesForTypes([0]);
+          final rejected = expectLater(pending, throwsStateError);
+          await gateway.started.future;
+          switch (change) {
+            case 'installation':
+              c.setInstallationPath(r'C:\OtherStarCraft');
+            case 'map':
+              await f.openMapController.open(sourcePath: r'C:\Maps\Other.scx');
+            case 'dispose':
+              await c.dispose();
+          }
+          await Future<void>.delayed(Duration.zero);
+          expect(gateway.cancelled, [gateway.requests.single.operationId]);
+          gateway.release.complete();
+          await rejected;
+          expect(gateway.requests.length, 1);
+          expect(f.objectEditingController.canUndo, isFalse);
+        },
+      );
+    }
+  }
+
+  test(
+    'overlapping Doodad recipe lookups use independent operation IDs',
+    () async {
+      final gateway = _RecipeLookupGateway(hold: true);
+      final f = await _openFixture(catalogGateway: gateway);
+      addTearDown(f.dispose);
+      final c = f.controller..setInstallationPath(_installationPath);
+      final first = c.doodadRecipes(0), second = c.doodadRecipes(1);
+      final rejected = [
+        expectLater(first, throwsStateError),
+        expectLater(second, throwsStateError),
+      ];
+      await gateway.started.future;
+      c.setInstallationPath(null);
+      await Future<void>.delayed(Duration.zero);
+      expect(gateway.cancelled.toSet().length, 2);
+      gateway.release.complete();
+      await Future.wait(rejected);
+      expect(gateway.requests.length, 2);
+    },
+  );
+}
+
+final class _RecipeLookupGateway implements StarCraftPlacementCatalogGateway {
+  _RecipeLookupGateway({
+    this.fault,
+    this.hold = false,
+    this.cancelFailure = 'none',
+  });
+  final String? fault;
+  final bool hold;
+  final String cancelFailure;
+  final requests = <StarCraftPlacementCatalogRequest>[];
+  final cancelled = <String>[];
+  final started = Completer<void>(), release = Completer<void>();
+
+  @override
+  Future<StarCraftPlacementCatalogPage> list(
+    StarCraftPlacementCatalogRequest request,
+  ) async {
+    requests.add(request);
+    if (hold) {
+      if (!started.isCompleted) started.complete();
+      await release.future;
+    }
+    if (const [
+      'operation',
+      'path',
+      'kind',
+      'tileset',
+      'offset',
+      'limit',
+      'metadata',
+    ].contains(fault)) {
+      return StarCraftPlacementCatalogPage(
+        request: StarCraftPlacementCatalogRequest(
+          operationId: fault == 'operation' ? 'wrong' : request.operationId,
+          installationPath: fault == 'path'
+              ? r'C:\Wrong'
+              : request.installationPath,
+          kind: fault == 'kind' ? StarCraftPlacementKind.tile : request.kind,
+          tileset: fault == 'tileset'
+              ? StarCraftTilesetAssetSet.badlands
+              : request.tileset,
+          offset: fault == 'offset' ? 1 : request.offset,
+          limit: fault == 'limit' ? 128 : request.limit,
+          unitMetadataOnly: fault == 'metadata',
+        ),
+        totalEntries: 0,
+      );
+    }
+    final later = request.offset > 0;
+    if (later && fault == 'throw') throw StateError('Synthetic lookup failure');
+    return StarCraftPlacementCatalogPage(
+      request: request,
+      totalEntries: later && fault == 'total' ? 261 : 260,
+      entries: [
+        for (
+          var i = request.offset;
+          i < 260 && i < request.offset + request.limit;
+          i++
+        )
+          _entry(later && fault == 'duplicate' && i == request.offset ? 0 : i),
+      ],
+      storageProduct: later && fault == 'product' ? 'other' : 's1',
+      storageBuildNumber: later && fault == 'build' ? 1 : 13515,
+      helperVersion: later && fault == 'helper' ? 'other' : '0.7.0',
+      cascLibRevision: later && fault == 'revision' ? 'other' : 'abc',
+    );
+  }
+
+  StarCraftPlacementCatalogEntry _entry(int index) {
+    final recipe = _recipe(
+      doodadType: index < 2 ? 0 : index - 1,
+      startTileGroup: index == 1 ? 201 : 200,
+    );
+    return StarCraftPlacementCatalogEntry(
+      key: StarCraftPlacementCatalogKey.doodad(
+        tileset: recipe.tileset,
+        doodadId: recipe.doodadType,
+        startTileGroup: recipe.startTileGroup,
+      ),
+      source: StarCraftPlacementCatalogSource.localData,
+      availability: StarCraftPlacementAvailability.placeable,
+      doodadRecipe: recipe,
+    );
+  }
+
+  @override
+  Future<void> cancel(String operationId) {
+    cancelled.add(operationId);
+    if (cancelFailure == 'sync') {
+      throw StateError('Synthetic sync cancellation');
+    }
+    return cancelFailure == 'async'
+        ? Future.error(StateError('Synthetic async cancellation'))
+        : Future.value();
   }
 }
 

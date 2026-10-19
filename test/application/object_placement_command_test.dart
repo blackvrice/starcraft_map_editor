@@ -29,6 +29,112 @@ import 'package:starcraft_map_editor/l10n/app_localizations.dart';
 import '../fixtures/doodad_deletion_fixture.dart';
 
 void main() {
+  for (final available in [true, false]) {
+    testWidgets(
+      'batch review resolves distinct types once, available=$available',
+      (tester) async {
+        var document = batchDeletionDocument();
+        final at = document.sections.indexWhere((s) => s.name == 'DD2 ');
+        final bytes = document.sections[at].payload;
+        ByteData.sublistView(bytes).setUint16(16, 9, Endian.little);
+        document = document.replaceSection(
+          at,
+          document.sections[at].withPayload(bytes),
+        );
+        final f = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(document),
+        );
+        addTearDown(f.dispose);
+        final session = f.openMapController.state.session!;
+        f.mapLayerController.selectObjects(
+          session: session,
+          objects: [
+            for (final index in [0, 2])
+              MapLayerObjectRef(
+                layer: MapLayerType.doodads,
+                sectionIndex:
+                    session.objectViews.doodadSections.single.sectionIndex,
+                recordIndex: index,
+              ),
+          ],
+        );
+        final recipe = deletionRecipe();
+        final other = DoodadPlacementRecipe(
+          tileset: recipe.tileset,
+          startTileGroup: recipe.startTileGroup,
+          doodadType: 9,
+          width: recipe.width,
+          height: recipe.height,
+          centerOffsetX: recipe.centerOffsetX,
+          centerOffsetY: recipe.centerOffsetY,
+          footprint: recipe.footprint,
+        );
+        final catalog = _DeletionCatalog(recipe)
+          ..byType = {
+            7: [recipe],
+            if (available) 9: [other],
+          };
+        final before = const RawChkEncoder().encode(session.rawDocument);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => deleteObjectsWithDoodadReview(
+                    context,
+                    f.controller,
+                    catalog,
+                  ),
+                  child: const Text('Delete selection'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Delete selection'));
+        await tester.pumpAndSettle();
+        expect(catalog.calls, 1);
+        expect(catalog.requestedTypes, [7, 9]);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        expect(f.openMapController.editHistory.undoDepth, 0);
+        if (available) {
+          expect(find.byType(AlertDialog), findsOneWidget);
+          await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+          await tester.pumpAndSettle();
+          expect(
+            f
+                .openMapController
+                .state
+                .session!
+                .objectViews
+                .doodadSections
+                .single
+                .doodads
+                .length,
+            1,
+          );
+          expect(f.openMapController.editHistory.undoDepth, 1);
+          expect(f.controller.undo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(
+              f.openMapController.state.session!.rawDocument,
+            ),
+            before,
+          );
+        } else {
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(find.byType(SnackBar), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
   for (final kind in ['mixed', 'oversized', 'stale']) {
     testWidgets('batch review rejects $kind selection/context before editing', (
       tester,
@@ -2639,12 +2745,27 @@ class _DeletionCatalog implements PlacementCatalogController {
   _DeletionCatalog(this.recipe);
   final DoodadPlacementRecipe recipe;
   int calls = 0;
+  Map<int, List<DoodadPlacementRecipe>>? byType;
+  List<int>? requestedTypes;
   Future<void> Function()? beforeList;
   @override
   Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async {
     calls++;
     await beforeList?.call();
     return [recipe];
+  }
+
+  @override
+  Future<Map<int, List<DoodadPlacementRecipe>>> doodadRecipesForTypes(
+    Iterable<int> types,
+  ) async {
+    calls++;
+    requestedTypes = types.toList();
+    await beforeList?.call();
+    return byType ??
+        {
+          for (final type in types) type: [recipe],
+        };
   }
 
   @override

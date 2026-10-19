@@ -242,6 +242,7 @@ class PlacementCatalogController {
     _powerSessionSubscription = openMapController.changes.listen((state) {
       if (!identical(_powerSession, state.session)) {
         _powerSession = state.session;
+        _invalidateDoodadRecipes();
         _invalidatePowerState();
         _invalidateCreepState();
         _notifyEnvironment();
@@ -252,6 +253,7 @@ class PlacementCatalogController {
     _powerHistorySubscription = openMapController.editHistory.changes.listen((
       _,
     ) {
+      _invalidateDoodadRecipes();
       _invalidatePowerState();
       _invalidateCreepState();
       _notifyEnvironment();
@@ -536,48 +538,117 @@ class PlacementCatalogController {
 
   Stream<PlacementCatalogState> get changes => _changes.stream;
 
-  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async {
+  static const maximumDoodadRecipeTypes = 32;
+  int _doodadRecipeEpoch = 0;
+  int _doodadRecipeSequence = 0;
+  final _doodadRecipeOperations = <String>{};
+
+  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async =>
+      (await doodadRecipesForTypes([type]))[type]!;
+
+  /// Scans metadata once for the whole selection, without loading thumbnails.
+  /// No partial result escapes if a later page or the document is invalidated.
+  Future<Map<int, List<DoodadPlacementRecipe>>> doodadRecipesForTypes(
+    Iterable<int> types,
+  ) async {
+    final requested = types.take(maximumDoodadRecipeTypes + 1).toList();
+    if (requested.length > maximumDoodadRecipeTypes) {
+      throw ArgumentError('Too many Doodad recipe types.');
+    }
+    for (final type in requested) {
+      RangeError.checkValueInInterval(type, 0, 0xffff, 'type');
+    }
+    if (requested.isEmpty) return const {};
     final path = _installationPath;
     final tileset = mapTileset;
     final gateway = catalogGateway;
-    final epoch = _thumbnailEpoch;
+    final document = openMapController.state.session?.rawDocument;
+    final epoch = _doodadRecipeEpoch;
     if (_disposed || path == null || tileset == null || gateway == null) {
       throw StateError('Choose a StarCraft installation and open a map.');
     }
-    final recipes = <DoodadPlacementRecipe>[];
+    final recipes = <int, List<DoodadPlacementRecipe>>{
+      for (final type in requested) type: [],
+    };
+    final sequence = ++_doodadRecipeSequence;
+    StarCraftPlacementCatalogPage? previous;
     var offset = 0;
-    do {
-      final page = await gateway.list(
-        StarCraftPlacementCatalogRequest(
-          operationId: 'doodad-delete-$epoch-$offset',
-          installationPath: path,
-          kind: StarCraftPlacementKind.doodad,
-          tileset: tileset,
-          offset: offset,
-          limit: 256,
-        ),
+    while (true) {
+      final request = StarCraftPlacementCatalogRequest(
+        operationId: 'doodad-recipes-$sequence-$offset',
+        installationPath: path,
+        kind: StarCraftPlacementKind.doodad,
+        tileset: tileset,
+        offset: offset,
+        limit: 256,
       );
-      if (_disposed || epoch != _thumbnailEpoch) {
+      final StarCraftPlacementCatalogPage page;
+      _doodadRecipeOperations.add(request.operationId);
+      try {
+        page = await gateway.list(request);
+      } finally {
+        _doodadRecipeOperations.remove(request.operationId);
+      }
+      if (_disposed ||
+          epoch != _doodadRecipeEpoch ||
+          !identical(document, openMapController.state.session?.rawDocument)) {
         throw StateError('Map or installation changed.');
       }
       if (!page.isSuccess ||
+          page.request.operationId != request.operationId ||
+          page.request.installationPath != path ||
           page.request.offset != offset ||
           page.request.tileset != tileset ||
-          page.request.kind != StarCraftPlacementKind.doodad) {
+          page.request.kind != request.kind ||
+          page.request.limit != request.limit ||
+          page.request.unitMetadataOnly != request.unitMetadataOnly) {
         throw StateError('Doodad catalog could not be verified.');
       }
-      recipes.addAll(
-        page.entries
-            .where((e) => e.key.id == type)
-            .map((e) => e.doodadRecipe)
-            .whereType<DoodadPlacementRecipe>(),
-      );
+      if (previous != null &&
+          (page.totalEntries != previous.totalEntries ||
+              (
+                    page.storageProduct,
+                    page.storageBuildNumber,
+                    page.helperVersion,
+                    page.cascLibRevision,
+                  ) !=
+                  (
+                    previous.storageProduct,
+                    previous.storageBuildNumber,
+                    previous.helperVersion,
+                    previous.cascLibRevision,
+                  ) ||
+              page.entries.isEmpty ||
+              previous.entries.last.key.compareTo(page.entries.first.key) >=
+                  0)) {
+        throw StateError('Doodad catalog pages are inconsistent.');
+      }
+      for (final entry in page.entries) {
+        final recipe = entry.doodadRecipe;
+        if (recipe != null) recipes[entry.key.id]?.add(recipe);
+      }
       final next = page.nextOffset;
       if (next == null) break;
       if (next <= offset) throw StateError('Doodad catalog made no progress.');
+      previous = page;
       offset = next;
-    } while (offset < StarCraftPlacementCatalogPage.maximumTotalEntries);
-    return recipes;
+    }
+    return Map.unmodifiable({
+      for (final entry in recipes.entries)
+        entry.key: List<DoodadPlacementRecipe>.unmodifiable(entry.value),
+    });
+  }
+
+  void _invalidateDoodadRecipes() {
+    _doodadRecipeEpoch++;
+    for (final operation in _doodadRecipeOperations.toList()) {
+      unawaited(
+        Future.sync(
+          () => catalogGateway?.cancel(operation),
+        ).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      );
+    }
+    _doodadRecipeOperations.clear();
   }
 
   /// The tileset every tileset-scoped catalog page uses, taken from the single
@@ -609,6 +680,7 @@ class PlacementCatalogController {
     if (_disposed) return;
     if (!identical(_powerSession, session)) {
       _powerSession = session;
+      _invalidateDoodadRecipes();
       _invalidatePowerState();
       _invalidateCreepState();
     }
@@ -770,6 +842,7 @@ class PlacementCatalogController {
   }
 
   void _invalidateCatalog() {
+    _invalidateDoodadRecipes();
     _invalidateCollisionMetadata();
     _invalidateTerrainPlacement();
     _unitCatalogIdentity = null;
@@ -2055,6 +2128,7 @@ class PlacementCatalogController {
   }
 
   Future<void> dispose() async {
+    _invalidateDoodadRecipes();
     _invalidateCollisionMetadata();
     _invalidateTerrainPlacement();
     _invalidateEudData();

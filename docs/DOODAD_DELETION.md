@@ -119,6 +119,9 @@ metadata 조회 중 문서 교체는 무변경 거부한다. 적용 직전 문�
 재사용한다. 전체 카탈로그의 다종류 일괄 조회/비동기 UI 색인과 실제 RSS/지연
 프로파일링은 이번 범위가 아니며 성능 수치 향상을 측정했다고 주장하지 않는다.
 
+위 문단은 다중 삭제 초기 구현의 기록이다. 아래 후속 조회 최적화에서 종류별
+반복 스캔을 제거했다. typed decode와 실제 지연/RSS 측정은 계속 후속 범위다.
+
 겹친 실제 footprint, 확인하지 않은 인근 두다드, TILE 없음/오염·모호한 섹션,
 불일치 상태, 두다드 외 객체가 섞인 삭제는 계속 미지원이다. 게임/외부 에디터
 상호 운용 인수는 별도로 남으며 코드 지원 확대로 완료 처리하지 않는다.
@@ -159,3 +162,67 @@ metadata 조회 중 문서 교체는 무변경 거부한다. 적용 직전 문�
 다른 기존 해시임을 확인했다. 해당 객체 하나를 `.dart_tool`에 백업하고 검증된
 작업 파일에서 재생성한 뒤 전체 스트림 읽기·staged diff·`git fsck --full --no-dangling` 검사를 통과했다.
 원인은 확정하지 않았으며 사용자 원문·기존 index·커밋 이력은 변경하지 않았다.
+
+## 다종류 Recipe 조회 계획과 실행
+
+2026-10-19 후속. M6.2의 삭제 검토 준비 경로를 개선한다. 삭제 가능 범위와
+TILE/overlay 귀속 검증은 넓히지 않으며 게임·외부 에디터 인수도 완료 처리하지 않는다.
+
+1. 소스 분석: `doodadRecipes(type)`는 각 종류마다 전체 metadata를 순회했다.
+   확인 창의 cache는 같은 종류만 재사용하여 최대 32종 선택 시 최대 32회 스캔했다.
+   개별 페이지 모델은 페이지 내부 순서를 보장하지만 조회 함수는 페이지 간
+   중복/전체 개수·출처 변경과 요청 ID/경로/limit 불일치를 충분히 검사하지 않았다.
+2. 실행: `doodadRecipesForTypes`로 선택 종류를 한 번에 전달한다. 단일 조회도
+   같은 경로를 사용한다. 전체 페이지 검증이 끝난 후 불변 map/list를 반환하고
+   없는 종류는 빈 목록으로 남긴다. 썸네일/atlas/배치 카탈로그 UI 상태는 읽지 않는다.
+3. 안전: 입력을 33개째에서 중단하고 32개 이하·16-bit ID만 받는다. 페이지의
+   요청 ID/경로/kind/tileset/offset/limit/metadata 모드, 전체 개수, 엄격 증가 key,
+   product/build/helper/CascLib 출처 일관성을 확인한다. 뒤 페이지 실패도 전체 거부한다.
+4. 수명: 조회마다 고유 operation ID를 사용한다. 설치·문서·편집 이력 변경과
+   종료에서 epoch를 무효화하고 진행 중 요청을 best-effort 취소한다. 취소의 동기/
+   비동기 예외는 삼키지만 늦은 성공은 다시 허용하지 않는다. 응답 후 문서 identity도
+   확인하므로 UI 동기화 호출 순서에 의존해 다른 문서에 결과를 제공하지 않는다.
+5. UI: 다중 확인 창은 전체 종류 조회 한 번 이후에만 열린다. 한 종류라도 recipe가
+   없거나 조회 중 문서가 바뀌면 창/적용을 거부한다. 명시 overlay 선택·취소·한 Undo는
+   기존 경로를 유지한다. 복잡한 원자적 조회 계약을 코드 주석으로 남겼다.
+
+## 조회 요구사항과 검증
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203 다종류 삭제 검토 | 32종도 전체 카탈로그 한 번 순회 | application 합성 260항목/2페이지 |
+| FR-203 종류별 variant/누락 | variant 순서·불변 결과, 누락은 빈 목록 | application |
+| FR-005/217 조회 중 설치·맵 교체/종료 | 요청 취소·늦은 결과/후속 페이지 거부 | application 3상황 x 취소 정상/동기·비동기 실패 |
+| FR-217 잘못된 요청/개수/출처/중복 key | 부분 결과 없이 전체 실패 | application |
+| FR-102/204 UI 성공/누락 | 준비 중 문서 불변·한 Undo 복원/무변경 거부 | widget 다종류 2개 |
+| NFR-006/009 입력 상한/중첩 조회 | 외부 도구 없이 무한 입력 33개만 읽음·고유 요청 ID | application |
+
+합성 32종/260항목의 실제 관찰은 **요청 2개**다. 이전 코드의 종류별 전체 스캔은
+같은 조건에서 계산상 64개 요청이며 이전 버전의 벽시계 측정을 수행한 것은 아니다.
+조회 복잡도를 종류 수 x 전체 항목에서 전체 항목 + 선택 종류로 줄였다. helper
+실행 시간·실제 SC:R 설치 데이터의 지연/RSS 개선 수치는 측정하지 않았다.
+
+최종 결과:
+
+- 신규 조회 회귀 26개와 다종류 확인 창 2개를 추가했다. 카탈로그/객체 편집 전체
+  집중 실행은 **515 통과 / 10 조건부 skip**이다.
+  `flutter test test/application/placement_catalog_controller_test.dart test/application/object_placement_command_test.dart`.
+  `.dart_tool/doodad-lookup-application.log`.
+- `flutter analyze`: 무이슈. 최초 실행의 테스트 취소 fake 중괄호 지적 1개를
+  수정한 뒤 다시 확인했다. `.dart_tool/doodad-lookup-analyze.log`.
+- `flutter test`: **2628 통과 / 86 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-lookup-full-tests.log`. skip을 검증 성공으로 계산하지 않는다.
+- `flutter build windows --debug`: 성공.
+  `.dart_tool/doodad-lookup-windows-build.log`. 기존 CascLib CMake 최소 버전 경고는 유지된다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- `MAP_ARCHIVE_HELPER_PATH`를 빌드된 helper로 지정하고
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **6/6 통과**.
+  `.dart_tool/doodad-lookup-mpq.log`. 원본 불변·단일/다중 삭제의 Undo/Redo와
+  Save As/재열기를 확인했다. 새 metadata 조회가 실제 CASC에서 검증됐다는 뜻은 아니다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: 기존 미수정
+  infrastructure 테스트 3개 차이로 exit 1이다. 파일 목록은 위 단일 삭제 기록과
+  같으며 이번 변경 파일 4개는 모두 포맷 차이가 없다.
+  `.dart_tool/doodad-lookup-format.log`.
+- SDK는 **Flutter 3.47.5 / Dart 3.13.4**다. 기준 3.44.8/3.12 또는 CI에서
+  재검증하지 못했다. 실제 열린 앱·SC:R·외부 에디터 조작과 깨끗한 PC 인수도
+  사용자 지시에 따라 수행하지 않았다. 자동 통과를 전체 기능/출시 인수로 보지 않는다.

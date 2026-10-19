@@ -133,6 +133,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [ ] Doodad 복합 삭제의 실제 게임/외부 에디터 왕복 검증과 미지원 사례 확대
 - [x] 검증된 비활성 Doodad 단일 삭제·상태별 overlay 확인·한영 UI·MPQ/Undo 회귀
 - [x] 최대 32개 Doodad의 원본 인덱스·전체 footprint/명시 overlay 검증·한 Undo 일괄 삭제
+- [x] 다종류 삭제 recipe 단일 metadata 순회·페이지 출처/순서 검증·조회 취소
 
 2026-10-19: 첫 미완료 항목의 미지원 사례 중 비활성 단일 삭제를 확대했다.
 [현재 계약/실행 기록](DOODAD_DELETION.md)과 [ADR-0026](decisions/0026-disabled-doodad-deletion.md)을 따른다.
@@ -149,6 +150,14 @@ DD2 0/1과 일관된 THG2 flags만 허용하고 기존 TILE/geometry/귀속/잠�
 인수는 계속 남는다. 범위/상한·시나리오/실행 결과는 [삭제 계약](DOODAD_DELETION.md)을 따른다.
 analyze 무이슈·전체 2600 통과/86 조건부 skip·집중 155 통과(실제 MPQ 6개 포함),
 Windows Debug 빌드·native CTest 7/7을 확인했다. 기존 포맷 3개와 SDK 차이는 유지된다.
+
+2026-10-19 조회 후속: 최대 32종의 recipe를 전체 metadata 한 번 순회로 조회한다.
+요청/페이지 출처·개수·순서를 검증하고 설치·맵·편집 이력 변경/종료에서 취소한다.
+다종류 확인 창도 같은 API를 사용하며 누락/실패는 무변경 거부한다.
+계획·요구사항·실행 결과와 측정 한계는 [삭제 계약](DOODAD_DELETION.md)에 남긴다.
+analyze 무이슈·전체 2628 통과/86 조건부 skip·집중 515 통과/10 조건부 skip,
+실제 MPQ 6/6·Windows Debug 빌드·native CTest 7/7. 기존 포맷 3개·SDK 차이와
+실제 CASC 조회/게임·외부 에디터 인수는 미검증으로 유지한다.
 
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
