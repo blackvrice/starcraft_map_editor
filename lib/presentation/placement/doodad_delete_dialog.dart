@@ -20,13 +20,30 @@ Future<void> deleteObjectsWithDoodadReview(
     return;
   }
   try {
-    if (selected.any((s) => s.object.layer != MapLayerType.doodads)) {
+    if (selected.any(
+      (s) =>
+          s.object.layer != MapLayerType.doodads &&
+          s.object.layer != MapLayerType.sprites,
+    )) {
       throw StateError(context.l10n.doodadDeleteMixedSelection);
     }
-    if (selected.length > DoodadDeletionPlan.maximumBatchSize) {
+    final doodads = selected
+        .where((s) => s.object.layer == MapLayerType.doodads)
+        .toList();
+    final sprites = selected
+        .where((s) => s.object.layer == MapLayerType.sprites)
+        .toList();
+    if (doodads.length > DoodadDeletionPlan.maximumBatchSize) {
       throw StateError(
         context.l10n.doodadDeleteBatchLimit(
           DoodadDeletionPlan.maximumBatchSize,
+        ),
+      );
+    }
+    if (sprites.length > DoodadDeletionPlan.maximumSelectedSprites) {
+      throw StateError(
+        context.l10n.doodadDeleteSpriteLimit(
+          DoodadDeletionPlan.maximumSelectedSprites,
         ),
       );
     }
@@ -35,7 +52,7 @@ Future<void> deleteObjectsWithDoodadReview(
       throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
     }
     if (selected.length > 1) {
-      await _reviewBatch(context, editing, catalog, session, selected);
+      await _reviewBatch(context, editing, catalog, session, doodads, sprites);
       return;
     }
     final object = selected.single.object;
@@ -214,7 +231,16 @@ Future<void> _reviewBatch(
   PlacementCatalogController catalog,
   OpenedMapSession session,
   List<MapLayerSelection> selected,
+  List<MapLayerSelection> sprites,
 ) async {
+  if (sprites.any(
+    (s) =>
+        session.objectViews.spriteSections.length != 1 ||
+        s.object.sectionIndex !=
+            session.objectViews.spriteSections.single.sectionIndex,
+  )) {
+    throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
+  }
   final doodads = <ChkDoodadPlacement>[];
   for (final selection in selected) {
     final object = selection.object;
@@ -249,7 +275,14 @@ Future<void> _reviewBatch(
           (r) => r.recipe.overlay == null || r.overlayIndex != null,
         );
         return AlertDialog(
-          title: Text(context.l10n.doodadDeleteBatchTitle(reviews.length)),
+          title: Text(
+            sprites.isEmpty
+                ? context.l10n.doodadDeleteBatchTitle(reviews.length)
+                : context.l10n.doodadDeleteMixedTitle(
+                    reviews.length,
+                    sprites.length,
+                  ),
+          ),
           content: SizedBox(
             width: 560,
             height: 420,
@@ -259,6 +292,22 @@ Future<void> _reviewBatch(
                 Expanded(
                   child: ListView(
                     children: [
+                      if (sprites.isNotEmpty) ...[
+                        Text(context.l10n.doodadDeleteSelectedSprites),
+                        for (final selection in sprites)
+                          Text(
+                            context.l10n.doodadDeleteOverlayRecord(
+                              selection.object.recordIndex,
+                              session
+                                  .objectViews
+                                  .spriteSections
+                                  .single
+                                  .sprites[selection.object.recordIndex]
+                                  .spriteType,
+                            ),
+                          ),
+                        const Divider(),
+                      ],
                       for (final r in reviews) ...[
                         Text(
                           context.l10n.doodadDeleteRecord(
@@ -365,14 +414,19 @@ Future<void> _reviewBatch(
                         )) {
                           throw StateError(context.l10n.doodadDeleteMapChanged);
                         }
-                        final plan = editing.prepareDoodadDeletions([
-                          for (final r in reviews)
-                            DoodadDeletionRequest(
-                              recipe: r.recipe,
-                              recordIndex: r.doodad.recordIndex,
-                              confirmedOverlayRecordIndex: r.overlayIndex,
-                            ),
-                        ]);
+                        final plan = editing.prepareDoodadDeletions(
+                          [
+                            for (final r in reviews)
+                              DoodadDeletionRequest(
+                                recipe: r.recipe,
+                                recordIndex: r.doodad.recordIndex,
+                                confirmedOverlayRecordIndex: r.overlayIndex,
+                              ),
+                          ],
+                          selectedSpriteRecordIndices: sprites.map(
+                            (s) => s.object.recordIndex,
+                          ),
+                        );
                         editing.deleteDoodad(plan);
                         Navigator.pop(dialogContext);
                       } on Object catch (e) {

@@ -39,7 +39,8 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0024](0024-eud-source-translation-and-draft-recovery.md) | Accepted | 공식 EPS→Python·native Python 빌드·공통 EUD 액션 모델과 미적용 초안 복구 |
 | [0025](0025-static-source-workspace.md) | Accepted | 실행 없는 다중 소스·원문/충돌 보존·schema v3 복구·빌드 의존 지문 |
 | [0026](0026-disabled-doodad-deletion.md) | Superseded by 0027 | 일관된 비활성 두다드의 상태별 overlay 검증·단일 복합 삭제 |
-| [0027](0027-atomic-batch-doodad-deletion.md) | Accepted | 최대 32개 두다드의 원본 인덱스·명시 귀속 기반 일괄 삭제 |
+| [0027](0027-atomic-batch-doodad-deletion.md) | Superseded by 0028 | 최대 32개 두다드의 원본 인덱스·명시 귀속 기반 일괄 삭제 |
+| [0028](0028-doodad-sprite-mixed-deletion.md) | Accepted | 두다드·선택 스프라이트의 원본 THG2 합집합·한 Undo 혼합 삭제 |
 
 ## 새 ADR 형식
 

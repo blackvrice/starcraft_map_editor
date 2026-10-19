@@ -273,7 +273,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get doodadDeleteMixedSelection =>
-      '두다드만 선택하세요. 다른 종류가 섞인 선택은 삭제하지 않습니다.';
+      '두다드와 스프라이트만 선택하세요. 유닛이나 로케이션이 섞인 선택은 삭제하지 않습니다.';
+
+  @override
+  String doodadDeleteSpriteLimit(int count) {
+    return '두다드와 함께 삭제할 스프라이트는 $count개 이하로 선택하세요.';
+  }
+
+  @override
+  String doodadDeleteMixedTitle(int doodads, int sprites) {
+    return '두다드 $doodads개와 선택 스프라이트 $sprites개 삭제';
+  }
+
+  @override
+  String get doodadDeleteSelectedSprites =>
+      '선택한 THG2 레코드도 삭제합니다. 아래에서 overlay 귀속을 확인하세요. 양쪽에서 선택한 레코드는 한 번만 삭제합니다.';
 
   @override
   String doodadDeleteBatchLimit(int count) {

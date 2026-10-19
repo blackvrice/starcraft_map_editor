@@ -19,10 +19,11 @@ import '../fixtures/new_map_harness.dart';
 
 void main() {
   final helper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
-  for (final batch in [false, true]) {
+  for (final mode in ['single', 'batch', 'mixed']) {
+    final batch = mode != 'single', mixed = mode == 'mixed';
     for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
       test(
-        'Doodad $overlay batch=$batch delete survives real MPQ Save As/reopen and preserves original',
+        'Doodad $overlay mode=$mode delete survives real MPQ Save As/reopen and preserves original',
         () async {
           final root = await Directory.systemTemp.createTemp(
             'doodad_delete_roundtrip_',
@@ -89,6 +90,7 @@ void main() {
           final plan = batch
               ? editing.prepareDoodadDeletions(
                   batchDeletionRequests(overlay: overlay),
+                  selectedSpriteRecordIndices: mixed ? [0, 1] : const [],
                 )
               : editing.prepareDoodadDeletion(
                   recipe: deletionRecipe(overlay: overlay),
@@ -129,7 +131,13 @@ void main() {
           );
           expect(
             maps.state.session!.objectViews.spriteSections.single.sprites,
-            hasLength(overlay == null ? 3 : 2),
+            hasLength(
+              mixed
+                  ? 1
+                  : overlay == null
+                  ? 3
+                  : 2,
+            ),
           );
         },
         skip: !Platform.isWindows || helper == null

@@ -8,6 +8,10 @@
 **두다드만 선택한 최대 32개 일괄 삭제**를 추가했다. 아래 단일 삭제 결과는
 초기 구현 당시 기록이며 최신 다중 삭제 범위/결과는 마지막 절을 따른다.
 
+2026-10-19 혼합 후속: [ADR-0028](decisions/0028-doodad-sprite-mixed-deletion.md)에
+따라 **두다드 최대 32개 + 별도 선택 Sprite 최대 256개**의 혼합 삭제를 지원한다.
+기존 절은 당시 이력이며 최신 범위/검증은 마지막 혼합 삭제 절을 따른다.
+
 ## 계획과 소스 분석
 
 1. 기존 삭제 계획/배치 정의/상태 편집/복합 clipboard/확인 창을 분석한다.
@@ -43,7 +47,7 @@ flags/unused가 모두 일치해야 한다. 후보가 한 개여도 자동 선�
 
 삭제는 MTXM 복원·대상 DD2·확인한 THG2만 한 명령으로 바꾼다. TILE과 다른
 레코드/원시 섹션은 유지하며 한 Undo로 복원한다. 준비 이후 문서 변경 또는
-필수 레이어 잠금은 적용을 막는다. 혼합 선택·TILE 부재·불일치 상태는 미지원이다.
+필수 레이어 잠금은 적용을 막는다. Unit/Location 혼합·TILE 부재·불일치 상태는 미지원이다.
 비활성 DD2에 활성 유닛형 overlay가 남은 불일치 입력도 자동 보정하지 않는다.
 
 확인 창은 대상 DD2 인덱스/종류/원시 상태와 recipe를 표시한다. 한영으로 번역하고
@@ -226,3 +230,69 @@ TILE/overlay 귀속 검증은 넓히지 않으며 게임·외부 에디터 인�
 - SDK는 **Flutter 3.47.5 / Dart 3.13.4**다. 기준 3.44.8/3.12 또는 CI에서
   재검증하지 못했다. 실제 열린 앱·SC:R·외부 에디터 조작과 깨끗한 PC 인수도
   사용자 지시에 따라 수행하지 않았다. 자동 통과를 전체 기능/출시 인수로 보지 않는다.
+
+## 혼합 삭제 계획과 소스 분석
+
+1. 기존 확인 창은 두다드 외 객체가 있으면 먼저 거부한다. 일반 Sprite 삭제는
+   THG2를 별도로 다시 작성하므로 두 명령을 연속 적용하면 overlay 인덱스가
+   이동하고 부분 삭제가 생길 수 있다. 이번에는 Sprite 혼합만 확대한다.
+2. `createBatch`에 원본 선택 Sprite 인덱스를 전달한다. 두다드별 recipe·상태·
+   TILE·footprint·overlay 명시 확인은 그대로 유지한다. 원본 THG2의 유일성/완전성,
+   선택 인덱스/중복·상한을 검증한 뒤 확인한 overlay와 합집합을 만든다.
+3. 같은 overlay가 Sprite로도 선택되면 한 번 제거한다. Sprite 선택만으로
+   overlay 귀속을 확인했다고 간주하지 않으며 두다드 간 중복 귀속은 계속 거부한다.
+4. 확인 창은 두다드/선택 Sprite 개수와 선택 THG2 인덱스·종류를 한영으로
+   보여준다. pure sprite/unit-sprite 모두 지원하며 개별 Sprite의 알 수 없는
+   플래그를 재해석/정규화하지 않는다. 명시 선택하지 않은 레코드/다른 섹션은 보존한다.
+5. domain → application의 기존 한 명령 적용 경로를 사용한다. 취소·실패·필수
+   레이어 잠금·문서 교체는 무변경 거부한다. UI는 바이너리/I/O를 호출하지 않는다.
+
+### 최적화 판단
+
+THG2 삭제 인덱스는 집합으로 합쳐 원본 섹션을 한 번만 스캔/생성한다. 추가
+Sprite 검증을 MTXM/DD2 출력 생성보다 앞에 두어 잘못된 요청의 불필요한 복사를
+피했다. 입력은 257개까지만 읽으며 선택 Sprite 256개와 overlay 32개의 합집합은
+최대 288개다. 기존 두다드 recipe 조회/footprint 검증을 재사용하고 새 캐시/의존성은
+도입하지 않았다. 실제 지연/RSS 개선 수치를 측정했다고 주장하지 않는다.
+
+## 혼합 삭제 요구사항과 검증
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203 두다드/Sprite 혼합 삭제 | 개수·원본 THG2 목록 표시, 한 Undo/Redo | application/widget |
+| FR-102/217 overlay와 선택 Sprite 중복 | 명시 귀속 후 한 번만 제거·미선택 bytes 보존 | domain/application/MPQ |
+| FR-217 선택 overlay만 있고 귀속 확인 없음 | 자동 확인하지 않고 전체 거부/Apply 비활성 | domain/widget |
+| FR-204/218 잘린/중복/누락 THG2·잘못된 인덱스 | 정규화/부분 적용 없이 거부 | domain/application |
+| FR-005/213 잠금·오래된 계획 | 문서/이력 불변·원래 명령 한 번만 적용 | application |
+| NFR-008 한국어 600px/영어 1200px | 세 overlay 유형의 확인·취소·삭제, 예외 없음 | widget |
+| NFR-006/009 선택 256/257개·무한 iterable | 256 허용·257에서 차단, 무제한 소비 없음 | domain/widget |
+| FR-101/104 자체 제작 맵 MPQ | 단일/다중/혼합 3유형 Save As·재열기/원본 불변 | integration |
+
+집중 검증은 181개 통과했다(domain 혼합 10 + 기존 batch 6 + 객체 편집/위젯
+156 + 실제 MPQ 9). 최초 analyze는 새 domain 테스트의 if 중괄호 1개를 지적하여
+수정했다. `.dart_tool/doodad-sprite-focused.log`.
+
+최종 실행 결과:
+
+- `flutter analyze`: 무이슈. `.dart_tool/doodad-sprite-analyze.log`.
+- `flutter test`: **2649 통과 / 89 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-sprite-full-tests.log`. 새 MPQ 혼합 3개를 포함한 조건부 skip을
+  통과로 세지 않았다. 실제 MPQ 9개는 helper 경로를 지정한 별도 실행에서 검증했다.
+- `flutter build windows --debug`: 성공.
+  `.dart_tool/doodad-sprite-windows-build.log`. 기존 CascLib CMake 최소 버전 경고는 남는다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 빌드 helper로 `MAP_ARCHIVE_HELPER_PATH`를 지정하고
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **9/9 통과**.
+  `.dart_tool/doodad-sprite-mpq.log`.
+- `dart format --output=none --set-exit-if-changed lib test tool`: 기존 미수정
+  `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개 차이로 exit 1. 이번 변경 파일은 포맷 차이가 없다.
+  `.dart_tool/doodad-sprite-format.log`.
+- SDK **Flutter 3.47.5 / Dart 3.13.4**로 검증했다. 기준 3.44.8/3.12 및 CI
+  버전에서 재검증하지 못했으며 전체 게이트가 동일 환경에서 통과했다고 주장하지 않는다.
+
+Unit/Location 혼합, 실제 겹친 footprint, 미확인 이웃, 복원 정보 부재·오염은
+여전히 미지원이다. 선택 Sprite의 숨은 DD2 귀속을 추정하거나 미선택 overlay를
+추가 삭제하지 않는다. 실제 앱·SC:R·외부 에디터·고대비/DPI/깨끗한 PC 인수는
+자동 테스트·빌드만 허용한 사용자 지시에 따라 수행하지 않는다.

@@ -280,7 +280,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doodadDeleteMixedSelection =>
-      'Select Doodads only. Mixed object selections are not deleted.';
+      'Select Doodads and Sprites only. Unit and Location mixtures are not deleted.';
+
+  @override
+  String doodadDeleteSpriteLimit(int count) {
+    return 'Select no more than $count additional Sprites for one Doodad deletion.';
+  }
+
+  @override
+  String doodadDeleteMixedTitle(int doodads, int sprites) {
+    return 'Delete $doodads Doodads and $sprites selected Sprites';
+  }
+
+  @override
+  String get doodadDeleteSelectedSprites =>
+      'Selected THG2 records will also be deleted. Confirm overlay ownership below; a record selected both ways is deleted only once.';
 
   @override
   String doodadDeleteBatchLimit(int count) {

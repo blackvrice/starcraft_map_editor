@@ -611,8 +611,26 @@ abstract class AppLocalizations {
   /// No description provided for @doodadDeleteMixedSelection.
   ///
   /// In en, this message translates to:
-  /// **'Select Doodads only. Mixed object selections are not deleted.'**
+  /// **'Select Doodads and Sprites only. Unit and Location mixtures are not deleted.'**
   String get doodadDeleteMixedSelection;
+
+  /// No description provided for @doodadDeleteSpriteLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select no more than {count} additional Sprites for one Doodad deletion.'**
+  String doodadDeleteSpriteLimit(int count);
+
+  /// No description provided for @doodadDeleteMixedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {doodads} Doodads and {sprites} selected Sprites'**
+  String doodadDeleteMixedTitle(int doodads, int sprites);
+
+  /// No description provided for @doodadDeleteSelectedSprites.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected THG2 records will also be deleted. Confirm overlay ownership below; a record selected both ways is deleted only once.'**
+  String get doodadDeleteSelectedSprites;
 
   /// No description provided for @doodadDeleteBatchLimit.
   ///

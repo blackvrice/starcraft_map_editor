@@ -23,12 +23,14 @@ final class DoodadDeletionPlan {
     this._restoredTiles,
     this.doodadCount,
     this.overlayCount,
+    this.spriteCount,
   );
   final RawChkDocument document;
   final Map<int, RawChkSection> replacements;
   final Map<int, int> _restoredTiles;
-  final int doodadCount, overlayCount;
+  final int doodadCount, overlayCount, spriteCount;
   static const maximumBatchSize = 32;
+  static const maximumSelectedSprites = 256;
 
   static DoodadDeletionPlan create({
     required RawChkDocument document,
@@ -46,10 +48,18 @@ final class DoodadDeletionPlan {
   static DoodadDeletionPlan createBatch({
     required RawChkDocument document,
     required Iterable<DoodadDeletionRequest> requests,
+    Iterable<int> selectedSpriteRecordIndices = const [],
   }) {
     final items = requests.take(maximumBatchSize + 1).toList();
     if (items.isEmpty || items.length > maximumBatchSize) {
       throw StateError('DOODAD_DELETE: batch size');
+    }
+    final selectedSprites = selectedSpriteRecordIndices
+        .take(maximumSelectedSprites + 1)
+        .toList();
+    if (selectedSprites.length > maximumSelectedSprites ||
+        selectedSprites.toSet().length != selectedSprites.length) {
+      throw StateError('DOODAD_DELETE: selected sprite count or duplicates');
     }
     final records = items.map((r) => r.recordIndex).toSet();
     final overlays = items
@@ -85,6 +95,27 @@ final class DoodadDeletionPlan {
             .decode(document)
             .tileMaps
             .single;
+    // Merge original THG2 indices, never indices from an already-deleted view.
+    // A separately selected, explicitly confirmed overlay is removed only once.
+    final spriteIndices = {...overlays, ...selectedSprites};
+    if (spriteIndices.isNotEmpty) {
+      final rawSprites = document.sections.where(
+        (s) => s.hasNameBytes(ChkSectionNames.spritePlacements),
+      );
+      if (rawSprites.length != 1 ||
+          objects.spriteSections.length != 1 ||
+          rawSprites.single.declaredLength !=
+              objects.spriteSections.single.sprites.length *
+                  ChkSpritePlacement.recordLength) {
+        throw StateError('DOODAD_DELETE: requires one complete THG2 section');
+      }
+      final sprites = objects.spriteSections.single;
+      for (final index in spriteIndices) {
+        if (index < 0 || index >= sprites.sprites.length) {
+          throw StateError('DOODAD_DELETE: invalid selected sprite');
+        }
+      }
+    }
     final values = terrain.rawTileValues.toList();
     for (final tile in restored.entries) {
       values[tile.key] = tile.value;
@@ -95,11 +126,11 @@ final class DoodadDeletionPlan {
       terrain.sectionIndex: terrain.withRawTileValues(values),
       dd.sectionIndex: editor.deleteDoodads(dd, records),
     };
-    if (overlays.isNotEmpty) {
+    if (spriteIndices.isNotEmpty) {
       final sprites = objects.spriteSections.single;
       replacements[sprites.sectionIndex] = editor.deleteSprites(
         sprites,
-        overlays.toSet(),
+        spriteIndices,
       );
     }
     return DoodadDeletionPlan._(
@@ -108,6 +139,7 @@ final class DoodadDeletionPlan {
       Map.unmodifiable(restored),
       items.length,
       overlays.length,
+      spriteIndices.length,
     );
   }
 
@@ -258,6 +290,7 @@ final class DoodadDeletionPlan {
       Map.unmodifiable(replacements),
       Map.unmodifiable(restoredTiles),
       1,
+      overlay == null ? 0 : 1,
       overlay == null ? 0 : 1,
     );
   }

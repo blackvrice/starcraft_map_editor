@@ -2032,8 +2032,9 @@ class ObjectEditingController {
   }
 
   DoodadDeletionPlan prepareDoodadDeletions(
-    Iterable<DoodadDeletionRequest> requests,
-  ) {
+    Iterable<DoodadDeletionRequest> requests, {
+    Iterable<int> selectedSpriteRecordIndices = const [],
+  }) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
       throw StateError('Open an editable map.');
@@ -2041,6 +2042,7 @@ class ObjectEditingController {
     return DoodadDeletionPlan.createBatch(
       document: session.rawDocument,
       requests: requests,
+      selectedSpriteRecordIndices: selectedSpriteRecordIndices,
     );
   }
 

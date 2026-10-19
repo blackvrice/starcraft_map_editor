@@ -5,6 +5,10 @@ TILE/footprint·명시 overlay 귀속을 모두 확인한다. 알 수 없는 상
 flags를 자동 보정하지 않으며 선택하지 않은 bytes·원본 맵을 보존한다.
 후속 다중 삭제는 원래 문서/인덱스에서 최대 32개를 모두 검증한 뒤 한 번에
 적용한다. 하나라도 실패하면 부분 삭제하지 않으며 overlay 중복 귀속도 거부한다.
+선택 Sprite 최대 256개와의 혼합 삭제는 명시 확인 overlay와 원본 THG2 인덱스
+합집합으로 한 번 적용한다. Sprite 선택은 귀속 확인을 대신하지 않으며 유일한
+완전한 THG2가 필요하다. 원래 문서/미선택 bytes·TILE을 보존하고 Unit/Location
+혼합은 거부한다([ADR-0028](decisions/0028-doodad-sprite-mixed-deletion.md)).
 
 2026-10-19 [FR-320](SOURCE_WORKSPACE.md): bounded 루트 스캔·링크/이탈 거절,
 외부 변경 시 버퍼 보존/저장 차단, 예상 SHA·원본 백업·명시 저장을 제공한다.

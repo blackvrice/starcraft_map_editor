@@ -414,7 +414,10 @@ Doodad 한 개를 선택하고 Delete를 누르면 recipe와 overlay 귀속 확�
 TILE 부재, 겹침 가능성, 잠금, 변경된 지형, 모호한 섹션은 거부하며 임의로 복원하지 않는다.
 취소는 맵을 변경하지 않는다. 두다드만 최대 32개 선택하면 각 recipe/overlay를
 확인하는 일괄 삭제 창을 연다. 모든 overlay 명시 확인 후 한 Undo로 적용하며
-혼합 선택·상한 초과·조회 중 문서 변경은 무변경 거부한다.
+선택 Sprite를 최대 256개까지 함께 삭제할 수 있다. 혼합 창은 두다드/선택 Sprite
+개수와 THG2 인덱스·종류를 표시한다. Sprite로 선택한 overlay도 귀속을 따로
+확인해야 하며 양쪽에서 선택한 레코드는 한 번만 삭제한다. Unit/Location 혼합·
+상한 초과·조회/확인 중 문서 변경은 무변경 거부한다. [ADR-0028](decisions/0028-doodad-sprite-mixed-deletion.md).
 
 EUD Project의 `Generation preview`는 후보 5개 필드의 정렬된 JSON 생성 명세를
 읽기 전용으로 표시한다. 실행 가능한 Python/epScript 생성이나 컴파일은 아직 아니며,

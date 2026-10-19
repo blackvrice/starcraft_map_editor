@@ -1,6 +1,6 @@
 # ADR-0027: 원본 인덱스 기반 두다드 일괄 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0028](0028-doodad-sprite-mixed-deletion.md)
 - Date: 2026-10-19
 - Supersedes: [ADR-0026](0026-disabled-doodad-deletion.md)
 
