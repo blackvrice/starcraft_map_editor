@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import '../chk/chk.dart';
 import 'doodad_placement_recipe.dart';
+import 'unit_deletion_plan.dart';
 
 final class DoodadDeletionRequest {
   const DoodadDeletionRequest({
@@ -23,12 +24,14 @@ final class DoodadDeletionPlan {
     this._restoredTiles,
     this.doodadCount,
     this.overlayCount,
-    this.spriteCount,
-  );
+    this.spriteCount, {
+    this.unitDeletion,
+  });
   final RawChkDocument document;
   final Map<int, RawChkSection> replacements;
   final Map<int, int> _restoredTiles;
   final int doodadCount, overlayCount, spriteCount;
+  final UnitDeletionPlan? unitDeletion;
   static const maximumBatchSize = 32;
   static const maximumSelectedSprites = 256;
 
@@ -49,6 +52,8 @@ final class DoodadDeletionPlan {
     required RawChkDocument document,
     required Iterable<DoodadDeletionRequest> requests,
     Iterable<int> selectedSpriteRecordIndices = const [],
+    Iterable<int> selectedUnitRecordIndices = const [],
+    Iterable<int> confirmedUnitPeerRecordIndices = const [],
   }) {
     final items = requests.take(maximumBatchSize + 1).toList();
     if (items.isEmpty || items.length > maximumBatchSize) {
@@ -60,6 +65,27 @@ final class DoodadDeletionPlan {
     if (selectedSprites.length > maximumSelectedSprites ||
         selectedSprites.toSet().length != selectedSprites.length) {
       throw StateError('DOODAD_DELETE: selected sprite count or duplicates');
+    }
+    final unitIndices = selectedUnitRecordIndices
+        .take(UnitDeletionPlan.maximumSelectedUnits + 1)
+        .toList();
+    final unitDeletion = unitIndices.isEmpty
+        ? null
+        : UnitDeletionPlan.create(
+            document: document,
+            recordIndices: unitIndices,
+          );
+    final confirmedPeers = confirmedUnitPeerRecordIndices
+        .take(UnitDeletionPlan.maximumSelectedUnits + 1)
+        .toList();
+    final expectedPeers =
+        unitDeletion?.unlinkedPeerRecordIndices ?? const <int>{};
+    if (confirmedPeers.length != expectedPeers.length ||
+        confirmedPeers.toSet().length != confirmedPeers.length ||
+        !expectedPeers.containsAll(confirmedPeers)) {
+      throw StateError(
+        'UNIT_DELETE: explicit surviving peer confirmation required',
+      );
     }
     final records = items.map((r) => r.recordIndex).toSet();
     final overlays = items
@@ -125,6 +151,8 @@ final class DoodadDeletionPlan {
     final replacements = <int, RawChkSection>{
       terrain.sectionIndex: terrain.withRawTileValues(values),
       dd.sectionIndex: editor.deleteDoodads(dd, records),
+      if (unitDeletion != null)
+        unitDeletion.sectionIndex: unitDeletion.replacement,
     };
     if (spriteIndices.isNotEmpty) {
       final sprites = objects.spriteSections.single;
@@ -140,6 +168,7 @@ final class DoodadDeletionPlan {
       items.length,
       overlays.length,
       spriteIndices.length,
+      unitDeletion: unitDeletion,
     );
   }
 

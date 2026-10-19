@@ -40,7 +40,8 @@ ADR은 되돌리기 어렵거나 여러 컴포넌트에 영향을 주는 결정�
 | [0025](0025-static-source-workspace.md) | Accepted | 실행 없는 다중 소스·원문/충돌 보존·schema v3 복구·빌드 의존 지문 |
 | [0026](0026-disabled-doodad-deletion.md) | Superseded by 0027 | 일관된 비활성 두다드의 상태별 overlay 검증·단일 복합 삭제 |
 | [0027](0027-atomic-batch-doodad-deletion.md) | Superseded by 0028 | 최대 32개 두다드의 원본 인덱스·명시 귀속 기반 일괄 삭제 |
-| [0028](0028-doodad-sprite-mixed-deletion.md) | Accepted | 두다드·선택 스프라이트의 원본 THG2 합집합·한 Undo 혼합 삭제 |
+| [0028](0028-doodad-sprite-mixed-deletion.md) | Superseded by 0029 | 두다드·선택 스프라이트의 원본 THG2 합집합·한 Undo 혼합 삭제 |
+| [0029](0029-unit-mixed-doodad-deletion.md) | Accepted | 유닛 incoming/outgoing 관계 검증·남는 peer 명시 확인·한 Undo 혼합 삭제 |
 
 ## 새 ADR 형식
 

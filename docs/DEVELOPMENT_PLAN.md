@@ -135,6 +135,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 최대 32개 Doodad의 원본 인덱스·전체 footprint/명시 overlay 검증·한 Undo 일괄 삭제
 - [x] 다종류 삭제 recipe 단일 metadata 순회·페이지 출처/순서 검증·조회 취소
 - [x] 최대 256개 선택 Sprite와 두다드의 원본 THG2 합집합·한 Undo 혼합 삭제
+- [x] Unit 혼합 삭제·양방향 관계 검증·남는 peer 집합 명시 확인·한 Undo
 
 2026-10-19: 첫 미완료 항목의 미지원 사례 중 비활성 단일 삭제를 확대했다.
 [현재 계약/실행 기록](DOODAD_DELETION.md)과 [ADR-0026](decisions/0026-disabled-doodad-deletion.md)을 따른다.
@@ -167,6 +168,14 @@ analyze 무이슈·전체 2628 통과/86 조건부 skip·집중 515 통과/10 �
 계획·요구사항·자동 검증/미실행 범위는 [삭제 계약](DOODAD_DELETION.md)을 따른다.
 analyze 무이슈·전체 2649 통과/89 조건부 skip·집중 181 통과(실제 MPQ 9개 포함),
 Windows Debug 빌드·native CTest 7/7. 기존 포맷 3개와 SDK 차이는 유지된다.
+
+2026-10-19 Unit 후속: [ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)의
+유닛 최대 256개 혼합 삭제를 추가했다. 들어오는/나가는 관계를 검증하고 남는
+peer은 정확한 원본 인덱스 집합을 확인한 뒤 관계 필드만 해제한다. 모든 삭제는
+한 Undo다. Location 혼합·모호한 관계·지형 복원 부족·게임/외부 인수는 남는다.
+시나리오·실행/실패 수정·최적화 판단은 [삭제 계약](DOODAD_DELETION.md)에 기록한다.
+analyze 무이슈·전체 2673 통과/95 조건부 skip·집중 211 통과(실제 MPQ 15개 포함),
+Windows Debug 빌드·native CTest 7/7. 기존 미수정 포맷 3개·SDK 차이는 유지된다.
 
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현

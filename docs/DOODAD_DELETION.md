@@ -12,6 +12,10 @@
 따라 **두다드 최대 32개 + 별도 선택 Sprite 최대 256개**의 혼합 삭제를 지원한다.
 기존 절은 당시 이력이며 최신 범위/검증은 마지막 혼합 삭제 절을 따른다.
 
+2026-10-19 Unit 후속: [ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)에 따라
+**Unit 최대 256개까지 혼합 삭제**를 지원한다. 남는 상호 연결 유닛은 관계 해제를
+별도로 확인하며 Location 혼합과 게임/외부 에디터 인수는 남는다.
+
 ## 계획과 소스 분석
 
 1. 기존 삭제 계획/배치 정의/상태 편집/복합 clipboard/확인 창을 분석한다.
@@ -45,9 +49,10 @@ overlay가 있으면 단일 THG2와 **사용자가 선택한** record의 종류/
 flags/unused가 모두 일치해야 한다. 후보가 한 개여도 자동 선택하지 않는다.
 좌표가 같은 다른 레코드나 알 수 없는 플래그를 추측해 정리하지 않는다.
 
-삭제는 MTXM 복원·대상 DD2·확인한 THG2만 한 명령으로 바꾼다. TILE과 다른
+삭제는 MTXM 복원·대상 DD2·확인한 THG2를 한 명령으로 바꾼다. Unit 혼합은
+선택 UNIT와 명시 확인한 남는 peer의 관계 필드만 추가 변경한다. TILE과 다른
 레코드/원시 섹션은 유지하며 한 Undo로 복원한다. 준비 이후 문서 변경 또는
-필수 레이어 잠금은 적용을 막는다. Unit/Location 혼합·TILE 부재·불일치 상태는 미지원이다.
+필수 레이어 잠금은 적용을 막는다. Location 혼합·TILE 부재·불일치 상태는 미지원이다.
 비활성 DD2에 활성 유닛형 overlay가 남은 불일치 입력도 자동 보정하지 않는다.
 
 확인 창은 대상 DD2 인덱스/종류/원시 상태와 recipe를 표시한다. 한영으로 번역하고
@@ -296,3 +301,71 @@ Unit/Location 혼합, 실제 겹친 footprint, 미확인 이웃, 복원 정보 �
 여전히 미지원이다. 선택 Sprite의 숨은 DD2 귀속을 추정하거나 미선택 overlay를
 추가 삭제하지 않는다. 실제 앱·SC:R·외부 에디터·고대비/DPI/깨끗한 PC 인수는
 자동 테스트·빌드만 허용한 사용자 지시에 따라 수행하지 않는다.
+
+## Unit 혼합 삭제 계획과 실행
+
+1. 기존 `deleteSelection`의 일반 UNIT 삭제는 `ChkBasicEditing.unlinkUnits`로
+   상호 관계를 해제한다. Doodad 삭제와 순차 결합하면 부분 적용/여러 Undo가 된다.
+   선택 대상의 outgoing만 검사해서는 다른 유닛이 가리키는 비대칭 incoming을 놓친다.
+2. 순수 domain `UnitDeletionPlan`에서 유일하고 완전한 UNIT·명시 원본 인덱스를
+   검증한다. 선택 class ID를 가리키는 incoming도 수집하고 기존 unlink로 ID
+   유일성·알려진 관계 flags·상호 참조를 검사한다. 무관한 raw 관계는 재해석하지 않는다.
+3. 명시 선택한 Unit만 제거한다. 남는 정상 peer은 관계 flags/peer class ID만
+   해제하고 다른 bytes는 보존한다. 남는 peer의 원본 인덱스를 UI에 전달한다.
+4. 확인 창에 Doodad/Unit/Sprite 개수·선택 UNIT·남는 peer의 인덱스/종류를
+   표시한다. peer이 있으면 체크박스 확인까지 Apply를 막는다. domain도 전달받은
+   `confirmedUnitPeerRecordIndices`와 영향 집합의 정확한 일치를 요구한다.
+5. 검증한 UNIT replacement를 기존 Doodad 계획에 합쳐 한 번 적용/Undo한다.
+   필수 Units 레이어도 재검사하며 overlay 명시 귀속·기존 TILE/footprint/문서
+   identity 검증은 유지한다. 기존 일반 객체 삭제 경로와 CHK 포맷은 바꾸지 않는다.
+
+### 최적화 판단과 상한
+
+Unit/peer 확인 목록은 각각 257개까지만 읽고 256개 초과/중복을 거부한다.
+incoming 수집은 한 번 순회하며 정상 상호 관계의 후보가 선택 수의 두 배를
+넘으면 거부한다(최대 512개). 새 관계 알고리즘/캐시 대신 기존 unlink의 후보별
+UNIT 스캔을 재사용했다. 확인 창 준비와 Apply에서 계획을 다시 생성하는 비용은
+명시 확인/문서 안전성 때문에 유지한다. 실제 지연/RSS 향상은 측정하지 않았다.
+
+### 요구사항 체크리스트
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203/213 Unit+Doodad+Sprite 삭제 | 선택/영향 개수·한 Undo/Redo | application/widget/MPQ |
+| FR-102 남는 애드온/나이더스 한 peer | 관계 필드만 해제·다른 raw bytes 보존 | domain/application/MPQ |
+| FR-217 양쪽 연결 유닛 선택 | 선택 Unit만 제거, 추가 peer 확인 없음 | domain/widget |
+| FR-204/218 비대칭/unknown flags·중복/누락 ID | 관계를 추측 해제하지 않고 전체 거부 | domain |
+| FR-203 peer 확인 없음/잘못된 집합 | domain 거부·checkbox 미확인 Apply 비활성 | domain/widget |
+| FR-005/213 Units 등 잠금·오래된 계획 | 문서/이력 불변 거부 | application |
+| NFR-006/009 256/257개·무한 입력 | 256 허용·257개만 읽어 차단 | domain/widget |
+| NFR-008 한국어 600px/영어 1200px | 취소·overlay/peer 확인·스크롤·한 Undo | widget |
+| FR-101/104 자체 제작 MPQ 15종 | 단일/다중/Sprite/Unit 혼합 Save As·재열기·원본 불변 | integration |
+
+집중 검증 **211개 통과**(Unit domain 15 + Sprite domain 10 + batch domain 6 +
+객체 편집/위젯 165 + 실제 MPQ 15). `.dart_tool/doodad-unit-focused.log`.
+초기 domain 실행은 `chk.dart`가 basic editing을 재노출하지 않아 import 누락으로
+컴파일 실패했다. 명시 import로 수정 후 통과했다. 초기 application은 164 통과/
+1 실패였으며 영어 창의 화면 밖 overlay가 lazy 생성 전인데 `ensureVisible`을
+호출한 테스트 보조 오류였다. 실제 스크롤 기반 검사로 수정하고 두 언어의 확인/
+취소를 재검증했다. 앱 결함을 수정한 것으로 계산하지 않는다.
+
+최종 게이트:
+
+- `flutter analyze`: 무이슈. `.dart_tool/doodad-unit-analyze.log`.
+- `flutter test`: **2673 통과 / 95 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-unit-full-tests.log`. 새 Unit 혼합 MPQ 6개를 포함한 skip은
+  검증 성공이 아니다. 실제 MPQ 15개는 별도 helper 지정 실행에서 모두 통과했다.
+- `flutter build windows --debug`: 성공.
+  `.dart_tool/doodad-unit-windows-build.log`. 기존 CascLib CMake 최소 버전 경고는 남는다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 빌드 helper를 `MAP_ARCHIVE_HELPER_PATH`로 지정한
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **15/15 통과**.
+  `.dart_tool/doodad-unit-mpq.log`. 원본 파일·Undo/Redo·재열기 bytes를 확인했다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: 기존 미수정
+  `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개 차이로 exit 1. 이번 변경 파일에는 포맷 차이가 없다.
+  `.dart_tool/doodad-unit-format.log`.
+- SDK **Flutter 3.47.5 / Dart 3.13.4**를 사용했다. 기준 3.44.8/3.12와 CI에서
+  재검증하지 않았다. Location 혼합과 실제 게임/외부 에디터·깨끗한 PC·고대비/DPI
+  수동 인수는 미완료다. 자동 테스트·빌드 한정 지시대로 실제 앱을 조작하지 않았다.

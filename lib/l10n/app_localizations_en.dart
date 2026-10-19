@@ -280,7 +280,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doodadDeleteMixedSelection =>
-      'Select Doodads and Sprites only. Unit and Location mixtures are not deleted.';
+      'Select Doodads, Units and Sprites only. Location mixtures are not deleted.';
+
+  @override
+  String doodadDeleteUnitLimit(int count) {
+    return 'Select no more than $count Units for one Doodad deletion.';
+  }
+
+  @override
+  String get doodadDeleteAmbiguousUnits =>
+      'Unit deletion requires one complete UNIT section.';
+
+  @override
+  String get doodadDeleteUnitMixedTitle => 'Delete selected objects';
+
+  @override
+  String doodadDeleteUnitSummary(int doodads, int units, int sprites) {
+    return 'Doodads: $doodads · Units: $units · Selected Sprites: $sprites';
+  }
+
+  @override
+  String doodadDeleteUnitRecord(int index, int type) {
+    return 'UNIT record #$index · type $type';
+  }
+
+  @override
+  String doodadDeleteUnitUnlink(int count) {
+    return 'Confirm unlinking $count surviving connected Units listed below. They will not be deleted.';
+  }
 
   @override
   String doodadDeleteSpriteLimit(int count) {

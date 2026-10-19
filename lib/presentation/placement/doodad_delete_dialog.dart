@@ -5,6 +5,7 @@ import '../../application/layers/map_layer_controller.dart';
 import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/doodad_deletion_plan.dart';
+import '../../domain/placement/unit_deletion_plan.dart';
 import '../../domain/chk/typed/chk_object_views.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../localization/l10n.dart';
@@ -23,7 +24,8 @@ Future<void> deleteObjectsWithDoodadReview(
     if (selected.any(
       (s) =>
           s.object.layer != MapLayerType.doodads &&
-          s.object.layer != MapLayerType.sprites,
+          s.object.layer != MapLayerType.sprites &&
+          s.object.layer != MapLayerType.units,
     )) {
       throw StateError(context.l10n.doodadDeleteMixedSelection);
     }
@@ -32,6 +34,9 @@ Future<void> deleteObjectsWithDoodadReview(
         .toList();
     final sprites = selected
         .where((s) => s.object.layer == MapLayerType.sprites)
+        .toList();
+    final units = selected
+        .where((s) => s.object.layer == MapLayerType.units)
         .toList();
     if (doodads.length > DoodadDeletionPlan.maximumBatchSize) {
       throw StateError(
@@ -47,12 +52,27 @@ Future<void> deleteObjectsWithDoodadReview(
         ),
       );
     }
+    if (units.length > UnitDeletionPlan.maximumSelectedUnits) {
+      throw StateError(
+        context.l10n.doodadDeleteUnitLimit(
+          UnitDeletionPlan.maximumSelectedUnits,
+        ),
+      );
+    }
     final session = editing.openMapController.state.session!;
     if (session.objectViews.spriteSections.length > 1) {
       throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
     }
     if (selected.length > 1) {
-      await _reviewBatch(context, editing, catalog, session, doodads, sprites);
+      await _reviewBatch(
+        context,
+        editing,
+        catalog,
+        session,
+        doodads,
+        sprites,
+        units,
+      );
       return;
     }
     final object = selected.single.object;
@@ -232,7 +252,19 @@ Future<void> _reviewBatch(
   OpenedMapSession session,
   List<MapLayerSelection> selected,
   List<MapLayerSelection> sprites,
+  List<MapLayerSelection> units,
 ) async {
+  if (units.any(
+    (s) =>
+        session.objectViews.unitSections.length != 1 ||
+        s.object.sectionIndex !=
+            session.objectViews.unitSections.single.sectionIndex,
+  )) {
+    throw StateError(context.l10n.doodadDeleteAmbiguousUnits);
+  }
+  final unitPlan = units.isEmpty
+      ? null
+      : editing.prepareUnitDeletion(units.map((s) => s.object.recordIndex));
   if (sprites.any(
     (s) =>
         session.objectViews.spriteSections.length != 1 ||
@@ -267,16 +299,22 @@ Future<void> _reviewBatch(
   }
   if (!context.mounted) return;
   String? error;
+  var unlinkConfirmed =
+      unitPlan == null || unitPlan.unlinkedPeerRecordIndices.isEmpty;
   await showDialog<void>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, update) {
-        final ready = reviews.every(
-          (r) => r.recipe.overlay == null || r.overlayIndex != null,
-        );
+        final ready =
+            unlinkConfirmed &&
+            reviews.every(
+              (r) => r.recipe.overlay == null || r.overlayIndex != null,
+            );
         return AlertDialog(
           title: Text(
-            sprites.isEmpty
+            units.isNotEmpty
+                ? context.l10n.doodadDeleteUnitMixedTitle
+                : sprites.isEmpty
                 ? context.l10n.doodadDeleteBatchTitle(reviews.length)
                 : context.l10n.doodadDeleteMixedTitle(
                     reviews.length,
@@ -292,6 +330,58 @@ Future<void> _reviewBatch(
                 Expanded(
                   child: ListView(
                     children: [
+                      if (unitPlan != null) ...[
+                        Text(
+                          context.l10n.doodadDeleteUnitSummary(
+                            reviews.length,
+                            units.length,
+                            sprites.length,
+                          ),
+                        ),
+                        for (final selection in units)
+                          Text(
+                            context.l10n.doodadDeleteUnitRecord(
+                              selection.object.recordIndex,
+                              session
+                                  .objectViews
+                                  .unitSections
+                                  .single
+                                  .units[selection.object.recordIndex]
+                                  .unitType,
+                            ),
+                          ),
+                        if (unitPlan.unlinkedPeerRecordIndices.isNotEmpty) ...[
+                          CheckboxListTile(
+                            key: const Key('doodad-delete-unit-unlink'),
+                            value: unlinkConfirmed,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              context.l10n.doodadDeleteUnitUnlink(
+                                unitPlan.unlinkedPeerRecordIndices.length,
+                              ),
+                            ),
+                            onChanged: (value) => update(() {
+                              unlinkConfirmed = value!;
+                              error = null;
+                            }),
+                          ),
+                          for (final index
+                              in unitPlan.unlinkedPeerRecordIndices)
+                            Text(
+                              context.l10n.doodadDeleteUnitRecord(
+                                index,
+                                session
+                                    .objectViews
+                                    .unitSections
+                                    .single
+                                    .units[index]
+                                    .unitType,
+                              ),
+                            ),
+                        ],
+                        const Divider(),
+                      ],
                       if (sprites.isNotEmpty) ...[
                         Text(context.l10n.doodadDeleteSelectedSprites),
                         for (final selection in sprites)
@@ -426,6 +516,11 @@ Future<void> _reviewBatch(
                           selectedSpriteRecordIndices: sprites.map(
                             (s) => s.object.recordIndex,
                           ),
+                          selectedUnitRecordIndices: units.map(
+                            (s) => s.object.recordIndex,
+                          ),
+                          confirmedUnitPeerRecordIndices:
+                              unitPlan?.unlinkedPeerRecordIndices ?? const [],
                         );
                         editing.deleteDoodad(plan);
                         Navigator.pop(dialogContext);

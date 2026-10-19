@@ -19,8 +19,9 @@ import '../fixtures/new_map_harness.dart';
 
 void main() {
   final helper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
-  for (final mode in ['single', 'batch', 'mixed']) {
-    final batch = mode != 'single', mixed = mode == 'mixed';
+  for (final mode in ['single', 'batch', 'mixed', 'unit-addon', 'unit-nydus']) {
+    final unitMixed = mode.startsWith('unit-');
+    final batch = mode != 'single', mixed = mode == 'mixed' || unitMixed;
     for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
       test(
         'Doodad $overlay mode=$mode delete survives real MPQ Save As/reopen and preserves original',
@@ -55,7 +56,13 @@ void main() {
             operationProgressController: progress,
           );
           addTearDown(save.dispose);
-          final doc = batch
+          final doc = unitMixed
+                  ? doodadUnitDeletionDocument(
+                      overlay: overlay,
+                      batch: true,
+                      nydus: mode == 'unit-nydus',
+                    )
+                  : batch
                   ? batchDeletionDocument(overlay: overlay)
                   : deletionDocument(overlay: overlay),
               before = const RawChkEncoder().encode(doc);
@@ -91,6 +98,8 @@ void main() {
               ? editing.prepareDoodadDeletions(
                   batchDeletionRequests(overlay: overlay),
                   selectedSpriteRecordIndices: mixed ? [0, 1] : const [],
+                  selectedUnitRecordIndices: unitMixed ? [0] : const [],
+                  confirmedUnitPeerRecordIndices: unitMixed ? [1] : const [],
                 )
               : editing.prepareDoodadDeletion(
                   recipe: deletionRecipe(overlay: overlay),
@@ -139,6 +148,14 @@ void main() {
                   : 2,
             ),
           );
+          if (unitMixed) {
+            final units =
+                maps.state.session!.objectViews.unitSections.single.units;
+            expect(units.length, 2);
+            expect(units.first.classId, 12);
+            expect(units.first.relationFlags, 0);
+            expect(units.first.relationClassId, 0);
+          }
         },
         skip: !Platform.isWindows || helper == null
             ? 'Requires MAP_ARCHIVE_HELPER_PATH on Windows.'

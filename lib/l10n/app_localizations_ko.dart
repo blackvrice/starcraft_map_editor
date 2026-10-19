@@ -273,7 +273,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get doodadDeleteMixedSelection =>
-      '두다드와 스프라이트만 선택하세요. 유닛이나 로케이션이 섞인 선택은 삭제하지 않습니다.';
+      '두다드·유닛·스프라이트만 선택하세요. 로케이션이 섞인 선택은 삭제하지 않습니다.';
+
+  @override
+  String doodadDeleteUnitLimit(int count) {
+    return '두다드와 함께 삭제할 유닛은 $count개 이하로 선택하세요.';
+  }
+
+  @override
+  String get doodadDeleteAmbiguousUnits => '유닛 삭제에는 유일하고 완전한 UNIT 섹션이 필요합니다.';
+
+  @override
+  String get doodadDeleteUnitMixedTitle => '선택 객체 함께 삭제';
+
+  @override
+  String doodadDeleteUnitSummary(int doodads, int units, int sprites) {
+    return '두다드: $doodads · 유닛: $units · 선택 스프라이트: $sprites';
+  }
+
+  @override
+  String doodadDeleteUnitRecord(int index, int type) {
+    return 'UNIT 레코드 #$index · 종류 $type';
+  }
+
+  @override
+  String doodadDeleteUnitUnlink(int count) {
+    return '아래의 남은 연결 유닛 $count개 관계 해제를 확인합니다. 해당 유닛은 삭제하지 않습니다.';
+  }
 
   @override
   String doodadDeleteSpriteLimit(int count) {

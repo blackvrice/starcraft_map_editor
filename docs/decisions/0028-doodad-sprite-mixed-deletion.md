@@ -1,6 +1,6 @@
 # ADR-0028: 두다드와 스프라이트의 원자적 혼합 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0029](0029-unit-mixed-doodad-deletion.md)
 - Date: 2026-10-19
 - Supersedes: [ADR-0027](0027-atomic-batch-doodad-deletion.md)
 

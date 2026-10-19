@@ -611,8 +611,44 @@ abstract class AppLocalizations {
   /// No description provided for @doodadDeleteMixedSelection.
   ///
   /// In en, this message translates to:
-  /// **'Select Doodads and Sprites only. Unit and Location mixtures are not deleted.'**
+  /// **'Select Doodads, Units and Sprites only. Location mixtures are not deleted.'**
   String get doodadDeleteMixedSelection;
+
+  /// No description provided for @doodadDeleteUnitLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select no more than {count} Units for one Doodad deletion.'**
+  String doodadDeleteUnitLimit(int count);
+
+  /// No description provided for @doodadDeleteAmbiguousUnits.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit deletion requires one complete UNIT section.'**
+  String get doodadDeleteAmbiguousUnits;
+
+  /// No description provided for @doodadDeleteUnitMixedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete selected objects'**
+  String get doodadDeleteUnitMixedTitle;
+
+  /// No description provided for @doodadDeleteUnitSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Doodads: {doodads} · Units: {units} · Selected Sprites: {sprites}'**
+  String doodadDeleteUnitSummary(int doodads, int units, int sprites);
+
+  /// No description provided for @doodadDeleteUnitRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'UNIT record #{index} · type {type}'**
+  String doodadDeleteUnitRecord(int index, int type);
+
+  /// No description provided for @doodadDeleteUnitUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm unlinking {count} surviving connected Units listed below. They will not be deleted.'**
+  String doodadDeleteUnitUnlink(int count);
 
   /// No description provided for @doodadDeleteSpriteLimit.
   ///

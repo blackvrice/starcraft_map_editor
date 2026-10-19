@@ -1,9 +1,36 @@
 import 'dart:typed_data';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/chk/chk_basic_editing.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'basic_editing_fixture.dart';
+
+RawChkDocument doodadUnitDeletionDocument({
+  DoodadOverlaySemantic? overlay,
+  bool batch = false,
+  bool nydus = false,
+}) {
+  var doc = batch
+      ? batchDeletionDocument(overlay: overlay)
+      : deletionDocument(overlay: overlay);
+  final at = doc.sections.indexWhere((s) => s.name == 'UNIT');
+  final first = basicUnit(type: nydus ? 134 : 106, owner: 3, id: 11);
+  final second = basicUnit(type: nydus ? 134 : 107, owner: 3, id: 12);
+  second[29] = 0xab;
+  doc = doc.replaceSection(
+    at,
+    doc.sections[at].withPayload([
+      ...first,
+      ...second,
+      ...basicUnit(type: 37, id: 13, owner: 7),
+    ]),
+  );
+  doc = const ChkBasicEditing().linkUnits(doc, 0, 1, addon: !nydus);
+  return const RawChkParser()
+      .parse(const RawChkEncoder().encode(doc))
+      .document!;
+}
 
 DoodadPlacementRecipe deletionRecipe({DoodadOverlaySemantic? overlay}) =>
     DoodadPlacementRecipe(

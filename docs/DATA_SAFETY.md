@@ -7,8 +7,10 @@ flags를 자동 보정하지 않으며 선택하지 않은 bytes·원본 맵을 
 적용한다. 하나라도 실패하면 부분 삭제하지 않으며 overlay 중복 귀속도 거부한다.
 선택 Sprite 최대 256개와의 혼합 삭제는 명시 확인 overlay와 원본 THG2 인덱스
 합집합으로 한 번 적용한다. Sprite 선택은 귀속 확인을 대신하지 않으며 유일한
-완전한 THG2가 필요하다. 원래 문서/미선택 bytes·TILE을 보존하고 Unit/Location
-혼합은 거부한다([ADR-0028](decisions/0028-doodad-sprite-mixed-deletion.md)).
+완전한 THG2가 필요하다. 원래 문서/미선택 THG2 bytes·TILE을 보존한다.
+[ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)의 Unit 혼합은 양방향 관계
+검증과 남는 peer 집합의 명시 확인 후 관계 필드만 해제한다. 모호한 관계·잘린/
+중복 UNIT과 Location 혼합은 거부하며 미선택 peer을 자동 삭제하지 않는다.
 
 2026-10-19 [FR-320](SOURCE_WORKSPACE.md): bounded 루트 스캔·링크/이탈 거절,
 외부 변경 시 버퍼 보존/저장 차단, 예상 SHA·원본 백업·명시 저장을 제공한다.
