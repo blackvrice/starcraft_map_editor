@@ -218,6 +218,16 @@ analyze 무이슈·전체 2778 통과/119 조건부 skip·집중 666 통과/10 �
 최종 MPQ 39/39·Windows Debug 빌드·native CTest 7/7. 기존 미수정 포맷 3개·
 SDK 기준 차이와 실제 카탈로그/게임/외부 에디터 인수 대기는 유지한다.
 
+2026-10-20 준비 비용 후속: 두다드 삭제 계획 내부에서 원본 metadata/terrain/object
+view와 TILE 사본을 한 번만 읽도록 변경했다. 장기 cache 없이 각 대상의 tileset,
+geometry/전체 후보/overlay/복원 검사를 유지한다. 256x256 자체 제작 맵 32개 삭제의
+로컬 JIT 중앙값은 31.165ms에서 4.045ms로 측정됐다. 앱 지연/RSS 보장은 아니며
+측정 조건·요구사항·회귀·최종 게이트는 [삭제 계약](DOODAD_DELETION.md)에 기록한다.
+analyze 무이슈·전체 2787 통과/119 조건부 skip·최종 MPQ 39/39·Windows Debug
+빌드·native CTest 7/7. 최초 언어 설정 테스트 로딩 연결 종료는 단독 5/5와 전체
+재실행 통과로 구분 기록했다. 기존 미수정 포맷 3개·SDK 기준 차이와 실제 게임/
+외부 에디터 인수는 여전히 미완료다.
+
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현
 - [x] 선택 결과의 커서 ghost, 스냅, 단일/연속 배치와 `Escape` 취소 구현

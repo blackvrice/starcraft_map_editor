@@ -94,7 +94,7 @@ final class DoodadDeletionPlan {
     Map<int, Iterable<DoodadPlacementRecipe>> retainedNeighborCandidates =
         const {},
   }) => _create(
-    document: document,
+    source: _DoodadDeletionSource(document),
     recipe: recipe,
     recordIndex: recordIndex,
     confirmedOverlayRecordIndex: confirmedOverlayRecordIndex,
@@ -183,12 +183,13 @@ final class DoodadDeletionPlan {
       retainedNeighborRecipes,
       retainedNeighborCandidates,
     );
+    final source = _DoodadDeletionSource(document);
     final restored = <int, int>{};
     // Validate every request against the same immutable source before merging.
     // Deleting sequentially would shift DD2/THG2 indices and could leave partial edits.
     for (final request in items) {
       final plan = _create(
-        document: document,
+        source: source,
         recipe: request.recipe,
         recordIndex: request.recordIndex,
         confirmedOverlayRecordIndex: request.confirmedOverlayRecordIndex,
@@ -203,11 +204,7 @@ final class DoodadDeletionPlan {
         restored[tile.key] = tile.value;
       }
     }
-    final objects = const ChkObjectViewDecoder().decode(document),
-        terrain = const ChkTerrainViewDecoder()
-            .decode(document)
-            .tileMaps
-            .single;
+    final objects = source.objects, terrain = source.terrain;
     // Merge original THG2 indices, never indices from an already-deleted view.
     // A separately selected, explicitly confirmed overlay is removed only once.
     final spriteIndices = {...overlays, ...selectedSprites};
@@ -264,7 +261,7 @@ final class DoodadDeletionPlan {
   }
 
   static DoodadDeletionPlan _create({
-    required RawChkDocument document,
+    required _DoodadDeletionSource source,
     required DoodadPlacementRecipe recipe,
     required int recordIndex,
     required int? confirmedOverlayRecordIndex,
@@ -272,27 +269,18 @@ final class DoodadDeletionPlan {
     required _RetainedNeighborReview retainedNeighbors,
     bool buildReplacements = true,
   }) {
+    final document = source.document;
     Never reject(String reason) => throw StateError('DOODAD_DELETE: $reason');
-    int unique(String name) {
-      final indices = [
-        for (var i = 0; i < document.sections.length; i++)
-          if (document.sections[i].hasNameBytes(name.codeUnits)) i,
-      ];
-      if (indices.length != 1) reject('requires one $name section');
-      return indices.single;
-    }
+    final unique = source.unique;
 
     unique('DIM ');
     unique('ERA ');
     unique('MTXM');
     unique('DD2 ');
-    final underlyingIndex = unique('TILE');
-    final metadata = const ChkMetadataViewDecoder().decode(document);
-    final terrain = const ChkTerrainViewDecoder()
-        .decode(document)
-        .tileMaps
-        .single;
-    final objects = const ChkObjectViewDecoder().decode(document);
+    unique('TILE');
+    final metadata = source.metadata;
+    final terrain = source.terrain;
+    final objects = source.objects;
     if (metadata.tilesets.length != 1 ||
         metadata.tilesets.single.rawValue != recipe.tileset.rawValue ||
         terrain.width == null ||
@@ -363,11 +351,7 @@ final class DoodadDeletionPlan {
       }
       reject('nearby doodad ownership is ambiguous');
     }
-    final underlying = document.sections[underlyingIndex].payload;
-    if (underlying.length != terrain.width! * terrain.height! * 2) {
-      reject('invalid TILE length');
-    }
-    final data = ByteData.sublistView(underlying);
+    final data = source.underlying;
     final values = terrain.rawTileValues;
     final restoredTiles = <int, int>{};
     for (final cell in recipe.footprint) {
@@ -436,6 +420,41 @@ final class DoodadDeletionPlan {
         retainedNeighbors.verified.keys,
       ),
     );
+  }
+}
+
+/// Request-local only: every batch member reads the same original indices.
+/// Lazy decoding preserves validation order without caching across map edits.
+final class _DoodadDeletionSource {
+  _DoodadDeletionSource(this.document);
+
+  final RawChkDocument document;
+  final _uniqueIndices = <String, int>{};
+  late final metadata = const ChkMetadataViewDecoder().decode(document);
+  late final terrain = const ChkTerrainViewDecoder()
+      .decode(document)
+      .tileMaps
+      .single;
+  late final objects = const ChkObjectViewDecoder().decode(document);
+  late final underlying = _underlying();
+
+  int unique(String name) => _uniqueIndices.putIfAbsent(name, () {
+    final indices = [
+      for (var i = 0; i < document.sections.length; i++)
+        if (document.sections[i].hasNameBytes(name.codeUnits)) i,
+    ];
+    if (indices.length != 1) {
+      throw StateError('DOODAD_DELETE: requires one $name section');
+    }
+    return indices.single;
+  });
+
+  ByteData _underlying() {
+    final bytes = document.sections[unique('TILE')].payload;
+    if (bytes.length != terrain.width! * terrain.height! * 2) {
+      throw StateError('DOODAD_DELETE: invalid TILE length');
+    }
+    return ByteData.sublistView(bytes);
   }
 }
 

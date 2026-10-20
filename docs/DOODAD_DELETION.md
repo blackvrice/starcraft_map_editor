@@ -728,3 +728,86 @@ typed decode와 정확한 footprint 대조는 유지했다. 실제 시간/RSS �
 복원 정보 부족과 작업 예산 초과는 계속 거부한다. 다음 범위는 이런 입력을 추측
 복구하는 작업이 아니라, 지원 가능 근거 확정 또는 실제 상호 운용 검증이다.
 첫 미완료 M6.2 항목은 게임/외부 인수가 남아 열린 상태로 유지한다.
+
+## 삭제 준비 원본 해석 재사용
+
+2026-10-20. M6.2 첫 미완료 항목의 자동 검증 가능한 후속 최적화다. 삭제 지원
+범위와 ADR-0033의 보수적 검증 계약을 변경하지 않으며 게임/외부 인수를 대신하지 않는다.
+
+### 계획과 소스 분석
+
+기존 `createBatch`는 각 대상의 `_create`에서 metadata/terrain/object를 다시
+해석하고 TILE payload 사본을 만들었다. 최종 병합에서도 terrain/object를 다시
+해석했다. 최대 32개 대상에서는 metadata/TILE 32회, terrain/object 33회였다.
+같은 불변 원본 문서의 반복 작업이므로 계획 내부 재사용이 가능하다고 판단했다.
+대상마다 달라지는 recipe tileset, 상태, geometry, 후보 영역, overlay 및 복원값
+검사는 제거하지 않는다. 후보 검증의 기존 예산과 원본 인덱스 병합도 유지한다.
+
+### 실행과 요구사항 체크
+
+- [x] `_DoodadDeletionSource`는 단일/다중 호출마다 생성한다. 각 view와 TILE
+  ByteData는 필요할 때 한 번만 만들고, 성공한 섹션 유일성 조회만 재사용한다.
+- [x] 공개 API/삭제 결과는 그대로다. 문서 변경을 넘는 cache, I/O, 새 dependency는
+  없으며 준비 단계의 교체 섹션은 실제 Apply 이전에 원본에 반영하지 않는다.
+- [x] 기존 검증 순서를 유지한다. THG2를 쓰지 않는 no-overlay 삭제에 불필요한
+  THG2 존재 조건을 추가하지 않는다. 복잡한 수명/지연 해석의 이유를 주석으로 남겼다.
+- [x] NFR-006/009: 대형 맵 32개 정방향/역방향 입력의 기존 인덱스/예산을 유지한다.
+- [x] FR-203/204/217: 뒤쪽 대상의 다른 tileset도 여전히 거부하고, 필수 섹션
+  DIM/ERA/MTXM/DD2/TILE 중복을 거부한다. 오류 시 원본 bytes는 불변이다.
+- [x] FR-005/101/104: 256x256 맵의 전체 지형 복원, 미선택 DD2/다른 섹션 보존,
+  서로 다른 TILE 원본을 번갈아 준비해도 stale 값이 없는지 확인한다.
+
+새 domain 회귀는 `test/domain/placement/doodad_deletion_source_test.dart` 9종이다.
+기존 batch/복수 후보 테스트를 합친 최초 집중 실행은 **28 통과 / 실패 0**이다.
+fixture는 `NewMapFactory`로 온전한 256x256 raw-terrain 맵을 새로 만들고 자체
+DD2/THG2를 넣는다. DIM만 바꾼 불일치 맵이나 SC:R 추출 자산을 사용하지 않는다.
+
+### 전후 측정과 분석
+
+재현 명령: `dart run tool/doodad_deletion_benchmark.dart`.
+자체 제작 256x256 raw-terrain 맵, no-overlay 1x1 대상 1/8/32개, 동일 프로세스 내
+대상 수별 10회 warm-up 후 31회 측정한다. fixture 생성은 측정에서 제외하고
+계획 준비 전체를 잰다. 기존 구현과 변경 구현 각각 같은 명령을 한 번 실행했다.
+
+| 대상 수 | 변경 전 median / p95 (ms) | 변경 후 median / p95 (ms) |
+| --- | --- | --- |
+| 1 | 5.056 / 5.335 | 4.030 / 4.316 |
+| 8 | 11.314 / 12.646 | 3.992 / 4.755 |
+| 32 | 31.165 / 32.605 | 4.045 / 4.544 |
+
+32개 중앙값 약 87% 감소는 이 로컬 JIT synthetic 측정에 한정된다. timing assert를
+추가하지 않았으며 실사용 UI/카탈로그/대형 object 수, Profile/Release, 여러 실행의
+통계나 RSS/GPU는 측정하지 않았다. 구조적으로 32개 batch에서도 각 view/TILE은
+한 번만 만든다. UNIT/MRGN의 별도 혼합 삭제 검증이나 서로 다른 계획의 비용은
+합치지 않는다. 전체 DD2 영역 반복과 최종 출력 복사는 여전히 필요하다.
+
+### 최종 검증
+
+최초 전체 실행은 **2782 통과 / 119 조건부 skip / 로딩 실패 1**이었다.
+`app_language_controller_test.dart`가 `Connection closed before test suite loaded`로
+로드되지 않았다. 해당 파일을 단독 재실행한 결과 **5/5 통과**였고 소스를 수정하지
+않았다. 일시적인 로더/환경 문제 가능성이 있지만 원인을 확정하지 않으며,
+`.dart_tool/doodad-source-tests.log`에 실패를 남기고 전체 테스트를 다시 실행했다.
+
+- `flutter analyze`: **무이슈**. `.dart_tool/doodad-source-analyze.log`.
+- 최종 `flutter test`: **2787 통과 / 119 조건부 skip / 실패 0**, 1분 50초.
+  `.dart_tool/doodad-source-tests-final.log`. skip은 성공으로 계산하지 않는다.
+- `flutter build windows --debug`: **성공**, 17.1초.
+  `.dart_tool/doodad-source-windows-build.log`. 기존 CascLib CMake 최소 버전
+  deprecation 경고는 유지되며 네이티브 의존 revision은 변경하지 않았다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 빌드 helper를 `MAP_ARCHIVE_HELPER_PATH`로 지정한
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **39/39 통과**.
+  `.dart_tool/doodad-source-mpq-final.log`. 전체 실행에서 skip된 실제 MPQ 사례를
+  별도로 실행해 원본 bytes·미선택 이웃·한 Undo/Redo·Save As/재열기를 확인했다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: **exit 1**,
+  622개 검사 중 기존 미수정 `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개의 포맷 차이만 남는다. 변경 파일 포맷은 통과했고 무관한 파일은 수정하지
+  않았다. `.dart_tool/doodad-source-format.log`.
+- 실제 SDK는 **Flutter 3.47.5 / Dart 3.13.4**다. 기준 3.44.8/3.12와 CI 환경에서는
+  재검증하지 않았으므로 전체 필수 게이트/배포 인수 완료로 표현하지 않는다.
+
+실제 앱/SC:R/외부 에디터 조작은 자동 테스트/빌드만 허용한 사용자 지시에 따라
+수행하지 않는다. 첫 미완료 항목의 외부 인수, 불명확한 geometry, 실제 겹침/복원
+근거 부족은 이 변경으로 닫지 않는다.

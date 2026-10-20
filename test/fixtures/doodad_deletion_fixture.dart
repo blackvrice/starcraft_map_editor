@@ -2,9 +2,36 @@ import 'dart:typed_data';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
 import 'package:starcraft_map_editor/domain/chk/chk_basic_editing.dart';
+import 'package:starcraft_map_editor/domain/chk/new_map_factory.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'basic_editing_fixture.dart';
+
+/// A fresh full-size raw-terrain map, not a DIM-only resize of the small map.
+RawChkDocument largeBatchDeletionDocument({int count = 32}) {
+  final small = batchDeletionDocument(count: count);
+  var doc = const NewMapFactory().create(
+    NewMapOptions(width: 256, height: 256, rawTileValue: 1),
+  );
+  for (final name in ['DD2 ', 'THG2']) {
+    final at = doc.sections.indexWhere((s) => s.name == name);
+    doc = doc.replaceSection(
+      at,
+      doc.sections[at].withPayload(
+        small.sections.singleWhere((s) => s.name == name).payload,
+      ),
+    );
+  }
+  final at = doc.sections.indexWhere((s) => s.name == 'MTXM');
+  final bytes = doc.sections[at].payload;
+  final data = ByteData.sublistView(bytes);
+  for (var i = 0; i < count; i++) {
+    data.setUint16(((1 + i ~/ 16) * 256 + 1 + i % 16) * 2, 3200, Endian.little);
+  }
+  return doc
+      .replaceSection(at, doc.sections[at].withPayload(bytes))
+      .appendSection(basicSection('ZZZZ', [255, 0, 17]));
+}
 
 RawChkDocument doodadLocationDeletionDocument({
   DoodadOverlaySemantic? overlay,
