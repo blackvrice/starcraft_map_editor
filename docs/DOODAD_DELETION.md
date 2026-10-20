@@ -16,6 +16,11 @@
 **Unit 최대 256개까지 혼합 삭제**를 지원한다. 남는 상호 연결 유닛은 관계 해제를
 별도로 확인하며 Location 혼합과 게임/외부 에디터 인수는 남는다.
 
+2026-10-20 Location 후속: [ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md)에
+따라 저장된 일반 TRIG/MBRF에서 정적 미참조를 검증한 Location 최대 254개를
+혼합 삭제한다. 명시 확인한 MRGN 슬롯만 비우며 고정 ID/공유 문자열을 보존한다.
+이전 절의 미지원 문구는 당시 이력이며 최신 프로필/검증은 마지막 절을 따른다.
+
 ## 계획과 소스 분석
 
 1. 기존 삭제 계획/배치 정의/상태 편집/복합 clipboard/확인 창을 분석한다.
@@ -52,7 +57,8 @@ flags/unused가 모두 일치해야 한다. 후보가 한 개여도 자동 선�
 삭제는 MTXM 복원·대상 DD2·확인한 THG2를 한 명령으로 바꾼다. Unit 혼합은
 선택 UNIT와 명시 확인한 남는 peer의 관계 필드만 추가 변경한다. TILE과 다른
 레코드/원시 섹션은 유지하며 한 Undo로 복원한다. 준비 이후 문서 변경 또는
-필수 레이어 잠금은 적용을 막는다. Location 혼합·TILE 부재·불일치 상태는 미지원이다.
+필수 레이어 잠금은 적용을 막는다. Location 혼합은 명시 확인한 슬롯만 비운다.
+참조/미확인 트리거·Anywhere·TILE 부재·불일치 상태는 미지원이다.
 비활성 DD2에 활성 유닛형 overlay가 남은 불일치 입력도 자동 보정하지 않는다.
 
 확인 창은 대상 DD2 인덱스/종류/원시 상태와 recipe를 표시한다. 한영으로 번역하고
@@ -369,3 +375,79 @@ UNIT 스캔을 재사용했다. 확인 창 준비와 Apply에서 계획을 다�
 - SDK **Flutter 3.47.5 / Dart 3.13.4**를 사용했다. 기준 3.44.8/3.12와 CI에서
   재검증하지 않았다. Location 혼합과 실제 게임/외부 에디터·깨끗한 PC·고대비/DPI
   수동 인수는 미완료다. 자동 테스트·빌드 한정 지시대로 실제 앱을 조작하지 않았다.
+
+## Location 혼합 삭제 계획과 실행
+
+2026-10-20. 첫 미완료 M6.2의 미지원 사례 확대 중 정적 참조 검증형 Location
+혼합 삭제를 추가한다. 일반 객체 삭제 경로 전체의 정책을 바꾸는 작업은 아니다.
+
+1. 소스 분석: 기존 `deleteLocations`는 선택 MRGN의 20-byte 슬롯만 0으로
+   비우므로 ID가 밀리지 않는다. 하지만 이것만으로 트리거 미참조는 증명되지 않는다.
+   기존 맵 간 복사는 unknown/EUDX/예약 bytes까지 거부하는 portable 검증이 있다.
+2. 순수 `LocationDeletionPlan`에서 MRGN의 유일성/64·255 슬롯 구조와 선택
+   인덱스를 검사한다. 빈 슬롯/Anywhere 64·중복/범위 밖 값은 거부한다.
+3. 저장된 TRIG/MBRF 합계 4096개 이하를 검사한다. TRIG는 유일해야 하며 MBRF
+   부재는 허용한다. 잘림/중복은 거부한다. 엄격한 canonical 검증을
+   `ChkTriggerPortability`로 옮겨 문서 전송과 공유하며 기존 transfer 진단은 유지한다.
+4. 비활성 record/slot을 포함해 모든 알려진 location 인자를 조회한다. 조건·
+   액션·목적지에서 선택 ID가 사용되거나 slot을 해석할 수 없으면 전체 거부한다.
+   읽는 동안 트리거를 재작성하지 않으며 외부/EUD 동적 코드를 실행하지 않는다.
+5. 확인 창은 로케이션 ID/MRGN 인덱스·개수를 표시한다. 슬롯 비우기 checkbox가
+   확인돼야 Apply가 가능하며 domain도 정확한 `confirmedLocationRecordIndices`
+   집합을 요구한다. 외부 스크립트 참조는 미검증이라는 경고를 함께 표시한다.
+6. MRGN replacement를 기존 두다드/Unit/Sprite 계획과 결합하여 한 명령으로
+   적용한다. Location 레이어도 재검사한다. 취소/오류/잠금/문서 교체는 부분 적용하지
+   않는다. 선택하지 않은 슬롯·문자열·TRIG/MBRF·TILE/unknown bytes를 보존한다.
+
+### 최적화 판단과 한계
+
+중복된 portable 검증을 공유하여 소비자별 규칙이 달라지는 것을 막았다. canonical
+검증 뒤 location 인자를 조회하는 두 순회는 기존 검증 계약을 그대로 쓰기 위해
+유지한다. Trigger 총량은 payload 크기에서 먼저 검사한다. 선택/확인 iterable은
+255개까지만 읽고 최대 254개만 허용한다. 출력 MRGN은 한 번 생성한다.
+복원/관계 검증과 preview/Apply 재검증은 유지하며 실제 지연/RSS 개선은 미측정이다.
+정적 미참조는 저장된 canonical TRIG/MBRF 범위의 결과이지 외부/미적용 스크립트나
+런타임 동적 참조까지 없다는 보장이 아니다. 그 경계는 확인 창에서도 명시한다.
+
+### 요구사항과 테스트
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203/213 Location 포함 혼합 삭제 | 각 확인 후 다섯 레이어를 한 Undo/Redo | application/widget/MPQ |
+| FR-102/104 64/255 MRGN·공유 이름 | 선택 20-byte만 비움·ID/문자열/다른 슬롯 보존 | domain/MPQ |
+| FR-204/218 조건/액션/목적지·비활성 참조 | 사용 중 ID는 전체 거부 | domain/widget |
+| FR-204 unknown/EUDX/예약 bytes·잘린 섹션 | 미참조라고 추측하지 않음 | domain/기존 transfer 회귀 |
+| FR-203 Anywhere/빈 슬롯·잘못된 확인 집합 | 준비/적용 무변경 거부 | domain/widget |
+| FR-005/213 확인 중 잠금·조회 중 교체 | 맵/Undo 불변·다시 준비/해제 후 검증 | application/widget |
+| NFR-006/009 254/255 선택·무한 입력·TRIG 예산 | 254 허용·255까지만 읽음·4096개 상한 | domain/widget |
+| NFR-008 한영 600/1200px | 취소·세 확인·스크롤·재시도, 예외 없음 | widget |
+| FR-101/104 자체 제작 MPQ | Location/전체 혼합 포함 21종 Save As·재열기·원본 불변 | integration |
+
+집중 검증 **259개 통과**(Location domain 19 + Unit 15 + Sprite 10 + batch 6 +
+기존 transfer 12 + 객체 편집/위젯 176 + 실제 MPQ 21).
+`.dart_tool/doodad-location-focused.log`. 최초 analyze는 옮긴 검증의 미사용 비교
+함수 1개와 if 중괄호 3개를 지적했다. 미사용 함수를 제거하고 중괄호를 보완했다.
+참조/삭제 동작 테스트는 실패하지 않았다. 최종 게이트:
+
+- `flutter analyze`: 무이슈. `.dart_tool/doodad-location-analyze.log`.
+- `flutter test`: **2703 통과 / 101 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-location-full-tests.log`. 새 Location MPQ 6개를 포함한 skip을
+  성공으로 세지 않았으며 실제 MPQ는 별도 helper 지정 실행에서 확인했다.
+- `flutter build windows --debug`: 성공.
+  `.dart_tool/doodad-location-windows-build.log`. 기존 CascLib CMake 최소 버전 경고는 유지된다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 helper 경로를 `MAP_ARCHIVE_HELPER_PATH`로 지정하여 집중 회귀를 다시
+  실행했다. **259/259 통과**, 실제 MPQ **21/21 포함**.
+  `.dart_tool/doodad-location-focused-final.log`. 문자열/고정 ID·원본/Undo/재열기
+  bytes를 검증했으며 실제 게임 인수로 보지 않는다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: 기존 미수정
+  `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개 차이로 exit 1. 이번 변경 파일은 포맷 차이가 없다.
+  `.dart_tool/doodad-location-format.log`.
+- 실제 SDK **Flutter 3.47.5 / Dart 3.13.4**. 기준 3.44.8/3.12 및 CI 버전에서
+  재검증하지 않았다. 자동 통과를 전체 요구사항/배포 인수 완료로 표현하지 않는다.
+
+실제 앱/게임/외부 에디터·고대비/DPI·깨끗한 PC 인수는 자동 테스트·빌드만 허용한
+사용자 지시에 따라 수행하지 않는다. 참조 중인/미확인 Location의 삭제나 동적 EUD
+참조 재작성, 실제 겹침/미확인 이웃/복원 정보 부족의 두다드 삭제는 계속 미지원이다.

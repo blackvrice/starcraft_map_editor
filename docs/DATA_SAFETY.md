@@ -10,7 +10,11 @@ flags를 자동 보정하지 않으며 선택하지 않은 bytes·원본 맵을 
 완전한 THG2가 필요하다. 원래 문서/미선택 THG2 bytes·TILE을 보존한다.
 [ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)의 Unit 혼합은 양방향 관계
 검증과 남는 peer 집합의 명시 확인 후 관계 필드만 해제한다. 모호한 관계·잘린/
-중복 UNIT과 Location 혼합은 거부하며 미선택 peer을 자동 삭제하지 않는다.
+중복 UNIT은 거부하며 미선택 peer을 자동 삭제하지 않는다.
+2026-10-20 [ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md)의 Location
+혼합은 저장된 canonical TRIG/MBRF를 검사하고 참조/미확인 slot·Anywhere를 거부한다.
+명시 확인한 MRGN 슬롯만 비워 ID·공유 문자열·트리거 bytes를 보존한다. 외부 코드의
+동적 참조 부재를 보장하지 않으며 이를 확인 창에서 고지한다.
 
 2026-10-19 [FR-320](SOURCE_WORKSPACE.md): bounded 루트 스캔·링크/이탈 거절,
 외부 변경 시 버퍼 보존/저장 차단, 예상 SHA·원본 백업·명시 저장을 제공한다.

@@ -19,9 +19,19 @@ import '../fixtures/new_map_harness.dart';
 
 void main() {
   final helper = Platform.environment['MAP_ARCHIVE_HELPER_PATH'];
-  for (final mode in ['single', 'batch', 'mixed', 'unit-addon', 'unit-nydus']) {
-    final unitMixed = mode.startsWith('unit-');
-    final batch = mode != 'single', mixed = mode == 'mixed' || unitMixed;
+  for (final mode in [
+    'single',
+    'batch',
+    'mixed',
+    'unit-addon',
+    'unit-nydus',
+    'location',
+    'all',
+  ]) {
+    final unitMixed = mode.startsWith('unit-') || mode == 'all';
+    final locationMixed = mode == 'location' || mode == 'all';
+    final batch = mode != 'single',
+        mixed = mode == 'mixed' || unitMixed || locationMixed;
     for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
       test(
         'Doodad $overlay mode=$mode delete survives real MPQ Save As/reopen and preserves original',
@@ -56,7 +66,13 @@ void main() {
             operationProgressController: progress,
           );
           addTearDown(save.dispose);
-          final doc = unitMixed
+          final doc = locationMixed
+                  ? doodadLocationDeletionDocument(
+                      overlay: overlay,
+                      batch: true,
+                      units: unitMixed,
+                    )
+                  : unitMixed
                   ? doodadUnitDeletionDocument(
                       overlay: overlay,
                       batch: true,
@@ -100,6 +116,12 @@ void main() {
                   selectedSpriteRecordIndices: mixed ? [0, 1] : const [],
                   selectedUnitRecordIndices: unitMixed ? [0] : const [],
                   confirmedUnitPeerRecordIndices: unitMixed ? [1] : const [],
+                  selectedLocationRecordIndices: locationMixed
+                      ? [0, 254]
+                      : const [],
+                  confirmedLocationRecordIndices: locationMixed
+                      ? [254, 0]
+                      : const [],
                 )
               : editing.prepareDoodadDeletion(
                   recipe: deletionRecipe(overlay: overlay),
@@ -155,6 +177,19 @@ void main() {
             expect(units.first.classId, 12);
             expect(units.first.relationFlags, 0);
             expect(units.first.relationClassId, 0);
+          }
+          if (locationMixed) {
+            final locations = maps
+                .state
+                .session!
+                .objectViews
+                .locationSections
+                .single
+                .locations;
+            expect(locations.length, 255);
+            expect(locations[0].isBlank, isTrue);
+            expect(locations[254].isBlank, isTrue);
+            expect(locations[1].isBlank, isFalse);
           }
         },
         skip: !Platform.isWindows || helper == null

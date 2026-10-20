@@ -460,12 +460,15 @@ M6.2의 전체 배치 목록은 `application/ports`의
   CV5 group/member raw 값과 overlay ID 범위를 다시 검증한다.
 - 손상 Doodad는 page 전체 실패가 아니라 `doodadRecipeIssueCode`가 있는 항목으로
   격리한다. 검증된 recipe의 `DD2 `·`MTXM`·필요한 `THG2`를 원자적으로 배치하고
-  한 번에 Undo한다. 기존 Doodad 삭제는 [ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)의
+  한 번에 Undo한다. 기존 Doodad 삭제는 [ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md)의
   복원 정보·overlay 확인 조건을 적용한다. 탐색 자체는 CHK와 기록을 바꾸지 않는다.
   선택 Sprite 혼합은 원래 THG2 인덱스를 domain 계획에 전달하고 검증된 합집합을
   한 번 출력한다. UI는 바이너리/I/O를 호출하지 않으며 기존 공통 Undo로 적용한다.
   `UnitDeletionPlan`은 incoming 후보와 기존 unlink 검증으로 원본 UNIT replacement/
   남는 peer 목록을 만든다. Doodad 계획이 명시 확인 집합을 검사하고 결합한다.
+  `LocationDeletionPlan`은 고정 ID 슬롯과 저장된 트리거 참조를 검증한다.
+  `ChkTriggerPortability`는 맵 간 복사와 같은 엄격한 slot 검증을 공유한다. UI는
+  계획과 typed view만 읽고 MRGN 비우기 확인 집합을 application에 전달한다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.

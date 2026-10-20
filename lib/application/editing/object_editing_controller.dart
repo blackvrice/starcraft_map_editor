@@ -21,6 +21,7 @@ import '../../domain/chk/typed/chk_player_colors.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/unit_deletion_plan.dart';
+import '../../domain/placement/location_deletion_plan.dart';
 import '../../domain/placement/object_placement_factory.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
@@ -2015,6 +2016,7 @@ class ObjectEditingController {
       ))
         MapLayerType.sprites,
       if (plan.unitDeletion != null) MapLayerType.units,
+      if (plan.locationDeletion != null) MapLayerType.locations,
     ]) {
       if (!mapLayerController.state.statusOf(layer).isSelectable) {
         throw StateError('A required layer is locked.');
@@ -2038,6 +2040,8 @@ class ObjectEditingController {
     Iterable<int> selectedSpriteRecordIndices = const [],
     Iterable<int> selectedUnitRecordIndices = const [],
     Iterable<int> confirmedUnitPeerRecordIndices = const [],
+    Iterable<int> selectedLocationRecordIndices = const [],
+    Iterable<int> confirmedLocationRecordIndices = const [],
   }) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
@@ -2049,6 +2053,8 @@ class ObjectEditingController {
       selectedSpriteRecordIndices: selectedSpriteRecordIndices,
       selectedUnitRecordIndices: selectedUnitRecordIndices,
       confirmedUnitPeerRecordIndices: confirmedUnitPeerRecordIndices,
+      selectedLocationRecordIndices: selectedLocationRecordIndices,
+      confirmedLocationRecordIndices: confirmedLocationRecordIndices,
     );
   }
 
@@ -2058,6 +2064,17 @@ class ObjectEditingController {
       throw StateError('Open an editable map.');
     }
     return UnitDeletionPlan.create(
+      document: session.rawDocument,
+      recordIndices: recordIndices,
+    );
+  }
+
+  LocationDeletionPlan prepareLocationDeletion(Iterable<int> recordIndices) {
+    final session = openMapController.state.session;
+    if (session == null || !_isEditableSession(session)) {
+      throw StateError('Open an editable map.');
+    }
+    return LocationDeletionPlan.create(
       document: session.rawDocument,
       recordIndices: recordIndices,
     );

@@ -598,7 +598,7 @@ TECS/TECx와 PTEC/PTEx를 버전별로 선택하며 기본값 상속은 저장 �
 
 ## 기존 Doodad 복합 삭제 (2026-09-25)
 
-[ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md)의 단일/다중 Doodad 검증을 통과한
+[ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md)의 단일/다중 Doodad 검증을 통과한
 경우에만 기존 TILE을 원본 복원 정보로 읽고 MTXM의 recipe 쓰기 셀을 복원한다.
 DD2와 명시적으로 확인한 THG2 삭제는 같은 명령에 포함하며 TILE 자체는 바꾸지 않는다.
 누락/중복/잘린 복원 정보는 자동 보정하지 않고 전체 삭제를 거부한다.
@@ -609,7 +609,10 @@ pure sprite는 `0x1000`, sprite-unit은 활성 `0`/비활성 `0x8000`을 요구�
 선택 Sprite 최대 256개와 혼합할 때는 원본 THG2의 명시 확인 overlay/선택 인덱스
 합집합을 한 번 삭제한다. 중복/잘린 THG2는 거부한다. Unit 혼합은 원본 UNIT
 인덱스만 제거하고 검증·명시 확인한 남는 peer의 u16 관계 flags/u32 peer ID만
-해제한다. 다른 UNIT bytes와 MRGN/TRIG/TILE은 바꾸지 않는다.
+해제한다. 다른 UNIT bytes와 TRIG/TILE은 바꾸지 않는다. Location 혼합은 유일한
+64/255개 MRGN에서 명시 확인한 20-byte 슬롯만 비우며 배열 길이와 ID는 유지한다.
+공유 이름 문자열은 삭제/재할당하지 않는다. 저장된 일반 TRIG/MBRF에서 사용되는
+ID·Anywhere 64·미확인 트리거는 거부하며 동적 코드 참조는 분석하지 않는다.
 
 ## 일반 트리거·속성·스위치 (2026-09-27)
 

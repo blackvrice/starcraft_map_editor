@@ -611,8 +611,38 @@ abstract class AppLocalizations {
   /// No description provided for @doodadDeleteMixedSelection.
   ///
   /// In en, this message translates to:
-  /// **'Select Doodads, Units and Sprites only. Location mixtures are not deleted.'**
+  /// **'The selection contains an object that cannot be deleted.'**
   String get doodadDeleteMixedSelection;
+
+  /// No description provided for @doodadDeleteLocationLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select no more than {count} Locations for one Doodad deletion.'**
+  String doodadDeleteLocationLimit(int count);
+
+  /// No description provided for @doodadDeleteAmbiguousLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Location deletion requires one complete MRGN section.'**
+  String get doodadDeleteAmbiguousLocations;
+
+  /// No description provided for @doodadDeleteLocationUnsafe.
+  ///
+  /// In en, this message translates to:
+  /// **'The Locations are referenced or cannot be verified safely. Nothing was deleted.'**
+  String get doodadDeleteLocationUnsafe;
+
+  /// No description provided for @doodadDeleteLocationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear {count} selected Locations while retaining their IDs. External script references have not been verified.'**
+  String doodadDeleteLocationConfirm(int count);
+
+  /// No description provided for @doodadDeleteLocationRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Location {id} · MRGN record #{index}'**
+  String doodadDeleteLocationRecord(int id, int index);
 
   /// No description provided for @doodadDeleteUnitLimit.
   ///

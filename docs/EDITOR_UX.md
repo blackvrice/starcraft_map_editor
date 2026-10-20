@@ -419,8 +419,11 @@ TILE 부재, 겹침 가능성, 잠금, 변경된 지형, 모호한 섹션은 거
 확인해야 하며 양쪽에서 선택한 레코드는 한 번만 삭제한다. Unit도 최대 256개까지
 함께 삭제한다. 남는 연결 유닛은 UNIT 인덱스/종류로 표시하고 관계 해제 체크박스를
 확인하기 전에는 Apply를 막는다. 두 연결 유닛을 모두 선택하면 남는 peer 확인은 없다.
-Location 혼합·상한 초과·모호한 UNIT 관계·조회/확인 중 문서 변경은 무변경 거부한다.
-[ADR-0029](decisions/0029-unit-mixed-doodad-deletion.md).
+Location도 최대 254개까지 ID/MRGN 인덱스로 표시하고 슬롯 비우기 checkbox를
+확인해야 한다. 저장된 일반 트리거에서 참조되거나 참조 검증이 불가능하면 준비
+단계에서 거부한다. 외부 스크립트 참조가 미검증이라는 경고를 함께 표시한다.
+Anywhere·상한 초과·모호한 UNIT 관계·조회/확인 중 문서 변경은 무변경 거부한다.
+[ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md).
 
 EUD Project의 `Generation preview`는 후보 5개 필드의 정렬된 JSON 생성 명세를
 읽기 전용으로 표시한다. 실행 가능한 Python/epScript 생성이나 컴파일은 아직 아니며,

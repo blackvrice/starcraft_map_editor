@@ -1,7 +1,7 @@
 # 문서 인덱스
 
 [두다드 복합 삭제](DOODAD_DELETION.md): 최대 32개 일괄 삭제·비활성 지원·명시 overlay 귀속,
-Unit/Sprite 혼합 삭제·관계 해제 명시 확인·다종류 recipe 일괄 조회·지형 복원/Undo와 실제 MPQ 왕복 검증.
+Unit/Sprite/정적 미참조 Location 혼합 삭제·명시 확인·고정 ID·지형 복원/Undo와 실제 MPQ 왕복 검증.
 
 [여러 소스 편집](SOURCE_WORKSPACE.md): 소스 폴더/탭·정적 완성/검색·원본 진단,
 외부 변경/안전 저장·다중 초안 복구와 빌드 의존 파일 검증.

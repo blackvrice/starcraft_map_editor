@@ -16,6 +16,7 @@ import 'package:starcraft_map_editor/application/ports/map_file_picker.dart';
 import 'package:starcraft_map_editor/application/recent_projects/recent_projects_service.dart';
 import 'package:starcraft_map_editor/domain/assets/starcraft_data_asset_manifest.dart';
 import 'package:starcraft_map_editor/domain/chk/chk.dart';
+import 'package:starcraft_map_editor/domain/chk/typed/chk_trigger_editor.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.dart';
 import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'package:starcraft_map_editor/domain/placement/object_placement_factory.dart';
@@ -30,6 +31,7 @@ import '../fixtures/doodad_deletion_fixture.dart';
 import '../fixtures/basic_editing_fixture.dart';
 
 void main() {
+  _locationMixedDoodadDeletionTests();
   _unitMixedDoodadDeletionTests();
   _mixedDoodadSpriteDeletionTests();
   for (final available in [true, false]) {
@@ -143,20 +145,10 @@ void main() {
       tester,
     ) async {
       final count = kind == 'oversized' ? 33 : 2;
-      var doc = batchDeletionDocument(
+      final doc = batchDeletionDocument(
         count: count,
         overlay: DoodadOverlaySemantic.spriteUnit,
       );
-      if (kind == 'mixed') {
-        final at = doc.sections.indexWhere((s) => s.name == 'MRGN');
-        final bytes = doc.sections[at].payload;
-        ByteData.sublistView(bytes)
-          ..setUint32(0, 16, Endian.little)
-          ..setUint32(4, 16, Endian.little)
-          ..setUint32(8, 32, Endian.little)
-          ..setUint32(12, 32, Endian.little);
-        doc = doc.replaceSection(at, doc.sections[at].withPayload(bytes));
-      }
       final f = await _openFixture(mapBytes: const RawChkEncoder().encode(doc));
       addTearDown(f.dispose);
       final session = f.openMapController.state.session!,
@@ -175,7 +167,7 @@ void main() {
               layer: MapLayerType.locations,
               sectionIndex:
                   session.objectViews.locationSections.single.sectionIndex,
-              recordIndex: 0,
+              recordIndex: 63,
             ),
         ],
       );
@@ -2748,6 +2740,413 @@ final class _Fixture {
     await mapLayerController.dispose();
     await openMapController.dispose();
     await progressController.dispose();
+  }
+}
+
+void _locationMixedDoodadDeletionTests() {
+  for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
+    test(
+      'Location mixed $overlay clears slots and all five layers undo atomically',
+      () async {
+        final doc = doodadLocationDeletionDocument(
+          overlay: overlay,
+          batch: true,
+          units: true,
+        );
+        final f = await _openFixture(
+          mapBytes: const RawChkEncoder().encode(doc),
+        );
+        addTearDown(f.dispose);
+        final before = const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        );
+        final plan = f.controller.prepareDoodadDeletions(
+          batchDeletionRequests(overlay: overlay),
+          selectedLocationRecordIndices: [0, 254],
+          confirmedLocationRecordIndices: [254, 0],
+          selectedUnitRecordIndices: [0],
+          confirmedUnitPeerRecordIndices: [1],
+          selectedSpriteRecordIndices: [0, 1],
+        );
+        for (final layer in MapLayerType.values) {
+          f.mapLayerController.setLocked(layer, true);
+          expect(() => f.controller.deleteDoodad(plan), throwsStateError);
+          expect(f.openMapController.editHistory.undoDepth, 0);
+          expect(
+            const RawChkEncoder().encode(
+              f.openMapController.state.session!.rawDocument,
+            ),
+            before,
+          );
+          f.mapLayerController.setLocked(layer, false);
+        }
+        f.controller.deleteDoodad(plan);
+        final after = const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        );
+        final locations = f
+            .openMapController
+            .state
+            .session!
+            .objectViews
+            .locationSections
+            .single
+            .locations;
+        expect(locations.length, 255);
+        expect(locations[0].isBlank, isTrue);
+        expect(locations[254].isBlank, isTrue);
+        expect(locations[1].isBlank, isFalse);
+        expect(f.openMapController.editHistory.undoDepth, 1);
+        expect(f.controller.undo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          before,
+        );
+        expect(f.controller.redo(), isTrue);
+        expect(
+          const RawChkEncoder().encode(
+            f.openMapController.state.session!.rawDocument,
+          ),
+          after,
+        );
+        expect(() => f.controller.deleteDoodad(plan), throwsStateError);
+      },
+    );
+  }
+  for (final mode in ['referenced', 'stale', '254', '255']) {
+    testWidgets('Location mixed review handles $mode without partial editing', (
+      tester,
+    ) async {
+      var doc = doodadLocationDeletionDocument();
+      final limit = mode == '254' || mode == '255';
+      if (limit) {
+        final at = doc.sections.indexWhere((s) => s.name == 'MRGN');
+        final bytes = doc.sections[at].payload;
+        for (var i = 0; i < 255; i++) {
+          if (i != 63) {
+            bytes[i * 20] = 1;
+          }
+        }
+        doc = doc.replaceSection(at, doc.sections[at].withPayload(bytes));
+      }
+      if (mode == 'referenced') {
+        final op = TriggerOpcodes.actions.singleWhere((o) => o.id == 10);
+        final trigger = ChkTrigger.create().withSlot(
+          true,
+          0,
+          ChkTrigger.makeSlot(true, op, {'Location ID': 1}, doc),
+        );
+        final at = doc.sections.indexWhere((s) => s.name == 'TRIG');
+        doc = doc.replaceSection(
+          at,
+          doc.sections[at].withPayload(trigger.bytes),
+        );
+      }
+      final f = await _openFixture(mapBytes: const RawChkEncoder().encode(doc));
+      addTearDown(f.dispose);
+      final session = f.openMapController.state.session!;
+      final before = const RawChkEncoder().encode(session.rawDocument);
+      f.mapLayerController.selectObjects(
+        session: session,
+        objects: [
+          MapLayerObjectRef(
+            layer: MapLayerType.doodads,
+            sectionIndex:
+                session.objectViews.doodadSections.single.sectionIndex,
+            recordIndex: 0,
+          ),
+          for (final i
+              in limit
+                  ? [
+                      for (var i = 0; i < 255; i++)
+                        if (mode == '255' || i != 63) i,
+                    ]
+                  : [0])
+            MapLayerObjectRef(
+              layer: MapLayerType.locations,
+              sectionIndex:
+                  session.objectViews.locationSections.single.sectionIndex,
+              recordIndex: i,
+            ),
+        ],
+      );
+      final catalog = _DeletionCatalog(deletionRecipe());
+      if (mode == 'stale') {
+        catalog.beforeList = () async {
+          await f.openMapController.open(sourcePath: r'C:\Maps\Placement.scx');
+        };
+      }
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => deleteObjectsWithDoodadReview(
+                  context,
+                  f.controller,
+                  catalog,
+                ),
+                child: const Text('Delete selection'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Delete selection'));
+      await tester.pumpAndSettle();
+      expect(
+        const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(f.openMapController.editHistory.undoDepth, 0);
+      expect(catalog.calls, mode == 'stale' || mode == '254' ? 1 : 0);
+      if (mode == '254') {
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(const Key('doodad-delete-apply')),
+              )
+              .onPressed,
+          isNull,
+        );
+        await tester.tap(
+          find.byKey(const Key('doodad-delete-location-confirm')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+        await tester.pumpAndSettle();
+        expect(f.openMapController.editHistory.undoDepth, 1);
+        expect(
+          f
+              .openMapController
+              .state
+              .session!
+              .objectViews
+              .locationSections
+              .single
+              .locations
+              .where((l) => !l.isBlank)
+              .length,
+          1,
+        );
+      } else {
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(SnackBar), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+  for (final (width, locale) in [
+    (600.0, const Locale('ko')),
+    (1200.0, const Locale('en')),
+  ]) {
+    for (final units in [false, true]) {
+      testWidgets(
+        'Location mixed confirms all effects at $width units=$units',
+        (tester) async {
+          tester.view.physicalSize = Size(width, 850);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          const overlay = DoodadOverlaySemantic.spriteUnit;
+          final doc = doodadLocationDeletionDocument(
+            overlay: overlay,
+            units: units,
+          );
+          final f = await _openFixture(
+            mapBytes: const RawChkEncoder().encode(doc),
+          );
+          addTearDown(f.dispose);
+          final session = f.openMapController.state.session!;
+          final before = const RawChkEncoder().encode(session.rawDocument);
+          f.mapLayerController.selectObjects(
+            session: session,
+            objects: [
+              MapLayerObjectRef(
+                layer: MapLayerType.doodads,
+                sectionIndex:
+                    session.objectViews.doodadSections.single.sectionIndex,
+                recordIndex: 0,
+              ),
+              MapLayerObjectRef(
+                layer: MapLayerType.locations,
+                sectionIndex:
+                    session.objectViews.locationSections.single.sectionIndex,
+                recordIndex: 0,
+              ),
+              if (units)
+                MapLayerObjectRef(
+                  layer: MapLayerType.units,
+                  sectionIndex:
+                      session.objectViews.unitSections.single.sectionIndex,
+                  recordIndex: 0,
+                ),
+              for (final i in [0, 1])
+                MapLayerObjectRef(
+                  layer: MapLayerType.sprites,
+                  sectionIndex:
+                      session.objectViews.spriteSections.single.sectionIndex,
+                  recordIndex: i,
+                ),
+            ],
+          );
+          final catalog = _DeletionCatalog(deletionRecipe(overlay: overlay));
+          await tester.pumpWidget(
+            MaterialApp(
+              locale: locale,
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              home: Scaffold(
+                body: Builder(
+                  builder: (context) => TextButton(
+                    onPressed: () => deleteObjectsWithDoodadReview(
+                      context,
+                      f.controller,
+                      catalog,
+                    ),
+                    child: const Text('Delete selection'),
+                  ),
+                ),
+              ),
+            ),
+          );
+          final scrollable = find
+              .descendant(
+                of: find.byType(AlertDialog),
+                matching: find.byType(Scrollable),
+              )
+              .first;
+          for (final apply in [false, true]) {
+            await tester.tap(find.text('Delete selection'));
+            await tester.pumpAndSettle();
+            expect(
+              find.text(
+                locale.languageCode == 'ko'
+                    ? '선택 객체 함께 삭제'
+                    : 'Delete selected objects',
+              ),
+              findsOneWidget,
+            );
+            expect(
+              tester
+                  .widget<FilledButton>(
+                    find.byKey(const Key('doodad-delete-apply')),
+                  )
+                  .onPressed,
+              isNull,
+            );
+            if (!apply) {
+              await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+              await tester.pumpAndSettle();
+              expect(
+                const RawChkEncoder().encode(
+                  f.openMapController.state.session!.rawDocument,
+                ),
+                before,
+              );
+              expect(f.openMapController.editHistory.undoDepth, 0);
+              continue;
+            }
+            await tester.scrollUntilVisible(
+              find.byKey(const Key('doodad-delete-overlay-0')),
+              150,
+              scrollable: scrollable,
+            );
+            await tester.tap(find.byKey(const Key('doodad-delete-overlay-0')));
+            await tester.pumpAndSettle();
+            await tester.tap(
+              find
+                  .text(
+                    locale.languageCode == 'ko'
+                        ? 'THG2 레코드 #1 · 종류 100'
+                        : 'THG2 record #1 · type 100',
+                  )
+                  .last,
+            );
+            await tester.pumpAndSettle();
+            expect(
+              tester
+                  .widget<FilledButton>(
+                    find.byKey(const Key('doodad-delete-apply')),
+                  )
+                  .onPressed,
+              isNull,
+            );
+            if (units) {
+              await tester.scrollUntilVisible(
+                find.byKey(const Key('doodad-delete-unit-unlink')),
+                -150,
+                scrollable: scrollable,
+              );
+              await tester.tap(
+                find.byKey(const Key('doodad-delete-unit-unlink')),
+              );
+              await tester.pumpAndSettle();
+            }
+            expect(
+              tester
+                  .widget<FilledButton>(
+                    find.byKey(const Key('doodad-delete-apply')),
+                  )
+                  .onPressed,
+              isNull,
+            );
+            await tester.scrollUntilVisible(
+              find.byKey(const Key('doodad-delete-location-confirm')),
+              -150,
+              scrollable: scrollable,
+            );
+            await tester.tap(
+              find.byKey(const Key('doodad-delete-location-confirm')),
+            );
+            await tester.pumpAndSettle();
+            f.mapLayerController.setLocked(MapLayerType.locations, true);
+            await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+            await tester.pumpAndSettle();
+            expect(find.byType(AlertDialog), findsOneWidget);
+            expect(f.openMapController.editHistory.undoDepth, 0);
+            expect(
+              const RawChkEncoder().encode(
+                f.openMapController.state.session!.rawDocument,
+              ),
+              before,
+            );
+            f.mapLayerController.setLocked(MapLayerType.locations, false);
+            await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+            await tester.pumpAndSettle();
+          }
+          expect(find.byType(AlertDialog), findsNothing);
+          expect(f.openMapController.editHistory.undoDepth, 1);
+          expect(
+            f
+                .openMapController
+                .state
+                .session!
+                .objectViews
+                .locationSections
+                .single
+                .locations[0]
+                .isBlank,
+            isTrue,
+          );
+          expect(f.controller.undo(), isTrue);
+          expect(
+            const RawChkEncoder().encode(
+              f.openMapController.state.session!.rawDocument,
+            ),
+            before,
+          );
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+        },
+      );
+    }
   }
 }
 

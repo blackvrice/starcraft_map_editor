@@ -6,6 +6,37 @@ import 'package:starcraft_map_editor/domain/placement/doodad_placement_recipe.da
 import 'package:starcraft_map_editor/domain/placement/doodad_deletion_plan.dart';
 import 'basic_editing_fixture.dart';
 
+RawChkDocument doodadLocationDeletionDocument({
+  DoodadOverlaySemantic? overlay,
+  bool batch = false,
+  bool units = false,
+}) {
+  final doc = units
+      ? doodadUnitDeletionDocument(overlay: overlay, batch: batch)
+      : batch
+      ? batchDeletionDocument(overlay: overlay)
+      : deletionDocument(overlay: overlay);
+  final at = doc.sections.indexWhere((s) => s.name == 'MRGN');
+  final bytes = doc.sections[at].payload;
+  final data = ByteData.sublistView(bytes);
+  for (final index in [0, 1, 254]) {
+    data
+      ..setUint32(index * 20, 32, Endian.little)
+      ..setUint32(index * 20 + 4, 64, Endian.little)
+      ..setUint32(index * 20 + 8, 96, Endian.little)
+      ..setUint32(index * 20 + 12, 128, Endian.little)
+      ..setUint16(index * 20 + 16, 4, Endian.little)
+      ..setUint16(index * 20 + 18, 0x23, Endian.little);
+  }
+  return const RawChkParser()
+      .parse(
+        const RawChkEncoder().encode(
+          doc.replaceSection(at, doc.sections[at].withPayload(bytes)),
+        ),
+      )
+      .document!;
+}
+
 RawChkDocument doodadUnitDeletionDocument({
   DoodadOverlaySemantic? overlay,
   bool batch = false,

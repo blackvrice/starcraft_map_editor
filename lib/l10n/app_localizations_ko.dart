@@ -272,8 +272,30 @@ class AppLocalizationsKo extends AppLocalizations {
       '캔버스 소유자 표식에 설정 색상을 표시합니다. 스프라이트 재색상과 무작위·플레이어 선택 색상은 모의하지 않습니다.';
 
   @override
-  String get doodadDeleteMixedSelection =>
-      '두다드·유닛·스프라이트만 선택하세요. 로케이션이 섞인 선택은 삭제하지 않습니다.';
+  String get doodadDeleteMixedSelection => '선택에 삭제할 수 없는 객체가 포함되어 있습니다.';
+
+  @override
+  String doodadDeleteLocationLimit(int count) {
+    return '두다드와 함께 비울 로케이션은 $count개 이하로 선택하세요.';
+  }
+
+  @override
+  String get doodadDeleteAmbiguousLocations =>
+      '로케이션 삭제에는 유일하고 완전한 MRGN 섹션이 필요합니다.';
+
+  @override
+  String get doodadDeleteLocationUnsafe =>
+      '사용 중이거나 참조를 안전하게 확인할 수 없는 로케이션입니다. 삭제하지 않았습니다.';
+
+  @override
+  String doodadDeleteLocationConfirm(int count) {
+    return '선택한 로케이션 $count개를 ID를 유지한 채 비웁니다. 외부 스크립트 참조는 확인되지 않았습니다.';
+  }
+
+  @override
+  String doodadDeleteLocationRecord(int id, int index) {
+    return '로케이션 $id · MRGN 레코드 #$index';
+  }
 
   @override
   String doodadDeleteUnitLimit(int count) {

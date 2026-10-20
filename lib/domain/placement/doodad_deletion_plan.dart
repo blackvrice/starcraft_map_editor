@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../chk/chk.dart';
 import 'doodad_placement_recipe.dart';
 import 'unit_deletion_plan.dart';
+import 'location_deletion_plan.dart';
 
 final class DoodadDeletionRequest {
   const DoodadDeletionRequest({
@@ -26,12 +27,14 @@ final class DoodadDeletionPlan {
     this.overlayCount,
     this.spriteCount, {
     this.unitDeletion,
+    this.locationDeletion,
   });
   final RawChkDocument document;
   final Map<int, RawChkSection> replacements;
   final Map<int, int> _restoredTiles;
   final int doodadCount, overlayCount, spriteCount;
   final UnitDeletionPlan? unitDeletion;
+  final LocationDeletionPlan? locationDeletion;
   static const maximumBatchSize = 32;
   static const maximumSelectedSprites = 256;
 
@@ -54,6 +57,8 @@ final class DoodadDeletionPlan {
     Iterable<int> selectedSpriteRecordIndices = const [],
     Iterable<int> selectedUnitRecordIndices = const [],
     Iterable<int> confirmedUnitPeerRecordIndices = const [],
+    Iterable<int> selectedLocationRecordIndices = const [],
+    Iterable<int> confirmedLocationRecordIndices = const [],
   }) {
     final items = requests.take(maximumBatchSize + 1).toList();
     if (items.isEmpty || items.length > maximumBatchSize) {
@@ -65,6 +70,26 @@ final class DoodadDeletionPlan {
     if (selectedSprites.length > maximumSelectedSprites ||
         selectedSprites.toSet().length != selectedSprites.length) {
       throw StateError('DOODAD_DELETE: selected sprite count or duplicates');
+    }
+    final locationIndices = selectedLocationRecordIndices
+        .take(LocationDeletionPlan.maximumSelectedLocations + 1)
+        .toList();
+    final locationDeletion = locationIndices.isEmpty
+        ? null
+        : LocationDeletionPlan.create(
+            document: document,
+            recordIndices: locationIndices,
+          );
+    final confirmedLocations = confirmedLocationRecordIndices
+        .take(LocationDeletionPlan.maximumSelectedLocations + 1)
+        .toList();
+    final expectedLocations = locationDeletion?.recordIndices ?? const <int>{};
+    if (confirmedLocations.length != expectedLocations.length ||
+        confirmedLocations.toSet().length != confirmedLocations.length ||
+        !expectedLocations.containsAll(confirmedLocations)) {
+      throw StateError(
+        'LOCATION_DELETE: explicit slot clearing confirmation required',
+      );
     }
     final unitIndices = selectedUnitRecordIndices
         .take(UnitDeletionPlan.maximumSelectedUnits + 1)
@@ -153,6 +178,8 @@ final class DoodadDeletionPlan {
       dd.sectionIndex: editor.deleteDoodads(dd, records),
       if (unitDeletion != null)
         unitDeletion.sectionIndex: unitDeletion.replacement,
+      if (locationDeletion != null)
+        locationDeletion.sectionIndex: locationDeletion.replacement,
     };
     if (spriteIndices.isNotEmpty) {
       final sprites = objects.spriteSections.single;
@@ -169,6 +196,7 @@ final class DoodadDeletionPlan {
       overlays.length,
       spriteIndices.length,
       unitDeletion: unitDeletion,
+      locationDeletion: locationDeletion,
     );
   }
 

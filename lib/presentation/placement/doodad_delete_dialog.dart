@@ -6,6 +6,7 @@ import '../../application/placement/placement_catalog_controller.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
 import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/unit_deletion_plan.dart';
+import '../../domain/placement/location_deletion_plan.dart';
 import '../../domain/chk/typed/chk_object_views.dart';
 import '../../application/documents/opened_map_session.dart';
 import '../localization/l10n.dart';
@@ -25,7 +26,8 @@ Future<void> deleteObjectsWithDoodadReview(
       (s) =>
           s.object.layer != MapLayerType.doodads &&
           s.object.layer != MapLayerType.sprites &&
-          s.object.layer != MapLayerType.units,
+          s.object.layer != MapLayerType.units &&
+          s.object.layer != MapLayerType.locations,
     )) {
       throw StateError(context.l10n.doodadDeleteMixedSelection);
     }
@@ -37,6 +39,9 @@ Future<void> deleteObjectsWithDoodadReview(
         .toList();
     final units = selected
         .where((s) => s.object.layer == MapLayerType.units)
+        .toList();
+    final locations = selected
+        .where((s) => s.object.layer == MapLayerType.locations)
         .toList();
     if (doodads.length > DoodadDeletionPlan.maximumBatchSize) {
       throw StateError(
@@ -59,6 +64,13 @@ Future<void> deleteObjectsWithDoodadReview(
         ),
       );
     }
+    if (locations.length > LocationDeletionPlan.maximumSelectedLocations) {
+      throw StateError(
+        context.l10n.doodadDeleteLocationLimit(
+          LocationDeletionPlan.maximumSelectedLocations,
+        ),
+      );
+    }
     final session = editing.openMapController.state.session!;
     if (session.objectViews.spriteSections.length > 1) {
       throw StateError(context.l10n.doodadDeleteAmbiguousSprites);
@@ -72,6 +84,7 @@ Future<void> deleteObjectsWithDoodadReview(
         doodads,
         sprites,
         units,
+        locations,
       );
       return;
     }
@@ -253,7 +266,26 @@ Future<void> _reviewBatch(
   List<MapLayerSelection> selected,
   List<MapLayerSelection> sprites,
   List<MapLayerSelection> units,
+  List<MapLayerSelection> locations,
 ) async {
+  if (locations.any(
+    (s) =>
+        session.objectViews.locationSections.length != 1 ||
+        s.object.sectionIndex !=
+            session.objectViews.locationSections.single.sectionIndex,
+  )) {
+    throw StateError(context.l10n.doodadDeleteAmbiguousLocations);
+  }
+  final LocationDeletionPlan? locationPlan;
+  try {
+    locationPlan = locations.isEmpty
+        ? null
+        : editing.prepareLocationDeletion(
+            locations.map((s) => s.object.recordIndex),
+          );
+  } on Object catch (failure) {
+    throw StateError('${context.l10n.doodadDeleteLocationUnsafe}\n$failure');
+  }
   if (units.any(
     (s) =>
         session.objectViews.unitSections.length != 1 ||
@@ -301,18 +333,20 @@ Future<void> _reviewBatch(
   String? error;
   var unlinkConfirmed =
       unitPlan == null || unitPlan.unlinkedPeerRecordIndices.isEmpty;
+  var locationsConfirmed = locationPlan == null;
   await showDialog<void>(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (context, update) {
         final ready =
             unlinkConfirmed &&
+            locationsConfirmed &&
             reviews.every(
               (r) => r.recipe.overlay == null || r.overlayIndex != null,
             );
         return AlertDialog(
           title: Text(
-            units.isNotEmpty
+            units.isNotEmpty || locations.isNotEmpty
                 ? context.l10n.doodadDeleteUnitMixedTitle
                 : sprites.isEmpty
                 ? context.l10n.doodadDeleteBatchTitle(reviews.length)
@@ -330,7 +364,7 @@ Future<void> _reviewBatch(
                 Expanded(
                   child: ListView(
                     children: [
-                      if (unitPlan != null) ...[
+                      if (unitPlan != null || locationPlan != null)
                         Text(
                           context.l10n.doodadDeleteUnitSummary(
                             reviews.length,
@@ -338,6 +372,32 @@ Future<void> _reviewBatch(
                             sprites.length,
                           ),
                         ),
+                      if (locationPlan != null) ...[
+                        CheckboxListTile(
+                          key: const Key('doodad-delete-location-confirm'),
+                          value: locationsConfirmed,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            context.l10n.doodadDeleteLocationConfirm(
+                              locations.length,
+                            ),
+                          ),
+                          onChanged: (value) => update(() {
+                            locationsConfirmed = value!;
+                            error = null;
+                          }),
+                        ),
+                        for (final index in locationPlan.recordIndices)
+                          Text(
+                            context.l10n.doodadDeleteLocationRecord(
+                              index + 1,
+                              index,
+                            ),
+                          ),
+                        const Divider(),
+                      ],
+                      if (unitPlan != null) ...[
                         for (final selection in units)
                           Text(
                             context.l10n.doodadDeleteUnitRecord(
@@ -521,6 +581,11 @@ Future<void> _reviewBatch(
                           ),
                           confirmedUnitPeerRecordIndices:
                               unitPlan?.unlinkedPeerRecordIndices ?? const [],
+                          selectedLocationRecordIndices: locations.map(
+                            (s) => s.object.recordIndex,
+                          ),
+                          confirmedLocationRecordIndices:
+                              locationPlan?.recordIndices ?? const [],
                         );
                         editing.deleteDoodad(plan);
                         Navigator.pop(dialogContext);

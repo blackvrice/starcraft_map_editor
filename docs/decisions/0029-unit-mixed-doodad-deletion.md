@@ -1,6 +1,6 @@
 # ADR-0029: 유닛 관계 확인을 포함한 두다드 혼합 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0030](0030-reviewed-location-mixed-deletion.md)
 - Date: 2026-10-19
 - Supersedes: [ADR-0028](0028-doodad-sprite-mixed-deletion.md)
 

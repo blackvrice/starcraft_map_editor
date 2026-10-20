@@ -280,7 +280,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get doodadDeleteMixedSelection =>
-      'Select Doodads, Units and Sprites only. Location mixtures are not deleted.';
+      'The selection contains an object that cannot be deleted.';
+
+  @override
+  String doodadDeleteLocationLimit(int count) {
+    return 'Select no more than $count Locations for one Doodad deletion.';
+  }
+
+  @override
+  String get doodadDeleteAmbiguousLocations =>
+      'Location deletion requires one complete MRGN section.';
+
+  @override
+  String get doodadDeleteLocationUnsafe =>
+      'The Locations are referenced or cannot be verified safely. Nothing was deleted.';
+
+  @override
+  String doodadDeleteLocationConfirm(int count) {
+    return 'Clear $count selected Locations while retaining their IDs. External script references have not been verified.';
+  }
+
+  @override
+  String doodadDeleteLocationRecord(int id, int index) {
+    return 'Location $id · MRGN record #$index';
+  }
 
   @override
   String doodadDeleteUnitLimit(int count) {
