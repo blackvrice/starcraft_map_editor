@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import '../../domain/assets/starcraft_data_asset_manifest.dart';
 import '../../domain/diagnostics/editor_diagnostic.dart';
 import '../../domain/placement/doodad_placement_recipe.dart';
+import '../../domain/placement/doodad_deletion_plan.dart';
 import '../../domain/placement/unit_placement_capability.dart';
 import '../../domain/placement/unit_collision_catalog.dart';
 import '../../domain/placement/unit_resource_distance_catalog.dart';
@@ -538,7 +539,7 @@ class PlacementCatalogController {
 
   Stream<PlacementCatalogState> get changes => _changes.stream;
 
-  static const maximumDoodadRecipeTypes = 32;
+  static const maximumDoodadRecipeTypes = DoodadDeletionPlan.maximumRecipeTypes;
   int _doodadRecipeEpoch = 0;
   int _doodadRecipeSequence = 0;
   final _doodadRecipeOperations = <String>{};

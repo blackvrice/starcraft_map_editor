@@ -38,8 +38,50 @@ final class DoodadDeletionPlan {
   final LocationDeletionPlan? locationDeletion;
   final Set<int> preservedNeighborRecordIndices;
   static const maximumBatchSize = 32;
+  static const maximumRecipeTypes = 32;
   static const maximumSelectedSprites = 256;
   static const maximumPreservedNeighbors = 256;
+  static const _maximumHalfExtent =
+      DoodadPlacementRecipe.maximumFootprintAxis *
+      DoodadPlacementRecipe.halfTilePixels;
+
+  /// Chooses metadata types, not deletion targets. Before recipes are loaded,
+  /// both centers need their maximum possible half-extent. Exceeding the lookup
+  /// budget falls back to selected types; Apply still performs the exact checks.
+  static Set<int> recipeLookupTypes({
+    required ChkDoodadSectionView section,
+    required Iterable<int> recordIndices,
+  }) {
+    final indices = recordIndices.take(maximumBatchSize + 1).toList();
+    final selectedIndices = indices.toSet();
+    if (indices.isEmpty ||
+        indices.length > maximumBatchSize ||
+        selectedIndices.length != indices.length ||
+        indices.any((i) => i < 0 || i >= section.doodads.length)) {
+      throw StateError('DOODAD_DELETE: invalid recipe lookup selection');
+    }
+    final selected = [for (final i in indices) section.doodads[i]];
+    final selectedTypes = selected.map((d) => d.doodadType).toSet();
+    final types = {...selectedTypes};
+    var neighborCount = 0;
+    for (final other in section.doodads) {
+      if (selectedIndices.contains(other.recordIndex) ||
+          !selected.any(
+            (d) =>
+                (d.x - other.x).abs() < _maximumHalfExtent * 2 &&
+                (d.y - other.y).abs() < _maximumHalfExtent * 2,
+          )) {
+        continue;
+      }
+      neighborCount++;
+      types.add(other.doodadType);
+      if (neighborCount > maximumPreservedNeighbors ||
+          types.length > maximumRecipeTypes) {
+        return Set.unmodifiable(selectedTypes);
+      }
+    }
+    return Set.unmodifiable(types);
+  }
 
   static DoodadDeletionPlan create({
     required RawChkDocument document,
@@ -53,9 +95,7 @@ final class DoodadDeletionPlan {
     recordIndex: recordIndex,
     confirmedOverlayRecordIndex: confirmedOverlayRecordIndex,
     reviewedNeighbors: const {},
-    retainedNeighbors: _RetainedNeighborReview(retainedNeighborRecipes, {
-      recipe.doodadType,
-    }),
+    retainedNeighbors: _RetainedNeighborReview(retainedNeighborRecipes),
   );
 
   static DoodadDeletionPlan createBatch({
@@ -130,10 +170,7 @@ final class DoodadDeletionPlan {
       throw StateError('DOODAD_DELETE: duplicate record ownership');
     }
     final neighbors = {for (final r in items) r.recordIndex: r.recipe};
-    final retained = _RetainedNeighborReview(
-      retainedNeighborRecipes,
-      items.map((r) => r.recipe.doodadType).toSet(),
-    );
+    final retained = _RetainedNeighborReview(retainedNeighborRecipes);
     final restored = <int, int>{};
     // Validate every request against the same immutable source before merging.
     // Deleting sequentially would shift DD2/THG2 indices and could leave partial edits.
@@ -284,10 +321,10 @@ final class DoodadDeletionPlan {
       if (other.recordIndex == recordIndex) continue;
       var reviewed = reviewedNeighbors[other.recordIndex];
       if (reviewed == null) {
-        if (!(other.x + 256 > dx &&
-            other.x - 256 < dx + recipe.width * 32 &&
-            other.y + 256 > dy &&
-            other.y - 256 < dy + recipe.height * 32)) {
+        if (!(other.x + _maximumHalfExtent > dx &&
+            other.x - _maximumHalfExtent < dx + recipe.width * 32 &&
+            other.y + _maximumHalfExtent > dy &&
+            other.y - _maximumHalfExtent < dy + recipe.height * 32)) {
           continue;
         }
         reviewed = retainedNeighbors.verify(
@@ -388,14 +425,9 @@ final class DoodadDeletionPlan {
 /// These recipes describe retained objects, not additional deletion requests.
 /// The caller must supply only types with exactly one catalog candidate.
 final class _RetainedNeighborReview {
-  _RetainedNeighborReview(
-    Map<int, DoodadPlacementRecipe> recipes,
-    Set<int> selectedTypes,
-  ) {
-    if (recipes.length > DoodadDeletionPlan.maximumBatchSize ||
-        recipes.entries.any(
-          (e) => !selectedTypes.contains(e.key) || e.value.doodadType != e.key,
-        )) {
+  _RetainedNeighborReview(Map<int, DoodadPlacementRecipe> recipes) {
+    if (recipes.length > DoodadDeletionPlan.maximumRecipeTypes ||
+        recipes.entries.any((e) => e.value.doodadType != e.key)) {
       throw StateError('DOODAD_DELETE: invalid retained neighbor recipes');
     }
     this.recipes = Map.unmodifiable(recipes);

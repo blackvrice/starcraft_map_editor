@@ -93,8 +93,8 @@ Future<void> deleteObjectsWithDoodadReview(
         .where((s) => s.sectionIndex == object.sectionIndex)
         .single;
     final doodad = section.doodads[object.recordIndex];
-    final recipes = await catalog.doodadRecipes(
-      doodad.doodadType,
+    final byType = await catalog.doodadRecipesForTypes(
+      editing.doodadDeletionRecipeTypes([object.recordIndex]),
       requireCompleteTypes: true,
     );
     if (!context.mounted) return;
@@ -104,6 +104,8 @@ Future<void> deleteObjectsWithDoodadReview(
     )) {
       throw StateError(context.l10n.doodadDeleteMapChanged);
     }
+    final recipes =
+        byType[doodad.doodadType] ?? const <DoodadPlacementRecipe>[];
     if (recipes.isEmpty) {
       throw StateError(context.l10n.doodadDeleteNoRecipe);
     }
@@ -231,8 +233,9 @@ Future<void> deleteObjectsWithDoodadReview(
                             recordIndex: object.recordIndex,
                             overlayRecordIndex: overlayIndex,
                             retainedNeighborRecipes: {
-                              if (recipes.length == 1)
-                                doodad.doodadType: recipes.single,
+                              for (final entry in byType.entries)
+                                if (entry.value.length == 1)
+                                  entry.key: entry.value.single,
                             },
                           );
                           editing.deleteDoodad(plan);
@@ -321,7 +324,7 @@ Future<void> _reviewBatch(
     doodads.add(section.doodads[object.recordIndex]);
   }
   final byType = await catalog.doodadRecipesForTypes(
-    doodads.map((d) => d.doodadType).toSet(),
+    editing.doodadDeletionRecipeTypes(doodads.map((d) => d.recordIndex)),
     requireCompleteTypes: true,
   );
   if (!context.mounted) return;

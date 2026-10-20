@@ -25,6 +25,11 @@
 따라 후보가 하나인 동일 종류의 미선택 이웃은 현재 지형/상태/경계를 검증하고 실제
 전체 footprint가 겹치지 않으면 보존한다. 다른 종류/복수 후보/손상 이웃은 계속 거부한다.
 
+2026-10-20 다른 종류 후속: [ADR-0032](decisions/0032-other-type-doodad-neighbors.md)에
+따라 가능한 이웃 종류도 기존 카탈로그 한 번 조회에 포함한다. 최대 32종/256개
+범위의 완전한 단일 후보는 종류가 달라도 실제 지형/상태/비겹침 검증 후 보존한다.
+앞의 날짜별 미지원 문구는 당시 이력이며 최신 범위/결과는 마지막 절을 따른다.
+
 ## 계획과 소스 분석
 
 1. 기존 삭제 계획/배치 정의/상태 편집/복합 clipboard/확인 창을 분석한다.
@@ -54,7 +59,7 @@ sprite-unit의 THG2 bit15를 지원한다. 삭제 계획은 DD2=0과 활성 THG2
 
 유효한 단일 DIM/ERA/MTXM/DD2/TILE, 일치한 로컬 recipe/footprint/현재 지형,
 검증된 TILE 복원 값이 필요하다. 확인하지 않은 인근 두다드와 겹칠 가능성은 계속 거부한다.
-완전한 카탈로그에서 후보가 하나인 선택 종류는 미선택 이웃 최대 256개의 지형과
+완전한 카탈로그에서 후보가 하나인 조회 종류는 미선택 이웃 최대 256개의 지형과
 전체 영역을 검증할 수 있다. 미선택 이웃 자체를 삭제하거나 overlay 귀속을 추정하지 않는다.
 overlay가 있으면 단일 THG2와 **사용자가 선택한** record의 종류/좌표/owner/
 flags/unused가 모두 일치해야 한다. 후보가 한 개여도 자동 선택하지 않는다.
@@ -538,3 +543,89 @@ UNIT 스캔을 재사용했다. 확인 창 준비와 Apply에서 계획을 다�
 동적/불투명 Location 참조는 미지원이다. 실제 SC:R·외부 에디터 왕복과 수동 앱
 조작·고대비/DPI·깨끗한 PC 인수는 수행하지 않았다. 다음 단계는 다른 종류 이웃의
 명시 검증 또는 실제 상호 운용 인수이며 첫 미완료 M6.2 항목은 열어 둔다.
+
+## 다른 종류 이웃 보존 계획과 실행
+
+2026-10-20. M6.2 첫 미완료의 미지원 확대를 이어간다. 앞의 동일 종류 한정은
+이전 단계의 범위이며 이 절과 [ADR-0032](decisions/0032-other-type-doodad-neighbors.md)가
+최신 계약이다. 복원/overlay/Unit/Location 안전 정책과 실제 게임 인수 대기는 유지한다.
+
+### 소스 분석과 실행 계획
+
+1. 기존 카탈로그는 선택 종류만 반환하고 domain의 보존 recipe도 선택 종류로
+   제한했다. 다른 종류의 실제 footprint를 확인할 근거가 없어 인접 삭제를 거부했다.
+2. 순수 `recipeLookupTypes`로 원본 DD2와 명시 인덱스를 읽는다. 선택 최대 32개,
+   입력은 33개까지만 읽으며 중복/범위 밖 선택을 거부한다. 두 개의 최대 16x16
+   영역이 만날 수 있는 양 축 중심 차이 512px 미만의 미선택 이웃을 모은다.
+3. 선택+가능한 이웃 합계 32종 또는 미선택 후보 256개를 넘으면 선택 종류 집합
+   전체로 되돌린다. 임의 이웃 일부를 추려 안전하다고 처리하지 않는다. 불변 결과를
+   반환하며 문서·선택·Undo를 변경하지 않는다.
+4. application은 편집 가능한 유일 DD2의 cached typed view만 전달한다. 단일/
+   다중/혼합 UI는 조회 종류 집합으로 metadata를 한 번 요청한다. 누락 후보가 있는
+   종류 전체를 비우는 complete-type 정책과 페이지/문서 검증은 유지한다.
+5. domain은 보존 recipe의 선택 종류 제한만 해제한다. 최대 32종·key/type 일치,
+   실제 이웃의 타일셋/상태/정렬/경계/현재 쓰기 타일과 전체 비겹침을 계속 검사한다.
+   복수 후보/누락 후보는 UI에서 보존 recipe로 전달하지 않는다. 조회 범위는 삭제
+   허가가 아니며 실제 겹침이나 잘못된 지형은 끝까지 거부한다.
+6. 이웃 DD2/지형과 미선택 THG2·TILE/unknown bytes를 보존하고 선택한 것만 기존
+   한 Undo로 삭제한다. overlay 자동 귀속/확인은 하지 않는다. 조회 중 문서 변경,
+   적용 시 잠금·취소·실패는 부분 적용하지 않는다.
+
+### 최적화 판단
+
+카탈로그 종류당 재조회 대신 기존 전체 metadata 한 번 순회를 사용한다. 조회는
+이미 decode된 DD2를 사용하여 별도 binary decode나 atlas/thumbnail 요청이 없다.
+최대 선택 32개와 DD2 수 N에 대해 O(32N)이며 후보/종류 상한 초과 시 조기 반환한다.
+이웃 실제 타일 대조는 계획 내부에서 한 번이며 최대 65,536셀이다. 기존 대상별
+typed decode와 정확한 footprint 대조는 유지했다. 실제 시간/RSS 개선은 측정하지 않았다.
+출처가 검증된 완전한 단일 후보 전달은 내부 호출자 계약이지 임의 recipe 인증이 아니다.
+
+### 요구사항 체크리스트
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203/217 다른 종류 이웃·단일/다중·overlay 3종 | 선택만 삭제, 이웃 DD2/MTXM/미선택 THG2 bytes 보존 | domain/MPQ |
+| FR-204/218 상태·지형·실제 겹침 | 조회 성공만으로 허용하지 않음·문서 불변 | domain |
+| NFR-006/009 최대 영역 경계 511/512px | 가능한 후보 포함·정확히 닿는 최대 영역 제외 | domain |
+| NFR-006/009 32/33종·256/257개 이웃 | 상한 내 확장·초과 시 선택 종류 전체로 복귀 | domain |
+| FR-203/204 중복/잘못된 인덱스·무한 입력 | 33개까지만 읽어 거부·원본 불변 | domain |
+| FR-217 복수/누락 후보·한 번 카탈로그 조회 | 이웃 정의를 추정하지 않고 거부·complete-type 요청 | catalog/widget |
+| FR-005/213 조회 중 교체·잠금 후 재시도·취소 | 문서 identity/잠금 재검증·부분 적용 없음 | widget |
+| NFR-008 한국어 600px/영어 1200px | 기존 명시 overlay/취소·스크롤·한 Undo/Redo 유지 | widget |
+| FR-101/102/104 혼합 Sprite·Save As/재열기 | 명시 선택만 제거·원본 보존·정확한 재열기 | application/MPQ |
+
+### 실행 결과
+
+초기 domain/객체 편집·위젯 **216개 통과**.
+`.dart_tool/doodad-other-neighbor-focused.log`. 누락/교체/혼합 및 최종 MPQ를 포함한
+집중 실행은 **631 통과 / 10 조건부 skip / 실패 0**.
+`.dart_tool/doodad-other-neighbor-focused-final.log`. 실제 MPQ **33종 통과**를 포함하며
+10 skip은 로컬 게임 설치/helper 경로가 필요한 기존 카탈로그 테스트로 성공이 아니다.
+최초 analyze는 새 테스트의 여러 줄 if 중괄호 1건을 지적했다. 중괄호를 보완했으며
+기능 테스트 실패나 실제 맵 데이터 손상을 재현한 사례는 아니다. 전체 게이트는 아래에 기록한다.
+
+- `flutter analyze`: **무이슈**. `.dart_tool/doodad-other-neighbor-analyze.log`.
+- `flutter test`: **2749 통과 / 113 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-other-neighbor-full-tests.log`. 기본 실행에서는 MPQ 33종도 skip되며
+  별도 실제 helper 실행으로 검증했다. 나머지 skip은 검증 성공이 아니다.
+- `flutter build windows --debug`: **성공**, 33.4초.
+  `.dart_tool/doodad-other-neighbor-windows-build.log`. 기존 CascLib CMake 최소 버전
+  deprecation 경고는 남아 있으며 네이티브 의존 revision을 변경하지 않았다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 빌드 helper를 `MAP_ARCHIVE_HELPER_PATH`로 지정한
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **33/33 통과**.
+  `.dart_tool/doodad-other-neighbor-mpq-final.log`. 다른 종류 이웃의 단일/다중×overlay
+  3종 6개를 포함하며 원본 archive·이웃·Undo/Redo·Save As/재열기 bytes를 확인했다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: **exit 1**.
+  기존 미수정 `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개만 포맷 차이가 있다. 이번 변경 파일은 포맷 차이가 없고 무관한 파일은 수정하지
+  않았다. `.dart_tool/doodad-other-neighbor-format.log`.
+- 실제 SDK는 **Flutter 3.47.5 / Dart 3.13.4**. 기준 3.44.8/3.12 및 CI 버전에서는
+  재검증하지 않았다. 필수 포맷 게이트까지 모두 통과했다고 표현하지 않는다.
+
+실제 열린 앱·SC:R·외부 에디터 조작, 고대비/DPI·깨끗한 PC 인수는 사용자 지시가
+자동 테스트/빌드로 제한되어 수행하지 않았다. 실제 로컬 카탈로그 재검증도 환경 변수
+미설정으로 skip이다. synthetic/MPQ 자동 통과는 실제 게임이나 외부 상호 운용 인수가
+아니다. 복수 후보 이웃의 정의를 명시 검증하는 범위와 실제 겹침/복원 정보 부족은
+계속 미지원이며 다음 후속 작업이다. 첫 미완료 M6.2 항목은 닫지 않는다.

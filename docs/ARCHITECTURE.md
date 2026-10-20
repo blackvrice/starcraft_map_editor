@@ -473,6 +473,9 @@ M6.2의 전체 배치 목록은 `application/ports`의
   기존 metadata 조회의 완전한 단일 후보만 전달받는다. domain은 최대 256개
   가까운 미선택 이웃의 지형/상태/경계를 한 계획 내부에서 한 번 검증하고 전체
   footprint 비겹침을 검사한다. 이웃 recipe는 삭제 요청이나 overlay 귀속이 아니다.
+  [ADR-0032](decisions/0032-other-type-doodad-neighbors.md)는 cached typed DD2에서
+  가능한 이웃 종류까지 최대 32종/256개로 수집한다. 상한 초과 시 선택 종류로
+  복귀하고 metadata 한 번 조회·완전한 단일 후보·실제 검증 계약을 유지한다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.

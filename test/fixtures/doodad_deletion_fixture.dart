@@ -63,27 +63,53 @@ RawChkDocument doodadUnitDeletionDocument({
       .document!;
 }
 
-DoodadPlacementRecipe deletionRecipe({DoodadOverlaySemantic? overlay}) =>
-    DoodadPlacementRecipe(
-      tileset: StarCraftTilesetAssetSet.badlands,
-      startTileGroup: 200,
-      doodadType: 7,
-      width: 1,
-      height: 1,
-      centerOffsetX: 16,
-      centerOffsetY: 16,
-      footprint: [
-        DoodadFootprintCell(
-          x: 0,
-          y: 0,
-          rawTileValue: 3200,
-          requiredTileGroup: 0,
-        ),
-      ],
-      overlay: overlay == null
-          ? null
-          : DoodadOverlayRecipe(semantic: overlay, id: 100),
-    );
+DoodadPlacementRecipe deletionRecipe({
+  DoodadOverlaySemantic? overlay,
+  int doodadType = 7,
+  int startTileGroup = 200,
+  int overlayId = 100,
+}) => DoodadPlacementRecipe(
+  tileset: StarCraftTilesetAssetSet.badlands,
+  startTileGroup: startTileGroup,
+  doodadType: doodadType,
+  width: 1,
+  height: 1,
+  centerOffsetX: 16,
+  centerOffsetY: 16,
+  footprint: [
+    DoodadFootprintCell(
+      x: 0,
+      y: 0,
+      rawTileValue: startTileGroup * 16,
+      requiredTileGroup: 0,
+    ),
+  ],
+  overlay: overlay == null
+      ? null
+      : DoodadOverlayRecipe(semantic: overlay, id: overlayId),
+);
+
+RawChkDocument differentTypeNeighborDocument({
+  bool batch = false,
+  DoodadOverlaySemantic? overlay,
+}) {
+  var doc = batchDeletionDocument(count: batch ? 3 : 2, overlay: overlay);
+  for (final name in ['DD2 ', 'MTXM', if (overlay != null) 'THG2']) {
+    final at = doc.sections.indexWhere((s) => s.name == name);
+    final bytes = doc.sections[at].payload;
+    final data = ByteData.sublistView(bytes);
+    switch (name) {
+      case 'DD2 ':
+        data.setUint16(bytes.length - 8, 9, Endian.little);
+      case 'MTXM':
+        data.setUint16((batch ? 35 : 34) * 2, 3216, Endian.little);
+      case 'THG2':
+        data.setUint16(bytes.length - 10, 101, Endian.little);
+    }
+    doc = doc.replaceSection(at, doc.sections[at].withPayload(bytes));
+  }
+  return doc;
+}
 
 RawChkDocument deletionDocument({
   int state = 1,

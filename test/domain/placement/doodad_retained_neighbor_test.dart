@@ -205,36 +205,33 @@ void main() {
     );
   });
 
-  test(
-    'recipe types and tilesets cannot widen the retained-neighbor scope',
-    () {
-      final base = deletionRecipe();
-      final wrongTileset = DoodadPlacementRecipe(
-        tileset: StarCraftTilesetAssetSet.jungle,
-        startTileGroup: base.startTileGroup,
-        doodadType: base.doodadType,
-        width: base.width,
-        height: base.height,
-        centerOffsetX: base.centerOffsetX,
-        centerOffsetY: base.centerOffsetY,
-        footprint: base.footprint,
+  test('retained recipes require matching keys and tilesets', () {
+    final base = deletionRecipe();
+    final wrongTileset = DoodadPlacementRecipe(
+      tileset: StarCraftTilesetAssetSet.jungle,
+      startTileGroup: base.startTileGroup,
+      doodadType: base.doodadType,
+      width: base.width,
+      height: base.height,
+      centerOffsetX: base.centerOffsetX,
+      centerOffsetY: base.centerOffsetY,
+      footprint: base.footprint,
+    );
+    for (final recipes in [
+      {8: base},
+      {7: wrongTileset},
+    ]) {
+      expect(
+        () => DoodadDeletionPlan.create(
+          document: batchDeletionDocument(),
+          recipe: base,
+          recordIndex: 0,
+          retainedNeighborRecipes: recipes,
+        ),
+        throwsStateError,
       );
-      for (final recipes in [
-        {8: base},
-        {7: wrongTileset},
-      ]) {
-        expect(
-          () => DoodadDeletionPlan.create(
-            document: batchDeletionDocument(),
-            recipe: base,
-            recordIndex: 0,
-            retainedNeighborRecipes: recipes,
-          ),
-          throwsStateError,
-        );
-      }
-    },
-  );
+    }
+  });
 
   test(
     'truncated DD2 and MTXM are rejected instead of dropping tail bytes',

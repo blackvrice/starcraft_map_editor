@@ -1,6 +1,6 @@
 # 문서 인덱스
 
-[두다드 복합 삭제](DOODAD_DELETION.md): 최대 32개 일괄 삭제·동일 종류 미선택 이웃 보존·명시 overlay 귀속,
+[두다드 복합 삭제](DOODAD_DELETION.md): 최대 32개 일괄 삭제·다른 종류까지 검증형 이웃 보존·명시 overlay 귀속,
 Unit/Sprite/정적 미참조 Location 혼합 삭제·명시 확인·고정 ID·지형 복원/Undo와 실제 MPQ 왕복 검증.
 
 [여러 소스 편집](SOURCE_WORKSPACE.md): 소스 폴더/탭·정적 완성/검색·원본 진단,

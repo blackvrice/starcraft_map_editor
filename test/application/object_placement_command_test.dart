@@ -31,6 +31,7 @@ import '../fixtures/doodad_deletion_fixture.dart';
 import '../fixtures/basic_editing_fixture.dart';
 
 void main() {
+  _differentNeighborReviewTests();
   _retainedDoodadNeighborTests();
   _locationMixedDoodadDeletionTests();
   _unitMixedDoodadDeletionTests();
@@ -3809,188 +3810,339 @@ void _mixedDoodadSpriteDeletionTests() {
   }
 }
 
+void _differentNeighborReviewTests() {
+  for (final mode in ['empty-single', 'empty-batch', 'stale', 'mixed']) {
+    testWidgets('different neighbor handles $mode without partial editing', (
+      tester,
+    ) async {
+      final batch = mode == 'empty-batch';
+      final doc = differentTypeNeighborDocument(batch: batch);
+      final f = await _openFixture(mapBytes: const RawChkEncoder().encode(doc));
+      addTearDown(f.dispose);
+      final session = f.openMapController.state.session!;
+      final before = const RawChkEncoder().encode(session.rawDocument);
+      final indices = [0, if (batch) 2];
+      final types = f.controller.doodadDeletionRecipeTypes(indices);
+      expect(types, {7, 9});
+      expect(() => types.clear(), throwsUnsupportedError);
+      expect(
+        f.openMapController.state.session!.rawDocument,
+        same(session.rawDocument),
+      );
+      expect(f.openMapController.editHistory.undoDepth, 0);
+      f.mapLayerController.selectObjects(
+        session: session,
+        objects: [
+          for (final index in indices)
+            MapLayerObjectRef(
+              layer: MapLayerType.doodads,
+              sectionIndex:
+                  session.objectViews.doodadSections.single.sectionIndex,
+              recordIndex: index,
+            ),
+          if (mode == 'mixed')
+            MapLayerObjectRef(
+              layer: MapLayerType.sprites,
+              sectionIndex:
+                  session.objectViews.spriteSections.single.sectionIndex,
+              recordIndex: 0,
+            ),
+        ],
+      );
+      final recipe = deletionRecipe();
+      final catalog = _DeletionCatalog(recipe)
+        ..byType = {
+          7: [recipe],
+          9: [
+            if (!mode.startsWith('empty'))
+              deletionRecipe(doodadType: 9, startTileGroup: 201),
+          ],
+        };
+      if (mode == 'stale') {
+        catalog.beforeList = () async {
+          await f.openMapController.open(sourcePath: r'C:\Maps\Placement.scx');
+        };
+      }
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => deleteObjectsWithDoodadReview(
+                  context,
+                  f.controller,
+                  catalog,
+                ),
+                child: const Text('Delete selection'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Delete selection'));
+      await tester.pumpAndSettle();
+      expect(catalog.calls, 1);
+      expect(catalog.requestedTypes, [7, 9]);
+      expect(catalog.requiredCompleteTypes, isTrue);
+      if (mode == 'stale') {
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(
+          f.openMapController.state.session!.rawDocument,
+          isNot(same(session.rawDocument)),
+        );
+      } else {
+        expect(find.byType(AlertDialog), findsOneWidget);
+        await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+        await tester.pumpAndSettle();
+        if (mode == 'mixed') {
+          expect(find.byType(AlertDialog), findsNothing);
+          final after = f.openMapController.state.session!;
+          expect(after.objectViews.doodadSections.single.doodads, hasLength(2));
+          expect(after.objectViews.spriteSections.single.sprites, hasLength(2));
+          expect(after.terrainViews.tileMaps.single.rawTileValues[34], 3216);
+          expect(f.openMapController.editHistory.undoDepth, 1);
+          expect(f.controller.undo(), isTrue);
+        } else {
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(find.textContaining('ownership is ambiguous'), findsOneWidget);
+          expect(
+            f.openMapController.state.session!.rawDocument,
+            same(session.rawDocument),
+          );
+          await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+          await tester.pumpAndSettle();
+        }
+      }
+      expect(f.openMapController.editHistory.undoDepth, 0);
+      expect(
+        const RawChkEncoder().encode(
+          f.openMapController.state.session!.rawDocument,
+        ),
+        before,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+}
+
 void _retainedDoodadNeighborTests() {
-  for (final batch in [false, true]) {
-    for (final ambiguous in [false, true]) {
-      for (final locale in [const Locale('ko'), const Locale('en')]) {
-        testWidgets(
-          'retained neighbor batch=$batch ambiguous=$ambiguous ${locale.languageCode}',
-          (tester) async {
-            tester.view.physicalSize = Size(
-              locale.languageCode == 'ko' ? 600 : 1200,
-              900,
-            );
-            tester.view.devicePixelRatio = 1;
-            addTearDown(tester.view.resetPhysicalSize);
-            addTearDown(tester.view.resetDevicePixelRatio);
-            final doc = batchDeletionDocument(
-              count: batch ? 3 : 2,
-              overlay: DoodadOverlaySemantic.spriteUnit,
-            );
-            final f = await _openFixture(
-              mapBytes: const RawChkEncoder().encode(doc),
-            );
-            addTearDown(f.dispose);
-            final session = f.openMapController.state.session!;
-            f.mapLayerController.selectObjects(
-              session: session,
-              objects: [
-                for (final index in [0, if (batch) 2])
-                  MapLayerObjectRef(
-                    layer: MapLayerType.doodads,
-                    sectionIndex:
-                        session.objectViews.doodadSections.single.sectionIndex,
-                    recordIndex: index,
-                  ),
-              ],
-            );
-            final recipe = deletionRecipe(
-              overlay: DoodadOverlaySemantic.spriteUnit,
-            );
-            final catalog = _DeletionCatalog(recipe)
-              ..byType = {
-                7: [
-                  recipe,
-                  if (ambiguous)
-                    deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
+  for (final differentType in [false, true]) {
+    for (final batch in [false, true]) {
+      for (final ambiguous in [false, true]) {
+        for (final locale in [const Locale('ko'), const Locale('en')]) {
+          testWidgets(
+            'retained neighbor differentType=$differentType batch=$batch ambiguous=$ambiguous ${locale.languageCode}',
+            (tester) async {
+              tester.view.physicalSize = Size(
+                locale.languageCode == 'ko' ? 600 : 1200,
+                900,
+              );
+              tester.view.devicePixelRatio = 1;
+              addTearDown(tester.view.resetPhysicalSize);
+              addTearDown(tester.view.resetDevicePixelRatio);
+              final doc = differentType
+                  ? differentTypeNeighborDocument(
+                      batch: batch,
+                      overlay: DoodadOverlaySemantic.spriteUnit,
+                    )
+                  : batchDeletionDocument(
+                      count: batch ? 3 : 2,
+                      overlay: DoodadOverlaySemantic.spriteUnit,
+                    );
+              final f = await _openFixture(
+                mapBytes: const RawChkEncoder().encode(doc),
+              );
+              addTearDown(f.dispose);
+              final session = f.openMapController.state.session!;
+              f.mapLayerController.selectObjects(
+                session: session,
+                objects: [
+                  for (final index in [0, if (batch) 2])
+                    MapLayerObjectRef(
+                      layer: MapLayerType.doodads,
+                      sectionIndex: session
+                          .objectViews
+                          .doodadSections
+                          .single
+                          .sectionIndex,
+                      recordIndex: index,
+                    ),
                 ],
-              };
-            final before = const RawChkEncoder().encode(session.rawDocument);
-            await tester.pumpWidget(
-              MaterialApp(
-                locale: locale,
-                supportedLocales: AppLocalizations.supportedLocales,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                home: Scaffold(
-                  body: Builder(
-                    builder: (context) => TextButton(
-                      onPressed: () => deleteObjectsWithDoodadReview(
-                        context,
-                        f.controller,
-                        catalog,
+              );
+              final recipe = deletionRecipe(
+                overlay: DoodadOverlaySemantic.spriteUnit,
+              );
+              final catalog = _DeletionCatalog(recipe)
+                ..byType = {
+                  7: [
+                    recipe,
+                    if (ambiguous && !differentType)
+                      deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
+                  ],
+                  if (differentType)
+                    9: [
+                      for (var i = 0; i < (ambiguous ? 2 : 1); i++)
+                        deletionRecipe(
+                          overlay: DoodadOverlaySemantic.spriteUnit,
+                          doodadType: 9,
+                          startTileGroup: 201,
+                          overlayId: 101,
+                        ),
+                    ],
+                };
+              final before = const RawChkEncoder().encode(session.rawDocument);
+              await tester.pumpWidget(
+                MaterialApp(
+                  locale: locale,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates:
+                      AppLocalizations.localizationsDelegates,
+                  home: Scaffold(
+                    body: Builder(
+                      builder: (context) => TextButton(
+                        onPressed: () => deleteObjectsWithDoodadReview(
+                          context,
+                          f.controller,
+                          catalog,
+                        ),
+                        child: const Text('Delete selection'),
                       ),
-                      child: const Text('Delete selection'),
                     ),
                   ),
                 ),
-              ),
-            );
-            await tester.tap(find.text('Delete selection'));
-            await tester.pumpAndSettle();
-            expect(
-              tester
-                  .widget<FilledButton>(
-                    find.byKey(const Key('doodad-delete-apply')),
-                  )
-                  .onPressed,
-              isNull,
-            );
-            await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
-            await tester.pumpAndSettle();
-            expect(
-              f.openMapController.state.session!.rawDocument,
-              same(session.rawDocument),
-            );
-            expect(f.openMapController.editHistory.undoDepth, 0);
-            await tester.tap(find.text('Delete selection'));
-            await tester.pumpAndSettle();
-            for (final index in [0, if (batch) 2]) {
-              final key = Key(
-                batch
-                    ? 'doodad-delete-overlay-$index'
-                    : 'doodad-delete-overlay',
               );
-              if (batch) {
-                await tester.scrollUntilVisible(
-                  find.byKey(key),
-                  150,
-                  scrollable: find
-                      .descendant(
-                        of: find.byType(AlertDialog),
-                        matching: find.byType(Scrollable),
-                      )
-                      .first,
-                );
-              }
-              await tester.tap(find.byKey(key));
+              await tester.tap(find.text('Delete selection'));
               await tester.pumpAndSettle();
-              final overlayIndex = index == 0 ? 1 : 3;
-              await tester.tap(
-                find
-                    .text(
-                      locale.languageCode == 'ko'
-                          ? 'THG2 레코드 #$overlayIndex · 종류 100'
-                          : 'THG2 record #$overlayIndex · type 100',
-                    )
-                    .last,
-              );
-              await tester.pumpAndSettle();
-            }
-            await tester.tap(find.byKey(const Key('doodad-delete-apply')));
-            await tester.pumpAndSettle();
-            // One catalog pass per dialog, including when a neighbor is retained.
-            expect(catalog.calls, 2);
-            expect(catalog.requiredCompleteTypes, isTrue);
-            if (ambiguous) {
-              expect(find.byType(AlertDialog), findsOneWidget);
+              expect(catalog.requestedTypes, [7, if (differentType) 9]);
               expect(
-                find.textContaining('nearby doodad ownership is ambiguous'),
-                findsOneWidget,
+                tester
+                    .widget<FilledButton>(
+                      find.byKey(const Key('doodad-delete-apply')),
+                    )
+                    .onPressed,
+                isNull,
               );
+              await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+              await tester.pumpAndSettle();
               expect(
                 f.openMapController.state.session!.rawDocument,
                 same(session.rawDocument),
               );
               expect(f.openMapController.editHistory.undoDepth, 0);
-              await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+              await tester.tap(find.text('Delete selection'));
               await tester.pumpAndSettle();
-            } else {
-              expect(find.byType(AlertDialog), findsNothing);
-              expect(f.openMapController.editHistory.undoDepth, 1);
-              final after = f.openMapController.state.session!;
-              expect(
-                after.objectViews.doodadSections.single.doodads,
-                hasLength(2),
-              );
-              expect(
-                after.objectViews.spriteSections.single.sprites,
-                hasLength(3),
-              );
-              final originalDD = doc.sections
-                  .singleWhere((s) => s.name == 'DD2 ')
-                  .payload;
-              final retained = batch ? 3 : 2;
-              expect(
-                after.rawDocument.sections
+              for (final index in [0, if (batch) 2]) {
+                final key = Key(
+                  batch
+                      ? 'doodad-delete-overlay-$index'
+                      : 'doodad-delete-overlay',
+                );
+                if (batch) {
+                  await tester.scrollUntilVisible(
+                    find.byKey(key),
+                    150,
+                    scrollable: find
+                        .descendant(
+                          of: find.byType(AlertDialog),
+                          matching: find.byType(Scrollable),
+                        )
+                        .first,
+                  );
+                }
+                await tester.tap(find.byKey(key));
+                await tester.pumpAndSettle();
+                final overlayIndex = index == 0 ? 1 : 3;
+                await tester.tap(
+                  find
+                      .text(
+                        locale.languageCode == 'ko'
+                            ? 'THG2 레코드 #$overlayIndex · 종류 100'
+                            : 'THG2 record #$overlayIndex · type 100',
+                      )
+                      .last,
+                );
+                await tester.pumpAndSettle();
+              }
+              if (differentType && !ambiguous) {
+                f.mapLayerController.setLocked(MapLayerType.terrain, true);
+                await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+                await tester.pumpAndSettle();
+                expect(find.byType(AlertDialog), findsOneWidget);
+                expect(
+                  f.openMapController.state.session!.rawDocument,
+                  same(session.rawDocument),
+                );
+                expect(f.openMapController.editHistory.undoDepth, 0);
+                f.mapLayerController.setLocked(MapLayerType.terrain, false);
+              }
+              await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+              await tester.pumpAndSettle();
+              // One catalog pass per dialog, including when a neighbor is retained.
+              expect(catalog.calls, 2);
+              expect(catalog.requiredCompleteTypes, isTrue);
+              if (ambiguous) {
+                expect(find.byType(AlertDialog), findsOneWidget);
+                expect(
+                  find.textContaining('nearby doodad ownership is ambiguous'),
+                  findsOneWidget,
+                );
+                expect(
+                  f.openMapController.state.session!.rawDocument,
+                  same(session.rawDocument),
+                );
+                expect(f.openMapController.editHistory.undoDepth, 0);
+                await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+                await tester.pumpAndSettle();
+              } else {
+                expect(find.byType(AlertDialog), findsNothing);
+                expect(f.openMapController.editHistory.undoDepth, 1);
+                final after = f.openMapController.state.session!;
+                expect(
+                  after.objectViews.doodadSections.single.doodads,
+                  hasLength(2),
+                );
+                expect(
+                  after.objectViews.spriteSections.single.sprites,
+                  hasLength(3),
+                );
+                final originalDD = doc.sections
                     .singleWhere((s) => s.name == 'DD2 ')
-                    .payload,
-                [
-                  ...originalDD.sublist(8, 16),
-                  ...originalDD.sublist(retained * 8, retained * 8 + 8),
-                ],
-              );
-              final afterBytes = const RawChkEncoder().encode(
-                after.rawDocument,
-              );
-              expect(f.controller.undo(), isTrue);
-              expect(
-                const RawChkEncoder().encode(
-                  f.openMapController.state.session!.rawDocument,
-                ),
-                before,
-              );
-              expect(f.controller.redo(), isTrue);
-              expect(
-                const RawChkEncoder().encode(
-                  f.openMapController.state.session!.rawDocument,
-                ),
-                afterBytes,
-              );
-            }
-            expect(tester.takeException(), isNull);
-            await tester.pumpWidget(const SizedBox());
-          },
-        );
+                    .payload;
+                final retained = batch ? 3 : 2;
+                expect(
+                  after.rawDocument.sections
+                      .singleWhere((s) => s.name == 'DD2 ')
+                      .payload,
+                  [
+                    ...originalDD.sublist(8, 16),
+                    ...originalDD.sublist(retained * 8, retained * 8 + 8),
+                  ],
+                );
+                final afterBytes = const RawChkEncoder().encode(
+                  after.rawDocument,
+                );
+                expect(f.controller.undo(), isTrue);
+                expect(
+                  const RawChkEncoder().encode(
+                    f.openMapController.state.session!.rawDocument,
+                  ),
+                  before,
+                );
+                expect(f.controller.redo(), isTrue);
+                expect(
+                  const RawChkEncoder().encode(
+                    f.openMapController.state.session!.rawDocument,
+                  ),
+                  afterBytes,
+                );
+              }
+              expect(tester.takeException(), isNull);
+              await tester.pumpWidget(const SizedBox());
+            },
+          );
+        }
       }
     }
   }
@@ -4026,7 +4178,8 @@ class _DeletionCatalog implements PlacementCatalogController {
     await beforeList?.call();
     return byType ??
         {
-          for (final type in types) type: [recipe],
+          for (final type in types)
+            type: type == recipe.doodadType ? [recipe] : [],
         };
   }
 

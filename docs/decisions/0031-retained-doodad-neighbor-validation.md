@@ -1,6 +1,6 @@
 # ADR-0031: 동일 종류의 미선택 두다드 이웃 검증
 
-- Status: Accepted
+- Status: Superseded by [ADR-0032](0032-other-type-doodad-neighbors.md)
 - Date: 2026-10-20
 - Supersedes: [ADR-0030](0030-reviewed-location-mixed-deletion.md)
 

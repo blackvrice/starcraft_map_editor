@@ -29,11 +29,14 @@ void main() {
     'all',
     'neighbor-single',
     'neighbor-batch',
+    'neighbor-other-single',
+    'neighbor-other-batch',
   ]) {
     final retainedNeighbors = mode.startsWith('neighbor-');
+    final differentType = mode.startsWith('neighbor-other-');
     final unitMixed = mode.startsWith('unit-') || mode == 'all';
     final locationMixed = mode == 'location' || mode == 'all';
-    final batch = mode != 'single' && mode != 'neighbor-single',
+    final batch = mode != 'single' && !mode.endsWith('-single'),
         mixed = mode == 'mixed' || unitMixed || locationMixed;
     for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
       test(
@@ -69,7 +72,12 @@ void main() {
             operationProgressController: progress,
           );
           addTearDown(save.dispose);
-          final doc = retainedNeighbors
+          final doc = differentType
+                  ? differentTypeNeighborDocument(
+                      batch: batch,
+                      overlay: overlay,
+                    )
+                  : retainedNeighbors
                   ? batchDeletionDocument(
                       count: batch ? 3 : 2,
                       overlay: overlay,
@@ -131,7 +139,13 @@ void main() {
                       ? [254, 0]
                       : const [],
                   retainedNeighborRecipes: {
-                    if (retainedNeighbors) 7: deletionRecipe(overlay: overlay),
+                    if (retainedNeighbors)
+                      (differentType ? 9 : 7): deletionRecipe(
+                        overlay: overlay,
+                        doodadType: differentType ? 9 : 7,
+                        startTileGroup: differentType ? 201 : 200,
+                        overlayId: differentType ? 101 : 100,
+                      ),
                   },
                 )
               : editing.prepareDoodadDeletion(
@@ -139,7 +153,13 @@ void main() {
                   recordIndex: 0,
                   overlayRecordIndex: overlay == null ? null : 1,
                   retainedNeighborRecipes: {
-                    if (retainedNeighbors) 7: deletionRecipe(overlay: overlay),
+                    if (retainedNeighbors)
+                      (differentType ? 9 : 7): deletionRecipe(
+                        overlay: overlay,
+                        doodadType: differentType ? 9 : 7,
+                        startTileGroup: differentType ? 201 : 200,
+                        overlayId: differentType ? 101 : 100,
+                      ),
                   },
                 );
           expect(
@@ -209,7 +229,7 @@ void main() {
               session.terrainViews.tileMaps.single.rawTileValues[batch
                   ? 35
                   : 34],
-              3200,
+              differentType ? 3216 : 3200,
             );
             if (overlay != null) {
               final originalSprites = doc.sections

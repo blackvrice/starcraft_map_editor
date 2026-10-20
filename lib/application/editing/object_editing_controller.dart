@@ -1984,6 +1984,19 @@ class ObjectEditingController {
     return true;
   }
 
+  Set<int> doodadDeletionRecipeTypes(Iterable<int> recordIndices) {
+    final session = openMapController.state.session;
+    if (session == null ||
+        !_isEditableSession(session) ||
+        session.objectViews.doodadSections.length != 1) {
+      throw StateError('Open an editable map with one DD2 section.');
+    }
+    return DoodadDeletionPlan.recipeLookupTypes(
+      section: session.objectViews.doodadSections.single,
+      recordIndices: recordIndices,
+    );
+  }
+
   DoodadDeletionPlan prepareDoodadDeletion({
     required DoodadPlacementRecipe recipe,
     required int recordIndex,
