@@ -30,6 +30,10 @@
 범위의 완전한 단일 후보는 종류가 달라도 실제 지형/상태/비겹침 검증 후 보존한다.
 앞의 날짜별 미지원 문구는 당시 이력이며 최신 범위/결과는 마지막 절을 따른다.
 
+2026-10-20 복수 후보 후속: [ADR-0033](decisions/0033-all-doodad-neighbor-candidates.md)에
+따라 전체 후보의 geometry/비겹침과 최소 한 후보의 현재 지형 일치를 검사한다.
+지형 불일치 후보의 영역도 제외하지 않으며 정의를 하나로 추측하지 않는다.
+
 ## 계획과 소스 분석
 
 1. 기존 삭제 계획/배치 정의/상태 편집/복합 clipboard/확인 창을 분석한다.
@@ -59,8 +63,9 @@ sprite-unit의 THG2 bit15를 지원한다. 삭제 계획은 DD2=0과 활성 THG2
 
 유효한 단일 DIM/ERA/MTXM/DD2/TILE, 일치한 로컬 recipe/footprint/현재 지형,
 검증된 TILE 복원 값이 필요하다. 확인하지 않은 인근 두다드와 겹칠 가능성은 계속 거부한다.
-완전한 카탈로그에서 후보가 하나인 조회 종류는 미선택 이웃 최대 256개의 지형과
-전체 영역을 검증할 수 있다. 미선택 이웃 자체를 삭제하거나 overlay 귀속을 추정하지 않는다.
+완전한 카탈로그 후보 집합으로 미선택 이웃 최대 256개의 지형과 전체 영역을
+검증할 수 있다. 한 후보 이상이 현재 지형과 일치하고 모든 후보 영역이 삭제 대상과
+겹치지 않아야 한다. 미선택 이웃을 삭제하거나 overlay 귀속을 추정하지 않는다.
 overlay가 있으면 단일 THG2와 **사용자가 선택한** record의 종류/좌표/owner/
 flags/unused가 모두 일치해야 한다. 후보가 한 개여도 자동 선택하지 않는다.
 좌표가 같은 다른 레코드나 알 수 없는 플래그를 추측해 정리하지 않는다.
@@ -629,3 +634,97 @@ typed decode와 정확한 footprint 대조는 유지했다. 실제 시간/RSS �
 미설정으로 skip이다. synthetic/MPQ 자동 통과는 실제 게임이나 외부 상호 운용 인수가
 아니다. 복수 후보 이웃의 정의를 명시 검증하는 범위와 실제 겹침/복원 정보 부족은
 계속 미지원이며 다음 후속 작업이다. 첫 미완료 M6.2 항목은 닫지 않는다.
+
+## 복수 이웃 후보 전체 영역 검증 계획과 실행
+
+2026-10-20. M6.2 첫 미완료 항목의 미지원 확대를 이어간다. 앞의 복수 후보 일괄
+거부는 당시 계약이다. [ADR-0033](decisions/0033-all-doodad-neighbor-candidates.md)부터
+완전한 후보 집합의 전체 영역이 안전함을 검증하는 보존 삭제를 지원한다.
+
+### 소스 분석과 실행
+
+1. 기존 UI는 후보 개수가 하나인 종류만 domain에 전달했다. 복수 정의는 선택하지
+   않은 이웃의 크기를 확정할 수 없어 거부했다. 실제 정의를 하나로 결정하는 대신
+   모든 가능한 영역을 그대로 보호하는 방향으로 범위를 좁혔다.
+2. 단일/다중/혼합 창은 complete-type 카탈로그 결과 전체를 새 후보 인자로
+   전달한다. 추가 조회·자동 overlay 귀속/선택은 없고 삭제 대상의 recipe 선택은 유지한다.
+3. domain은 기존 단일 recipe 인자를 유지한다. 두 인자 간 중복 종류·key/type
+   불일치·32종 초과·전체 256개 후보 초과를 거부한다. iterable 합계 최대 257개만
+   읽어 immutable 후보 snapshot을 만든다. 누락된 정의를 유일성으로 바꾸지 않는다.
+4. 실제 가까운 이웃의 상태 0/1과 모든 후보의 타일셋·정렬·전체 맵 경계를 검사한다.
+   최소 한 후보의 쓰기 MTXM이 모두 일치해야 한다. 모든 후보의 전체 사각형이 모든
+   삭제 대상과 겹치지 않아야 한다. 어떤 후보라도 geometry가 불명확하면 거부한다.
+5. 초기 접근은 지형과 일치한 후보만 영역 검사에 사용할 수 있다고 보았다. 소스 검토에서
+   불일치 후보가 수정된 지형의 실제 정의일 가능성을 배제하지 못함을 확인했다.
+   불일치 대안도 영역 검사에 남기고, 일치 후보가 있어도 다른 geometry가 불명확하면
+   거부하도록 보강했다. 이 두 상황을 별도 domain 회귀로 추가했다. 실제 사용자 맵의
+   손상이나 배포된 앱 결함을 재현한 기록은 아니며 구현 중의 안전성 보강이다.
+6. 후보 검증을 원본 DD2 인덱스로 계획 내부에 재사용한다. 후보의 실제 정체를 기록하거나
+   이웃을 삭제하지 않는다. 이웃 DD2/지형·미선택 THG2/TILE·unknown bytes를 보존하며
+   기존 한 Undo/Redo·잠금/문서 identity·명시 overlay·Unit/Location 확인을 유지한다.
+
+### 최적화와 작업 예산
+
+최대 32종·총 256개 후보·256개 이웃을 허용한다. 후보의 모든 footprint 셀 반복을
+합계 262,144회로 제한하며 투명 셀도 센다. 지형 불일치가 발견되면 그 후보의 남은
+셀 반복만 생략한다. 영역은 생략하지 않는다. 동일 이웃의 검증을 한 계획에서 한 번
+수행하고 다중 대상에 재사용한다. 후보 영역 대조의 보수적 상한은 2,097,152회다.
+실제 지연/RSS 개선은 미측정이며 전체 map typed decode의 기존 비용은 유지한다.
+장기 cache나 새 dependency/I/O/atlas/thumbnail은 도입하지 않았다.
+
+이는 이웃의 실제 정의 식별이나 모든 지형의 무결성 증명이 아니다. 최소 하나의
+현재 타일 일치와 모든 가능한 영역 밖만 변경함을 확인한다. 다른 대안의 현재 지형이
+수정됐을 가능성을 배제하지 않으며 그 bytes도 보존한다. 임의 외부 recipe의 출처를
+인증하는 API가 아니고 complete-type 카탈로그 전달은 내부 호출자 계약이다.
+
+### 요구사항과 테스트
+
+| 요구사항 / 시나리오 | 기대 결과 | 자동 근거 |
+| --- | --- | --- |
+| FR-203/217 동일/다른 종류 복수 후보·단일/다중 | 모든 영역 안전할 때 선택만 삭제·이웃 보존 | domain/widget/MPQ |
+| FR-204/218 서로 다른 크기/투명 셀/불일치 대안 겹침 | 첫 일치로 우회하지 않고 전체 거부 | domain/widget |
+| FR-204 한 후보 일치+다른 geometry 불명확 | 불명확 대안을 배제하지 않고 거부 | domain |
+| FR-217 후보 없음/전부 불일치/잘못된 tileset | 근거 없는 안전 추정 거부 | domain/기존 catalog 회귀 |
+| NFR-006/009 32종/256 후보·합계 257회/무한 입력 | 유한하게 snapshot·중복 출처/key 오류 거부 | domain/widget |
+| NFR-006/009 262,144셀 경계·batch 재사용 | 경계 허용·초과 거부·두 번째 대상에서 재검증 안 함 | domain |
+| FR-005/213 취소/잠금/문서 변경·한 Undo/Redo | 준비/실패 무변경·원자적 Apply | application/widget |
+| NFR-008 한국어 600px/영어 1200px | 명시 overlay·복수 후보/혼합·예산 거부·버튼 유지 | widget |
+| FR-101/102/104 MPQ 39종 | 원본/이웃 bytes·Save As/Undo/재열기 보존 | 실제 helper integration |
+
+초기 도메인/객체 편집·위젯 **231개 통과**.
+`.dart_tool/doodad-candidates-focused.log`. UI/MPQ 확장 후 초기 집중 검증은
+**664 통과 / 10 조건부 skip**이었다. 위 소스 검토의 두 안전 회귀를 추가한 최종
+집중 실행은 **666 통과 / 10 조건부 skip / 실패 0**.
+`.dart_tool/doodad-candidates-focused-final.log`. 실제 MPQ **39종 통과**를 포함한다.
+10 skip은 실제 로컬 설치/helper 경로가 필요한 기존 카탈로그 검사로 성공이 아니다.
+기존 복수 후보 UI의 무조건 거부 기대는 모든 영역이 안전한 경우 허용하도록 변경했다.
+실패한 기능 테스트를 수정한 것으로 계산하지 않는다. `flutter analyze`는 무이슈였다.
+
+최종 게이트:
+
+- `flutter analyze`: **무이슈**. `.dart_tool/doodad-candidates-analyze.log`.
+- `flutter test`: **2778 통과 / 119 조건부 skip / 실패 0**.
+  `.dart_tool/doodad-candidates-full-tests.log`. 기본 실행에서 skip된 MPQ 39종은
+  별도 실제 helper 실행으로 검증했다. 다른 조건부 skip은 성공으로 계산하지 않는다.
+- `flutter build windows --debug`: **성공**, 17.7초.
+  `.dart_tool/doodad-candidates-windows-build.log`. 기존 CascLib CMake 최소 버전
+  deprecation 경고는 남으며 네이티브 의존 revision/프로토콜은 변경하지 않았다.
+- `ctest --test-dir build/windows/x64 -C Debug --output-on-failure`: **7/7 통과**.
+- 최종 빌드 helper를 `MAP_ARCHIVE_HELPER_PATH`로 지정한
+  `flutter test test/integration/doodad_deletion_roundtrip_test.dart`: **39/39 통과**.
+  `.dart_tool/doodad-candidates-mpq-final.log`. 복수 후보·단일/다중×overlay 3종 6개를
+  포함해 원본/이웃·한 Undo/Redo·Save As/재열기 bytes를 확인했다.
+- `dart format --output=none --set-exit-if-changed lib test tool`: **exit 1**.
+  기존 미수정 `test/infrastructure/local_map_save_file_gateway_test.dart`,
+  `process_eud_compiler_gateway_test.dart`, `process_map_archive_gateway_test.dart`
+  3개만 차이가 있다. 이번 변경 파일은 포맷 차이가 없으며 무관한 파일은 수정하지
+  않았다. `.dart_tool/doodad-candidates-format.log`.
+- 실제 SDK **Flutter 3.47.5 / Dart 3.13.4**. 기준 3.44.8/3.12 및 CI 환경에서는
+  재검증하지 않았다. 기능 통과를 전체 게이트/배포 인수 완료로 표현하지 않는다.
+
+실제 앱/SC:R/외부 에디터 조작·고대비/DPI·깨끗한 PC 인수는 자동 테스트/빌드만
+허용한 사용자 지시에 따라 수행하지 않았다. 로컬 카탈로그 재검증은 환경 변수
+미설정으로 skip이다. 후보 누락·불명확한 geometry·모든 후보 지형 불일치·실제 겹침·
+복원 정보 부족과 작업 예산 초과는 계속 거부한다. 다음 범위는 이런 입력을 추측
+복구하는 작업이 아니라, 지원 가능 근거 확정 또는 실제 상호 운용 검증이다.
+첫 미완료 M6.2 항목은 게임/외부 인수가 남아 열린 상태로 유지한다.

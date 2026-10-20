@@ -31,6 +31,7 @@ import '../fixtures/doodad_deletion_fixture.dart';
 import '../fixtures/basic_editing_fixture.dart';
 
 void main() {
+  _candidateNeighborReviewTests();
   _differentNeighborReviewTests();
   _retainedDoodadNeighborTests();
   _locationMixedDoodadDeletionTests();
@@ -3927,13 +3928,157 @@ void _differentNeighborReviewTests() {
   }
 }
 
+void _candidateNeighborReviewTests() {
+  for (final mode in ['safe', 'overlap', 'budget', 'mixed']) {
+    for (final batch in [false, true]) {
+      for (final locale in [const Locale('ko'), const Locale('en')]) {
+        testWidgets(
+          'candidate neighbor $mode batch=$batch ${locale.languageCode}',
+          (tester) async {
+            tester.view.physicalSize = Size(
+              locale.languageCode == 'ko' ? 600 : 1200,
+              900,
+            );
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            final doc = candidateNeighborDocument(
+              batch: batch,
+              disjoint: mode != 'overlap',
+            );
+            final f = await _openFixture(
+              mapBytes: const RawChkEncoder().encode(doc),
+            );
+            addTearDown(f.dispose);
+            final session = f.openMapController.state.session!;
+            final before = const RawChkEncoder().encode(session.rawDocument);
+            f.mapLayerController.selectObjects(
+              session: session,
+              objects: [
+                for (final index in [0, if (batch) 2])
+                  MapLayerObjectRef(
+                    layer: MapLayerType.doodads,
+                    sectionIndex:
+                        session.objectViews.doodadSections.single.sectionIndex,
+                    recordIndex: index,
+                  ),
+                if (mode == 'mixed')
+                  MapLayerObjectRef(
+                    layer: MapLayerType.sprites,
+                    sectionIndex:
+                        session.objectViews.spriteSections.single.sectionIndex,
+                    recordIndex: 0,
+                  ),
+              ],
+            );
+            final recipe = deletionRecipe();
+            final small = deletionRecipe(doodadType: 9, startTileGroup: 201);
+            final catalog = _DeletionCatalog(recipe)
+              ..byType = {
+                7: [recipe],
+                9: mode == 'budget'
+                    ? List.filled(256, small)
+                    : [small, wideNeighborRecipe()],
+              };
+            await tester.pumpWidget(
+              MaterialApp(
+                locale: locale,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                home: Scaffold(
+                  body: Builder(
+                    builder: (context) => TextButton(
+                      onPressed: () => deleteObjectsWithDoodadReview(
+                        context,
+                        f.controller,
+                        catalog,
+                      ),
+                      child: const Text('Delete selection'),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await tester.tap(find.text('Delete selection'));
+            await tester.pumpAndSettle();
+            expect(
+              f.openMapController.state.session!.rawDocument,
+              same(session.rawDocument),
+            );
+            expect(f.openMapController.editHistory.undoDepth, 0);
+            await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('Delete selection'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.byKey(const Key('doodad-delete-apply')));
+            await tester.pumpAndSettle();
+            expect(catalog.calls, 2);
+            expect(catalog.requestedTypes, [7, 9]);
+            expect(catalog.requiredCompleteTypes, isTrue);
+            if (mode == 'overlap' || mode == 'budget') {
+              expect(find.byType(AlertDialog), findsOneWidget);
+              expect(
+                find.textContaining(
+                  mode == 'overlap'
+                      ? 'footprints overlap'
+                      : 'invalid retained neighbor candidates',
+                ),
+                findsOneWidget,
+              );
+              expect(
+                f.openMapController.state.session!.rawDocument,
+                same(session.rawDocument),
+              );
+              expect(f.openMapController.editHistory.undoDepth, 0);
+              await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
+              await tester.pumpAndSettle();
+            } else {
+              expect(find.byType(AlertDialog), findsNothing);
+              expect(f.openMapController.editHistory.undoDepth, 1);
+              final after = f.openMapController.state.session!;
+              final rawDD = doc.sections
+                  .singleWhere((s) => s.name == 'DD2 ')
+                  .payload;
+              expect(
+                after.rawDocument.sections
+                    .singleWhere((s) => s.name == 'DD2 ')
+                    .payload,
+                [...rawDD.sublist(8, 16), ...rawDD.sublist(rawDD.length - 8)],
+              );
+              final afterBytes = const RawChkEncoder().encode(
+                after.rawDocument,
+              );
+              expect(f.controller.undo(), isTrue);
+              expect(
+                const RawChkEncoder().encode(
+                  f.openMapController.state.session!.rawDocument,
+                ),
+                before,
+              );
+              expect(f.controller.redo(), isTrue);
+              expect(
+                const RawChkEncoder().encode(
+                  f.openMapController.state.session!.rawDocument,
+                ),
+                afterBytes,
+              );
+            }
+            expect(tester.takeException(), isNull);
+            await tester.pumpWidget(const SizedBox());
+          },
+        );
+      }
+    }
+  }
+}
+
 void _retainedDoodadNeighborTests() {
   for (final differentType in [false, true]) {
     for (final batch in [false, true]) {
-      for (final ambiguous in [false, true]) {
+      for (final multipleCandidates in [false, true]) {
         for (final locale in [const Locale('ko'), const Locale('en')]) {
           testWidgets(
-            'retained neighbor differentType=$differentType batch=$batch ambiguous=$ambiguous ${locale.languageCode}',
+            'retained neighbor differentType=$differentType batch=$batch multiple=$multipleCandidates ${locale.languageCode}',
             (tester) async {
               tester.view.physicalSize = Size(
                 locale.languageCode == 'ko' ? 600 : 1200,
@@ -3978,12 +4123,12 @@ void _retainedDoodadNeighborTests() {
                 ..byType = {
                   7: [
                     recipe,
-                    if (ambiguous && !differentType)
+                    if (multipleCandidates && !differentType)
                       deletionRecipe(overlay: DoodadOverlaySemantic.spriteUnit),
                   ],
                   if (differentType)
                     9: [
-                      for (var i = 0; i < (ambiguous ? 2 : 1); i++)
+                      for (var i = 0; i < (multipleCandidates ? 2 : 1); i++)
                         deletionRecipe(
                           overlay: DoodadOverlaySemantic.spriteUnit,
                           doodadType: 9,
@@ -4065,7 +4210,7 @@ void _retainedDoodadNeighborTests() {
                 );
                 await tester.pumpAndSettle();
               }
-              if (differentType && !ambiguous) {
+              if (differentType) {
                 f.mapLayerController.setLocked(MapLayerType.terrain, true);
                 await tester.tap(find.byKey(const Key('doodad-delete-apply')));
                 await tester.pumpAndSettle();
@@ -4082,62 +4227,47 @@ void _retainedDoodadNeighborTests() {
               // One catalog pass per dialog, including when a neighbor is retained.
               expect(catalog.calls, 2);
               expect(catalog.requiredCompleteTypes, isTrue);
-              if (ambiguous) {
-                expect(find.byType(AlertDialog), findsOneWidget);
-                expect(
-                  find.textContaining('nearby doodad ownership is ambiguous'),
-                  findsOneWidget,
-                );
-                expect(
-                  f.openMapController.state.session!.rawDocument,
-                  same(session.rawDocument),
-                );
-                expect(f.openMapController.editHistory.undoDepth, 0);
-                await tester.tap(find.byKey(const Key('doodad-delete-cancel')));
-                await tester.pumpAndSettle();
-              } else {
-                expect(find.byType(AlertDialog), findsNothing);
-                expect(f.openMapController.editHistory.undoDepth, 1);
-                final after = f.openMapController.state.session!;
-                expect(
-                  after.objectViews.doodadSections.single.doodads,
-                  hasLength(2),
-                );
-                expect(
-                  after.objectViews.spriteSections.single.sprites,
-                  hasLength(3),
-                );
-                final originalDD = doc.sections
+              expect(find.byType(AlertDialog), findsNothing);
+              expect(f.openMapController.editHistory.undoDepth, 1);
+              final after = f.openMapController.state.session!;
+              expect(
+                after.objectViews.doodadSections.single.doodads,
+                hasLength(2),
+              );
+              expect(
+                after.objectViews.spriteSections.single.sprites,
+                hasLength(3),
+              );
+              final originalDD = doc.sections
+                  .singleWhere((s) => s.name == 'DD2 ')
+                  .payload;
+              final retained = batch ? 3 : 2;
+              expect(
+                after.rawDocument.sections
                     .singleWhere((s) => s.name == 'DD2 ')
-                    .payload;
-                final retained = batch ? 3 : 2;
-                expect(
-                  after.rawDocument.sections
-                      .singleWhere((s) => s.name == 'DD2 ')
-                      .payload,
-                  [
-                    ...originalDD.sublist(8, 16),
-                    ...originalDD.sublist(retained * 8, retained * 8 + 8),
-                  ],
-                );
-                final afterBytes = const RawChkEncoder().encode(
-                  after.rawDocument,
-                );
-                expect(f.controller.undo(), isTrue);
-                expect(
-                  const RawChkEncoder().encode(
-                    f.openMapController.state.session!.rawDocument,
-                  ),
-                  before,
-                );
-                expect(f.controller.redo(), isTrue);
-                expect(
-                  const RawChkEncoder().encode(
-                    f.openMapController.state.session!.rawDocument,
-                  ),
-                  afterBytes,
-                );
-              }
+                    .payload,
+                [
+                  ...originalDD.sublist(8, 16),
+                  ...originalDD.sublist(retained * 8, retained * 8 + 8),
+                ],
+              );
+              final afterBytes = const RawChkEncoder().encode(
+                after.rawDocument,
+              );
+              expect(f.controller.undo(), isTrue);
+              expect(
+                const RawChkEncoder().encode(
+                  f.openMapController.state.session!.rawDocument,
+                ),
+                before,
+              );
+              expect(f.controller.redo(), isTrue);
+              expect(
+                const RawChkEncoder().encode(
+                  f.openMapController.state.session!.rawDocument,
+                ),
+                afterBytes,
+              );
               expect(tester.takeException(), isNull);
               await tester.pumpWidget(const SizedBox());
             },

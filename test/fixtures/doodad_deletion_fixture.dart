@@ -111,6 +111,53 @@ RawChkDocument differentTypeNeighborDocument({
   return doc;
 }
 
+DoodadPlacementRecipe wideNeighborRecipe() => DoodadPlacementRecipe(
+  tileset: StarCraftTilesetAssetSet.badlands,
+  startTileGroup: 201,
+  doodadType: 9,
+  width: 3,
+  height: 1,
+  centerOffsetX: 48,
+  centerOffsetY: 16,
+  footprint: [
+    for (var x = 0; x < 3; x++)
+      DoodadFootprintCell(
+        x: x,
+        y: 0,
+        rawTileValue: x == 2 ? 3218 : null,
+        requiredTileGroup: 0,
+      ),
+  ],
+);
+
+RawChkDocument candidateNeighborDocument({
+  bool batch = false,
+  DoodadOverlaySemantic? overlay,
+  bool disjoint = true,
+}) {
+  var doc = differentTypeNeighborDocument(batch: batch, overlay: overlay);
+  final oldX = batch ? 3 : 2;
+  final x = disjoint ? oldX + 2 : oldX;
+  for (final name in ['DD2 ', 'MTXM', if (overlay != null) 'THG2']) {
+    final at = doc.sections.indexWhere((s) => s.name == name);
+    final bytes = doc.sections[at].payload;
+    final data = ByteData.sublistView(bytes);
+    switch (name) {
+      case 'DD2 ':
+        data.setUint16(bytes.length - 6, x * 32 + 16, Endian.little);
+      case 'MTXM':
+        data
+          ..setUint16((32 + oldX) * 2, 1, Endian.little)
+          ..setUint16((32 + x) * 2, 3216, Endian.little)
+          ..setUint16((32 + x + 1) * 2, 3218, Endian.little);
+      case 'THG2':
+        data.setUint16(bytes.length - 8, x * 32 + 16, Endian.little);
+    }
+    doc = doc.replaceSection(at, doc.sections[at].withPayload(bytes));
+  }
+  return doc;
+}
+
 RawChkDocument deletionDocument({
   int state = 1,
   DoodadOverlaySemantic? overlay,

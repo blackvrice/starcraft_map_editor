@@ -232,11 +232,7 @@ Future<void> deleteObjectsWithDoodadReview(
                             recipe: recipe,
                             recordIndex: object.recordIndex,
                             overlayRecordIndex: overlayIndex,
-                            retainedNeighborRecipes: {
-                              for (final entry in byType.entries)
-                                if (entry.value.length == 1)
-                                  entry.key: entry.value.single,
-                            },
+                            retainedNeighborCandidates: byType,
                           );
                           editing.deleteDoodad(plan);
                           Navigator.pop(dialogContext);
@@ -597,11 +593,7 @@ Future<void> _reviewBatch(
                           ),
                           confirmedLocationRecordIndices:
                               locationPlan?.recordIndices ?? const [],
-                          retainedNeighborRecipes: {
-                            for (final entry in byType.entries)
-                              if (entry.value.length == 1)
-                                entry.key: entry.value.single,
-                          },
+                          retainedNeighborCandidates: byType,
                         );
                         editing.deleteDoodad(plan);
                         Navigator.pop(dialogContext);

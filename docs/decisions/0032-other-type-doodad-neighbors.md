@@ -1,6 +1,6 @@
 # ADR-0032: 다른 종류의 미선택 두다드 이웃 검증
 
-- Status: Accepted
+- Status: Superseded by [ADR-0033](0033-all-doodad-neighbor-candidates.md)
 - Date: 2026-10-20
 - Supersedes: [ADR-0031](0031-retained-doodad-neighbor-validation.md)
 

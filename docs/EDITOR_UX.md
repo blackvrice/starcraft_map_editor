@@ -431,6 +431,9 @@ Anywhere·상한 초과·모호한 UNIT 관계·조회/확인 중 문서 변경�
 후속 [다른 종류 이웃 검증](decisions/0032-other-type-doodad-neighbors.md)은 동일한
 단일/다중/혼합 창에서 가능한 다른 종류도 조회한다. 후보가 하나인 경우만 보존
 검증에 사용하고 조회 상한 초과·복수/누락 후보를 추측 처리하지 않는다.
+이후 [복수 후보 전체 검증](decisions/0033-all-doodad-neighbor-candidates.md)은 같은
+창에서 모든 대안 영역의 안전성을 검사한다. 후보 하나를 자동 채택하지 않으며
+겹치는 대안이나 geometry/작업 예산 문제는 기존 오류 경로로 거부한다.
 
 EUD Project의 `Generation preview`는 후보 5개 필드의 정렬된 JSON 생성 명세를
 읽기 전용으로 표시한다. 실행 가능한 Python/epScript 생성이나 컴파일은 아직 아니며,

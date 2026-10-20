@@ -22,6 +22,9 @@ flags를 자동 보정하지 않으며 선택하지 않은 bytes·원본 맵을 
 2026-10-20 [ADR-0032](decisions/0032-other-type-doodad-neighbors.md)는 다른 종류까지
 가능한 이웃을 bounded 조회하되 실제 검증 없이 허용하지 않는다. 조회 상한 초과는
 선택 종류 전체로 복귀하며 복수/누락 후보·실제 겹침·손상 이웃을 계속 거부한다.
+2026-10-20 [ADR-0033](decisions/0033-all-doodad-neighbor-candidates.md)는 전체 복수
+후보의 geometry/비겹침을 증명할 때만 허용한다. 최소 한 지형 일치가 필요하지만
+불일치 대안의 영역도 제외하지 않는다. 누락 후보·불명확 geometry·예산 초과는 거부한다.
 
 2026-10-19 [FR-320](SOURCE_WORKSPACE.md): bounded 루트 스캔·링크/이탈 거절,
 외부 변경 시 버퍼 보존/저장 차단, 예상 SHA·원본 백업·명시 저장을 제공한다.
