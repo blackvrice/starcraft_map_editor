@@ -3297,6 +3297,35 @@ void main() {
 }
 
 void _doodadRecipeLookupTests() {
+  for (final fault in ['missing-first', 'missing-later']) {
+    test(
+      'complete Doodad lookup rejects partially decoded type: $fault',
+      () async {
+        final gateway = _RecipeLookupGateway(fault: fault);
+        final f = await _openFixture(catalogGateway: gateway);
+        addTearDown(f.dispose);
+        final c = f.controller..setInstallationPath(_installationPath);
+        final type = fault == 'missing-first' ? 0 : 257;
+        final before = f.openMapController.state.session!.rawDocument;
+        final partial = await c.doodadRecipesForTypes([type, 1]);
+        expect(partial[type], hasLength(1));
+        final complete = await c.doodadRecipesForTypes([
+          type,
+          1,
+        ], requireCompleteTypes: true);
+        expect(complete[type], isEmpty);
+        expect(complete[1]!.single.doodadType, 1);
+        expect(
+          await c.doodadRecipes(type, requireCompleteTypes: true),
+          isEmpty,
+        );
+        expect(gateway.requests.map((r) => r.offset), [0, 256, 0, 256, 0, 256]);
+        expect(f.openMapController.state.session!.rawDocument, same(before));
+        expect(f.objectEditingController.canUndo, isFalse);
+        expect(() => complete[type]!.clear(), throwsUnsupportedError);
+      },
+    );
+  }
   test(
     'Doodad recipe lookup scans once for 32 types and freezes results',
     () async {
@@ -3512,9 +3541,15 @@ final class _RecipeLookupGateway implements StarCraftPlacementCatalogGateway {
   }
 
   StarCraftPlacementCatalogEntry _entry(int index) {
+    final laterVariant = fault == 'missing-later' && index == 259;
+    final missing = (fault == 'missing-first' && index == 0) || laterVariant;
     final recipe = _recipe(
-      doodadType: index < 2 ? 0 : index - 1,
-      startTileGroup: index == 1 ? 201 : 200,
+      doodadType: laterVariant
+          ? 257
+          : index < 2
+          ? 0
+          : index - 1,
+      startTileGroup: index == 1 || laterVariant ? 201 : 200,
     );
     return StarCraftPlacementCatalogEntry(
       key: StarCraftPlacementCatalogKey.doodad(
@@ -3524,7 +3559,8 @@ final class _RecipeLookupGateway implements StarCraftPlacementCatalogGateway {
       ),
       source: StarCraftPlacementCatalogSource.localData,
       availability: StarCraftPlacementAvailability.placeable,
-      doodadRecipe: recipe,
+      doodadRecipe: missing ? null : recipe,
+      doodadRecipeIssueCode: missing ? 'SC_CASC_DOODAD_RECIPE' : null,
     );
   }
 

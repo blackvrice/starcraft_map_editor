@@ -27,10 +27,13 @@ void main() {
     'unit-nydus',
     'location',
     'all',
+    'neighbor-single',
+    'neighbor-batch',
   ]) {
+    final retainedNeighbors = mode.startsWith('neighbor-');
     final unitMixed = mode.startsWith('unit-') || mode == 'all';
     final locationMixed = mode == 'location' || mode == 'all';
-    final batch = mode != 'single',
+    final batch = mode != 'single' && mode != 'neighbor-single',
         mixed = mode == 'mixed' || unitMixed || locationMixed;
     for (final overlay in [null, ...DoodadOverlaySemantic.values]) {
       test(
@@ -66,7 +69,12 @@ void main() {
             operationProgressController: progress,
           );
           addTearDown(save.dispose);
-          final doc = locationMixed
+          final doc = retainedNeighbors
+                  ? batchDeletionDocument(
+                      count: batch ? 3 : 2,
+                      overlay: overlay,
+                    )
+                  : locationMixed
                   ? doodadLocationDeletionDocument(
                       overlay: overlay,
                       batch: true,
@@ -122,12 +130,22 @@ void main() {
                   confirmedLocationRecordIndices: locationMixed
                       ? [254, 0]
                       : const [],
+                  retainedNeighborRecipes: {
+                    if (retainedNeighbors) 7: deletionRecipe(overlay: overlay),
+                  },
                 )
               : editing.prepareDoodadDeletion(
                   recipe: deletionRecipe(overlay: overlay),
                   recordIndex: 0,
                   overlayRecordIndex: overlay == null ? null : 1,
+                  retainedNeighborRecipes: {
+                    if (retainedNeighbors) 7: deletionRecipe(overlay: overlay),
+                  },
                 );
+          expect(
+            plan.preservedNeighborRecordIndices,
+            retainedNeighbors ? {batch ? 3 : 2} : isEmpty,
+          );
           editing.deleteDoodad(plan);
           expect(maps.editHistory.undoDepth, 1);
           final after = const RawChkEncoder().encode(
@@ -158,18 +176,54 @@ void main() {
           );
           expect(
             maps.state.session!.objectViews.doodadSections.single.doodads,
-            hasLength(1),
+            hasLength(retainedNeighbors ? 2 : 1),
           );
           expect(
             maps.state.session!.objectViews.spriteSections.single.sprites,
             hasLength(
               mixed
                   ? 1
+                  : retainedNeighbors
+                  ? 3
                   : overlay == null
                   ? 3
                   : 2,
             ),
           );
+          if (retainedNeighbors) {
+            final session = maps.state.session!;
+            final retained = batch ? 3 : 2;
+            final originalDoodads = doc.sections
+                .singleWhere((s) => s.name == 'DD2 ')
+                .payload;
+            expect(
+              session.rawDocument.sections
+                  .singleWhere((s) => s.name == 'DD2 ')
+                  .payload,
+              [
+                ...originalDoodads.sublist(8, 16),
+                ...originalDoodads.sublist(retained * 8, retained * 8 + 8),
+              ],
+            );
+            expect(
+              session.terrainViews.tileMaps.single.rawTileValues[batch
+                  ? 35
+                  : 34],
+              3200,
+            );
+            if (overlay != null) {
+              final originalSprites = doc.sections
+                  .singleWhere((s) => s.name == 'THG2')
+                  .payload;
+              final savedSprites = session.rawDocument.sections
+                  .singleWhere((s) => s.name == 'THG2')
+                  .payload;
+              expect(
+                savedSprites.sublist(savedSprites.length - 10),
+                originalSprites.sublist(originalSprites.length - 10),
+              );
+            }
+          }
           if (unitMixed) {
             final units =
                 maps.state.session!.objectViews.unitSections.single.units;

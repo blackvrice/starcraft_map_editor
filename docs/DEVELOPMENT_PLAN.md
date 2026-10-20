@@ -137,6 +137,7 @@ Sprite를 실제 이미지 목록에서 찾고 선택한 뒤 캔버스에 배치
 - [x] 최대 256개 선택 Sprite와 두다드의 원본 THG2 합집합·한 Undo 혼합 삭제
 - [x] Unit 혼합 삭제·양방향 관계 검증·남는 peer 집합 명시 확인·한 Undo
 - [x] 정적 미참조 Location 혼합 삭제·MRGN 고정 ID·명시 확인·공유 트리거 검증
+- [x] 단일 후보 동일 종류의 미선택 이웃 검증·전체 비겹침·원시 DD2/지형/미선택 THG2 보존
 
 2026-10-19: 첫 미완료 항목의 미지원 사례 중 비활성 단일 삭제를 확대했다.
 [현재 계약/실행 기록](DOODAD_DELETION.md)과 [ADR-0026](decisions/0026-disabled-doodad-deletion.md)을 따른다.
@@ -185,6 +186,15 @@ Windows Debug 빌드·native CTest 7/7. 기존 미수정 포맷 3개·SDK 차이
 계획·요구사항·실행 결과/최적화 판단은 [삭제 계약](DOODAD_DELETION.md)을 따른다.
 analyze 무이슈·전체 2703 통과/101 조건부 skip·최종 집중 259 통과(실제 MPQ 21개
 포함), Windows Debug 빌드·native CTest 7/7. 기존 포맷 3개·SDK 차이는 유지된다.
+
+2026-10-20 이웃 후속: [ADR-0031](decisions/0031-retained-doodad-neighbor-validation.md)의
+완전한 단일 후보·동일 종류 이웃 검증을 단일/다중 삭제 창에 연결했다. 최대 256개
+미선택 이웃은 상태/경계/현재 타일과 전체 비겹침 검증 후 보존하며 추가 삭제하지 않는다.
+다른 종류/복수·누락 후보/실제 겹침·TILE 부족과 게임/외부 에디터 인수는 남는다.
+요구사항·실행 결과·최적화 상한은 [삭제 계약](DOODAD_DELETION.md)을 따른다.
+analyze 무이슈·전체 2725 통과/107 조건부 skip·집중 601 통과/10 조건부 skip
+(실제 MPQ 27종 포함), Windows Debug 빌드·native CTest 7/7. 기존 미수정 포맷
+3개와 SDK 기준 차이는 유지한다. 실제 카탈로그/게임 인수와 자동 검증을 구분한다.
 
 - [x] Tile·Doodad·Unit·Sprite 탭이 있는 카탈로그 선택 탭 구현
 - [x] 분류·이름·숫자 ID 검색, 타일셋 필터, 최근 선택과 상세 미리보기 구현

@@ -543,14 +543,21 @@ class PlacementCatalogController {
   int _doodadRecipeSequence = 0;
   final _doodadRecipeOperations = <String>{};
 
-  Future<List<DoodadPlacementRecipe>> doodadRecipes(int type) async =>
-      (await doodadRecipesForTypes([type]))[type]!;
+  Future<List<DoodadPlacementRecipe>> doodadRecipes(
+    int type, {
+    bool requireCompleteTypes = false,
+  }) async => (await doodadRecipesForTypes([
+    type,
+  ], requireCompleteTypes: requireCompleteTypes))[type]!;
 
   /// Scans metadata once for the whole selection, without loading thumbnails.
   /// No partial result escapes if a later page or the document is invalidated.
+  /// Complete-type mode hides every candidate of a type with a missing recipe;
+  /// filtering broken variants must not turn an ambiguous type into a unique one.
   Future<Map<int, List<DoodadPlacementRecipe>>> doodadRecipesForTypes(
-    Iterable<int> types,
-  ) async {
+    Iterable<int> types, {
+    bool requireCompleteTypes = false,
+  }) async {
     final requested = types.take(maximumDoodadRecipeTypes + 1).toList();
     if (requested.length > maximumDoodadRecipeTypes) {
       throw ArgumentError('Too many Doodad recipe types.');
@@ -570,6 +577,7 @@ class PlacementCatalogController {
     final recipes = <int, List<DoodadPlacementRecipe>>{
       for (final type in requested) type: [],
     };
+    final incompleteTypes = <int>{};
     final sequence = ++_doodadRecipeSequence;
     StarCraftPlacementCatalogPage? previous;
     var offset = 0;
@@ -626,6 +634,11 @@ class PlacementCatalogController {
       for (final entry in page.entries) {
         final recipe = entry.doodadRecipe;
         if (recipe != null) recipes[entry.key.id]?.add(recipe);
+        if (requireCompleteTypes &&
+            recipe == null &&
+            recipes.containsKey(entry.key.id)) {
+          incompleteTypes.add(entry.key.id);
+        }
       }
       final next = page.nextOffset;
       if (next == null) break;
@@ -635,7 +648,9 @@ class PlacementCatalogController {
     }
     return Map.unmodifiable({
       for (final entry in recipes.entries)
-        entry.key: List<DoodadPlacementRecipe>.unmodifiable(entry.value),
+        entry.key: List<DoodadPlacementRecipe>.unmodifiable(
+          incompleteTypes.contains(entry.key) ? const [] : entry.value,
+        ),
     });
   }
 

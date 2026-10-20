@@ -93,7 +93,10 @@ Future<void> deleteObjectsWithDoodadReview(
         .where((s) => s.sectionIndex == object.sectionIndex)
         .single;
     final doodad = section.doodads[object.recordIndex];
-    final recipes = await catalog.doodadRecipes(doodad.doodadType);
+    final recipes = await catalog.doodadRecipes(
+      doodad.doodadType,
+      requireCompleteTypes: true,
+    );
     if (!context.mounted) return;
     if (!identical(
       editing.openMapController.state.session?.rawDocument,
@@ -227,6 +230,10 @@ Future<void> deleteObjectsWithDoodadReview(
                             recipe: recipe,
                             recordIndex: object.recordIndex,
                             overlayRecordIndex: overlayIndex,
+                            retainedNeighborRecipes: {
+                              if (recipes.length == 1)
+                                doodad.doodadType: recipes.single,
+                            },
                           );
                           editing.deleteDoodad(plan);
                           Navigator.pop(dialogContext);
@@ -315,6 +322,7 @@ Future<void> _reviewBatch(
   }
   final byType = await catalog.doodadRecipesForTypes(
     doodads.map((d) => d.doodadType).toSet(),
+    requireCompleteTypes: true,
   );
   if (!context.mounted) return;
   if (!identical(
@@ -586,6 +594,11 @@ Future<void> _reviewBatch(
                           ),
                           confirmedLocationRecordIndices:
                               locationPlan?.recordIndices ?? const [],
+                          retainedNeighborRecipes: {
+                            for (final entry in byType.entries)
+                              if (entry.value.length == 1)
+                                entry.key: entry.value.single,
+                          },
                         );
                         editing.deleteDoodad(plan);
                         Navigator.pop(dialogContext);

@@ -28,6 +28,7 @@ final class DoodadDeletionPlan {
     this.spriteCount, {
     this.unitDeletion,
     this.locationDeletion,
+    this.preservedNeighborRecordIndices = const {},
   });
   final RawChkDocument document;
   final Map<int, RawChkSection> replacements;
@@ -35,20 +36,26 @@ final class DoodadDeletionPlan {
   final int doodadCount, overlayCount, spriteCount;
   final UnitDeletionPlan? unitDeletion;
   final LocationDeletionPlan? locationDeletion;
+  final Set<int> preservedNeighborRecordIndices;
   static const maximumBatchSize = 32;
   static const maximumSelectedSprites = 256;
+  static const maximumPreservedNeighbors = 256;
 
   static DoodadDeletionPlan create({
     required RawChkDocument document,
     required DoodadPlacementRecipe recipe,
     required int recordIndex,
     int? confirmedOverlayRecordIndex,
+    Map<int, DoodadPlacementRecipe> retainedNeighborRecipes = const {},
   }) => _create(
     document: document,
     recipe: recipe,
     recordIndex: recordIndex,
     confirmedOverlayRecordIndex: confirmedOverlayRecordIndex,
     reviewedNeighbors: const {},
+    retainedNeighbors: _RetainedNeighborReview(retainedNeighborRecipes, {
+      recipe.doodadType,
+    }),
   );
 
   static DoodadDeletionPlan createBatch({
@@ -59,6 +66,7 @@ final class DoodadDeletionPlan {
     Iterable<int> confirmedUnitPeerRecordIndices = const [],
     Iterable<int> selectedLocationRecordIndices = const [],
     Iterable<int> confirmedLocationRecordIndices = const [],
+    Map<int, DoodadPlacementRecipe> retainedNeighborRecipes = const {},
   }) {
     final items = requests.take(maximumBatchSize + 1).toList();
     if (items.isEmpty || items.length > maximumBatchSize) {
@@ -122,6 +130,10 @@ final class DoodadDeletionPlan {
       throw StateError('DOODAD_DELETE: duplicate record ownership');
     }
     final neighbors = {for (final r in items) r.recordIndex: r.recipe};
+    final retained = _RetainedNeighborReview(
+      retainedNeighborRecipes,
+      items.map((r) => r.recipe.doodadType).toSet(),
+    );
     final restored = <int, int>{};
     // Validate every request against the same immutable source before merging.
     // Deleting sequentially would shift DD2/THG2 indices and could leave partial edits.
@@ -132,6 +144,7 @@ final class DoodadDeletionPlan {
         recordIndex: request.recordIndex,
         confirmedOverlayRecordIndex: request.confirmedOverlayRecordIndex,
         reviewedNeighbors: neighbors,
+        retainedNeighbors: retained,
         buildReplacements: false,
       );
       for (final tile in plan._restoredTiles.entries) {
@@ -197,6 +210,7 @@ final class DoodadDeletionPlan {
       spriteIndices.length,
       unitDeletion: unitDeletion,
       locationDeletion: locationDeletion,
+      preservedNeighborRecordIndices: Set.unmodifiable(retained.verified.keys),
     );
   }
 
@@ -206,6 +220,7 @@ final class DoodadDeletionPlan {
     required int recordIndex,
     required int? confirmedOverlayRecordIndex,
     required Map<int, DoodadPlacementRecipe> reviewedNeighbors,
+    required _RetainedNeighborReview retainedNeighbors,
     bool buildReplacements = true,
   }) {
     Never reject(String reason) => throw StateError('DOODAD_DELETE: $reason');
@@ -233,10 +248,16 @@ final class DoodadDeletionPlan {
         metadata.tilesets.single.rawValue != recipe.tileset.rawValue ||
         terrain.width == null ||
         terrain.height == null ||
+        terrain.tileCount != terrain.width! * terrain.height! ||
+        terrain.rawSection.declaredLength != terrain.tileCount * 2 ||
         objects.doodadSections.length != 1) {
       reject('invalid tileset, dimensions or object sections');
     }
     final section = objects.doodadSections.single;
+    if (document.sections[section.sectionIndex].declaredLength !=
+        section.doodads.length * ChkDoodadPlacement.recordLength) {
+      reject('requires one complete DD2 section');
+    }
     if (recordIndex < 0 || recordIndex >= section.doodads.length) {
       reject('invalid record');
     }
@@ -257,11 +278,24 @@ final class DoodadDeletionPlan {
         y + recipe.height > terrain.height!) {
       reject('footprint outside map');
     }
-    // With no verified recipe for neighbors, conservatively exclude every
-    // possible intersection with their maximum 16x16 footprint.
+    // Only a complete, unambiguous catalog recipe may narrow an unselected
+    // neighbor's maximum footprint. Its terrain is checked once per plan.
     for (final other in section.doodads) {
       if (other.recordIndex == recordIndex) continue;
-      final reviewed = reviewedNeighbors[other.recordIndex];
+      var reviewed = reviewedNeighbors[other.recordIndex];
+      if (reviewed == null) {
+        if (!(other.x + 256 > dx &&
+            other.x - 256 < dx + recipe.width * 32 &&
+            other.y + 256 > dy &&
+            other.y - 256 < dy + recipe.height * 32)) {
+          continue;
+        }
+        reviewed = retainedNeighbors.verify(
+          other,
+          recipe.tileset.rawValue,
+          terrain,
+        );
+      }
       if (reviewed != null) {
         final left = other.x - reviewed.centerOffsetX,
             top = other.y - reviewed.centerOffsetY;
@@ -273,12 +307,7 @@ final class DoodadDeletionPlan {
         }
         continue;
       }
-      if (other.x + 256 > dx &&
-          other.x - 256 < dx + recipe.width * 32 &&
-          other.y + 256 > dy &&
-          other.y - 256 < dy + recipe.height * 32) {
-        reject('nearby doodad ownership is ambiguous');
-      }
+      reject('nearby doodad ownership is ambiguous');
     }
     final underlying = document.sections[underlyingIndex].payload;
     if (underlying.length != terrain.width! * terrain.height! * 2) {
@@ -349,6 +378,65 @@ final class DoodadDeletionPlan {
       1,
       overlay == null ? 0 : 1,
       overlay == null ? 0 : 1,
+      preservedNeighborRecordIndices: Set.unmodifiable(
+        retainedNeighbors.verified.keys,
+      ),
     );
+  }
+}
+
+/// These recipes describe retained objects, not additional deletion requests.
+/// The caller must supply only types with exactly one catalog candidate.
+final class _RetainedNeighborReview {
+  _RetainedNeighborReview(
+    Map<int, DoodadPlacementRecipe> recipes,
+    Set<int> selectedTypes,
+  ) {
+    if (recipes.length > DoodadDeletionPlan.maximumBatchSize ||
+        recipes.entries.any(
+          (e) => !selectedTypes.contains(e.key) || e.value.doodadType != e.key,
+        )) {
+      throw StateError('DOODAD_DELETE: invalid retained neighbor recipes');
+    }
+    this.recipes = Map.unmodifiable(recipes);
+  }
+
+  late final Map<int, DoodadPlacementRecipe> recipes;
+  final verified = <int, DoodadPlacementRecipe>{};
+
+  DoodadPlacementRecipe? verify(
+    ChkDoodadPlacement doodad,
+    int tileset,
+    ChkTerrainTileMapView terrain,
+  ) {
+    if (verified.containsKey(doodad.recordIndex)) {
+      return verified[doodad.recordIndex];
+    }
+    final recipe = recipes[doodad.doodadType];
+    if (recipe == null) return null;
+    Never reject() =>
+        throw StateError('DOODAD_DELETE: retained neighbor is not verified');
+    if (verified.length >= DoodadDeletionPlan.maximumPreservedNeighbors ||
+        recipe.tileset.rawValue != tileset ||
+        (doodad.enabledValue != 0 && doodad.enabledValue != 1)) {
+      reject();
+    }
+    final dx = doodad.x - recipe.centerOffsetX,
+        dy = doodad.y - recipe.centerOffsetY;
+    if (dx < 0 || dy < 0 || dx % 32 != 0 || dy % 32 != 0) reject();
+    final x = dx ~/ 32, y = dy ~/ 32;
+    if (x + recipe.width > terrain.width! ||
+        y + recipe.height > terrain.height!) {
+      reject();
+    }
+    for (final cell in recipe.footprint) {
+      if (cell.writesTerrain &&
+          terrain.rawTileValues[(y + cell.y) * terrain.width! + x + cell.x] !=
+              cell.rawTileValue) {
+        reject();
+      }
+    }
+    verified[doodad.recordIndex] = recipe;
+    return recipe;
   }
 }

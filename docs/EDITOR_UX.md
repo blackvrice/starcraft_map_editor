@@ -424,6 +424,10 @@ Location도 최대 254개까지 ID/MRGN 인덱스로 표시하고 슬롯 비우�
 단계에서 거부한다. 외부 스크립트 참조가 미검증이라는 경고를 함께 표시한다.
 Anywhere·상한 초과·모호한 UNIT 관계·조회/확인 중 문서 변경은 무변경 거부한다.
 [ADR-0030](decisions/0030-reviewed-location-mixed-deletion.md).
+2026-10-20 [보존 이웃 검증](decisions/0031-retained-doodad-neighbor-validation.md)은
+기존 창/카탈로그 조회를 재사용한다. 후보가 정확히 하나인 선택 종류의 인접 미선택
+두다드는 지형/상태/전체 비겹침 검증 후 그대로 남는다. 복수/누락 후보나 다른 종류의
+이웃은 크기를 추측하지 않고 기존 거부 경로를 사용한다. overlay 자동 확인은 없다.
 
 EUD Project의 `Generation preview`는 후보 5개 필드의 정렬된 JSON 생성 명세를
 읽기 전용으로 표시한다. 실행 가능한 Python/epScript 생성이나 컴파일은 아직 아니며,

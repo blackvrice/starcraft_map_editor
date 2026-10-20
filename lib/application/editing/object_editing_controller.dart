@@ -1988,6 +1988,7 @@ class ObjectEditingController {
     required DoodadPlacementRecipe recipe,
     required int recordIndex,
     int? overlayRecordIndex,
+    Map<int, DoodadPlacementRecipe> retainedNeighborRecipes = const {},
   }) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
@@ -1998,6 +1999,7 @@ class ObjectEditingController {
       recipe: recipe,
       recordIndex: recordIndex,
       confirmedOverlayRecordIndex: overlayRecordIndex,
+      retainedNeighborRecipes: retainedNeighborRecipes,
     );
   }
 
@@ -2042,6 +2044,7 @@ class ObjectEditingController {
     Iterable<int> confirmedUnitPeerRecordIndices = const [],
     Iterable<int> selectedLocationRecordIndices = const [],
     Iterable<int> confirmedLocationRecordIndices = const [],
+    Map<int, DoodadPlacementRecipe> retainedNeighborRecipes = const {},
   }) {
     final session = openMapController.state.session;
     if (session == null || !_isEditableSession(session)) {
@@ -2055,6 +2058,7 @@ class ObjectEditingController {
       confirmedUnitPeerRecordIndices: confirmedUnitPeerRecordIndices,
       selectedLocationRecordIndices: selectedLocationRecordIndices,
       confirmedLocationRecordIndices: confirmedLocationRecordIndices,
+      retainedNeighborRecipes: retainedNeighborRecipes,
     );
   }
 

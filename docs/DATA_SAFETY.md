@@ -15,6 +15,10 @@ flags를 자동 보정하지 않으며 선택하지 않은 bytes·원본 맵을 
 혼합은 저장된 canonical TRIG/MBRF를 검사하고 참조/미확인 slot·Anywhere를 거부한다.
 명시 확인한 MRGN 슬롯만 비워 ID·공유 문자열·트리거 bytes를 보존한다. 외부 코드의
 동적 참조 부재를 보장하지 않으며 이를 확인 창에서 고지한다.
+2026-10-20 [ADR-0031](decisions/0031-retained-doodad-neighbor-validation.md): 완전한
+카탈로그 후보가 하나인 선택 종류의 미선택 이웃만 상태/경계/지형과 전체 비겹침을
+검증한다. 이웃을 추가 삭제하지 않으며 원본 인덱스/미선택 bytes를 보존한다.
+손상 후보를 제외한 뒤 유일성을 추정하지 않는다. DD2/MTXM trailing bytes도 거부한다.
 
 2026-10-19 [FR-320](SOURCE_WORKSPACE.md): bounded 루트 스캔·링크/이탈 거절,
 외부 변경 시 버퍼 보존/저장 차단, 예상 SHA·원본 백업·명시 저장을 제공한다.

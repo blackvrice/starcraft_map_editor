@@ -613,6 +613,10 @@ pure sprite는 `0x1000`, sprite-unit은 활성 `0`/비활성 `0x8000`을 요구�
 64/255개 MRGN에서 명시 확인한 20-byte 슬롯만 비우며 배열 길이와 ID는 유지한다.
 공유 이름 문자열은 삭제/재할당하지 않는다. 저장된 일반 TRIG/MBRF에서 사용되는
 ID·Anywhere 64·미확인 트리거는 거부하며 동적 코드 참조는 분석하지 않는다.
+2026-10-20 [ADR-0031](decisions/0031-retained-doodad-neighbor-validation.md): 후보가
+하나인 동일 종류의 미선택 이웃은 DD2 상태/경계·현재 MTXM 일치 및 전체 footprint
+비겹침을 검증한다. 이웃 DD2/지형과 미선택 THG2는 변경하지 않으며 포맷 추가는 없다.
+불완전한 DD2 8-byte 레코드 또는 MTXM 격자는 trailing bytes를 버리지 않고 거부한다.
 
 ## 일반 트리거·속성·스위치 (2026-09-27)
 

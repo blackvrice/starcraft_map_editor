@@ -469,6 +469,10 @@ M6.2의 전체 배치 목록은 `application/ports`의
   `LocationDeletionPlan`은 고정 ID 슬롯과 저장된 트리거 참조를 검증한다.
   `ChkTriggerPortability`는 맵 간 복사와 같은 엄격한 slot 검증을 공유한다. UI는
   계획과 typed view만 읽고 MRGN 비우기 확인 집합을 application에 전달한다.
+  [ADR-0031](decisions/0031-retained-doodad-neighbor-validation.md)의 보존 이웃 검증은
+  기존 metadata 조회의 완전한 단일 후보만 전달받는다. domain은 최대 256개
+  가까운 미선택 이웃의 지형/상태/경계를 한 계획 내부에서 한 번 검증하고 전체
+  footprint 비겹침을 검사한다. 이웃 recipe는 삭제 요청이나 overlay 귀속이 아니다.
 - popup 탐색과 페이지 로딩은 CHK, dirty 상태와 Undo를 변경하지 않는다. 현재
   맵의 byte-exact template fallback은 helper 결과로 가장하지 않고 이후 merge
   controller에서 source가 구분된 별도 항목으로 합친다.

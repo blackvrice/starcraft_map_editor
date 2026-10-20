@@ -1,6 +1,6 @@
 # ADR-0030: 정적 참조를 검증한 로케이션 혼합 삭제
 
-- Status: Accepted
+- Status: Superseded by [ADR-0031](0031-retained-doodad-neighbor-validation.md)
 - Date: 2026-10-20
 - Supersedes: [ADR-0029](0029-unit-mixed-doodad-deletion.md)
 
